@@ -14,7 +14,7 @@ import Pai from "./pages/destinations/Pai";
 import ChiangRai from "./pages/destinations/ChiangRai";
 
 // Legal & Company Pages
-import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndPrivacy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Contact from "./pages/Contact";
 
@@ -48,7 +48,8 @@ function Router() {
       <Route path="/blog/best-esim-for-thailand" component={BestEsimThailand} />
 
       {/* Legal & Company Pages */}
-      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/privacy" component={TermsAndPrivacy} />
+      <Route path="/terms-privacy" component={TermsAndPrivacy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/contact" component={Contact} />
 

@@ -83,7 +83,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-3 text-sm">
               <li><Link href="/contact" className="hover:underline">{t("footer.contactUs")}</Link></li>
               <li><Link href="/privacy" className="hover:underline">{t("footer.privacyPolicy")}</Link></li>
-              <li><Link href="/terms" className="hover:underline">{t("footer.termsOfService")}</Link></li>
+              <li><Link href="/terms-privacy" className="hover:underline">{t("footer.termsOfService")}</Link></li>
             </ul>
           </div>
 
