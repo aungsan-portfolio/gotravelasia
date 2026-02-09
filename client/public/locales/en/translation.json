@@ -1,0 +1,93 @@
+{
+  "common": {
+    "bookNow": "Book Now",
+    "search": "Search"
+  },
+  "nav": {
+    "home": "Home",
+    "flights": "Flights",
+    "hotels": "Hotels",
+    "tours": "Tours",
+    "transfers": "Transfers",
+    "esim": "eSIM",
+    "insurance": "Insurance",
+    "blog": "Blog"
+  },
+  "hero": {
+    "title": "PLAN YOUR TRIP TO",
+    "country": "THAILAND",
+    "slogan": "Crafting Unforgettable Journeys",
+    "subtitle": "Thailand Travel Guides & Planning for Myanmar and International Travelers."
+  },
+  "categories": {
+    "findFlights": "Find Flights",
+    "agodaHotels": "Agoda Hotels",
+    "thingsToDo": "Things To Do",
+    "transfers": "Transfers",
+    "esim": "eSIM",
+    "insurance": "Insurance"
+  },
+  "sections": {
+    "travelingFromMyanmar": "Traveling from Myanmar?",
+    "featuredDestinations": "Featured Destinations",
+    "bookTransport": "Book Your Transport",
+    "gettingAround": "Getting Around Thailand"
+  },
+  "transport": {
+    "from": "From",
+    "to": "To",
+    "departureDate": "Departure Date",
+    "search": "Search",
+    "noSchedules": "No schedules found",
+    "duration": "Duration",
+    "price": "Price",
+    "bookNow": "Book Now",
+    "rating": "Rating"
+  },
+  "destinations": {
+    "bangkok": "Bangkok",
+    "chiangMai": "Chiang Mai",
+    "phuket": "Phuket",
+    "krabi": "Krabi",
+    "pai": "Pai",
+    "chiangRai": "Chiang Rai",
+    "chiangMaiDesc": "Ancient temples, mountain retreats, and the best night markets.",
+    "bangkokDesc": "The vibrant capital. Street food, shopping, and grand palaces.",
+    "phuketDesc": "Thailand's largest island with stunning beaches and nightlife."
+  },
+  "cta": {
+    "checkHotels": "Check Hotels",
+    "viewTours": "View Tours",
+    "bookThisTrip": "Book This Trip Now",
+    "planTrip": "Plan Trip",
+    "signIn": "Sign In",
+    "learnMore": "Learn More",
+    "viewAll": "View All",
+    "readMore": "Read More"
+  },
+  "footer": {
+    "aboutUs": "About Us",
+    "contactUs": "Contact Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "subscribe": "Subscribe",
+    "newsletterTitle": "Stay Updated",
+    "newsletterDesc": "Join thousands of travelers getting the best Thailand travel tips and deals.",
+    "enterEmail": "Enter your email address",
+    "affiliateDisclosure": "GoTravel is an affiliate website. Some links on this site are affiliate links, meaning we may earn a small commission if you make a purchase through them, at no extra cost to you.",
+    "copyright": "© 2026 GoTravel — Crafting Unforgettable Journeys"
+  },
+  "cookie": {
+    "title": "🍪 We use cookies",
+    "message": "We use cookies to enhance your browsing experience and analyze site traffic. By clicking \"Accept\", you consent to our use of cookies.",
+    "learnMore": "Learn more",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "mobile": {
+    "destinations": "Destinations",
+    "resources": "Resources",
+    "travelBlog": "Travel Blog",
+    "quickBook": "Quick Book"
+  }
+}
