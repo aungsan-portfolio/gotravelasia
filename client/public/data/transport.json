@@ -1,0 +1,458 @@
+{
+  "lastUpdated": "2026-02-10T15:53:14.219052+00:00",
+  "affiliateId": "14566451",
+  "totalRoutes": 14,
+  "scrapeStats": {
+    "success": 0,
+    "fallback": 14
+  },
+  "routes": [
+    {
+      "from": "Bangkok",
+      "to": "Chiang Mai",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Transport Co (VIP)",
+          "price": 650,
+          "duration": "10 hours",
+          "departure": "08:00",
+          "arrival": "18:00",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Bus",
+          "provider": "Nakhonchai Air",
+          "price": 750,
+          "duration": "9h 30m",
+          "departure": "20:00",
+          "arrival": "05:30 (+1)",
+          "rating": 4.5,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Train",
+          "provider": "State Railway (Sleeper)",
+          "price": 1200,
+          "duration": "12 hours",
+          "departure": "19:00",
+          "arrival": "07:00 (+1)",
+          "rating": 4.6,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Various Airlines",
+          "price": 1500,
+          "duration": "1h 20m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.8,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Chiang Mai",
+      "to": "Bangkok",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Transport Co (VIP)",
+          "price": 650,
+          "duration": "10 hours",
+          "departure": "08:00",
+          "arrival": "18:00",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Train",
+          "provider": "State Railway (Sleeper)",
+          "price": 1200,
+          "duration": "12 hours",
+          "departure": "17:00",
+          "arrival": "05:00 (+1)",
+          "rating": 4.6,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Various Airlines",
+          "price": 1400,
+          "duration": "1h 20m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.8,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Phuket",
+      "options": [
+        {
+          "type": "Bus + Ferry",
+          "provider": "Phantip Travel",
+          "price": 1100,
+          "duration": "14 hours",
+          "departure": "Evening",
+          "arrival": "Morning",
+          "rating": 4.2,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/phuket?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Various Airlines",
+          "price": 1800,
+          "duration": "1h 30m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.7,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/phuket?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Krabi",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Nakhonchai Air",
+          "price": 850,
+          "duration": "12 hours",
+          "departure": "18:00",
+          "arrival": "06:00 (+1)",
+          "rating": 4.4,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/krabi?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Various Airlines",
+          "price": 2100,
+          "duration": "1h 25m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.7,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/krabi?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Koh Samui",
+      "options": [
+        {
+          "type": "Bus + Ferry",
+          "provider": "Lomprayah",
+          "price": 1200,
+          "duration": "13 hours",
+          "departure": "Evening",
+          "arrival": "Morning",
+          "rating": 4.5,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/koh-samui?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Bangkok Airways",
+          "price": 3500,
+          "duration": "1h 10m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.9,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/koh-samui?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Pattaya",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Roong Reuang Coach",
+          "price": 120,
+          "duration": "2h 30m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.4,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/pattaya?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Minivan",
+          "provider": "Bell Travel",
+          "price": 250,
+          "duration": "2 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/pattaya?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Hua Hin",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Transport Co",
+          "price": 180,
+          "duration": "3h 30m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/hua-hin?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Train",
+          "provider": "State Railway",
+          "price": 250,
+          "duration": "4 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.2,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/hua-hin?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Minivan",
+          "provider": "Bell Travel",
+          "price": 300,
+          "duration": "3 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.4,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/hua-hin?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Chiang Mai",
+      "to": "Chiang Rai",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Green Bus",
+          "price": 250,
+          "duration": "3h 30m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.5,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/chiang-rai?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Minivan",
+          "provider": "Private Minivan",
+          "price": 350,
+          "duration": "3 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/chiang-rai?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Chiang Mai",
+      "to": "Pai",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Sombat Tour",
+          "price": 180,
+          "duration": "3h 30m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.0,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/pai?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Minivan",
+          "provider": "Prempracha Transport",
+          "price": 250,
+          "duration": "3 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.2,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/pai?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Phuket",
+      "to": "Krabi",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Phantip Travel",
+          "price": 200,
+          "duration": "3 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.2,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/phuket/krabi?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Ferry",
+          "provider": "Tigerline Ferry",
+          "price": 450,
+          "duration": "2h 30m",
+          "departure": "09:00",
+          "arrival": "11:30",
+          "rating": 4.6,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/phuket/krabi?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Phuket",
+      "to": "Koh Samui",
+      "options": [
+        {
+          "type": "Bus + Ferry",
+          "provider": "Lomprayah",
+          "price": 850,
+          "duration": "8 hours",
+          "departure": "07:00",
+          "arrival": "15:00",
+          "rating": 4.4,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/phuket/koh-samui?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Bangkok Airways",
+          "price": 3200,
+          "duration": "1 hour",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.8,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/phuket/koh-samui?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Surat Thani",
+      "options": [
+        {
+          "type": "Bus",
+          "provider": "Nakhonchai Air",
+          "price": 600,
+          "duration": "10 hours",
+          "departure": "19:00",
+          "arrival": "05:00 (+1)",
+          "rating": 4.4,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/surat-thani?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Train",
+          "provider": "State Railway",
+          "price": 800,
+          "duration": "11 hours",
+          "departure": "17:30",
+          "arrival": "04:30 (+1)",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/surat-thani?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight",
+          "provider": "Various Airlines",
+          "price": 2200,
+          "duration": "1h 10m",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.7,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/surat-thani?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Koh Phangan",
+      "options": [
+        {
+          "type": "Bus + Ferry",
+          "provider": "Lomprayah",
+          "price": 1100,
+          "duration": "14 hours",
+          "departure": "Evening",
+          "arrival": "Morning",
+          "rating": 4.4,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/koh-phangan?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight + Ferry",
+          "provider": "Various + Lomprayah",
+          "price": 2800,
+          "duration": "3 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.6,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/koh-phangan?referer=14566451&z=14566451"
+        }
+      ]
+    },
+    {
+      "from": "Bangkok",
+      "to": "Koh Tao",
+      "options": [
+        {
+          "type": "Bus + Ferry",
+          "provider": "Lomprayah",
+          "price": 1200,
+          "duration": "15 hours",
+          "departure": "Evening",
+          "arrival": "Morning",
+          "rating": 4.3,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/koh-tao?referer=14566451&z=14566451"
+        },
+        {
+          "type": "Flight + Ferry",
+          "provider": "Various + Lomprayah",
+          "price": 3000,
+          "duration": "4 hours",
+          "departure": "Various",
+          "arrival": "Various",
+          "rating": 4.5,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/koh-tao?referer=14566451&z=14566451"
+        }
+      ]
+    }
+  ]
+}

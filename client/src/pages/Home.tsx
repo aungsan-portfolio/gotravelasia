@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ArrowRight, ExternalLink, MapPin, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import TransportScheduleWidget from "@/components/TransportScheduleWidget";
+import TravelSearchWidget from "@/components/TravelSearchWidget";
+
 
 export default function Home() {
   const { t } = useTranslation();
@@ -114,8 +115,8 @@ export default function Home() {
       <section className="py-16 bg-muted/30 border-b border-border">
         <div className="container">
           <h2 className="text-3xl font-bold tracking-tight mb-2">Book Your Transport</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Search for buses, trains, and minibuses between Thai cities. Compare prices and book directly.</p>
-          <TransportScheduleWidget />
+          <p className="text-muted-foreground mb-8 text-lg">Search for buses, trains, ferries, and flights between Thai cities via 12Go Asia.</p>
+          <TravelSearchWidget />
         </div>
       </section>
 
