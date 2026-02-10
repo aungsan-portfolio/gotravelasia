@@ -324,6 +324,7 @@ export default function TransportScheduleWidget() {
                                 </div>
 
                                 {/* Price */}
+                                <p className="text-xs text-muted-foreground mb-1">Starting from</p>
                                 <p className="text-2xl font-bold text-primary mb-4">
                                     ฿{option.price.toLocaleString()}
                                 </p>

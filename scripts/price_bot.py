@@ -36,6 +36,27 @@ OUTPUT_PATH = Path(__file__).parent.parent / "client" / "public" / "data" / "tra
 REQUEST_TIMEOUT = 15
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
+# ─── Buffer Pricing ─────────────────────────────────────────────
+# Show slightly higher prices on the website so customers feel happy
+# when the actual price on 12Go is lower. Smart marketing!
+BUFFER_FLIGHT = 0.15      # +15% for flights
+BUFFER_FERRY = 0.12       # +12% for ferries
+BUFFER_DEFAULT = 0.10     # +10% for buses, trains, minivans
+
+
+def apply_price_buffer(price: int, transport_type: str) -> int:
+    """Apply buffer markup so displayed price is slightly above actual."""
+    t = transport_type.lower()
+    if "flight" in t:
+        buffer = BUFFER_FLIGHT
+    elif "ferry" in t:
+        buffer = BUFFER_FERRY
+    else:
+        buffer = BUFFER_DEFAULT
+    # Round up to nearest 50 for clean display
+    buffered = int(price * (1 + buffer))
+    return ((buffered + 49) // 50) * 50
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -243,10 +264,11 @@ def build_transport_data() -> dict:
         # Build affiliate URL
         booking_url = build_affiliate_url(route["slug_from"], route["slug_to"])
 
-        # Add booking URL and currency to each option
+        # Add booking URL, currency, and apply price buffer
         for opt in options:
             opt["currency"] = "THB"
             opt["bookingUrl"] = booking_url
+            opt["price"] = apply_price_buffer(opt["price"], opt["type"])
 
         # Sort by price (cheapest first)
         options.sort(key=lambda x: x.get("price", 99999))
