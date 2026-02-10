@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-02-10T16:27:46.776858+00:00",
+  "lastUpdated": "2026-02-10T18:54:39.780862+00:00",
   "affiliateId": "14566451",
   "totalRoutes": 14,
   "scrapeStats": {
@@ -14,7 +14,7 @@
         {
           "type": "Bus",
           "provider": "Transport Co (VIP)",
-          "price": 650,
+          "price": 750,
           "duration": "10 hours",
           "departure": "08:00",
           "arrival": "18:00",
@@ -25,7 +25,7 @@
         {
           "type": "Bus",
           "provider": "Nakhonchai Air",
-          "price": 750,
+          "price": 850,
           "duration": "9h 30m",
           "departure": "20:00",
           "arrival": "05:30 (+1)",
@@ -36,7 +36,7 @@
         {
           "type": "Train",
           "provider": "State Railway (Sleeper)",
-          "price": 1200,
+          "price": 1350,
           "duration": "12 hours",
           "departure": "19:00",
           "arrival": "07:00 (+1)",
@@ -47,7 +47,7 @@
         {
           "type": "Flight",
           "provider": "Various Airlines",
-          "price": 1500,
+          "price": 1750,
           "duration": "1h 20m",
           "departure": "Various",
           "arrival": "Various",
@@ -64,7 +64,7 @@
         {
           "type": "Bus",
           "provider": "Transport Co (VIP)",
-          "price": 650,
+          "price": 750,
           "duration": "10 hours",
           "departure": "08:00",
           "arrival": "18:00",
@@ -75,7 +75,7 @@
         {
           "type": "Train",
           "provider": "State Railway (Sleeper)",
-          "price": 1200,
+          "price": 1350,
           "duration": "12 hours",
           "departure": "17:00",
           "arrival": "05:00 (+1)",
@@ -86,7 +86,7 @@
         {
           "type": "Flight",
           "provider": "Various Airlines",
-          "price": 1400,
+          "price": 1650,
           "duration": "1h 20m",
           "departure": "Various",
           "arrival": "Various",
@@ -103,7 +103,7 @@
         {
           "type": "Bus + Ferry",
           "provider": "Phantip Travel",
-          "price": 1100,
+          "price": 1250,
           "duration": "14 hours",
           "departure": "Evening",
           "arrival": "Morning",
@@ -114,7 +114,7 @@
         {
           "type": "Flight",
           "provider": "Various Airlines",
-          "price": 1800,
+          "price": 2100,
           "duration": "1h 30m",
           "departure": "Various",
           "arrival": "Various",
@@ -131,7 +131,7 @@
         {
           "type": "Bus",
           "provider": "Nakhonchai Air",
-          "price": 850,
+          "price": 950,
           "duration": "12 hours",
           "departure": "18:00",
           "arrival": "06:00 (+1)",
@@ -142,7 +142,7 @@
         {
           "type": "Flight",
           "provider": "Various Airlines",
-          "price": 2100,
+          "price": 2450,
           "duration": "1h 25m",
           "departure": "Various",
           "arrival": "Various",
@@ -159,7 +159,7 @@
         {
           "type": "Bus + Ferry",
           "provider": "Lomprayah",
-          "price": 1200,
+          "price": 1350,
           "duration": "13 hours",
           "departure": "Evening",
           "arrival": "Morning",
@@ -170,7 +170,7 @@
         {
           "type": "Flight",
           "provider": "Bangkok Airways",
-          "price": 3500,
+          "price": 4050,
           "duration": "1h 10m",
           "departure": "Various",
           "arrival": "Various",
@@ -187,7 +187,7 @@
         {
           "type": "Bus",
           "provider": "Roong Reuang Coach",
-          "price": 120,
+          "price": 150,
           "duration": "2h 30m",
           "departure": "Various",
           "arrival": "Various",
@@ -198,7 +198,7 @@
         {
           "type": "Minivan",
           "provider": "Bell Travel",
-          "price": 250,
+          "price": 300,
           "duration": "2 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -215,7 +215,7 @@
         {
           "type": "Bus",
           "provider": "Transport Co",
-          "price": 180,
+          "price": 200,
           "duration": "3h 30m",
           "departure": "Various",
           "arrival": "Various",
@@ -226,7 +226,7 @@
         {
           "type": "Train",
           "provider": "State Railway",
-          "price": 250,
+          "price": 300,
           "duration": "4 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -237,7 +237,7 @@
         {
           "type": "Minivan",
           "provider": "Bell Travel",
-          "price": 300,
+          "price": 350,
           "duration": "3 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -254,7 +254,7 @@
         {
           "type": "Bus",
           "provider": "Green Bus",
-          "price": 250,
+          "price": 300,
           "duration": "3h 30m",
           "departure": "Various",
           "arrival": "Various",
@@ -265,7 +265,7 @@
         {
           "type": "Minivan",
           "provider": "Private Minivan",
-          "price": 350,
+          "price": 400,
           "duration": "3 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -282,7 +282,7 @@
         {
           "type": "Bus",
           "provider": "Sombat Tour",
-          "price": 180,
+          "price": 200,
           "duration": "3h 30m",
           "departure": "Various",
           "arrival": "Various",
@@ -293,7 +293,7 @@
         {
           "type": "Minivan",
           "provider": "Prempracha Transport",
-          "price": 250,
+          "price": 300,
           "duration": "3 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -310,7 +310,7 @@
         {
           "type": "Bus",
           "provider": "Phantip Travel",
-          "price": 200,
+          "price": 250,
           "duration": "3 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -321,7 +321,7 @@
         {
           "type": "Ferry",
           "provider": "Tigerline Ferry",
-          "price": 450,
+          "price": 550,
           "duration": "2h 30m",
           "departure": "09:00",
           "arrival": "11:30",
@@ -338,7 +338,7 @@
         {
           "type": "Bus + Ferry",
           "provider": "Lomprayah",
-          "price": 850,
+          "price": 1000,
           "duration": "8 hours",
           "departure": "07:00",
           "arrival": "15:00",
@@ -349,7 +349,7 @@
         {
           "type": "Flight",
           "provider": "Bangkok Airways",
-          "price": 3200,
+          "price": 3700,
           "duration": "1 hour",
           "departure": "Various",
           "arrival": "Various",
@@ -366,7 +366,7 @@
         {
           "type": "Bus",
           "provider": "Nakhonchai Air",
-          "price": 600,
+          "price": 700,
           "duration": "10 hours",
           "departure": "19:00",
           "arrival": "05:00 (+1)",
@@ -377,7 +377,7 @@
         {
           "type": "Train",
           "provider": "State Railway",
-          "price": 800,
+          "price": 900,
           "duration": "11 hours",
           "departure": "17:30",
           "arrival": "04:30 (+1)",
@@ -388,7 +388,7 @@
         {
           "type": "Flight",
           "provider": "Various Airlines",
-          "price": 2200,
+          "price": 2550,
           "duration": "1h 10m",
           "departure": "Various",
           "arrival": "Various",
@@ -405,7 +405,7 @@
         {
           "type": "Bus + Ferry",
           "provider": "Lomprayah",
-          "price": 1100,
+          "price": 1250,
           "duration": "14 hours",
           "departure": "Evening",
           "arrival": "Morning",
@@ -416,7 +416,7 @@
         {
           "type": "Flight + Ferry",
           "provider": "Various + Lomprayah",
-          "price": 2800,
+          "price": 3250,
           "duration": "3 hours",
           "departure": "Various",
           "arrival": "Various",
@@ -433,7 +433,7 @@
         {
           "type": "Bus + Ferry",
           "provider": "Lomprayah",
-          "price": 1200,
+          "price": 1350,
           "duration": "15 hours",
           "departure": "Evening",
           "arrival": "Morning",
@@ -444,7 +444,7 @@
         {
           "type": "Flight + Ferry",
           "provider": "Various + Lomprayah",
-          "price": 3000,
+          "price": 3450,
           "duration": "4 hours",
           "departure": "Various",
           "arrival": "Various",
