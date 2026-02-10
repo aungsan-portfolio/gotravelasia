@@ -1,0 +1,47 @@
+name: Update Transport Prices
+
+on:
+  # ပုံမှန် 6 နာရီတိုင်း auto-run
+  schedule:
+    - cron: '0 */6 * * *'
+  
+  # Manual trigger (GitHub UI ကနေ Run workflow နှိပ်လို့ရ)
+  workflow_dispatch:
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements.txt
+      
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+      
+      - name: Run price bot
+        run: python scripts/price_bot.py
+      
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet client/public/data/transport.json || echo "changed=true" >> $GITHUB_OUTPUT
+      
+      - name: Commit and push updated prices
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "GoTravel Price Bot"
+          git config user.email "bot@gotravel.asia"
+          git add client/public/data/transport.json
+          git commit -m "🤖 Auto-update transport prices [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git push
