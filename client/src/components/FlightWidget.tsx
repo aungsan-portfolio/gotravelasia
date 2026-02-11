@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, Plane } from "lucide-react";
+import { Search, Loader2, Plane, CalendarDays, ArrowRightLeft } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -44,17 +44,24 @@ const LOCATIONS = [
 // ─── Component ──────────────────────────────────────────────────
 
 export default function FlightWidget() {
+    const [tripType, setTripType] = useState<"oneway" | "round">("oneway");
     const [origin, setOrigin] = useState("RGN");
     const [dest, setDest] = useState("BKK");
     const [date, setDate] = useState("");
+    const [returnDate, setReturnDate] = useState("");
     const [deal, setDeal] = useState<Deal | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Default departure = tomorrow
+    // Set default dates: departure = tomorrow, return = +7 days
     useEffect(() => {
-        const tomorrow = new Date();
+        const today = new Date();
+        const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         setDate(tomorrow.toISOString().split("T")[0]);
+
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 8);
+        setReturnDate(nextWeek.toISOString().split("T")[0]);
     }, []);
 
     // Fetch flight data whenever origin/dest changes
@@ -81,42 +88,65 @@ export default function FlightWidget() {
         return () => { alive = false; };
     }, [origin, dest]);
 
-    // Build affiliate URL
-    const buildUrl = (searchDate: string) => {
+    // Build affiliate URL and open in new tab
+    const handleSearch = (overrideDate?: string) => {
+        const departDate = overrideDate || date;
+        if (!departDate) return alert("Please select a departure date");
+        if (tripType === "round" && !returnDate) return alert("Please select a return date");
+
         const params = new URLSearchParams({
             marker: AFFILIATE_ID,
             origin_iata: origin,
             destination_iata: dest,
-            depart_date: searchDate,
+            depart_date: departDate,
             adults: "1",
             trip_class: "0",
+            with_request: "true",
         });
-        return `https://www.aviasales.com/search?${params.toString()}`;
-    };
 
-    const handleSearch = (searchDate?: string) => {
-        const finalDate = searchDate || date;
-        if (!finalDate) {
-            alert("Please select a departure date");
-            return;
+        if (tripType === "round") {
+            params.append("return_date", returnDate);
         }
-        window.open(buildUrl(finalDate), "_blank");
+
+        window.open(`https://www.aviasales.com/search?${params.toString()}`, "_blank");
     };
 
     return (
         <div className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 font-sans">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-6 text-purple-600">
-                <Plane className="w-6 h-6" />
-                <h2 className="text-xl font-bold text-slate-800">GoTravel Flight Finder</h2>
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2 text-purple-600">
+                    <Plane className="w-6 h-6" />
+                    <h2 className="text-xl font-bold text-slate-800">Flight Finder</h2>
+                </div>
             </div>
 
-            {/* Route selection */}
+            {/* Trip Type Toggle */}
+            <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+                <button
+                    onClick={() => setTripType("oneway")}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${tripType === "oneway"
+                            ? "bg-white text-purple-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                >
+                    One Way
+                </button>
+                <button
+                    onClick={() => setTripType("round")}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${tripType === "round"
+                            ? "bg-white text-purple-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                >
+                    Round Trip
+                </button>
+            </div>
+
+            {/* Route Selection */}
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-                        From
-                    </label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">From</label>
                     <select
                         value={origin}
                         onChange={(e) => setOrigin(e.target.value)}
@@ -128,9 +158,7 @@ export default function FlightWidget() {
                     </select>
                 </div>
                 <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-                        To
-                    </label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">To</label>
                     <select
                         value={dest}
                         onChange={(e) => setDest(e.target.value)}
@@ -143,27 +171,45 @@ export default function FlightWidget() {
                 </div>
             </div>
 
-            {/* Date picker */}
-            <div className="mb-6 space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-                    Departure Date
-                </label>
-                <input
-                    type="date"
-                    value={date}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 font-semibold text-slate-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-                />
+            {/* Date Selection */}
+            <div className="grid grid-cols-1 gap-4 mb-6">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Departure</label>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={date}
+                            min={new Date().toISOString().split("T")[0]}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="w-full p-3 pl-10 bg-slate-50 rounded-xl border border-slate-200 font-semibold text-slate-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                        />
+                        <CalendarDays className="w-4 h-4 absolute left-3 top-3.5 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+
+                {tripType === "round" && (
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Return</label>
+                        <div className="relative">
+                            <input
+                                type="date"
+                                value={returnDate}
+                                min={date || new Date().toISOString().split("T")[0]}
+                                onChange={(e) => setReturnDate(e.target.value)}
+                                className="w-full p-3 pl-10 bg-slate-50 rounded-xl border border-slate-200 font-semibold text-slate-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                            />
+                            <ArrowRightLeft className="w-4 h-4 absolute left-3 top-3.5 text-slate-400 pointer-events-none" />
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Search button */}
+            {/* Search Button */}
             <button
                 onClick={() => handleSearch()}
                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2 mb-4"
             >
-                <Search className="w-5 h-5" />
-                Search Flights
+                <Search className="w-5 h-5" /> Search Flights
             </button>
 
             {/* Clickable Deal Badge */}
@@ -171,7 +217,7 @@ export default function FlightWidget() {
                 {loading ? (
                     <div className="flex items-center justify-center text-slate-400 text-xs py-2">
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        Searching deals...
+                        Finding best deals...
                     </div>
                 ) : deal ? (
                     <button
@@ -180,14 +226,14 @@ export default function FlightWidget() {
                     >
                         <div className="text-left">
                             <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
-                                Cheap Deal Found!
+                                Direct Deal Found!
                             </p>
                             <p className="text-slate-700 text-sm font-bold">
                                 ${deal.price}{" "}
                                 <span className="text-xs font-normal">via {deal.airline}</span>
                             </p>
                             <p className="text-[10px] text-slate-400 mt-0.5">
-                                on {deal.date} · {deal.transfers === 0 ? "Direct" : `${deal.transfers} stop(s)`}
+                                on {deal.date} · {deal.transfers === 0 ? "Direct ✈️" : `${deal.transfers} stop(s)`}
                             </p>
                         </div>
                         <div className="bg-emerald-500 text-white text-[10px] px-3 py-1.5 rounded-full font-bold group-hover:bg-emerald-600 transition-colors whitespace-nowrap">
