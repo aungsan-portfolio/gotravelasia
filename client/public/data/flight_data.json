@@ -1,8 +1,11 @@
 {
   "meta": {
-    "updated_at": "2026-02-11 19:30",
+    "updated_at": "2026-02-11 21:55",
     "currency": "USD",
-    "direct_only": false,
+    "direct_only": true,
+    "total_routes_scanned": 13,
+    "total_deals_found": 13,
+    "errors": 0,
     "overall_cheapest": {
       "origin": "RGN",
       "destination": "BKK",
@@ -13,7 +16,7 @@
       "date": "2026-03-08",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     }
   },
   "routes": [
@@ -27,7 +30,7 @@
       "date": "2026-03-08",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     },
     {
       "origin": "RGN",
@@ -39,7 +42,7 @@
       "date": "2026-03-08",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     },
     {
       "origin": "BKK",
@@ -51,7 +54,7 @@
       "date": "2026-05-13",
       "transfers": 0,
       "flight_num": "251",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     },
     {
       "origin": "DMK",
@@ -63,7 +66,19 @@
       "date": "2026-05-13",
       "transfers": 0,
       "flight_num": "251",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
+    },
+    {
+      "origin": "CNX",
+      "destination": "RGN",
+      "price": 69.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-03-09",
+      "transfers": 0,
+      "flight_num": "377",
+      "found_at": "2026-02-11 21:55"
     },
     {
       "origin": "BKK",
@@ -75,7 +90,19 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "361",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
+    },
+    {
+      "origin": "DMK",
+      "destination": "MDL",
+      "price": 87.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-05-15",
+      "transfers": 0,
+      "flight_num": "361",
+      "found_at": "2026-02-11 21:55"
     },
     {
       "origin": "MDL",
@@ -87,7 +114,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "362",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     },
     {
       "origin": "MDL",
@@ -99,7 +126,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "362",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     },
     {
       "origin": "RGN",
@@ -111,7 +138,7 @@
       "date": "2026-02-21",
       "transfers": 0,
       "flight_num": "501",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:55"
     },
     {
       "origin": "RGN",
@@ -123,7 +150,7 @@
       "date": "2026-03-01",
       "transfers": 0,
       "flight_num": "376",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:54"
     },
     {
       "origin": "RGN",
@@ -135,7 +162,7 @@
       "date": "2026-03-20",
       "transfers": 0,
       "flight_num": "235",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:55"
     },
     {
       "origin": "RGN",
@@ -147,7 +174,7 @@
       "date": "2026-02-14",
       "transfers": 0,
       "flight_num": "452",
-      "found_at": "2026-02-11 19:30"
+      "found_at": "2026-02-11 21:55"
     }
   ]
 }
