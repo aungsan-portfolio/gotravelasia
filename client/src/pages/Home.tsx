@@ -4,6 +4,7 @@ import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ArrowRight, ExternalLink,
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
+import FlightSearchWidget from "@/components/FlightSearchWidget";
 
 
 export default function Home() {
@@ -86,28 +87,7 @@ export default function Home() {
       {/* Regional Flights Section */}
       <section className="py-20 bg-muted/20 border-b border-border">
         <div className="container">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-card border border-border p-8 md:p-12 shadow-sm">
-            <div className="flex-1 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider">
-                <Plane className="w-3 h-3" /> Popular Route
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight">Traveling from Myanmar?</h2>
-              <p className="text-muted-foreground text-lg">
-                Find the best flight deals from Yangon (RGN) or Mandalay (MDL) to Bangkok (BKK/DMK) and Chiang Mai (CNX).
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <a
-                href="https://www.kiwi.com/en/search/results/yangon-myanmar/thailand"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-mono uppercase tracking-wider h-14 px-8 text-base shadow-lg hover:shadow-xl transition-all">
-                  Search Flights to Thailand <ExternalLink className="ml-2 w-4 h-4" />
-                </Button>
-              </a>
-            </div>
-          </div>
+          <FlightSearchWidget />
         </div>
       </section>
 
