@@ -117,7 +117,7 @@ export default function FlightWidget() {
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2 text-purple-600">
                     <Plane className="w-6 h-6" />
-                    <h2 className="text-xl font-bold text-slate-800">Flight Finder</h2>
+                    <h2 className="text-xl font-bold text-slate-800">GoTravel Flight Finder</h2>
                 </div>
             </div>
 
@@ -126,8 +126,8 @@ export default function FlightWidget() {
                 <button
                     onClick={() => setTripType("oneway")}
                     className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${tripType === "oneway"
-                            ? "bg-white text-purple-600 shadow-sm"
-                            : "text-slate-500 hover:text-slate-700"
+                        ? "bg-white text-purple-600 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
                         }`}
                 >
                     One Way
@@ -135,8 +135,8 @@ export default function FlightWidget() {
                 <button
                     onClick={() => setTripType("round")}
                     className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${tripType === "round"
-                            ? "bg-white text-purple-600 shadow-sm"
-                            : "text-slate-500 hover:text-slate-700"
+                        ? "bg-white text-purple-600 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
                         }`}
                 >
                     Round Trip
