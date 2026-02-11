@@ -28,7 +28,7 @@ type FlightData = {
 
 // ─── Helpers ────────────────────────────────────────────────────
 
-const MARKER = import.meta.env.VITE_TP_MARKER || "";
+const MARKER = import.meta.env.VITE_TP_MARKER || "697202";
 
 function buildAffiliateUrl(
     origin: string,
@@ -94,10 +94,6 @@ export default function FlightWidget() {
     );
 
     const onSearch = () => {
-        if (!MARKER) {
-            alert("Missing VITE_TP_MARKER in .env.local");
-            return;
-        }
         if (!date) {
             alert("Please select a departure date");
             return;
@@ -132,8 +128,8 @@ export default function FlightWidget() {
                     <label className="flex items-center gap-2 cursor-pointer">
                         <div
                             className={`w-5 h-5 rounded-full border flex items-center justify-center ${tripType === "oneway"
-                                    ? "border-purple-600"
-                                    : "border-gray-300"
+                                ? "border-purple-600"
+                                : "border-gray-300"
                                 }`}
                         >
                             {tripType === "oneway" && (
@@ -158,8 +154,8 @@ export default function FlightWidget() {
                     <label className="flex items-center gap-2 cursor-pointer">
                         <div
                             className={`w-5 h-5 rounded-full border flex items-center justify-center ${tripType === "round"
-                                    ? "border-purple-600"
-                                    : "border-gray-300"
+                                ? "border-purple-600"
+                                : "border-gray-300"
                                 }`}
                         >
                             {tripType === "round" && (
