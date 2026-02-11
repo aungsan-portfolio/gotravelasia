@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Plane, Calendar, MapPin, Search, ArrowRight } from 'lucide-react'
 
 // --- CONFIGURATION ---
-const MARKER_ID = 'YOUR_MARKER_ID' // Travelpayouts ID ကို ဒီနေရာမှာ ပြောင်းထည့်ပါ
+const MARKER_ID = '697202' // Travelpayouts Affiliate Marker ID
 
 export default function FlightSearchWidget() {
     const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway')

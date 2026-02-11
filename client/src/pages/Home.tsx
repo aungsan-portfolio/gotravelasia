@@ -4,7 +4,7 @@ import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ArrowRight, ExternalLink,
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
-import FlightSearchWidget from "@/components/FlightSearchWidget";
+import FlightWidget from "@/components/FlightWidget";
 
 
 export default function Home() {
@@ -87,7 +87,7 @@ export default function Home() {
       {/* Regional Flights Section */}
       <section className="py-20 bg-muted/20 border-b border-border">
         <div className="container">
-          <FlightSearchWidget />
+          <FlightWidget />
         </div>
       </section>
 

@@ -1,4 +1,4 @@
-name: Update Transport Prices
+name: Update Transport & Flight Prices
 
 on:
   # ပုံမှန် 6 နာရီတိုင်း auto-run
@@ -29,19 +29,24 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/requirements.txt
       
-      - name: Run price bot
+      - name: Run transport price bot
         run: python scripts/price_bot.py
+      
+      - name: Run flight price bot
+        env:
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+        run: python scripts/flight_bot.py
       
       - name: Check for changes
         id: changes
         run: |
-          git diff --quiet client/public/data/transport.json || echo "changed=true" >> $GITHUB_OUTPUT
+          git diff --quiet client/public/data/ || echo "changed=true" >> $GITHUB_OUTPUT
       
       - name: Commit and push updated prices
         if: steps.changes.outputs.changed == 'true'
         run: |
           git config user.name "GoTravel Price Bot"
           git config user.email "bot@gotravel.asia"
-          git add client/public/data/transport.json
-          git commit -m "🤖 Auto-update transport prices [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git add client/public/data/transport.json client/public/data/flight_data.json
+          git commit -m "🤖 Auto-update prices [$(date -u '+%Y-%m-%d %H:%M UTC')]"
           git push

@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "updated_at": "2026-02-11 17:57",
+    "currency": "USD",
+    "direct_only": false,
+    "overall_cheapest": {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 58.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "Thai AirAsia",
+      "date": "2026-03-08",
+      "transfers": 0,
+      "flight_num": "254",
+      "found_at": "2026-02-11 17:56"
+    }
+  },
+  "routes": [
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 58.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "Thai AirAsia",
+      "date": "2026-03-08",
+      "transfers": 0,
+      "flight_num": "254",
+      "found_at": "2026-02-11 17:56"
+    },
+    {
+      "origin": "RGN",
+      "destination": "DMK",
+      "price": 58.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "Thai AirAsia",
+      "date": "2026-03-08",
+      "transfers": 0,
+      "flight_num": "254",
+      "found_at": "2026-02-11 17:57"
+    },
+    {
+      "origin": "MDL",
+      "destination": "BKK",
+      "price": 96.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-05-15",
+      "transfers": 0,
+      "flight_num": "362",
+      "found_at": "2026-02-11 17:57"
+    },
+    {
+      "origin": "MDL",
+      "destination": "DMK",
+      "price": 96.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-05-15",
+      "transfers": 0,
+      "flight_num": "362",
+      "found_at": "2026-02-11 17:57"
+    },
+    {
+      "origin": "RGN",
+      "destination": "CNX",
+      "price": 114.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-03-01",
+      "transfers": 0,
+      "flight_num": "376",
+      "found_at": "2026-02-11 17:57"
+    },
+    {
+      "origin": "MDL",
+      "destination": "CNX",
+      "price": 151.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-03-20",
+      "transfers": 0,
+      "flight_num": "374",
+      "found_at": "2026-02-11 17:57"
+    }
+  ]
+}
