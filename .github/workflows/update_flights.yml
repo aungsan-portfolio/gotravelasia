@@ -1,0 +1,50 @@
+name: Update Flight Prices
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+  workflow_dispatch:        # Allow manual trigger from GitHub UI
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests urllib3
+
+    - name: Run Flight Bot
+      env:
+        TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+      run: |
+        python scripts/flight_bot.py
+
+    - name: Commit and Push
+      run: |
+        git config user.name "GoTravel Price Bot"
+        git config user.email "bot@gotravel.asia"
+        git add client/public/data/flight_data.json
+        # Check if there are changes before committing
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git commit -m "🤖 Auto-update flight prices [$(date -u +'%Y-%m-%d %H:%M UTC')]"
+        
+        # Pull latest changes before pushing to avoid conflicts
+        git pull --rebase origin main
+        
+        git push origin main
