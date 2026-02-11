@@ -59,12 +59,20 @@ class Config:
 # ─── Route Definitions ──────────────────────────────────────────
 
 ROUTES = [
+    # မြန်မာ → ထိုင်း
     {"origin": "RGN", "destination": "BKK"},
     {"origin": "RGN", "destination": "DMK"},
     {"origin": "RGN", "destination": "CNX"},
     {"origin": "MDL", "destination": "BKK"},
     {"origin": "MDL", "destination": "DMK"},
-    {"origin": "MDL", "destination": "CNX"},
+    # ထိုင်း → မြန်မာ (အပြန်)
+    {"origin": "BKK", "destination": "RGN"},
+    {"origin": "DMK", "destination": "RGN"},
+    {"origin": "BKK", "destination": "MDL"},
+    # တခြား SE Asia နိုင်ငံများ
+    {"origin": "RGN", "destination": "SIN"},  # Singapore
+    {"origin": "RGN", "destination": "KUL"},  # Kuala Lumpur
+    {"origin": "RGN", "destination": "SGN"},  # Ho Chi Minh
 ]
 
 AIRLINE_MAP = {
@@ -76,6 +84,13 @@ AIRLINE_MAP = {
     "WE": "Thai Smile",
     "PG": "Bangkok Airways",
     "DD": "Nok Air",
+    "SQ": "Singapore Airlines",
+    "TR": "Scoot",
+    "AK": "AirAsia",
+    "MH": "Malaysia Airlines",
+    "VJ": "VietJet Air",
+    "VN": "Vietnam Airlines",
+    "QR": "Qatar Airways",
 }
 
 

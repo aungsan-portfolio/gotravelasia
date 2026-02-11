@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updated_at": "2026-02-11 17:57",
+    "updated_at": "2026-02-11 19:30",
     "currency": "USD",
     "direct_only": false,
     "overall_cheapest": {
@@ -13,7 +13,7 @@
       "date": "2026-03-08",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-11 17:56"
+      "found_at": "2026-02-11 19:30"
     }
   },
   "routes": [
@@ -27,7 +27,7 @@
       "date": "2026-03-08",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-11 17:56"
+      "found_at": "2026-02-11 19:30"
     },
     {
       "origin": "RGN",
@@ -39,7 +39,43 @@
       "date": "2026-03-08",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-11 17:57"
+      "found_at": "2026-02-11 19:30"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 58.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "Thai AirAsia",
+      "date": "2026-05-13",
+      "transfers": 0,
+      "flight_num": "251",
+      "found_at": "2026-02-11 19:30"
+    },
+    {
+      "origin": "DMK",
+      "destination": "RGN",
+      "price": 58.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "Thai AirAsia",
+      "date": "2026-05-13",
+      "transfers": 0,
+      "flight_num": "251",
+      "found_at": "2026-02-11 19:30"
+    },
+    {
+      "origin": "BKK",
+      "destination": "MDL",
+      "price": 87.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-05-15",
+      "transfers": 0,
+      "flight_num": "361",
+      "found_at": "2026-02-11 19:30"
     },
     {
       "origin": "MDL",
@@ -51,7 +87,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "362",
-      "found_at": "2026-02-11 17:57"
+      "found_at": "2026-02-11 19:30"
     },
     {
       "origin": "MDL",
@@ -63,7 +99,19 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "362",
-      "found_at": "2026-02-11 17:57"
+      "found_at": "2026-02-11 19:30"
+    },
+    {
+      "origin": "RGN",
+      "destination": "KUL",
+      "price": 106.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-02-21",
+      "transfers": 0,
+      "flight_num": "501",
+      "found_at": "2026-02-11 19:30"
     },
     {
       "origin": "RGN",
@@ -75,19 +123,31 @@
       "date": "2026-03-01",
       "transfers": 0,
       "flight_num": "376",
-      "found_at": "2026-02-11 17:57"
+      "found_at": "2026-02-11 19:30"
     },
     {
-      "origin": "MDL",
-      "destination": "CNX",
-      "price": 151.0,
+      "origin": "RGN",
+      "destination": "SIN",
+      "price": 148.0,
       "currency": "USD",
       "airline_code": "8M",
       "airline": "MAI",
       "date": "2026-03-20",
       "transfers": 0,
-      "flight_num": "374",
-      "found_at": "2026-02-11 17:57"
+      "flight_num": "235",
+      "found_at": "2026-02-11 19:30"
+    },
+    {
+      "origin": "RGN",
+      "destination": "SGN",
+      "price": 168.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "MAI",
+      "date": "2026-02-14",
+      "transfers": 0,
+      "flight_num": "452",
+      "found_at": "2026-02-11 19:30"
     }
   ]
 }
