@@ -28,19 +28,27 @@ export default function FlightSearchWidget() {
             return
         }
 
-        // Build Secure URL
+        // Build Aviasales Deep Link URL (official parameters)
         const baseUrl = 'https://www.aviasales.com/search'
-        let query = `?origin=${origin}&destination=${destination}&depart_date=${departDate}&passengers=1&marker=${MARKER_ID}`
+        const params = new URLSearchParams({
+            origin_iata: origin,
+            destination_iata: destination,
+            depart_date: departDate,
+            adults: '1',
+            marker: MARKER_ID,
+        })
 
         if (tripType === 'roundtrip') {
             if (!returnDate) {
                 alert('Please select a return date')
                 return
             }
-            query += `&return_date=${returnDate}`
+            params.set('return_date', returnDate)
+        } else {
+            params.set('one_way', 'true')
         }
 
-        window.open(baseUrl + query, '_blank')
+        window.open(`${baseUrl}?${params.toString()}`, '_blank')
     }
 
     return (
