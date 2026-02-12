@@ -1,11 +1,51 @@
 // components/FlightSearchWidget.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plane, Calendar, MapPin, Search, ArrowRight } from 'lucide-react'
 
 // --- CONFIGURATION ---
 const MARKER_ID = '697202' // Travelpayouts Affiliate Marker ID
+
+// --- AIRPORTS DATA ---
+const ORIGINS = [
+    { code: 'RGN', label: 'Yangon (RGN)', country: 'Myanmar' },
+    { code: 'MDL', label: 'Mandalay (MDL)', country: 'Myanmar' },
+] as const
+
+const DESTINATIONS = [
+    // Thailand
+    { code: 'BKK', label: 'Bangkok – Suvarnabhumi (BKK)', country: 'Thailand', group: '🇹🇭 Thailand' },
+    { code: 'DMK', label: 'Bangkok – Don Mueang (DMK)', country: 'Thailand', group: '🇹🇭 Thailand' },
+    { code: 'CNX', label: 'Chiang Mai (CNX)', country: 'Thailand', group: '🇹🇭 Thailand' },
+    { code: 'HKT', label: 'Phuket (HKT)', country: 'Thailand', group: '🇹🇭 Thailand' },
+    { code: 'CEI', label: 'Chiang Rai (CEI)', country: 'Thailand', group: '🇹🇭 Thailand' },
+    // Singapore & Malaysia
+    { code: 'SIN', label: 'Singapore (SIN)', country: 'Singapore', group: '🇸🇬 Singapore & 🇲🇾 Malaysia' },
+    { code: 'KUL', label: 'Kuala Lumpur (KUL)', country: 'Malaysia', group: '🇸🇬 Singapore & 🇲🇾 Malaysia' },
+    // Vietnam & Cambodia
+    { code: 'SGN', label: 'Ho Chi Minh City (SGN)', country: 'Vietnam', group: '🇻🇳 Vietnam & 🇰🇭 Cambodia' },
+    { code: 'HAN', label: 'Hanoi (HAN)', country: 'Vietnam', group: '🇻🇳 Vietnam & 🇰🇭 Cambodia' },
+    { code: 'REP', label: 'Siem Reap (REP)', country: 'Cambodia', group: '🇻🇳 Vietnam & 🇰🇭 Cambodia' },
+    // China
+    { code: 'KMG', label: 'Kunming (KMG)', country: 'China', group: '🇨🇳 China' },
+    { code: 'CAN', label: 'Guangzhou (CAN)', country: 'China', group: '🇨🇳 China' },
+    // India
+    { code: 'CCU', label: 'Kolkata (CCU)', country: 'India', group: '🇮🇳 India' },
+    { code: 'GAY', label: 'Gaya / Bodh Gaya (GAY)', country: 'India', group: '🇮🇳 India' },
+    { code: 'DEL', label: 'New Delhi (DEL)', country: 'India', group: '🇮🇳 India' },
+    // Korea & Japan
+    { code: 'ICN', label: 'Seoul – Incheon (ICN)', country: 'South Korea', group: '🇰🇷 Korea & 🇯🇵 Japan' },
+    { code: 'NRT', label: 'Tokyo – Narita (NRT)', country: 'Japan', group: '🇰🇷 Korea & 🇯🇵 Japan' },
+    { code: 'KIX', label: 'Osaka – Kansai (KIX)', country: 'Japan', group: '🇰🇷 Korea & 🇯🇵 Japan' },
+] as const
+
+// Group destinations for <optgroup>
+const DESTINATION_GROUPS = DESTINATIONS.reduce<Record<string, typeof DESTINATIONS[number][]>>((acc, d) => {
+    if (!acc[d.group]) acc[d.group] = []
+    acc[d.group].push(d)
+    return acc
+}, {})
 
 export default function FlightSearchWidget() {
     const [tripType, setTripType] = useState<'oneway' | 'roundtrip'>('oneway')
@@ -14,13 +54,35 @@ export default function FlightSearchWidget() {
     const [departDate, setDepartDate] = useState('')
     const [returnDate, setReturnDate] = useState('')
 
-    // Dynamic Price Hint Logic
-    const getPriceHint = () => {
-        if (origin === 'RGN' && destination === 'CNX') return 'Direct flights available from $120'
-        if (origin === 'MDL' && destination === 'BKK') return 'Business route deals from $95'
-        if (destination === 'DMK') return 'Budget options starting from $59'
-        return 'Best price guarantee for this route'
-    }
+    // Dynamic Price Hint based on selected route
+    const priceHint = useMemo(() => {
+        const hints: Record<string, string> = {
+            'RGN-BKK': 'Direct flights from $59 – most popular route!',
+            'RGN-DMK': 'Budget carriers from $45 – Thai AirAsia, Nok Air',
+            'RGN-CNX': 'Direct flights available from $120',
+            'RGN-SIN': 'Direct flights from $85 – Singapore Airlines, MAI',
+            'RGN-KUL': 'Budget options from $70 – AirAsia direct',
+            'RGN-HKT': 'Connecting via BKK from $95',
+            'RGN-KMG': 'Short hop from $80 – China Eastern, MAI',
+            'RGN-ICN': 'From $250 – Korean Air seasonal',
+            'RGN-NRT': 'From $280 – via Bangkok or Singapore',
+            'RGN-GAY': 'Pilgrimage route from $150 – MAI direct',
+            'RGN-CCU': 'From $120 – IndiGo, MAI',
+            'RGN-SGN': 'From $100 – VietJet, Vietnam Airlines',
+            'RGN-HAN': 'From $110 – Vietnam Airlines',
+            'RGN-REP': 'From $130 – Angkor Wat awaits!',
+            'MDL-BKK': 'Business route deals from $95',
+            'MDL-DMK': 'Budget options from $65',
+            'MDL-KMG': 'Border route from $60 – short flight',
+        }
+        return hints[`${origin}-${destination}`] || 'Best price guarantee for this route'
+    }, [origin, destination])
+
+    // Dynamic button text
+    const destCountry = useMemo(() => {
+        const d = DESTINATIONS.find(d => d.code === destination)
+        return d?.country || 'Asia'
+    }, [destination])
 
     const handleSearch = () => {
         if (!departDate) {
@@ -62,7 +124,7 @@ export default function FlightSearchWidget() {
                     Traveling from Myanmar?
                 </h2>
                 <p className="text-gray-600">
-                    Find the best flight deals from Yangon or Mandalay to Bangkok & Chiang Mai.
+                    Compare cheap flights from Myanmar to Thailand, Singapore, Malaysia, Vietnam, China, India, Korea &amp; Japan.
                 </p>
             </div>
 
@@ -111,8 +173,9 @@ export default function FlightSearchWidget() {
                                 onChange={(e) => setOrigin(e.target.value)}
                                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none appearance-none transition-all"
                             >
-                                <option value="RGN">Yangon (RGN)</option>
-                                <option value="MDL">Mandalay (MDL)</option>
+                                {ORIGINS.map((o) => (
+                                    <option key={o.code} value={o.code}>{o.label}</option>
+                                ))}
                             </select>
                             <div className="absolute right-3 top-3.5 pointer-events-none text-gray-400">
                                 <ArrowRight className="w-4 h-4 rotate-90" />
@@ -130,9 +193,13 @@ export default function FlightSearchWidget() {
                                 onChange={(e) => setDestination(e.target.value)}
                                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none appearance-none transition-all"
                             >
-                                <option value="BKK">Bangkok (BKK - Full Service)</option>
-                                <option value="DMK">Bangkok (DMK - Budget)</option>
-                                <option value="CNX">Chiang Mai (CNX)</option>
+                                {Object.entries(DESTINATION_GROUPS).map(([group, dests]) => (
+                                    <optgroup key={group} label={group}>
+                                        {dests.map((d) => (
+                                            <option key={d.code} value={d.code}>{d.label}</option>
+                                        ))}
+                                    </optgroup>
+                                ))}
                             </select>
                             <div className="absolute right-3 top-3.5 pointer-events-none text-gray-400">
                                 <ArrowRight className="w-4 h-4 rotate-90" />
@@ -178,12 +245,12 @@ export default function FlightSearchWidget() {
                     className="w-full py-4 px-6 bg-gradient-to-r from-[#4b0082] to-[#7b1fa2] hover:from-[#3a006b] hover:to-[#6a1b9a] text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-purple-500/30 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
                 >
                     <Search className="w-5 h-5" />
-                    Search Flights to Thailand
+                    Search Flights to {destCountry}
                 </button>
 
                 {/* Dynamic Price Hint */}
                 <div className="text-center bg-green-50 text-green-700 py-2 px-4 rounded-lg text-sm font-semibold border border-green-100 flex items-center justify-center gap-2">
-                    <span className="animate-pulse">⚡</span> {getPriceHint()}
+                    <span className="animate-pulse">⚡</span> {priceHint}
                 </div>
             </div>
         </div>
