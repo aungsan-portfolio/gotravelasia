@@ -109,6 +109,15 @@ export default function FlightWidget() {
     };
 
     const handleSearch = () => {
+        if (!departDate) {
+            alert("Please select a departure date");
+            return;
+        }
+        if (returnDate && returnDate < departDate) {
+            alert("Return date must be after departure date");
+            return;
+        }
+
         const params = new URLSearchParams({
             origin_iata: origin,
             destination_iata: destination,
@@ -118,16 +127,17 @@ export default function FlightWidget() {
             infants: String(infants),
             trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
             marker: MARKER_ID,
-            with_request: "true",
+            locale: "en",
         });
 
         if (returnDate) {
             params.set("return_date", returnDate);
+            params.set("one_way", "false");
         } else {
             params.set("one_way", "true");
         }
 
-        window.open(`https://www.aviasales.com/search?${params.toString()}`, "_blank", "noopener,noreferrer");
+        window.open(`https://search.aviasales.com/flights/?${params.toString()}`, "_blank", "noopener,noreferrer");
     };
 
     return (

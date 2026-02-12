@@ -90,14 +90,15 @@ export default function FlightSearchWidget() {
             return
         }
 
-        // Build Aviasales Deep Link URL (official parameters)
-        const baseUrl = 'https://www.aviasales.com/search'
+        // Build Aviasales Deep Link URL (official Travelpayouts format)
+        const baseUrl = 'https://search.aviasales.com/flights/'
         const params = new URLSearchParams({
             origin_iata: origin,
             destination_iata: destination,
             depart_date: departDate,
             adults: '1',
             marker: MARKER_ID,
+            locale: 'en',
         })
 
         if (tripType === 'roundtrip') {
@@ -105,7 +106,12 @@ export default function FlightSearchWidget() {
                 alert('Please select a return date')
                 return
             }
+            if (returnDate < departDate) {
+                alert('Return date must be after departure date')
+                return
+            }
             params.set('return_date', returnDate)
+            params.set('one_way', 'false')
         } else {
             params.set('one_way', 'true')
         }
