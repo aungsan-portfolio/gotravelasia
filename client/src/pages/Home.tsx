@@ -5,7 +5,7 @@ import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ArrowRight, ExternalLink,
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
-import FlightSearchWidget from "@/components/FlightSearchWidget";
+import FlightWidget from "@/components/FlightWidget";
 
 /* ─── Types & Constants ─── */
 type Deal = {
@@ -164,7 +164,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex-1 w-full">
-              <FlightSearchWidget />
+              <FlightWidget />
             </div>
           </div>
         </div>
