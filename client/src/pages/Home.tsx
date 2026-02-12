@@ -1,310 +1,229 @@
-import { useEffect, useMemo, useState } from "react";
-import FlightWidget from "@/components/FlightWidget";
+import { useTranslation } from "react-i18next";
+import Layout from "@/components/Layout";
+import FlightSearchWidget from "@/components/FlightSearchWidget";
+import TransportScheduleWidget from "@/components/TransportScheduleWidget";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Plane, Bus, Map as MapIcon, Calendar } from "lucide-react";
-
-type Deal = {
-  origin: string;
-  destination: string;
-  price: number;
-  currency?: string;
-  airline?: string;
-  flight_num?: string | null;
-  date: string;
-};
-
-type Meta = {
-  updated?: string;
-  updated_at?: string;
-  overall_cheapest?: Deal;
-};
+import { MapPin, Calendar, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
-  const [bgImage, setBgImage] = useState("");
-
-  // --- REAL-TIME DATA STATES ---
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [meta, setMeta] = useState<Meta>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setBgImage(
-      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop"
-    );
-
-    // ✅ FIX: correct Vite public path
-    fetch("/data/flight_data.json", { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load flight data");
-        return res.json();
-      })
-      .then((data) => {
-        setDeals(Array.isArray(data.routes) ? data.routes : []);
-        setMeta(data.meta || {});
-      })
-      .catch((err) => {
-        console.error("Flight data load error:", err);
-        setDeals([]);
-        setMeta({});
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  // --- HELPER MAPS ---
-  const originMap: Record<string, string> = { RGN: "Yangon", MDL: "Mandalay" };
-  const destMap: Record<string, string> = { BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai", SIN: "Singapore", KUL: "Kuala Lumpur", SGN: "Ho Chi Minh" };
-
-  // ✅ FIX: cheapest via O(n) reduce, memoized
-  const cheapestBangkok = useMemo(() => {
-    const candidates = deals.filter((d) => d.destination === "BKK" || d.destination === "DMK");
-    return candidates.reduce<Deal | undefined>((best, cur) => {
-      if (!best) return cur;
-      return cur.price < best.price ? cur : best;
-    }, undefined);
-  }, [deals]);
-
-  const cheapestChiangMai = useMemo(() => {
-    const candidates = deals.filter((d) => d.destination === "CNX");
-    return candidates.reduce<Deal | undefined>((best, cur) => {
-      if (!best) return cur;
-      return cur.price < best.price ? cur : best;
-    }, undefined);
-  }, [deals]);
-
-  // ✅ FIX: updated string fallback
-  const updatedText = meta.updated_at || meta.updated || "";
-
-  const scrollToFlightSearch = () => {
-    const widget = document.querySelector("#flight-search-section");
-    widget?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Affiliate link builder for deal cards
-  const handleDealClick = (deal: Deal) => {
-    const dateStr = deal.date.replace(/-/g, "");
-    const link = `https://www.aviasales.com/search/${deal.origin}${dateStr}${deal.destination}1?marker=697202`;
-    window.open(link, "_blank");
-  };
+  const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen w-full bg-background">
-      {/* --- HERO SECTION --- */}
-      <section
-        className="relative w-full h-[600px] flex items-center justify-center bg-cover bg-center transition-all duration-1000"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+    <Layout>
+      {/* --- HERO SECTION WITH FLIGHT WIDGET --- */}
+      <section className="relative pt-20 pb-32 flex items-center min-h-[600px] bg-gradient-to-b from-purple-50 to-white">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-purple-200/20 blur-3xl" />
+          <div className="absolute top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-200/20 blur-3xl" />
+        </div>
 
-        <div className="container relative z-10 text-center px-4">
-          <div className="animate-in slide-in-from-top-8 duration-700">
-            <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight drop-shadow-lg">
-              GoTravel<span className="text-emerald-400">Asia</span>
-              <span className="block text-lg md:text-2xl font-medium text-white/80 mt-2 tracking-normal">Cheap Flights from Myanmar</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 font-medium max-w-2xl mx-auto mb-8 drop-shadow-md">
-              The easiest way to find cheap flights &amp; buses from Myanmar to Asia.
-            </p>
-          </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-12">
 
-          {/* Categories Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-8">
-            <Link href="/flights">
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition cursor-pointer flex flex-col items-center gap-2 group">
-                <Plane className="w-8 h-8 text-emerald-400 group-hover:scale-110 transition" />
-                <span className="text-white font-semibold">Flights</span>
+            {/* Left Content */}
+            <div className="flex-1 text-center lg:text-left space-y-6">
+              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                Explore <span className="text-purple-600">Myanmar</span> &amp; <span className="text-purple-600">Thailand</span>
+              </h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto lg:mx-0">
+                Book flights, buses, and trains seamlessly. The smartest way to travel across Southeast Asia with real-time price comparisons.
+              </p>
+
+              <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" /> Best Price Guarantee
+                </div>
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" /> 24/7 Support
+                </div>
               </div>
-            </Link>
-            <Link href="/buses">
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition cursor-pointer flex flex-col items-center gap-2 group">
-                <Bus className="w-8 h-8 text-amber-400 group-hover:scale-110 transition" />
-                <span className="text-white font-semibold">Buses</span>
-              </div>
-            </Link>
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition cursor-pointer flex flex-col items-center gap-2 group">
-              <MapIcon className="w-8 h-8 text-blue-400 group-hover:scale-110 transition" />
-              <span className="text-white font-semibold">Destinations</span>
             </div>
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition cursor-pointer flex flex-col items-center gap-2 group">
-              <Calendar className="w-8 h-8 text-rose-400 group-hover:scale-110 transition" />
-              <span className="text-white font-semibold">Plan Trip</span>
+
+            {/* Right Content: FLIGHT WIDGET */}
+            <div className="flex-1 w-full max-w-xl">
+              <FlightSearchWidget />
             </div>
           </div>
-
-          {/* --- TRUSTED PARTNERS --- */}
-          <div className="mt-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
-            <p className="text-center text-white/60 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
-              Official Partners &amp; Payment Methods
-            </p>
-
-            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-8 bg-white/10 backdrop-blur-md px-8 py-6 rounded-3xl border border-white/10 shadow-xl max-w-4xl mx-auto">
-              {/* Booking Partners */}
-              <img src="https://cdn6.agoda.net/images/b2c-default/logo-agoda-backend.svg" alt="Agoda" className="h-6 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 bg-white/10 rounded px-1" />
-              <img src="https://pages.trip.com/images/home/trip_logo_2020.svg" alt="Trip.com" className="h-6 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 bg-white/10 rounded px-1" />
-              <img src="https://12go.asia/static/img/logo.svg" alt="12Go" className="h-5 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300" />
-
-              {/* Divider */}
-              <div className="w-px h-8 bg-white/20 mx-2 hidden md:block"></div>
-
-              {/* Airlines */}
-              <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/33/Myanmar_Airways_International_logo.svg/1200px-Myanmar_Airways_International_logo.svg.png" alt="MAI" className="h-8 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/f/f5/AirAsia_New_Logo.svg" alt="AirAsia" className="h-8 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 bg-white rounded-full p-1" />
-
-              {/* Divider */}
-              <div className="w-px h-8 bg-white/20 mx-2 hidden md:block"></div>
-
-              {/* Payments */}
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 bg-white rounded px-1" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300" />
-            </div>
-          </div>
-          {/* --- END PARTNERS --- */}
-
         </div>
       </section>
 
-      {/* --- FLIGHT SEARCH SECTION --- */}
-      <section id="flight-search-section" className="py-16 px-4 max-w-5xl mx-auto -mt-10 relative z-20">
-        <div className="bg-card rounded-3xl shadow-2xl border border-border/50 overflow-hidden">
-          <div className="bg-primary/5 p-4 text-center border-b border-border/50">
-            <h2 className="text-xl font-bold flex items-center justify-center gap-2">
-              <Plane className="w-5 h-5 text-primary" />
-              Search Best Flights
-            </h2>
+      {/* --- TRANSPORT SCHEDULE WIDGET (BUS/TRAIN) --- */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-4">Ground Transport Deals</h2>
+            <p className="text-gray-600">Cheapest buses and trains for local travel</p>
           </div>
-          <div className="p-6">
-            <FlightWidget />
-          </div>
+          <TransportScheduleWidget />
         </div>
       </section>
 
       {/* --- POPULAR DESTINATIONS --- */}
-      <section className="py-16 container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-8 text-center">Popular Destinations</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer" onClick={scrollToFlightSearch}>
-            <img
-              src="https://images.unsplash.com/photo-1508009603885-50cf7c579365?q=80&w=1000&auto=format&fit=crop"
-              alt="Bangkok"
-              className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
-              <div>
-                <h3 className="text-2xl font-bold text-white">Bangkok</h3>
-                <p className="text-white/80 text-sm">
-                  Flights from{" "}
-                  {loading ? "..." : cheapestBangkok ? `$${cheapestBangkok.price}` : "Check now"}
-                </p>
-              </div>
-            </div>
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Popular Destinations</h2>
+            <p className="text-gray-600">Top rated locations by our community</p>
           </div>
 
-          <div className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer" onClick={scrollToFlightSearch}>
-            <img
-              src="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000&auto=format&fit=crop"
-              alt="Singapore"
-              className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
-              <div>
-                <h3 className="text-2xl font-bold text-white">Singapore</h3>
-                <p className="text-white/80 text-sm">Flights from $85</p>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Bangkok Card */}
+            <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-none shadow-md overflow-hidden">
+              <div className="h-48 bg-gray-200 relative overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1508009603885-50cf7c579365?q=80&w=2192&auto=format&fit=crop"
+                  alt="Bangkok"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 text-white">
+                  <h3 className="text-xl font-bold">Bangkok</h3>
+                  <p className="text-sm opacity-90">Thailand</p>
+                </div>
               </div>
-            </div>
-          </div>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" /> Best time: Nov-Feb
+                  </span>
+                  <span className="text-purple-600 font-bold">From $45</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href="https://www.trip.com/hotels/list?city=359&Allianceid=7796167&SID=293794502&trip_sub3=D12086139"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-center hover:bg-blue-100 font-medium"
+                  >
+                    Hotels (Trip.com)
+                  </a>
+                  <a
+                    href="https://12go.asia/en/travel/bangkok?z=14566451"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-orange-50 text-orange-600 py-2 px-3 rounded-lg text-center hover:bg-orange-100 font-medium"
+                  >
+                    Activities (Klook)
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer" onClick={scrollToFlightSearch}>
-            <img
-              src="https://images.unsplash.com/photo-1598935898639-5a711099a27e?q=80&w=1000&auto=format&fit=crop"
-              alt="Chiang Mai"
-              className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
-              <div>
-                <h3 className="text-2xl font-bold text-white">Chiang Mai</h3>
-                <p className="text-white/80 text-sm">
-                  Flights from{" "}
-                  {loading ? "..." : cheapestChiangMai ? `$${cheapestChiangMai.price}` : "Check now"}
-                </p>
+            {/* Chiang Mai Card */}
+            <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-none shadow-md overflow-hidden">
+              <div className="h-48 bg-gray-200 relative overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1598935876694-4b57444c9795?q=80&w=2070&auto=format&fit=crop"
+                  alt="Chiang Mai"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 text-white">
+                  <h3 className="text-xl font-bold">Chiang Mai</h3>
+                  <p className="text-sm opacity-90">Thailand</p>
+                </div>
               </div>
-            </div>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" /> Best time: Oct-Jan
+                  </span>
+                  <span className="text-purple-600 font-bold">From $55</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href="https://www.trip.com/hotels/list?city=73&Allianceid=7796167&SID=293794502&trip_sub3=D12086139"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-center hover:bg-blue-100 font-medium"
+                  >
+                    Hotels
+                  </a>
+                  <a
+                    href="https://12go.asia/en/travel/chiang-mai?z=14566451"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-orange-50 text-orange-600 py-2 px-3 rounded-lg text-center hover:bg-orange-100 font-medium"
+                  >
+                    Buses
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Phuket Card */}
+            <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-none shadow-md overflow-hidden">
+              <div className="h-48 bg-gray-200 relative overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1589394815804-989b33841a07?q=80&w=2070&auto=format&fit=crop"
+                  alt="Phuket"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 text-white">
+                  <h3 className="text-xl font-bold">Phuket</h3>
+                  <p className="text-sm opacity-90">Thailand</p>
+                </div>
+              </div>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" /> Best time: Nov-Apr
+                  </span>
+                  <span className="text-purple-600 font-bold">From $60</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href="https://www.trip.com/hotels/list?city=364&Allianceid=7796167&SID=293794502&trip_sub3=D12086139"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-center hover:bg-blue-100 font-medium"
+                  >
+                    Hotels
+                  </a>
+                  <a
+                    href="https://12go.asia/en/travel/phuket?z=14566451"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-orange-50 text-orange-600 py-2 px-3 rounded-lg text-center hover:bg-orange-100 font-medium"
+                  >
+                    Ferry
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* --- LIVE CHEAPEST DEALS --- */}
-      <section className="py-16 container mx-auto px-4 bg-muted/50 mb-10 rounded-3xl">
-        <h2 className="text-3xl font-bold mb-4 text-center">
-          Live Cheapest Flights {updatedText ? `(Updated ${updatedText})` : ""}
-        </h2>
+      {/* --- NEWSLETTER SECTION --- */}
+      <section className="py-20 bg-purple-900 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-800 rounded-full blur-3xl opacity-50 -mr-16 -mt-16" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-800 rounded-full blur-3xl opacity-50 -ml-16 -mb-16" />
 
-        {meta.overall_cheapest && (
-          <div className="text-center mb-8 bg-primary/10 py-4 rounded-xl max-w-2xl mx-auto border border-primary/20">
-            <p className="text-xl font-bold text-primary">
-              🔥 Overall Cheapest: {originMap[meta.overall_cheapest.origin] || meta.overall_cheapest.origin} →{" "}
-              {destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} – ${meta.overall_cheapest.price}{" "}
-              <span className="text-sm font-normal text-muted-foreground block md:inline mt-1 md:mt-0">
-                ({meta.overall_cheapest.airline} on {meta.overall_cheapest.date})
-              </span>
-            </p>
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <Mail className="w-12 h-12 mx-auto mb-6 text-purple-300" />
+          <h2 className="text-3xl font-bold mb-4">Get Secret Flight Deals</h2>
+          <p className="text-purple-100 mb-8 max-w-lg mx-auto">
+            Join 10,000+ travelers. We'll send you price drops for Yangon-Bangkok routes directly to your inbox.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Your email address"
+              className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+            <Button className="bg-purple-500 hover:bg-purple-400 text-white px-6 py-3 h-auto text-base font-semibold">
+              Subscribe
+            </Button>
           </div>
-        )}
-
-        {loading ? (
-          <p className="text-center text-muted-foreground animate-pulse">Loading latest deals...</p>
-        ) : deals.length === 0 ? (
-          <p className="text-center text-muted-foreground">No deals available right now. Check back soon!</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {deals.map((deal) => (
-              <div
-                key={`${deal.origin}-${deal.destination}-${deal.date}`}
-                className="bg-card p-6 rounded-2xl shadow-lg border border-border/50 hover:shadow-xl transition cursor-pointer hover:-translate-y-1"
-                onClick={() => handleDealClick(deal)}
-              >
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-bold text-card-foreground">
-                    {originMap[deal.origin] || deal.origin} ✈️ {destMap[deal.destination] || deal.destination}
-                  </h3>
-                  <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">
-                    SAVE
-                  </span>
-                </div>
-
-                <div className="my-4">
-                  <p className="text-3xl font-black text-primary">${deal.price}</p>
-                  <p className="text-xs text-muted-foreground mt-1">One-way / per person</p>
-                </div>
-
-                <div className="pt-4 border-t border-border/50 flex flex-col gap-1">
-                  <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Plane className="w-4 h-4 text-muted-foreground" /> {deal.airline} {deal.flight_num || ""}
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> {deal.date}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleDealClick(deal); }}
-                  className="mt-4 w-full py-2 text-sm bg-primary/5 text-primary font-bold rounded-lg hover:bg-primary/10 transition"
-                >
-                  Book This Deal →
-                </button>
-                <a
-                  href={`https://www.trip.com/flights/${deal.origin}-to-${deal.destination}/tickets-${deal.origin.toLowerCase()}-${deal.destination.toLowerCase()}/?locale=en-us`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="mt-2 block text-center text-[11px] text-muted-foreground hover:text-primary transition"
-                >
-                  Or book with Trip.com (hotel bundle) →
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
+          <p className="text-xs text-purple-300 mt-4">No spam, unsubscribe anytime.</p>
+        </div>
       </section>
-    </div>
+    </Layout>
   );
 }
