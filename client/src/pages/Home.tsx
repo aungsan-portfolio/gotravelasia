@@ -57,12 +57,13 @@ export default function Home() {
   const destMap: Record<string, string> = { BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai", SIN: "Singapore", KUL: "Kuala Lumpur", SGN: "Ho Chi Minh" };
 
   const buildAviasalesUrl = useCallback((d: Deal) => {
-    // Build Aviasales international URL: /search/{ORIGIN}{DEST}{DDMM}1
+    // Build Aviasales target URL, then wrap with tp.media for stable tracking
     const dp = new Date(d.date);
     const dd = String(dp.getDate()).padStart(2, "0");
     const mm = String(dp.getMonth() + 1).padStart(2, "0");
     const searchPath = `${d.origin}${d.destination}${dd}${mm}1`;
-    return `https://www.aviasales.com/search/${searchPath}?marker=${AFFILIATE_MARKER}&locale=en`;
+    const targetUrl = `https://www.aviasales.com/search/${searchPath}?locale=en`;
+    return `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
   }, []);
 
   const buildTripComUrl = useCallback((d: Deal) => {
@@ -155,10 +156,40 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider">
                 <Plane className="w-3 h-3" /> Search &amp; Compare
               </div>
-              <h2 className="text-3xl font-bold tracking-tight">Find Cheap Flights from Myanmar</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Find Cheap Flights Across Asia</h2>
               <p className="text-muted-foreground text-lg">
-                Compare prices from Yangon (RGN) or Mandalay (MDL) to Bangkok, Chiang Mai, Singapore &amp; more. Powered by Aviasales.
+                Compare prices from Yangon (RGN), Mandalay (MDL) and major Asian cities to Bangkok, Singapore, Chiang Mai &amp; more. Powered by Aviasales.
               </p>
+              {/* Partner Logos — 3 Groups */}
+              <div className="space-y-2 pt-2 max-w-md">
+                {/* Travel Partners */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold w-full mb-0.5">Travel Partners</span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold opacity-70">Aviasales</span>
+                  <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 text-[10px] font-bold opacity-70">Trip.com</span>
+                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] font-bold opacity-70">Agoda</span>
+                  <span className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 text-[10px] font-bold opacity-70">12Go</span>
+                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-600 text-[10px] font-bold opacity-70">Kiwi.com</span>
+                </div>
+                {/* Payment Trust */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold w-full mb-0.5">Secure Payment</span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold opacity-70">VISA</span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px] font-bold opacity-70">Mastercard</span>
+                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 text-[10px] font-bold opacity-70">UnionPay</span>
+                </div>
+                {/* Airlines */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold w-full mb-0.5">Airlines We Compare</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold opacity-60">MAI</span>
+                  <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-bold opacity-60">Thai Airways</span>
+                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] font-bold opacity-60">AirAsia</span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold opacity-60">Singapore Airlines</span>
+                  <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 text-[10px] font-bold opacity-60">Malaysia Airlines</span>
+                  <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold opacity-60">Bangkok Airways</span>
+                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-bold opacity-60">VietJet Air</span>
+                </div>
+              </div>
             </div>
             <div className="flex-1 w-full">
               <FlightWidget />
@@ -316,7 +347,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
                 {[
-                  { icon: Plane, title: "Flights", desc: "Best connections via Aviasales", link: `https://www.aviasales.com/search/RGN?marker=${AFFILIATE_MARKER}&locale=en` },
+                  { icon: Plane, title: "Flights", desc: "Best connections via Aviasales", link: `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search/RGN?locale=en")}` },
                   { icon: Hotel, title: "Agoda Stays", desc: "Best hotel deals on Agoda", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=15932" },
                   { icon: Ticket, title: "Experiences", desc: "Adventures by Klook", link: "https://www.klook.com/en-US/country/4-thailand-things-to-do/" },
                   { icon: Car, title: "Transfers", desc: "Reliable rides via Welcome Pickups", link: "https://www.welcomepickups.com/" },
@@ -348,7 +379,7 @@ export default function Home() {
                       <h5 className="font-bold text-sm">Flight to Chiang Mai</h5>
                       <p className="text-xs text-muted-foreground font-mono mt-1">BKK → CNX • 1h 15m</p>
                     </div>
-                    <a href={`https://www.aviasales.com/search/BKKCNX1?marker=${AFFILIATE_MARKER}&locale=en`} target="_blank" rel="noopener noreferrer">
+                    <a href={`https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search/BKKCNX1?locale=en")}`} target="_blank" rel="noopener noreferrer">
                       <Button size="sm" variant="ghost" className="text-xs font-mono uppercase text-primary hover:text-primary hover:bg-primary/10">Check Price</Button>
                     </a>
                   </div>
@@ -386,7 +417,7 @@ export default function Home() {
                 </div>
 
                 <div className="mt-8">
-                  <a href={`https://www.aviasales.com/search/RGNCNX1?marker=${AFFILIATE_MARKER}&locale=en`} target="_blank" rel="noopener noreferrer">
+                  <a href={`https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search/RGNCNX1?locale=en")}`} target="_blank" rel="noopener noreferrer">
                     <Button className="w-full font-mono uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors h-12">
                       Book This Trip Now
                     </Button>

@@ -5,8 +5,19 @@ import { Plane, Calendar, MapPin, Users, ArrowRightLeft, Armchair } from "lucide
 const MARKER_ID = "697202";
 
 const ORIGINS = [
+    // 📍 Pinned: Myanmar (default)
     { code: "RGN", name: "Yangon (RGN)" },
-    { code: "MDL", name: "Mandalay (MDL)" }
+    { code: "MDL", name: "Mandalay (MDL)" },
+    // 🌏 Major Asian Hubs
+    { code: "BKK", name: "Bangkok (BKK)" },
+    { code: "DMK", name: "Bangkok – Don Mueang (DMK)" },
+    { code: "CNX", name: "Chiang Mai (CNX)" },
+    { code: "HKT", name: "Phuket (HKT)" },
+    { code: "SIN", name: "Singapore (SIN)" },
+    { code: "KUL", name: "Kuala Lumpur (KUL)" },
+    { code: "SGN", name: "Ho Chi Minh City (SGN)" },
+    { code: "HAN", name: "Hanoi (HAN)" },
+    { code: "KMG", name: "Kunming (KMG)" },
 ];
 
 const DESTINATION_GROUPS = [
@@ -16,7 +27,8 @@ const DESTINATION_GROUPS = [
             { code: "BKK", name: "Bangkok – Suvarnabhumi (BKK)", country: "Thailand" },
             { code: "DMK", name: "Bangkok – Don Mueang (DMK)", country: "Thailand" },
             { code: "CNX", name: "Chiang Mai (CNX)", country: "Thailand" },
-            { code: "HKT", name: "Phuket (HKT)", country: "Thailand" }
+            { code: "HKT", name: "Phuket (HKT)", country: "Thailand" },
+            { code: "CEI", name: "Chiang Rai (CEI)", country: "Thailand" }
         ]
     },
     {
@@ -27,10 +39,12 @@ const DESTINATION_GROUPS = [
         ]
     },
     {
-        label: "🇻🇳 Vietnam",
+        label: "🇻🇳🇰🇭 Vietnam & Cambodia",
         options: [
             { code: "SGN", name: "Ho Chi Minh City (SGN)", country: "Vietnam" },
-            { code: "HAN", name: "Hanoi (HAN)", country: "Vietnam" }
+            { code: "HAN", name: "Hanoi (HAN)", country: "Vietnam" },
+            { code: "REP", name: "Siem Reap (REP)", country: "Cambodia" },
+            { code: "PNH", name: "Phnom Penh (PNH)", country: "Cambodia" }
         ]
     },
     {
@@ -52,7 +66,15 @@ const DESTINATION_GROUPS = [
         label: "🇰🇷🇯🇵 Korea & Japan",
         options: [
             { code: "ICN", name: "Seoul – Incheon (ICN)", country: "South Korea" },
-            { code: "NRT", name: "Tokyo – Narita (NRT)", country: "Japan" }
+            { code: "NRT", name: "Tokyo – Narita (NRT)", country: "Japan" },
+            { code: "KIX", name: "Osaka – Kansai (KIX)", country: "Japan" }
+        ]
+    },
+    {
+        label: "🇲🇲 Myanmar",
+        options: [
+            { code: "RGN", name: "Yangon (RGN)", country: "Myanmar" },
+            { code: "MDL", name: "Mandalay (MDL)", country: "Myanmar" }
         ]
     }
 ];
@@ -132,18 +154,14 @@ export default function FlightWidget() {
             datePart += `${rd}${rm}`;
         }
 
-        // Aviasales international URL: /search/{ORIGIN}{DEST}{DDMM}1
-        // The trailing "1" = 1 adult (passengers segment)
+        // Build Aviasales target URL
         const passengers = `${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
         const searchPath = `${origin}${destination}${datePart}${passengers}`;
+        const targetUrl = `https://www.aviasales.com/search/${searchPath}?locale=en&trip_class=${CABIN_TO_TRIP_CLASS[cabinClass] || "0"}`;
 
-        const params = new URLSearchParams({
-            marker: MARKER_ID,
-            locale: "en",
-            trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
-        });
-
-        window.open(`https://www.aviasales.com/search/${searchPath}?${params.toString()}`, "_blank", "noopener,noreferrer");
+        // tp.media redirect — stable Travelpayouts affiliate tracking
+        const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`;
+        window.open(tpUrl, "_blank", "noopener,noreferrer");
     };
 
     return (

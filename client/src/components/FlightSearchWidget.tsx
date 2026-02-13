@@ -111,14 +111,13 @@ export default function FlightSearchWidget() {
             datePart += `${rd}${rm}`
         }
 
-        // Aviasales international URL: /search/{ORIGIN}{DEST}{DDMM}1
+        // Build Aviasales target URL, then wrap with tp.media for stable tracking
         const searchPath = `${origin}${destination}${datePart}1`
-        const params = new URLSearchParams({
-            marker: MARKER_ID,
-            locale: 'en',
-        })
+        const targetUrl = `https://www.aviasales.com/search/${searchPath}?locale=en`
 
-        window.open(`https://www.aviasales.com/search/${searchPath}?${params.toString()}`, '_blank')
+        // tp.media redirect — stable Travelpayouts affiliate tracking
+        const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`
+        window.open(tpUrl, '_blank')
     }
 
     return (
