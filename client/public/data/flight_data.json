@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updated_at": "2026-02-13 12:46",
+    "updated_at": "2026-02-13 18:34",
     "currency": "USD",
     "direct_only": true,
     "total_routes_scanned": 13,
@@ -9,64 +9,64 @@
     "overall_cheapest": {
       "origin": "BKK",
       "destination": "RGN",
-      "price": 58.0,
+      "price": 55.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "Thai AirAsia",
       "date": "2026-05-13",
       "transfers": 0,
       "flight_num": "251",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     }
   },
   "routes": [
     {
       "origin": "BKK",
       "destination": "RGN",
-      "price": 58.0,
+      "price": 55.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "Thai AirAsia",
       "date": "2026-05-13",
       "transfers": 0,
       "flight_num": "251",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "DMK",
       "destination": "RGN",
-      "price": 58.0,
+      "price": 55.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "Thai AirAsia",
       "date": "2026-05-13",
       "transfers": 0,
       "flight_num": "251",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "RGN",
       "destination": "BKK",
-      "price": 59.0,
+      "price": 58.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "Thai AirAsia",
-      "date": "2026-03-11",
+      "date": "2026-05-16",
       "transfers": 0,
-      "flight_num": "254",
-      "found_at": "2026-02-13 12:45"
+      "flight_num": "252",
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "RGN",
       "destination": "DMK",
-      "price": 59.0,
+      "price": 58.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "Thai AirAsia",
-      "date": "2026-03-11",
+      "date": "2026-05-16",
       "transfers": 0,
-      "flight_num": "254",
-      "found_at": "2026-02-13 12:45"
+      "flight_num": "252",
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "CNX",
@@ -78,7 +78,7 @@
       "date": "2026-03-06",
       "transfers": 0,
       "flight_num": "371",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "BKK",
@@ -90,7 +90,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "361",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "DMK",
@@ -102,7 +102,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "361",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "MDL",
@@ -114,7 +114,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "362",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "MDL",
@@ -126,7 +126,7 @@
       "date": "2026-05-15",
       "transfers": 0,
       "flight_num": "362",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "RGN",
@@ -138,7 +138,7 @@
       "date": "2026-02-21",
       "transfers": 0,
       "flight_num": "501",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "RGN",
@@ -150,7 +150,7 @@
       "date": "2026-02-14",
       "transfers": 0,
       "flight_num": "452",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     },
     {
       "origin": "RGN",
@@ -162,7 +162,7 @@
       "date": "2026-02-21",
       "transfers": 0,
       "flight_num": "235",
-      "found_at": "2026-02-13 12:46"
+      "found_at": "2026-02-13 18:34"
     }
   ]
 }
