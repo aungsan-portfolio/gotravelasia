@@ -89,13 +89,6 @@ export default function FlightSearchWidget() {
             alert('Please select a departure date')
             return
         }
-
-        // Build date segment: DDMM format for Aviasales international URL
-        const dp = new Date(departDate)
-        const dd = String(dp.getDate()).padStart(2, '0')
-        const mm = String(dp.getMonth() + 1).padStart(2, '0')
-        let datePart = `${dd}${mm}`
-
         if (tripType === 'roundtrip') {
             if (!returnDate) {
                 alert('Please select a return date')
@@ -105,15 +98,22 @@ export default function FlightSearchWidget() {
                 alert('Return date must be after departure date')
                 return
             }
-            const rp = new Date(returnDate)
-            const rd = String(rp.getDate()).padStart(2, '0')
-            const rm = String(rp.getMonth() + 1).padStart(2, '0')
-            datePart += `${rd}${rm}`
         }
 
-        // Build Aviasales target URL, then wrap with tp.media for stable tracking
-        const searchPath = `${origin}${destination}${datePart}1`
-        const targetUrl = `https://www.aviasales.com/search/${searchPath}?locale=en`
+        // Official Aviasales deep link format (query parameters, YYYY-MM-DD dates)
+        const params = new URLSearchParams({
+            origin_iata: origin,
+            destination_iata: destination,
+            depart_date: departDate,
+            one_way: tripType === 'oneway' ? 'true' : 'false',
+            adults: '1',
+            locale: 'en',
+            currency: 'USD',
+        })
+        if (tripType === 'roundtrip' && returnDate) {
+            params.set('return_date', returnDate)
+        }
+        const targetUrl = `https://www.aviasales.com/search?${params.toString()}`
 
         // tp.media redirect — stable Travelpayouts affiliate tracking
         const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`

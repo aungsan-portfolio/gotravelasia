@@ -140,24 +140,23 @@ export default function FlightWidget() {
             return;
         }
 
-        // Build date segment: DDMM format for Aviasales path
-        const dp = new Date(departDate);
-        const dd = String(dp.getDate()).padStart(2, "0");
-        const mm = String(dp.getMonth() + 1).padStart(2, "0");
-        let datePart = `${dd}${mm}`;
-
-        // For round-trip, append return date as DDMM
+        // Official Aviasales deep link format (query parameters, YYYY-MM-DD dates)
+        const params = new URLSearchParams({
+            origin_iata: origin,
+            destination_iata: destination,
+            depart_date: departDate,
+            one_way: returnDate ? "false" : "true",
+            adults: String(adults),
+            children: String(children),
+            infants: String(infants),
+            trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
+            locale: "en",
+            currency: "USD",
+        });
         if (returnDate) {
-            const rp = new Date(returnDate);
-            const rd = String(rp.getDate()).padStart(2, "0");
-            const rm = String(rp.getMonth() + 1).padStart(2, "0");
-            datePart += `${rd}${rm}`;
+            params.set("return_date", returnDate);
         }
-
-        // Build Aviasales target URL
-        const passengers = `${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
-        const searchPath = `${origin}${destination}${datePart}${passengers}`;
-        const targetUrl = `https://www.aviasales.com/search/${searchPath}?locale=en&trip_class=${CABIN_TO_TRIP_CLASS[cabinClass] || "0"}`;
+        const targetUrl = `https://www.aviasales.com/search?${params.toString()}`;
 
         // tp.media redirect — stable Travelpayouts affiliate tracking
         const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`;
