@@ -57,15 +57,12 @@ export default function Home() {
   const destMap: Record<string, string> = { BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai", SIN: "Singapore", KUL: "Kuala Lumpur", SGN: "Ho Chi Minh" };
 
   const buildAviasalesUrl = useCallback((d: Deal) => {
-    const params = new URLSearchParams({
-      origin_iata: d.origin,
-      destination_iata: d.destination,
-      depart_date: d.date,
-      one_way: "true",
-      adults: "1",
-      marker: AFFILIATE_MARKER,
-    });
-    return `https://search.aviasales.com/flights/?${params.toString()}`;
+    // Build Aviasales international URL: /search/{ORIGIN}{DEST}{DDMM}1
+    const dp = new Date(d.date);
+    const dd = String(dp.getDate()).padStart(2, "0");
+    const mm = String(dp.getMonth() + 1).padStart(2, "0");
+    const searchPath = `${d.origin}${d.destination}${dd}${mm}1`;
+    return `https://www.aviasales.com/search/${searchPath}?marker=${AFFILIATE_MARKER}&locale=en`;
   }, []);
 
   const buildTripComUrl = useCallback((d: Deal) => {
@@ -319,7 +316,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
                 {[
-                  { icon: Plane, title: "Flights", desc: "Best connections via Aviasales", link: `https://search.aviasales.com/flights/?origin_iata=RGN&one_way=true&adults=1&locale=en&marker=${AFFILIATE_MARKER}` },
+                  { icon: Plane, title: "Flights", desc: "Best connections via Aviasales", link: `https://www.aviasales.com/search/RGN?marker=${AFFILIATE_MARKER}&locale=en` },
                   { icon: Hotel, title: "Agoda Stays", desc: "Best hotel deals on Agoda", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=15932" },
                   { icon: Ticket, title: "Experiences", desc: "Adventures by Klook", link: "https://www.klook.com/en-US/country/4-thailand-things-to-do/" },
                   { icon: Car, title: "Transfers", desc: "Reliable rides via Welcome Pickups", link: "https://www.welcomepickups.com/" },
@@ -351,7 +348,7 @@ export default function Home() {
                       <h5 className="font-bold text-sm">Flight to Chiang Mai</h5>
                       <p className="text-xs text-muted-foreground font-mono mt-1">BKK → CNX • 1h 15m</p>
                     </div>
-                    <a href={`https://search.aviasales.com/flights/?origin_iata=BKK&destination_iata=CNX&one_way=true&adults=1&locale=en&marker=${AFFILIATE_MARKER}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`https://www.aviasales.com/search/BKKCNX1?marker=${AFFILIATE_MARKER}&locale=en`} target="_blank" rel="noopener noreferrer">
                       <Button size="sm" variant="ghost" className="text-xs font-mono uppercase text-primary hover:text-primary hover:bg-primary/10">Check Price</Button>
                     </a>
                   </div>
@@ -389,7 +386,7 @@ export default function Home() {
                 </div>
 
                 <div className="mt-8">
-                  <a href={`https://search.aviasales.com/flights/?origin_iata=RGN&destination_iata=CNX&one_way=true&adults=1&locale=en&marker=${AFFILIATE_MARKER}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`https://www.aviasales.com/search/RGNCNX1?marker=${AFFILIATE_MARKER}&locale=en`} target="_blank" rel="noopener noreferrer">
                     <Button className="w-full font-mono uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors h-12">
                       Book This Trip Now
                     </Button>

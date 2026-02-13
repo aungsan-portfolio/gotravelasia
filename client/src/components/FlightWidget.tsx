@@ -118,26 +118,32 @@ export default function FlightWidget() {
             return;
         }
 
-        const params = new URLSearchParams({
-            origin_iata: origin,
-            destination_iata: destination,
-            depart_date: departDate,
-            adults: String(adults),
-            children: String(children),
-            infants: String(infants),
-            trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
-            marker: MARKER_ID,
-            locale: "en",
-        });
+        // Build date segment: DDMM format for Aviasales path
+        const dp = new Date(departDate);
+        const dd = String(dp.getDate()).padStart(2, "0");
+        const mm = String(dp.getMonth() + 1).padStart(2, "0");
+        let datePart = `${dd}${mm}`;
 
+        // For round-trip, append return date as DDMM
         if (returnDate) {
-            params.set("return_date", returnDate);
-            params.set("one_way", "false");
-        } else {
-            params.set("one_way", "true");
+            const rp = new Date(returnDate);
+            const rd = String(rp.getDate()).padStart(2, "0");
+            const rm = String(rp.getMonth() + 1).padStart(2, "0");
+            datePart += `${rd}${rm}`;
         }
 
-        window.open(`https://search.aviasales.com/flights/?${params.toString()}`, "_blank", "noopener,noreferrer");
+        // Aviasales international URL: /search/{ORIGIN}{DEST}{DDMM}1
+        // The trailing "1" = 1 adult (passengers segment)
+        const passengers = `${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
+        const searchPath = `${origin}${destination}${datePart}${passengers}`;
+
+        const params = new URLSearchParams({
+            marker: MARKER_ID,
+            locale: "en",
+            trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
+        });
+
+        window.open(`https://www.aviasales.com/search/${searchPath}?${params.toString()}`, "_blank", "noopener,noreferrer");
     };
 
     return (

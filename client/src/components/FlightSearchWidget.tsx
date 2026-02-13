@@ -90,16 +90,11 @@ export default function FlightSearchWidget() {
             return
         }
 
-        // Build Aviasales Deep Link URL (official Travelpayouts format)
-        const baseUrl = 'https://search.aviasales.com/flights/'
-        const params = new URLSearchParams({
-            origin_iata: origin,
-            destination_iata: destination,
-            depart_date: departDate,
-            adults: '1',
-            marker: MARKER_ID,
-            locale: 'en',
-        })
+        // Build date segment: DDMM format for Aviasales international URL
+        const dp = new Date(departDate)
+        const dd = String(dp.getDate()).padStart(2, '0')
+        const mm = String(dp.getMonth() + 1).padStart(2, '0')
+        let datePart = `${dd}${mm}`
 
         if (tripType === 'roundtrip') {
             if (!returnDate) {
@@ -110,13 +105,20 @@ export default function FlightSearchWidget() {
                 alert('Return date must be after departure date')
                 return
             }
-            params.set('return_date', returnDate)
-            params.set('one_way', 'false')
-        } else {
-            params.set('one_way', 'true')
+            const rp = new Date(returnDate)
+            const rd = String(rp.getDate()).padStart(2, '0')
+            const rm = String(rp.getMonth() + 1).padStart(2, '0')
+            datePart += `${rd}${rm}`
         }
 
-        window.open(`${baseUrl}?${params.toString()}`, '_blank')
+        // Aviasales international URL: /search/{ORIGIN}{DEST}{DDMM}1
+        const searchPath = `${origin}${destination}${datePart}1`
+        const params = new URLSearchParams({
+            marker: MARKER_ID,
+            locale: 'en',
+        })
+
+        window.open(`https://www.aviasales.com/search/${searchPath}?${params.toString()}`, '_blank')
     }
 
     return (
