@@ -74,7 +74,7 @@ export default function Home() {
   const buildTripComUrl = useCallback((d: Deal) => {
     const params = new URLSearchParams({
       locale: "en_US", dcity: d.origin, acity: d.destination, ddate: d.date, class: "Y", quantity: "1", searchBoxArg: "t",
-      allianceid: "293794502", sid: "gotravelasia",
+      allianceid: "7796167", SID: "293794502",
     });
     return `${TRIP_COM_BASE}?${params.toString()}`;
   }, []);

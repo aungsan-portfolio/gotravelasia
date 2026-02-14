@@ -37,7 +37,7 @@ const data: MoneyPageData = {
       pros: ["Reliable customer support", "Good mobile app", "Frequent coupon codes"],
       cons: ["Price fluctuations", "Add-ons can be pricey"],
       ctaText: "Compare Prices",
-      affiliateLink: "https://www.trip.com/?allianceid=293794502&sid=gotravelasia_blog",
+      affiliateLink: "https://www.trip.com/?Allianceid=7796167&SID=293794502",
       price: "Free"
     }
   ],
