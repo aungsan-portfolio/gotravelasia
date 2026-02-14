@@ -4,80 +4,56 @@ import { Plane, Calendar, MapPin, Users, ArrowRightLeft, Armchair } from "lucide
 // --- 1. CONFIG DATA ---
 const MARKER_ID = "697202";
 
-const ORIGINS = [
-    // 📍 Pinned: Myanmar (default)
-    { code: "RGN", name: "Yangon (RGN)" },
-    { code: "MDL", name: "Mandalay (MDL)" },
-    // 🌏 Major Asian Hubs
-    { code: "BKK", name: "Bangkok (BKK)" },
-    { code: "DMK", name: "Bangkok – Don Mueang (DMK)" },
-    { code: "CNX", name: "Chiang Mai (CNX)" },
-    { code: "HKT", name: "Phuket (HKT)" },
-    { code: "SIN", name: "Singapore (SIN)" },
-    { code: "KUL", name: "Kuala Lumpur (KUL)" },
-    { code: "SGN", name: "Ho Chi Minh City (SGN)" },
-    { code: "HAN", name: "Hanoi (HAN)" },
-    { code: "KMG", name: "Kunming (KMG)" },
+// ✈️ Unified Airport List (Master Source)
+// Logic: Myanmar ports first, then high-traffic SEA hubs.
+const AIRPORTS = [
+    // 🇲🇲 Myanmar (Origin/Return Hubs) - Pinned to Top
+    { code: "RGN", name: "Yangon (ရန်ကုန်)", country: "Myanmar" },
+    { code: "MDL", name: "Mandalay (မန္တလေး)", country: "Myanmar" },
+
+    // 🇹🇭 Thailand (Top Volume)
+    { code: "BKK", name: "Bangkok (Suvarnabhumi)", country: "Thailand" },
+    { code: "DMK", name: "Bangkok (Don Mueang)", country: "Thailand" },
+    { code: "CNX", name: "Chiang Mai", country: "Thailand" },
+    { code: "HKT", name: "Phuket", country: "Thailand" },
+
+    // 🇸🇬 Singapore (High Value)
+    { code: "SIN", name: "Singapore", country: "Singapore" },
+
+    // 🇲🇾 Malaysia (Family/Business)
+    { code: "KUL", name: "Kuala Lumpur", country: "Malaysia" },
+
+    // 🇻🇳 Vietnam (Trending)
+    { code: "SGN", name: "Ho Chi Minh", country: "Vietnam" },
+    { code: "HAN", name: "Hanoi", country: "Vietnam" },
+
+    // 🇰🇭 Cambodia (Niche/Direct)
+    { code: "PNH", name: "Phnom Penh", country: "Cambodia" },
+    { code: "REP", name: "Siem Reap", country: "Cambodia" },
 ];
 
-const DESTINATION_GROUPS = [
-    {
-        label: "🇹🇭 Thailand",
-        options: [
-            { code: "BKK", name: "Bangkok – Suvarnabhumi (BKK)", country: "Thailand" },
-            { code: "DMK", name: "Bangkok – Don Mueang (DMK)", country: "Thailand" },
-            { code: "CNX", name: "Chiang Mai (CNX)", country: "Thailand" },
-            { code: "HKT", name: "Phuket (HKT)", country: "Thailand" },
-            { code: "CEI", name: "Chiang Rai (CEI)", country: "Thailand" }
-        ]
+// Country → Flag emoji for optgroup labels
+const COUNTRY_FLAGS: Record<string, string> = {
+    Myanmar: "🇲🇲", Thailand: "🇹🇭", Singapore: "🇸🇬",
+    Malaysia: "🇲🇾", Vietnam: "🇻🇳", Cambodia: "🇰🇭",
+};
+
+// Dynamic grouping by country for <optgroup>
+const DESTINATION_GROUPS = AIRPORTS.reduce<{ label: string; options: typeof AIRPORTS }[]>(
+    (acc, airport) => {
+        const existing = acc.find(g => g.label.includes(airport.country));
+        if (existing) {
+            existing.options.push(airport);
+        } else {
+            acc.push({
+                label: `${COUNTRY_FLAGS[airport.country] || ""} ${airport.country}`,
+                options: [airport],
+            });
+        }
+        return acc;
     },
-    {
-        label: "🇸🇬🇲🇾 Singapore & Malaysia",
-        options: [
-            { code: "SIN", name: "Singapore (SIN)", country: "Singapore" },
-            { code: "KUL", name: "Kuala Lumpur (KUL)", country: "Malaysia" }
-        ]
-    },
-    {
-        label: "🇻🇳🇰🇭 Vietnam & Cambodia",
-        options: [
-            { code: "SGN", name: "Ho Chi Minh City (SGN)", country: "Vietnam" },
-            { code: "HAN", name: "Hanoi (HAN)", country: "Vietnam" },
-            { code: "REP", name: "Siem Reap (REP)", country: "Cambodia" },
-            { code: "PNH", name: "Phnom Penh (PNH)", country: "Cambodia" }
-        ]
-    },
-    {
-        label: "🇨🇳 China",
-        options: [
-            { code: "KMG", name: "Kunming (KMG)", country: "China" },
-            { code: "CAN", name: "Guangzhou (CAN)", country: "China" }
-        ]
-    },
-    {
-        label: "🇮🇳 India",
-        options: [
-            { code: "CCU", name: "Kolkata (CCU)", country: "India" },
-            { code: "GAY", name: "Bodh Gaya (GAY)", country: "India" },
-            { code: "DEL", name: "New Delhi (DEL)", country: "India" }
-        ]
-    },
-    {
-        label: "🇰🇷🇯🇵 Korea & Japan",
-        options: [
-            { code: "ICN", name: "Seoul – Incheon (ICN)", country: "South Korea" },
-            { code: "NRT", name: "Tokyo – Narita (NRT)", country: "Japan" },
-            { code: "KIX", name: "Osaka – Kansai (KIX)", country: "Japan" }
-        ]
-    },
-    {
-        label: "🇲🇲 Myanmar",
-        options: [
-            { code: "RGN", name: "Yangon (RGN)", country: "Myanmar" },
-            { code: "MDL", name: "Mandalay (MDL)", country: "Myanmar" }
-        ]
-    }
-];
+    []
+);
 
 const CABIN_OPTIONS = [
     { value: "Y", label: "Economy" },
@@ -123,14 +99,15 @@ export default function FlightWidget() {
     }, [origin, destination]);
 
     const getSelectedCountry = () => {
-        for (const group of DESTINATION_GROUPS) {
-            const found = group.options.find(opt => opt.code === destination);
-            if (found) return found.country;
-        }
-        return "Asia";
+        const found = AIRPORTS.find(a => a.code === destination);
+        return found ? found.country : "Asia";
     };
 
     const handleSearch = () => {
+        if (origin === destination) {
+            alert("Origin and destination cannot be the same");
+            return;
+        }
         if (!departDate) {
             alert("Please select a departure date");
             return;
@@ -173,7 +150,7 @@ export default function FlightWidget() {
                     <div className="flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent group-hover:border-emerald-400/50 transition-all">
                         <MapPin className="w-5 h-5 text-emerald-500 mr-3 shrink-0" />
                         <select value={origin} onChange={(e) => setOrigin(e.target.value)} className="w-full bg-transparent font-bold text-gray-700 outline-none appearance-none cursor-pointer truncate">
-                            {ORIGINS.map((city) => <option key={city.code} value={city.code}>{city.name}</option>)}
+                            {AIRPORTS.map((city) => <option key={city.code} value={city.code}>{city.name}</option>)}
                         </select>
                     </div>
                 </div>

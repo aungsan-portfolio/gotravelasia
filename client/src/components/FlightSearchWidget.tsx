@@ -7,43 +7,45 @@ import { Plane, Calendar, MapPin, Search, ArrowRight } from 'lucide-react'
 // --- CONFIGURATION ---
 const MARKER_ID = '697202' // Travelpayouts Affiliate Marker ID
 
-// --- AIRPORTS DATA ---
-const ORIGINS = [
-    { code: 'RGN', label: 'Yangon (RGN)', country: 'Myanmar' },
-    { code: 'MDL', label: 'Mandalay (MDL)', country: 'Myanmar' },
+// ✈️ Unified Airport List (Master Source)
+// Logic: Myanmar ports first, then high-traffic SEA hubs.
+const AIRPORTS = [
+    // 🇲🇲 Myanmar (Origin/Return Hubs) - Pinned to Top
+    { code: 'RGN', name: 'Yangon (ရန်ကုန်)', country: 'Myanmar' },
+    { code: 'MDL', name: 'Mandalay (မန္တလေး)', country: 'Myanmar' },
+
+    // 🇹🇭 Thailand (Top Volume)
+    { code: 'BKK', name: 'Bangkok (Suvarnabhumi)', country: 'Thailand' },
+    { code: 'DMK', name: 'Bangkok (Don Mueang)', country: 'Thailand' },
+    { code: 'CNX', name: 'Chiang Mai', country: 'Thailand' },
+    { code: 'HKT', name: 'Phuket', country: 'Thailand' },
+
+    // 🇸🇬 Singapore (High Value)
+    { code: 'SIN', name: 'Singapore', country: 'Singapore' },
+
+    // 🇲🇾 Malaysia (Family/Business)
+    { code: 'KUL', name: 'Kuala Lumpur', country: 'Malaysia' },
+
+    // 🇻🇳 Vietnam (Trending)
+    { code: 'SGN', name: 'Ho Chi Minh', country: 'Vietnam' },
+    { code: 'HAN', name: 'Hanoi', country: 'Vietnam' },
+
+    // 🇰🇭 Cambodia (Niche/Direct)
+    { code: 'PNH', name: 'Phnom Penh', country: 'Cambodia' },
+    { code: 'REP', name: 'Siem Reap', country: 'Cambodia' },
 ] as const
 
-const DESTINATIONS = [
-    // Thailand
-    { code: 'BKK', label: 'Bangkok – Suvarnabhumi (BKK)', country: 'Thailand', group: '🇹🇭 Thailand' },
-    { code: 'DMK', label: 'Bangkok – Don Mueang (DMK)', country: 'Thailand', group: '🇹🇭 Thailand' },
-    { code: 'CNX', label: 'Chiang Mai (CNX)', country: 'Thailand', group: '🇹🇭 Thailand' },
-    { code: 'HKT', label: 'Phuket (HKT)', country: 'Thailand', group: '🇹🇭 Thailand' },
-    { code: 'CEI', label: 'Chiang Rai (CEI)', country: 'Thailand', group: '🇹🇭 Thailand' },
-    // Singapore & Malaysia
-    { code: 'SIN', label: 'Singapore (SIN)', country: 'Singapore', group: '🇸🇬 Singapore & 🇲🇾 Malaysia' },
-    { code: 'KUL', label: 'Kuala Lumpur (KUL)', country: 'Malaysia', group: '🇸🇬 Singapore & 🇲🇾 Malaysia' },
-    // Vietnam & Cambodia
-    { code: 'SGN', label: 'Ho Chi Minh City (SGN)', country: 'Vietnam', group: '🇻🇳 Vietnam & 🇰🇭 Cambodia' },
-    { code: 'HAN', label: 'Hanoi (HAN)', country: 'Vietnam', group: '🇻🇳 Vietnam & 🇰🇭 Cambodia' },
-    { code: 'REP', label: 'Siem Reap (REP)', country: 'Cambodia', group: '🇻🇳 Vietnam & 🇰🇭 Cambodia' },
-    // China
-    { code: 'KMG', label: 'Kunming (KMG)', country: 'China', group: '🇨🇳 China' },
-    { code: 'CAN', label: 'Guangzhou (CAN)', country: 'China', group: '🇨🇳 China' },
-    // India
-    { code: 'CCU', label: 'Kolkata (CCU)', country: 'India', group: '🇮🇳 India' },
-    { code: 'GAY', label: 'Gaya / Bodh Gaya (GAY)', country: 'India', group: '🇮🇳 India' },
-    { code: 'DEL', label: 'New Delhi (DEL)', country: 'India', group: '🇮🇳 India' },
-    // Korea & Japan
-    { code: 'ICN', label: 'Seoul – Incheon (ICN)', country: 'South Korea', group: '🇰🇷 Korea & 🇯🇵 Japan' },
-    { code: 'NRT', label: 'Tokyo – Narita (NRT)', country: 'Japan', group: '🇰🇷 Korea & 🇯🇵 Japan' },
-    { code: 'KIX', label: 'Osaka – Kansai (KIX)', country: 'Japan', group: '🇰🇷 Korea & 🇯🇵 Japan' },
-] as const
+// Country → Flag emoji for optgroup labels
+const COUNTRY_FLAGS: Record<string, string> = {
+    Myanmar: '🇲🇲', Thailand: '🇹🇭', Singapore: '🇸🇬',
+    Malaysia: '🇲🇾', Vietnam: '🇻🇳', Cambodia: '🇰🇭',
+}
 
-// Group destinations for <optgroup>
-const DESTINATION_GROUPS = DESTINATIONS.reduce<Record<string, typeof DESTINATIONS[number][]>>((acc, d) => {
-    if (!acc[d.group]) acc[d.group] = []
-    acc[d.group].push(d)
+// Dynamic grouping by country for <optgroup>
+const DESTINATION_GROUPS = AIRPORTS.reduce<Record<string, typeof AIRPORTS[number][]>>((acc, d) => {
+    const label = `${COUNTRY_FLAGS[d.country] || ''} ${d.country}`
+    if (!acc[label]) acc[label] = []
+    acc[label].push(d)
     return acc
 }, {})
 
@@ -54,37 +56,46 @@ export default function FlightSearchWidget() {
     const [departDate, setDepartDate] = useState('')
     const [returnDate, setReturnDate] = useState('')
 
-    // Dynamic Price Hint based on selected route
+    // 🏷️ Cleaned Price Hints (SEA Only)
     const priceHint = useMemo(() => {
         const hints: Record<string, string> = {
-            'RGN-BKK': 'Direct flights from $59 – most popular route!',
-            'RGN-DMK': 'Budget carriers from $45 – Thai AirAsia, Nok Air',
-            'RGN-CNX': 'Direct flights available from $120',
-            'RGN-SIN': 'Direct flights from $85 – Singapore Airlines, MAI',
-            'RGN-KUL': 'Budget options from $70 – AirAsia direct',
-            'RGN-HKT': 'Connecting via BKK from $95',
-            'RGN-KMG': 'Short hop from $80 – China Eastern, MAI',
-            'RGN-ICN': 'From $250 – Korean Air seasonal',
-            'RGN-NRT': 'From $280 – via Bangkok or Singapore',
-            'RGN-GAY': 'Pilgrimage route from $150 – MAI direct',
-            'RGN-CCU': 'From $120 – IndiGo, MAI',
-            'RGN-SGN': 'From $100 – VietJet, Vietnam Airlines',
-            'RGN-HAN': 'From $110 – Vietnam Airlines',
-            'RGN-REP': 'From $130 – Angkor Wat awaits!',
-            'MDL-BKK': 'Business route deals from $95',
-            'MDL-DMK': 'Budget options from $65',
-            'MDL-KMG': 'Border route from $60 – short flight',
+            // 🇹🇭 Thailand Routes
+            'RGN-BKK': 'Popular! From $45 – MAI, Thai AirAsia',
+            'RGN-DMK': 'Budget choice! From $40 – AirAsia, Nok Air',
+            'RGN-CNX': 'Seasonal direct or via BKK from $80',
+            'RGN-HKT': 'Beach route! Via BKK from $90',
+            'MDL-BKK': 'Direct from Mandalay available ($60+)',
+            'MDL-DMK': 'Saver fare from $55',
+
+            // 🇸🇬 Singapore Routes
+            'RGN-SIN': 'Direct daily! From $95 – MAI, SQ',
+            'MDL-SIN': 'Via Bangkok or Yangon usually cheaper',
+
+            // 🇲🇾 Malaysia Routes
+            'RGN-KUL': 'Super Saver! From $50 – AirAsia, MH',
+
+            // 🇻🇳 Vietnam Routes
+            'RGN-SGN': 'Direct flights avail from $80 – VietJet',
+            'RGN-HAN': 'Via Bangkok/Hanoi from $110',
+
+            // 🇰🇭 Cambodia Routes
+            'RGN-PNH': 'Biz route: From $130 – MAI Direct',
+            'RGN-REP': 'Gateway to Angkor Wat – via BKK ($140+)',
         }
         return hints[`${origin}-${destination}`] || 'Best price guarantee for this route'
     }, [origin, destination])
 
     // Dynamic button text
     const destCountry = useMemo(() => {
-        const d = DESTINATIONS.find(d => d.code === destination)
+        const d = AIRPORTS.find(a => a.code === destination)
         return d?.country || 'Asia'
     }, [destination])
 
     const handleSearch = () => {
+        if (origin === destination) {
+            alert('Origin and destination cannot be the same')
+            return
+        }
         if (!departDate) {
             alert('Please select a departure date')
             return
@@ -128,10 +139,10 @@ export default function FlightSearchWidget() {
                     <Plane className="w-3 h-3" /> Popular Route
                 </span>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                    Traveling from Myanmar?
+                    Find Best Flights in SEA
                 </h2>
                 <p className="text-gray-600">
-                    Compare cheap flights from Myanmar to Thailand, Singapore, Malaysia, Vietnam, China, India, Korea &amp; Japan.
+                    Compare cheap flights across Myanmar, Thailand, Singapore, Malaysia, Vietnam &amp; Cambodia.
                 </p>
             </div>
 
@@ -180,8 +191,8 @@ export default function FlightSearchWidget() {
                                 onChange={(e) => setOrigin(e.target.value)}
                                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none appearance-none transition-all"
                             >
-                                {ORIGINS.map((o) => (
-                                    <option key={o.code} value={o.code}>{o.label}</option>
+                                {AIRPORTS.map((o) => (
+                                    <option key={o.code} value={o.code}>{o.name}</option>
                                 ))}
                             </select>
                             <div className="absolute right-3 top-3.5 pointer-events-none text-gray-400">
@@ -203,7 +214,7 @@ export default function FlightSearchWidget() {
                                 {Object.entries(DESTINATION_GROUPS).map(([group, dests]) => (
                                     <optgroup key={group} label={group}>
                                         {dests.map((d) => (
-                                            <option key={d.code} value={d.code}>{d.label}</option>
+                                            <option key={d.code} value={d.code}>{d.name}</option>
                                         ))}
                                     </optgroup>
                                 ))}
