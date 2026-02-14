@@ -94,7 +94,7 @@ export default function Home() {
   /* ─── Original Category Data ─── */
   const categories = [
     { icon: Plane, labelKey: "categories.findFlights", link: "https://www.kiwi.com/en/search/results/yangon-myanmar/bangkok-thailand", color: "text-blue-500" },
-    { icon: Hotel, labelKey: "categories.agodaHotels", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=15932", color: "text-indigo-500" },
+    { icon: Hotel, labelKey: "categories.agodaHotels", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932", color: "text-indigo-500" },
     { icon: Ticket, labelKey: "categories.thingsToDo", link: "https://www.klook.com/en-US/country/4-thailand-things-to-do/", color: "text-pink-500" },
     { icon: Car, labelKey: "categories.transfers", link: "https://www.welcomepickups.com/", color: "text-orange-500" },
     { icon: Wifi, labelKey: "categories.esim", link: "https://www.airalo.com/thailand-esim", color: "text-green-500" },
@@ -102,9 +102,9 @@ export default function Home() {
   ];
 
   const featuredDestinations = [
-    { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.jpg", link: "/thailand/chiang-mai" },
-    { nameKey: "destinations.bangkok", descKey: "destinations.bangkokDesc", image: "/images/bangkok.jpg", link: "/thailand/bangkok" },
-    { nameKey: "destinations.phuket", descKey: "destinations.phuketDesc", image: "/images/phuket.jpg", link: "/thailand/phuket" },
+    { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.jpg", link: "/thailand/chiang-mai", agodaCityId: 18296 },
+    { nameKey: "destinations.bangkok", descKey: "destinations.bangkokDesc", image: "/images/bangkok.jpg", link: "/thailand/bangkok", agodaCityId: 15932 },
+    { nameKey: "destinations.phuket", descKey: "destinations.phuketDesc", image: "/images/phuket.jpg", link: "/thailand/phuket", agodaCityId: 16639 },
   ];
 
   return (
@@ -324,7 +324,7 @@ export default function Home() {
                   </div>
                 </Link>
                 <div className="p-6 grid grid-cols-2 gap-3 mt-auto bg-card">
-                  <a href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=15932" target="_blank" rel="noopener noreferrer">
+                  <a href={`https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=${dest.agodaCityId}`} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">Agoda Hotels</Button>
                   </a>
                   <a href="https://www.klook.com/en-US/country/4-thailand-things-to-do/" target="_blank" rel="noopener noreferrer">
@@ -353,7 +353,7 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
                 {[
                   { icon: Plane, title: "Flights", desc: "Best connections via Aviasales", link: `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&locale=en")}` },
-                  { icon: Hotel, title: "Agoda Stays", desc: "Best hotel deals on Agoda", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=15932" },
+                  { icon: Hotel, title: "Agoda Stays", desc: "Best hotel deals on Agoda", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932" },
                   { icon: Ticket, title: "Experiences", desc: "Adventures by Klook", link: "https://www.klook.com/en-US/country/4-thailand-things-to-do/" },
                   { icon: Car, title: "Transfers", desc: "Reliable rides via Welcome Pickups", link: "https://www.welcomepickups.com/" },
                 ].map((item, i) => (
@@ -397,7 +397,7 @@ export default function Home() {
                       <h5 className="font-bold text-sm">Boutique Hotel</h5>
                       <p className="text-xs text-muted-foreground font-mono mt-1">3 Nights • Nimman</p>
                     </div>
-                    <a href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=18296" target="_blank" rel="noopener noreferrer">
+                    <a href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=18296" target="_blank" rel="noopener noreferrer">
                       <Button size="sm" variant="ghost" className="text-xs font-mono uppercase text-primary hover:text-primary hover:bg-primary/10">Agoda Check</Button>
                     </a>
                   </div>

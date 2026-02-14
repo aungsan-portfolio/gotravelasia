@@ -113,7 +113,7 @@ export default function MobileNav() {
                                 {t("nav.flights")}
                             </a>
                             <a
-                                href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=YOUR_AGODA_CID&city=15932"
+                                href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
