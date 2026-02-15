@@ -337,30 +337,29 @@ export default function Home() {
       </section>
 
       {/* ═══════════ LIVE FLIGHT DEALS ═══════════ */}
-      <section className="py-20 bg-muted/20 border-b border-border">
-        <div className="container">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h2 className="text-4xl font-bold tracking-tighter mb-2">Live Flight Deals</h2>
-              <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
-                {updatedText ? `Updated ${updatedText}` : "Real-time prices from airlines"}
-              </p>
-            </div>
+      <section className="py-12 md:py-20 bg-muted/20 border-b border-border">
+        <div className="container px-4 md:px-6">
+          <div className="mb-6 md:mb-8">
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tighter mb-1">Live Flight Deals</h2>
+            <p className="text-muted-foreground font-mono uppercase text-xs md:text-sm tracking-wider">
+              {updatedText ? `Updated ${updatedText}` : "Real-time prices from airlines"}
+            </p>
           </div>
 
           {meta.overall_cheapest && (
-            <div className="mb-8 bg-green-50 border border-green-200 p-4 flex items-center justify-between">
-              <p className="font-bold text-green-800">
+            <div className="mb-6 md:mb-8 bg-green-50 border border-green-200 rounded-lg p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+              <p className="font-bold text-green-800 text-sm md:text-base">
                 🔥 Best Deal: {originMap[meta.overall_cheapest.origin] || meta.overall_cheapest.origin} →{" "}
                 {destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} — $
                 {meta.overall_cheapest.price}
-                <span className="text-sm font-normal text-green-600 ml-2">
+                <span className="block sm:inline text-xs sm:text-sm font-normal text-green-600 sm:ml-2 mt-1 sm:mt-0">
                   ({meta.overall_cheapest.airline} on {meta.overall_cheapest.date})
                 </span>
               </p>
               <Button
                 size="sm"
-                className="bg-green-600 text-white hover:bg-green-700 font-mono uppercase text-xs"
+                className="bg-green-600 text-white hover:bg-green-700 font-mono uppercase text-xs w-full sm:w-auto min-h-[44px]"
+                aria-label={`Book best deal flight to ${destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} for $${meta.overall_cheapest.price}`}
                 onClick={() => {
                   track("deal_click_aviasales", meta.overall_cheapest as unknown as Record<string, unknown>);
                   openNewTab(buildAviasalesUrl(meta.overall_cheapest!));
@@ -372,66 +371,91 @@ export default function Home() {
           )}
 
           {loading ? (
-            <p className="text-center text-muted-foreground animate-pulse py-16 font-mono">Loading latest deals...</p>
+            <p className="text-center text-muted-foreground animate-pulse py-16 font-mono text-sm">Loading latest deals...</p>
           ) : error ? (
-            <p className="text-center text-red-500 py-16 font-mono">Failed to load deals. Please refresh.</p>
+            <p className="text-center text-red-500 py-16 font-mono text-sm">Failed to load deals. Please refresh.</p>
           ) : deals.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16 font-mono">No deals right now. Check back soon!</p>
+            <p className="text-center text-muted-foreground py-16 font-mono text-sm">No deals right now. Check back soon!</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {deals.map((deal) => {
                 const aviaUrl = buildAviasalesUrl(deal);
                 const tripUrl = buildTripComUrl(deal);
+                const flagMap: Record<string, string> = {
+                  BKK: "🇹🇭", DMK: "🇹🇭", CNX: "🇹🇭", HKT: "🇹🇭",
+                  SIN: "🇸🇬", KUL: "🇲🇾", SGN: "🇻🇳", HAN: "🇻🇳",
+                  PNH: "🇰🇭", RGN: "🇲🇲", MDL: "🇲🇲",
+                };
+                const daysUntil = Math.max(0, Math.ceil(
+                  (new Date(deal.date).getTime() - Date.now()) / 86400000
+                ));
+                const daysLabel = daysUntil === 0 ? "Today" : daysUntil === 1 ? "Tomorrow" : `in ${daysUntil} days`;
+                const originName = originMap[deal.origin] || deal.origin;
+                const destName = destMap[deal.destination] || deal.destination;
+
                 return (
                   <div
                     key={`${deal.origin}-${deal.destination}-${deal.date}`}
-                    className="bg-card border border-border p-6 hover:shadow-lg transition-all cursor-pointer group"
-                    onClick={() => {
-                      track("deal_click_aviasales", deal as unknown as Record<string, unknown>);
-                      openNewTab(aviaUrl);
-                    }}
+                    className="bg-card border border-border rounded-lg p-4 md:p-6 hover:shadow-lg transition-all group"
+                    role="article"
+                    aria-label={`Flight deal: ${originName} to ${destName} for $${deal.price}`}
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold">
-                          {originMap[deal.origin] || deal.origin} → {destMap[deal.destination] || deal.destination}
+                    {/* Row 1: Route + Price */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base md:text-lg font-bold truncate">
+                          {flagMap[deal.origin] || ""} {originName} → {flagMap[deal.destination] || ""} {destName}
                         </h3>
-                        <p className="text-xs text-muted-foreground font-mono mt-1">
+                        <p className="text-xs text-muted-foreground font-mono mt-1 truncate">
                           {deal.airline} {deal.flight_num || ""} • {deal.date}
                         </p>
                       </div>
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider">
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-2xl md:text-3xl font-bold text-primary">${deal.price}</p>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Badges */}
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded">
+                        ✈️ Direct
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-mono rounded">
+                        📅 {daysLabel}
+                      </span>
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider rounded">
                         Deal
                       </span>
                     </div>
 
-                    <p className="text-3xl font-bold text-primary mb-4">${deal.price}</p>
-
-                    <div className="flex gap-2">
+                    {/* Row 3: Buttons — side by side, touch-safe */}
+                    <div className="flex gap-3">
                       <Button
                         size="sm"
-                        className="flex-1 bg-primary text-primary-foreground font-mono uppercase text-xs hover:bg-primary/90"
+                        className="flex-1 bg-primary text-primary-foreground font-mono uppercase text-xs hover:bg-primary/90 min-h-[44px]"
+                        aria-label={`Book ${originName} to ${destName} on Aviasales for $${deal.price}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           track("deal_click_aviasales", deal as unknown as Record<string, unknown>);
                           openNewTab(aviaUrl);
                         }}
                       >
-                        Book on Aviasales <ExternalLink className="ml-1 w-3 h-3" />
+                        Aviasales <ExternalLink className="ml-1 w-3 h-3" />
                       </Button>
+                      <a
+                        href={tripUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Compare ${originName} to ${destName} price on Trip.com`}
+                        className="flex-1 inline-flex items-center justify-center text-xs font-mono uppercase border border-border rounded-md hover:bg-muted transition-colors min-h-[44px] px-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          track("deal_click_tripcom", deal as unknown as Record<string, unknown>);
+                        }}
+                      >
+                        Trip.com <ExternalLink className="ml-1 w-3 h-3" />
+                      </a>
                     </div>
-                    <a
-                      href={tripUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-center text-xs text-muted-foreground hover:text-primary mt-3 font-mono"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        track("deal_click_tripcom", deal as unknown as Record<string, unknown>);
-                      }}
-                    >
-                      Or book with Trip.com (hotel bundle) →
-                    </a>
                   </div>
                 );
               })}
