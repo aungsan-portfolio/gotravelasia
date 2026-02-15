@@ -70,17 +70,29 @@ ROUTES = [
     {"from": "Bangkok", "to": "Chiang Mai", "slug_from": "bangkok", "slug_to": "chiang-mai"},
     {"from": "Chiang Mai", "to": "Bangkok", "slug_from": "chiang-mai", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Phuket", "slug_from": "bangkok", "slug_to": "phuket"},
+    {"from": "Phuket", "to": "Bangkok", "slug_from": "phuket", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Krabi", "slug_from": "bangkok", "slug_to": "krabi"},
+    {"from": "Krabi", "to": "Bangkok", "slug_from": "krabi", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Koh Samui", "slug_from": "bangkok", "slug_to": "koh-samui"},
+    {"from": "Koh Samui", "to": "Bangkok", "slug_from": "koh-samui", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Pattaya", "slug_from": "bangkok", "slug_to": "pattaya"},
+    {"from": "Pattaya", "to": "Bangkok", "slug_from": "pattaya", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Hua Hin", "slug_from": "bangkok", "slug_to": "hua-hin"},
+    {"from": "Hua Hin", "to": "Bangkok", "slug_from": "hua-hin", "slug_to": "bangkok"},
     {"from": "Chiang Mai", "to": "Chiang Rai", "slug_from": "chiang-mai", "slug_to": "chiang-rai"},
+    {"from": "Chiang Rai", "to": "Chiang Mai", "slug_from": "chiang-rai", "slug_to": "chiang-mai"},
     {"from": "Chiang Mai", "to": "Pai", "slug_from": "chiang-mai", "slug_to": "pai"},
+    {"from": "Pai", "to": "Chiang Mai", "slug_from": "pai", "slug_to": "chiang-mai"},
     {"from": "Phuket", "to": "Krabi", "slug_from": "phuket", "slug_to": "krabi"},
+    {"from": "Krabi", "to": "Phuket", "slug_from": "krabi", "slug_to": "phuket"},
     {"from": "Phuket", "to": "Koh Samui", "slug_from": "phuket", "slug_to": "koh-samui"},
+    {"from": "Koh Samui", "to": "Phuket", "slug_from": "koh-samui", "slug_to": "phuket"},
     {"from": "Bangkok", "to": "Surat Thani", "slug_from": "bangkok", "slug_to": "surat-thani"},
+    {"from": "Surat Thani", "to": "Bangkok", "slug_from": "surat-thani", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Koh Phangan", "slug_from": "bangkok", "slug_to": "koh-phangan"},
+    {"from": "Koh Phangan", "to": "Bangkok", "slug_from": "koh-phangan", "slug_to": "bangkok"},
     {"from": "Bangkok", "to": "Koh Tao", "slug_from": "bangkok", "slug_to": "koh-tao"},
+    {"from": "Koh Tao", "to": "Bangkok", "slug_from": "koh-tao", "slug_to": "bangkok"},
 ]
 
 # ─── Estimated/Fallback Price Data ──────────────────────────────
@@ -100,40 +112,77 @@ FALLBACK_PRICES: dict[str, list[dict]] = {
         {"type": "Flight", "provider": "Various Airlines", "price": 1400, "duration": "1h 20m", "departure": "Various", "arrival": "Various", "rating": 4.8},
     ],
     "Bangkok-Phuket": [
-        {"type": "Flight", "provider": "Various Airlines", "price": 1800, "duration": "1h 30m", "departure": "Various", "arrival": "Various", "rating": 4.7},
         {"type": "Bus + Ferry", "provider": "Phantip Travel", "price": 1100, "duration": "14 hours", "departure": "Evening", "arrival": "Morning", "rating": 4.2},
+        {"type": "Flight", "provider": "Various Airlines", "price": 1800, "duration": "1h 30m", "departure": "Various", "arrival": "Various", "rating": 4.7},
+    ],
+    "Phuket-Bangkok": [
+        {"type": "Bus + Ferry", "provider": "Phantip Travel", "price": 1100, "duration": "14 hours", "departure": "Evening", "arrival": "Morning", "rating": 4.2},
+        {"type": "Flight", "provider": "Various Airlines", "price": 1800, "duration": "1h 30m", "departure": "Various", "arrival": "Various", "rating": 4.7},
     ],
     "Bangkok-Krabi": [
-        {"type": "Flight", "provider": "Various Airlines", "price": 2100, "duration": "1h 25m", "departure": "Various", "arrival": "Various", "rating": 4.7},
         {"type": "Bus", "provider": "Nakhonchai Air", "price": 850, "duration": "12 hours", "departure": "18:00", "arrival": "06:00 (+1)", "rating": 4.4},
+        {"type": "Flight", "provider": "Various Airlines", "price": 2100, "duration": "1h 25m", "departure": "Various", "arrival": "Various", "rating": 4.7},
+    ],
+    "Krabi-Bangkok": [
+        {"type": "Bus", "provider": "Nakhonchai Air", "price": 850, "duration": "12 hours", "departure": "17:00", "arrival": "05:00 (+1)", "rating": 4.4},
+        {"type": "Flight", "provider": "Various Airlines", "price": 2100, "duration": "1h 25m", "departure": "Various", "arrival": "Various", "rating": 4.7},
     ],
     "Bangkok-Koh Samui": [
-        {"type": "Flight", "provider": "Bangkok Airways", "price": 3500, "duration": "1h 10m", "departure": "Various", "arrival": "Various", "rating": 4.9},
         {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 1200, "duration": "13 hours", "departure": "Evening", "arrival": "Morning", "rating": 4.5},
+        {"type": "Flight", "provider": "Bangkok Airways", "price": 3500, "duration": "1h 10m", "departure": "Various", "arrival": "Various", "rating": 4.9},
+    ],
+    "Koh Samui-Bangkok": [
+        {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 1200, "duration": "13 hours", "departure": "Evening", "arrival": "Morning", "rating": 4.5},
+        {"type": "Flight", "provider": "Bangkok Airways", "price": 3500, "duration": "1h 10m", "departure": "Various", "arrival": "Various", "rating": 4.9},
     ],
     "Bangkok-Pattaya": [
         {"type": "Bus", "provider": "Roong Reuang Coach", "price": 120, "duration": "2h 30m", "departure": "Various", "arrival": "Various", "rating": 4.4},
         {"type": "Minivan", "provider": "Bell Travel", "price": 250, "duration": "2 hours", "departure": "Various", "arrival": "Various", "rating": 4.3},
     ],
+    "Pattaya-Bangkok": [
+        {"type": "Bus", "provider": "Roong Reuang Coach", "price": 120, "duration": "2h 30m", "departure": "Various", "arrival": "Various", "rating": 4.4},
+        {"type": "Minivan", "provider": "Bell Travel", "price": 250, "duration": "2 hours", "departure": "Various", "arrival": "Various", "rating": 4.3},
+    ],
     "Bangkok-Hua Hin": [
         {"type": "Bus", "provider": "Transport Co", "price": 180, "duration": "3h 30m", "departure": "Various", "arrival": "Various", "rating": 4.3},
-        {"type": "Minivan", "provider": "Bell Travel", "price": 300, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.4},
         {"type": "Train", "provider": "State Railway", "price": 250, "duration": "4 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
+        {"type": "Minivan", "provider": "Bell Travel", "price": 300, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.4},
+    ],
+    "Hua Hin-Bangkok": [
+        {"type": "Bus", "provider": "Transport Co", "price": 180, "duration": "3h 30m", "departure": "Various", "arrival": "Various", "rating": 4.3},
+        {"type": "Train", "provider": "State Railway", "price": 250, "duration": "4 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
+        {"type": "Minivan", "provider": "Bell Travel", "price": 300, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.4},
     ],
     "Chiang Mai-Chiang Rai": [
         {"type": "Bus", "provider": "Green Bus", "price": 250, "duration": "3h 30m", "departure": "Various", "arrival": "Various", "rating": 4.5},
         {"type": "Minivan", "provider": "Private Minivan", "price": 350, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.3},
     ],
+    "Chiang Rai-Chiang Mai": [
+        {"type": "Bus", "provider": "Green Bus", "price": 250, "duration": "3h 30m", "departure": "Various", "arrival": "Various", "rating": 4.5},
+        {"type": "Minivan", "provider": "Private Minivan", "price": 350, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.3},
+    ],
     "Chiang Mai-Pai": [
-        {"type": "Minivan", "provider": "Prempracha Transport", "price": 250, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
         {"type": "Bus", "provider": "Sombat Tour", "price": 180, "duration": "3h 30m", "departure": "Various", "arrival": "Various", "rating": 4.0},
+        {"type": "Minivan", "provider": "Prempracha Transport", "price": 250, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
+    ],
+    "Pai-Chiang Mai": [
+        {"type": "Bus", "provider": "Sombat Tour", "price": 180, "duration": "3h 30m", "departure": "Various", "arrival": "Various", "rating": 4.0},
+        {"type": "Minivan", "provider": "Prempracha Transport", "price": 250, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
     ],
     "Phuket-Krabi": [
         {"type": "Bus", "provider": "Phantip Travel", "price": 200, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
         {"type": "Ferry", "provider": "Tigerline Ferry", "price": 450, "duration": "2h 30m", "departure": "09:00", "arrival": "11:30", "rating": 4.6},
     ],
+    "Krabi-Phuket": [
+        {"type": "Bus", "provider": "Phantip Travel", "price": 200, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.2},
+        {"type": "Ferry", "provider": "Tigerline Ferry", "price": 450, "duration": "2h 30m", "departure": "10:00", "arrival": "12:30", "rating": 4.6},
+    ],
     "Phuket-Koh Samui": [
         {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 850, "duration": "8 hours", "departure": "07:00", "arrival": "15:00", "rating": 4.4},
+        {"type": "Flight", "provider": "Bangkok Airways", "price": 3200, "duration": "1 hour", "departure": "Various", "arrival": "Various", "rating": 4.8},
+    ],
+    "Koh Samui-Phuket": [
+        {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 850, "duration": "8 hours", "departure": "08:00", "arrival": "16:00", "rating": 4.4},
         {"type": "Flight", "provider": "Bangkok Airways", "price": 3200, "duration": "1 hour", "departure": "Various", "arrival": "Various", "rating": 4.8},
     ],
     "Bangkok-Surat Thani": [
@@ -141,12 +190,25 @@ FALLBACK_PRICES: dict[str, list[dict]] = {
         {"type": "Train", "provider": "State Railway", "price": 800, "duration": "11 hours", "departure": "17:30", "arrival": "04:30 (+1)", "rating": 4.3},
         {"type": "Flight", "provider": "Various Airlines", "price": 2200, "duration": "1h 10m", "departure": "Various", "arrival": "Various", "rating": 4.7},
     ],
+    "Surat Thani-Bangkok": [
+        {"type": "Bus", "provider": "Nakhonchai Air", "price": 600, "duration": "10 hours", "departure": "18:00", "arrival": "04:00 (+1)", "rating": 4.4},
+        {"type": "Train", "provider": "State Railway", "price": 800, "duration": "11 hours", "departure": "16:30", "arrival": "03:30 (+1)", "rating": 4.3},
+        {"type": "Flight", "provider": "Various Airlines", "price": 2200, "duration": "1h 10m", "departure": "Various", "arrival": "Various", "rating": 4.7},
+    ],
     "Bangkok-Koh Phangan": [
         {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 1100, "duration": "14 hours", "departure": "Evening", "arrival": "Morning", "rating": 4.4},
         {"type": "Flight + Ferry", "provider": "Various + Lomprayah", "price": 2800, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.6},
     ],
+    "Koh Phangan-Bangkok": [
+        {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 1100, "duration": "14 hours", "departure": "Morning", "arrival": "Evening", "rating": 4.4},
+        {"type": "Flight + Ferry", "provider": "Various + Lomprayah", "price": 2800, "duration": "3 hours", "departure": "Various", "arrival": "Various", "rating": 4.6},
+    ],
     "Bangkok-Koh Tao": [
         {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 1200, "duration": "15 hours", "departure": "Evening", "arrival": "Morning", "rating": 4.3},
+        {"type": "Flight + Ferry", "provider": "Various + Lomprayah", "price": 3000, "duration": "4 hours", "departure": "Various", "arrival": "Various", "rating": 4.5},
+    ],
+    "Koh Tao-Bangkok": [
+        {"type": "Bus + Ferry", "provider": "Lomprayah", "price": 1200, "duration": "15 hours", "departure": "Morning", "arrival": "Evening", "rating": 4.3},
         {"type": "Flight + Ferry", "provider": "Various + Lomprayah", "price": 3000, "duration": "4 hours", "departure": "Various", "arrival": "Various", "rating": 4.5},
     ],
 }
