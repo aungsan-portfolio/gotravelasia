@@ -30,16 +30,9 @@ const AGODA_CID = "1959281";
 
 /* ─── Hotel Search Form ─── */
 const HOTEL_CITIES = [
-  { name: "Bangkok", cityId: 15932 },
-  { name: "Chiang Mai", cityId: 18296 },
-  { name: "Phuket", cityId: 16639 },
-  { name: "Krabi", cityId: 17699 },
-  { name: "Yangon", cityId: 16497 },
-  { name: "Mandalay", cityId: 17171 },
-  { name: "Singapore", cityId: 4064 },
-  { name: "Kuala Lumpur", cityId: 14014 },
-  { name: "Hanoi", cityId: 2758 },
-  { name: "Ho Chi Minh City", cityId: 13170 },
+  "Bangkok", "Chiang Mai", "Phuket", "Krabi",
+  "Yangon", "Mandalay", "Singapore",
+  "Kuala Lumpur", "Hanoi", "Ho Chi Minh City",
 ];
 
 function HotelsSearchForm() {
@@ -53,7 +46,7 @@ function HotelsSearchForm() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const cityId = fd.get("city") as string;
+    const cityName = fd.get("city") as string;
     const checkInDate = fd.get("checkIn") as string;
     const checkOutDate = fd.get("checkOut") as string;
 
@@ -62,7 +55,13 @@ function HotelsSearchForm() {
       return;
     }
 
-    const url = `https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=${AGODA_CID}&city=${cityId}&checkIn=${checkInDate}&checkOut=${checkOutDate}`;
+    const params = new URLSearchParams({
+      cid: AGODA_CID,
+      asq: cityName,
+      checkin: checkInDate,
+      checkout: checkOutDate,
+    });
+    const url = `https://www.agoda.com/search?${params.toString()}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -75,12 +74,12 @@ function HotelsSearchForm() {
           </label>
           <select
             name="city"
-            defaultValue="15932"
+            defaultValue="Bangkok"
             className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none font-medium"
           >
-            {HOTEL_CITIES.map((c) => (
-              <option key={c.cityId} value={c.cityId}>
-                {c.name}
+            {HOTEL_CITIES.map((city) => (
+              <option key={city} value={city}>
+                {city}
               </option>
             ))}
           </select>
@@ -266,8 +265,8 @@ export default function Home() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-4 md:py-5 flex items-center justify-center gap-2 md:gap-3 transition-all font-mono text-xs md:text-sm uppercase tracking-widest ${activeTab === tab.id
-                      ? "bg-white/10 text-secondary border-b-2 border-secondary"
-                      : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-white/10 text-secondary border-b-2 border-secondary"
+                    : "text-white/60 hover:text-white hover:bg-white/5"
                     }`}
                 >
                   <span className="text-xl md:text-2xl">{tab.icon}</span>
