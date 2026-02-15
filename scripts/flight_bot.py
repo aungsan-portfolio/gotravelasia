@@ -66,8 +66,10 @@ ROUTES = [
     {"origin": "RGN", "destination": "BKK"},   # Yangon → Bangkok (Suvarnabhumi)
     {"origin": "RGN", "destination": "DMK"},   # Yangon → Don Mueang
     {"origin": "RGN", "destination": "CNX"},   # Yangon → Chiang Mai
+    {"origin": "RGN", "destination": "HKT"},   # Yangon → Phuket (MAI direct)
     {"origin": "MDL", "destination": "BKK"},   # Mandalay → Bangkok
     {"origin": "MDL", "destination": "DMK"},   # Mandalay → Don Mueang
+    {"origin": "MDL", "destination": "CNX"},   # Mandalay → Chiang Mai (MAI direct)
 
     # 🇹🇭 Thailand → 🇲🇲 Myanmar (အပြန်)
     {"origin": "BKK", "destination": "RGN"},
@@ -75,11 +77,15 @@ ROUTES = [
     {"origin": "BKK", "destination": "MDL"},
     {"origin": "DMK", "destination": "MDL"},
     {"origin": "CNX", "destination": "RGN"},   # Chiang Mai → Yangon
+    {"origin": "CNX", "destination": "MDL"},   # Chiang Mai → Mandalay
+    {"origin": "HKT", "destination": "RGN"},   # Phuket → Yangon
 
-    # 🌏 SE Asia Expansion
+    # 🌏 SE Asia Expansion (MAI direct routes)
     {"origin": "RGN", "destination": "SIN"},   # Singapore
     {"origin": "RGN", "destination": "KUL"},   # Kuala Lumpur
     {"origin": "RGN", "destination": "SGN"},   # Ho Chi Minh (Vietnam)
+    {"origin": "RGN", "destination": "HAN"},   # Hanoi (Vietnam) — MAI direct
+    {"origin": "RGN", "destination": "PNH"},   # Phnom Penh (Cambodia) — MAI direct
 ]
 
 AIRLINE_MAP = {

@@ -130,6 +130,8 @@ const ROUTE_CONFIG = [
   { from: "Yangon", to: "Hanoi", origin: "RGN", dest: "HAN" },
   { from: "Yangon", to: "Phuket", origin: "RGN", dest: "HKT" },
   { from: "Mandalay", to: "Chiang Mai", origin: "MDL", dest: "CNX" },
+  { from: "Yangon", to: "Ho Chi Minh", origin: "RGN", dest: "SGN" },
+  { from: "Yangon", to: "Phnom Penh", origin: "RGN", dest: "PNH" },
 ];
 
 /* ─── Tab Config ─── */
@@ -171,8 +173,9 @@ export default function Home() {
 
   const originMap: Record<string, string> = { RGN: "Yangon", MDL: "Mandalay" };
   const destMap: Record<string, string> = {
-    BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai",
+    BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai", HKT: "Phuket",
     SIN: "Singapore", KUL: "Kuala Lumpur", SGN: "Ho Chi Minh",
+    HAN: "Hanoi", PNH: "Phnom Penh",
   };
 
   const buildAviasalesUrl = useCallback((d: Deal) => {
