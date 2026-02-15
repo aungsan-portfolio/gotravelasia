@@ -30,9 +30,14 @@ const AGODA_CID = "1959281";
 
 /* ─── Hotel Search Form ─── */
 const HOTEL_CITIES = [
-  "Bangkok", "Chiang Mai", "Phuket", "Krabi",
-  "Yangon", "Mandalay", "Singapore",
-  "Kuala Lumpur", "Hanoi", "Ho Chi Minh City",
+  { name: "Bangkok", slug: "bangkok-th" },
+  { name: "Chiang Mai", slug: "chiang-mai-th" },
+  { name: "Phuket", slug: "phuket-th" },
+  { name: "Krabi", slug: "krabi-th" },
+  { name: "Singapore", slug: "singapore-sg" },
+  { name: "Kuala Lumpur", slug: "kuala-lumpur-my" },
+  { name: "Hanoi", slug: "hanoi-vn" },
+  { name: "Ho Chi Minh City", slug: "ho-chi-minh-city-vn" },
 ];
 
 function HotelsSearchForm() {
@@ -46,7 +51,7 @@ function HotelsSearchForm() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const cityName = fd.get("city") as string;
+    const citySlug = fd.get("city") as string;
     const checkInDate = fd.get("checkIn") as string;
     const checkOutDate = fd.get("checkOut") as string;
 
@@ -55,13 +60,7 @@ function HotelsSearchForm() {
       return;
     }
 
-    const params = new URLSearchParams({
-      cid: AGODA_CID,
-      asq: cityName,
-      checkin: checkInDate,
-      checkout: checkOutDate,
-    });
-    const url = `https://www.agoda.com/search?${params.toString()}`;
+    const url = `https://www.agoda.com/city/${citySlug}.html?cid=${AGODA_CID}&checkIn=${checkInDate}&checkout=${checkOutDate}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -74,12 +73,12 @@ function HotelsSearchForm() {
           </label>
           <select
             name="city"
-            defaultValue="Bangkok"
+            defaultValue="bangkok-th"
             className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none font-medium"
           >
             {HOTEL_CITIES.map((city) => (
-              <option key={city} value={city}>
-                {city}
+              <option key={city.slug} value={city.slug}>
+                {city.name}
               </option>
             ))}
           </select>
