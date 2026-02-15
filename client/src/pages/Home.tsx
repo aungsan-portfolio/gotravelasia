@@ -120,16 +120,16 @@ function HotelsSearchForm() {
   );
 }
 
-/* ─── Popular Routes Data ─── */
-const POPULAR_ROUTES = [
-  { from: "Yangon", to: "Bangkok", price: "85", origin: "RGN", dest: "BKK" },
-  { from: "Yangon", to: "Singapore", price: "120", origin: "RGN", dest: "SIN" },
-  { from: "Yangon", to: "Chiang Mai", price: "110", origin: "RGN", dest: "CNX" },
-  { from: "Mandalay", to: "Bangkok", price: "95", origin: "MDL", dest: "BKK" },
-  { from: "Yangon", to: "KL", price: "100", origin: "RGN", dest: "KUL" },
-  { from: "Yangon", to: "Hanoi", price: "130", origin: "RGN", dest: "HAN" },
-  { from: "Yangon", to: "Phuket", price: "140", origin: "RGN", dest: "HKT" },
-  { from: "Mandalay", to: "Chiang Mai", price: "125", origin: "MDL", dest: "CNX" },
+/* ─── Popular Routes Config (prices come from bot data) ─── */
+const ROUTE_CONFIG = [
+  { from: "Yangon", to: "Bangkok", origin: "RGN", dest: "BKK" },
+  { from: "Yangon", to: "Singapore", origin: "RGN", dest: "SIN" },
+  { from: "Yangon", to: "Chiang Mai", origin: "RGN", dest: "CNX" },
+  { from: "Mandalay", to: "Bangkok", origin: "MDL", dest: "BKK" },
+  { from: "Yangon", to: "KL", origin: "RGN", dest: "KUL" },
+  { from: "Yangon", to: "Hanoi", origin: "RGN", dest: "HAN" },
+  { from: "Yangon", to: "Phuket", origin: "RGN", dest: "HKT" },
+  { from: "Mandalay", to: "Chiang Mai", origin: "MDL", dest: "CNX" },
 ];
 
 /* ─── Tab Config ─── */
@@ -285,7 +285,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ POPULAR ROUTES ═══════════ */}
+      {/* ═══════════ POPULAR ROUTES (Auto-updated from bot data) ═══════════ */}
       <section className="py-16 bg-background border-b border-border">
         <div className="container">
           <div className="text-center mb-10">
@@ -293,26 +293,31 @@ export default function Home() {
               Popular Routes from Myanmar
             </h2>
             <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
-              Indicative starting prices
+              {meta.updated_at ? `Updated ${meta.updated_at}` : "Indicative starting prices"}
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {POPULAR_ROUTES.map((route) => (
-              <a
-                key={`${route.origin}-${route.dest}`}
-                href={buildRouteUrl(route.origin, route.dest)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
-              >
-                <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary mb-2">
-                  {route.from} → {route.to}
-                </div>
-                <div className="text-2xl font-bold font-mono text-primary group-hover:text-white">
-                  from ${route.price}
-                </div>
-              </a>
-            ))}
+            {ROUTE_CONFIG.map((route) => {
+              const matchedDeal = deals.find(
+                (d) => d.origin === route.origin && (d.destination === route.dest || (route.dest === "BKK" && d.destination === "DMK"))
+              );
+              return (
+                <a
+                  key={`${route.origin}-${route.dest}`}
+                  href={buildRouteUrl(route.origin, route.dest)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
+                >
+                  <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary mb-2">
+                    {route.from} → {route.to}
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-primary group-hover:text-white">
+                    {matchedDeal ? `from $${Math.round(matchedDeal.price)}` : "Check Price"}
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
