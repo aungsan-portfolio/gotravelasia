@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ArrowRight, ExternalLink, MapPin, CheckCircle, Calendar } from "lucide-react";
+import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
@@ -25,9 +26,126 @@ type Meta = {
 
 const AFFILIATE_MARKER = "697202";
 const TRIP_COM_BASE = "https://www.trip.com/flights";
+const AGODA_CID = "1959281";
+
+/* ─── Hotel Search Form ─── */
+const HOTEL_CITIES = [
+  { name: "Bangkok", cityId: 15932 },
+  { name: "Chiang Mai", cityId: 18296 },
+  { name: "Phuket", cityId: 16639 },
+  { name: "Krabi", cityId: 17699 },
+  { name: "Yangon", cityId: 16497 },
+  { name: "Mandalay", cityId: 17171 },
+  { name: "Singapore", cityId: 4064 },
+  { name: "Kuala Lumpur", cityId: 14014 },
+  { name: "Hanoi", cityId: 2758 },
+  { name: "Ho Chi Minh City", cityId: 13170 },
+];
+
+function HotelsSearchForm() {
+  const today = new Date().toISOString().split("T")[0];
+  const [checkIn, setCheckIn] = useState(today);
+
+  const minCheckOut = checkIn
+    ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
+    : today;
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const cityId = fd.get("city") as string;
+    const checkInDate = fd.get("checkIn") as string;
+    const checkOutDate = fd.get("checkOut") as string;
+
+    if (!checkInDate || !checkOutDate || new Date(checkOutDate) <= new Date(checkInDate)) {
+      alert("Please select valid check-in and check-out dates");
+      return;
+    }
+
+    const url = `https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=${AGODA_CID}&city=${cityId}&checkIn=${checkInDate}&checkOut=${checkOutDate}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label className="text-xs text-secondary uppercase font-bold mb-1 block font-mono tracking-wider">
+            Destination
+          </label>
+          <select
+            name="city"
+            defaultValue="15932"
+            className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none font-medium"
+          >
+            {HOTEL_CITIES.map((c) => (
+              <option key={c.cityId} value={c.cityId}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-secondary uppercase font-bold mb-1 block font-mono tracking-wider">
+            Check-in
+          </label>
+          <input
+            type="date"
+            name="checkIn"
+            defaultValue={today}
+            min={today}
+            onChange={(e) => setCheckIn(e.target.value)}
+            required
+            className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-secondary uppercase font-bold mb-1 block font-mono tracking-wider">
+            Check-out
+          </label>
+          <input
+            type="date"
+            name="checkOut"
+            min={minCheckOut}
+            required
+            className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none"
+          />
+        </div>
+      </div>
+      <Button
+        type="submit"
+        className="w-full md:w-auto md:self-end font-mono uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors h-12 px-10"
+      >
+        Search Hotels on Agoda 🏨
+      </Button>
+    </form>
+  );
+}
+
+/* ─── Popular Routes Data ─── */
+const POPULAR_ROUTES = [
+  { from: "Yangon", to: "Bangkok", price: "85", origin: "RGN", dest: "BKK" },
+  { from: "Yangon", to: "Singapore", price: "120", origin: "RGN", dest: "SIN" },
+  { from: "Yangon", to: "Chiang Mai", price: "110", origin: "RGN", dest: "CNX" },
+  { from: "Mandalay", to: "Bangkok", price: "95", origin: "MDL", dest: "BKK" },
+  { from: "Yangon", to: "KL", price: "100", origin: "RGN", dest: "KUL" },
+  { from: "Yangon", to: "Hanoi", price: "130", origin: "RGN", dest: "HAN" },
+  { from: "Yangon", to: "Phuket", price: "140", origin: "RGN", dest: "HKT" },
+  { from: "Mandalay", to: "Chiang Mai", price: "125", origin: "MDL", dest: "CNX" },
+];
+
+/* ─── Tab Config ─── */
+const TABS = [
+  { id: "flights" as const, icon: "✈️", label: "Flights" },
+  { id: "hotels" as const, icon: "🏨", label: "Hotels" },
+  { id: "transport" as const, icon: "🚌", label: "Transport" },
+];
+
+/* ═══════════════════════════════════════════════════════════ */
 
 export default function Home() {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
 
   /* ─── Live Deal State ─── */
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -54,10 +172,12 @@ export default function Home() {
   }, []);
 
   const originMap: Record<string, string> = { RGN: "Yangon", MDL: "Mandalay" };
-  const destMap: Record<string, string> = { BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai", SIN: "Singapore", KUL: "Kuala Lumpur", SGN: "Ho Chi Minh" };
+  const destMap: Record<string, string> = {
+    BKK: "Bangkok", DMK: "Bangkok", CNX: "Chiang Mai",
+    SIN: "Singapore", KUL: "Kuala Lumpur", SGN: "Ho Chi Minh",
+  };
 
   const buildAviasalesUrl = useCallback((d: Deal) => {
-    // Official Aviasales deep link format (query params, YYYY-MM-DD dates)
     const params = new URLSearchParams({
       origin_iata: d.origin,
       destination_iata: d.destination,
@@ -73,34 +193,33 @@ export default function Home() {
 
   const buildTripComUrl = useCallback((d: Deal) => {
     const params = new URLSearchParams({
-      locale: "en_US", dcity: d.origin, acity: d.destination, ddate: d.date, class: "Y", quantity: "1", searchBoxArg: "t",
+      locale: "en_US", dcity: d.origin, acity: d.destination, ddate: d.date,
+      class: "Y", quantity: "1", searchBoxArg: "t",
       Allianceid: "7796167", SID: "293794502",
     });
     return `${TRIP_COM_BASE}?${params.toString()}`;
   }, []);
 
-  const track = useCallback((event: "deal_click_aviasales" | "deal_click_tripcom", payload?: Record<string, unknown>) => {
-    const key = `gt_${event}_${new Date().toISOString().slice(0, 10)}`;
-    const current = Number(localStorage.getItem(key) || "0");
-    localStorage.setItem(key, String(current + 1));
-    console.log("[TRACK]", event, { count: current + 1, payload });
+  const buildRouteUrl = useCallback((origin: string, dest: string) => {
+    const targetUrl = `https://www.aviasales.com/search?origin_iata=${origin}&destination_iata=${dest}&one_way=true&adults=1&locale=en&currency=USD`;
+    return `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
   }, []);
+
+  const track = useCallback(
+    (event: "deal_click_aviasales" | "deal_click_tripcom", payload?: Record<string, unknown>) => {
+      const key = `gt_${event}_${new Date().toISOString().slice(0, 10)}`;
+      const current = Number(localStorage.getItem(key) || "0");
+      localStorage.setItem(key, String(current + 1));
+      console.log("[TRACK]", event, { count: current + 1, payload });
+    },
+    [],
+  );
 
   const openNewTab = useCallback((url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
   }, []);
 
   const updatedText = meta.updated_at || meta.updated || "";
-
-  /* ─── Original Category Data ─── */
-  const categories = [
-    { icon: Plane, labelKey: "categories.findFlights", link: "https://www.kiwi.com/en/search/results/yangon-myanmar/bangkok-thailand", color: "text-blue-500" },
-    { icon: Hotel, labelKey: "categories.agodaHotels", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932", color: "text-indigo-500" },
-    { icon: Ticket, labelKey: "categories.thingsToDo", link: "https://www.klook.com/en-US/country/4-thailand-things-to-do/", color: "text-pink-500" },
-    { icon: Car, labelKey: "categories.transfers", link: "https://www.welcomepickups.com/", color: "text-orange-500" },
-    { icon: Wifi, labelKey: "categories.esim", link: "https://www.airalo.com/thailand-esim", color: "text-green-500" },
-    { icon: ShieldCheck, labelKey: "categories.insurance", link: "https://ektatraveling.com/", color: "text-red-500" },
-  ];
 
   const featuredDestinations = [
     { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.jpg", link: "/thailand/chiang-mai", agodaCityId: 18296 },
@@ -110,43 +229,88 @@ export default function Home() {
 
   return (
     <Layout>
-      {/* ═══════════ HERO SECTION (ORIGINAL) ═══════════ */}
-      <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
+      {/* ═══════════ HERO + TABBED SEARCH ═══════════ */}
+      <section className="relative min-h-[60vh] md:min-h-[65vh] flex flex-col justify-end pb-6 overflow-hidden">
+        {/* Background */}
         <div className="absolute inset-0 z-0">
           <img
             src="/images/hero-travel.jpg"
-            alt="Thailand Temple"
+            alt="Southeast Asia Travel"
             className="w-full h-full object-cover grayscale contrast-125 brightness-75"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-primary/30 to-transparent opacity-90" />
         </div>
 
-        <div className="container relative z-10 text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold tracking-tighter text-white mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            {t("hero.title")}<br />
-            <span className="text-primary">{t("hero.country")}</span>
-          </h1>
-          <p className="text-lg md:text-xl text-secondary font-mono uppercase tracking-[0.2em] mb-4 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-100">
-            {t("hero.slogan")}
-          </p>
-          {/* SEO Keyword Subtitle */}
-          <p className="text-sm text-white/60 font-mono uppercase tracking-widest mb-8">Cheap Flights from Myanmar to Thailand</p>
-          <p className="text-xl md:text-2xl text-gray-200 max-w-2xl mx-auto mb-10 font-light tracking-wide animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
-            {t("hero.subtitle")}
-          </p>
+        <div className="container relative z-10">
+          {/* Hero Text */}
+          <div className="text-center text-white mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-3">
+              {t("hero.title")}
+              <br />
+              <span className="text-primary">{t("hero.country")}</span>
+            </h1>
+            <p className="text-lg md:text-xl text-secondary font-mono uppercase tracking-[0.15em] mb-2 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-100">
+              {t("hero.slogan")}
+            </p>
+            <p className="text-sm text-white/50 font-mono uppercase tracking-widest">
+              Compare Flights • Hotels • Transport from Myanmar
+            </p>
+          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-400">
-            {categories.map((cat, index) => (
+          {/* ── Tabbed Search Card ── */}
+          <div className="bg-primary/90 supports-[backdrop-filter]:bg-primary/80 backdrop-blur-xl border border-white/15 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+            {/* Tab Buttons */}
+            <div className="grid grid-cols-3 border-b border-white/10">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-4 md:py-5 flex items-center justify-center gap-2 md:gap-3 transition-all font-mono text-xs md:text-sm uppercase tracking-widest ${activeTab === tab.id
+                      ? "bg-white/10 text-secondary border-b-2 border-secondary"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                    }`}
+                >
+                  <span className="text-xl md:text-2xl">{tab.icon}</span>
+                  <span className="font-bold">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-4 md:p-6">
+              {activeTab === "flights" && <FlightWidget />}
+              {activeTab === "hotels" && <HotelsSearchForm />}
+              {activeTab === "transport" && <TransportScheduleWidget />}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ POPULAR ROUTES ═══════════ */}
+      <section className="py-16 bg-background border-b border-border">
+        <div className="container">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tighter mb-2">
+              Popular Routes from Myanmar
+            </h2>
+            <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
+              Indicative starting prices
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {POPULAR_ROUTES.map((route) => (
               <a
-                key={index}
-                href={cat.link}
+                key={`${route.origin}-${route.dest}`}
+                href={buildRouteUrl(route.origin, route.dest)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group block h-full"
+                className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
               >
-                <div className="bg-background/10 backdrop-blur-md border border-white/20 p-6 flex flex-col items-center justify-center gap-3 hover:bg-primary hover:border-primary transition-all duration-300 h-full">
-                  <cat.icon className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-white tracking-wide uppercase">{t(cat.labelKey)}</span>
+                <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary mb-2">
+                  {route.from} → {route.to}
+                </div>
+                <div className="text-2xl font-bold font-mono text-primary group-hover:text-white">
+                  from ${route.price}
                 </div>
               </a>
             ))}
@@ -154,58 +318,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ FLIGHT SEARCH WIDGET (NEW) ═══════════ */}
-      <section id="flight-search-section" className="py-20 bg-muted/20 border-b border-border">
-        <div className="container">
-          <div className="flex flex-col md:flex-row items-start justify-between gap-8">
-            <div className="flex-1 space-y-4 md:pt-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider">
-                <Plane className="w-3 h-3" /> Search &amp; Compare
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight">Find Cheap Flights Across Asia</h2>
-              <p className="text-muted-foreground text-lg">
-                Compare prices from Yangon (RGN), Mandalay (MDL) and major Asian cities to Bangkok, Singapore, Chiang Mai &amp; more. Powered by Aviasales.
-              </p>
-              {/* Partner Logos — 3 Groups */}
-              <div className="space-y-2 pt-2 max-w-md">
-                {/* Travel Partners */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold w-full mb-0.5">Travel Partners</span>
-                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold opacity-70">Aviasales</span>
-                  <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 text-[10px] font-bold opacity-70">Trip.com</span>
-                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] font-bold opacity-70">Agoda</span>
-                  <span className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 text-[10px] font-bold opacity-70">12Go</span>
-                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-600 text-[10px] font-bold opacity-70">Kiwi.com</span>
-                </div>
-                {/* Payment Trust */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold w-full mb-0.5">Secure Payment</span>
-                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold opacity-70">VISA</span>
-                  <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px] font-bold opacity-70">Mastercard</span>
-                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 text-[10px] font-bold opacity-70">UnionPay</span>
-                </div>
-                {/* Airlines */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold w-full mb-0.5">Airlines We Compare</span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold opacity-60">MAI</span>
-                  <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-bold opacity-60">Thai Airways</span>
-                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[10px] font-bold opacity-60">AirAsia</span>
-                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold opacity-60">Singapore Airlines</span>
-                  <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 text-[10px] font-bold opacity-60">Malaysia Airlines</span>
-                  <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold opacity-60">Bangkok Airways</span>
-                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-bold opacity-60">VietJet Air</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 w-full">
-              <FlightWidget />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ LIVE CHEAPEST DEALS (NEW) ═══════════ */}
-      <section className="py-20 bg-background border-b border-border">
+      {/* ═══════════ LIVE FLIGHT DEALS ═══════════ */}
+      <section className="py-20 bg-muted/20 border-b border-border">
         <div className="container">
           <div className="flex justify-between items-end mb-8">
             <div>
@@ -217,15 +331,22 @@ export default function Home() {
           </div>
 
           {meta.overall_cheapest && (
-            <div className="mb-8 bg-green-50 border border-green-200 p-4 flex items-center justify-between rounded-none">
+            <div className="mb-8 bg-green-50 border border-green-200 p-4 flex items-center justify-between">
               <p className="font-bold text-green-800">
-                🔥 Best Deal: {originMap[meta.overall_cheapest.origin] || meta.overall_cheapest.origin} → {destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} — ${meta.overall_cheapest.price}
-                <span className="text-sm font-normal text-green-600 ml-2">({meta.overall_cheapest.airline} on {meta.overall_cheapest.date})</span>
+                🔥 Best Deal: {originMap[meta.overall_cheapest.origin] || meta.overall_cheapest.origin} →{" "}
+                {destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} — $
+                {meta.overall_cheapest.price}
+                <span className="text-sm font-normal text-green-600 ml-2">
+                  ({meta.overall_cheapest.airline} on {meta.overall_cheapest.date})
+                </span>
               </p>
               <Button
                 size="sm"
                 className="bg-green-600 text-white hover:bg-green-700 font-mono uppercase text-xs"
-                onClick={() => { track("deal_click_aviasales", meta.overall_cheapest as unknown as Record<string, unknown>); openNewTab(buildAviasalesUrl(meta.overall_cheapest!)); }}
+                onClick={() => {
+                  track("deal_click_aviasales", meta.overall_cheapest as unknown as Record<string, unknown>);
+                  openNewTab(buildAviasalesUrl(meta.overall_cheapest!));
+                }}
               >
                 Book Now <ExternalLink className="ml-1 w-3 h-3" />
               </Button>
@@ -247,14 +368,23 @@ export default function Home() {
                   <div
                     key={`${deal.origin}-${deal.destination}-${deal.date}`}
                     className="bg-card border border-border p-6 hover:shadow-lg transition-all cursor-pointer group"
-                    onClick={() => { track("deal_click_aviasales", deal as unknown as Record<string, unknown>); openNewTab(aviaUrl); }}
+                    onClick={() => {
+                      track("deal_click_aviasales", deal as unknown as Record<string, unknown>);
+                      openNewTab(aviaUrl);
+                    }}
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-lg font-bold">{originMap[deal.origin] || deal.origin} → {destMap[deal.destination] || deal.destination}</h3>
-                        <p className="text-xs text-muted-foreground font-mono mt-1">{deal.airline} {deal.flight_num || ""} • {deal.date}</p>
+                        <h3 className="text-lg font-bold">
+                          {originMap[deal.origin] || deal.origin} → {destMap[deal.destination] || deal.destination}
+                        </h3>
+                        <p className="text-xs text-muted-foreground font-mono mt-1">
+                          {deal.airline} {deal.flight_num || ""} • {deal.date}
+                        </p>
                       </div>
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider">Deal</span>
+                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider">
+                        Deal
+                      </span>
                     </div>
 
                     <p className="text-3xl font-bold text-primary mb-4">${deal.price}</p>
@@ -263,7 +393,11 @@ export default function Home() {
                       <Button
                         size="sm"
                         className="flex-1 bg-primary text-primary-foreground font-mono uppercase text-xs hover:bg-primary/90"
-                        onClick={(e) => { e.stopPropagation(); track("deal_click_aviasales", deal as unknown as Record<string, unknown>); openNewTab(aviaUrl); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          track("deal_click_aviasales", deal as unknown as Record<string, unknown>);
+                          openNewTab(aviaUrl);
+                        }}
                       >
                         Book on Aviasales <ExternalLink className="ml-1 w-3 h-3" />
                       </Button>
@@ -273,7 +407,10 @@ export default function Home() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-center text-xs text-muted-foreground hover:text-primary mt-3 font-mono"
-                      onClick={(e) => { e.stopPropagation(); track("deal_click_tripcom", deal as unknown as Record<string, unknown>); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        track("deal_click_tripcom", deal as unknown as Record<string, unknown>);
+                      }}
                     >
                       Or book with Trip.com (hotel bundle) →
                     </a>
@@ -285,22 +422,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ TRANSPORT WIDGET (ORIGINAL) ═══════════ */}
-      <section className="py-16 bg-muted/30 border-b border-border">
-        <div className="container">
-          <h2 className="text-3xl font-bold tracking-tight mb-2">Book Your Transport</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Search for buses, trains, and minibuses between Thai cities. Compare prices and book directly.</p>
-          <TransportScheduleWidget />
-        </div>
-      </section>
-
-      {/* ═══════════ FEATURED DESTINATIONS (ORIGINAL) ═══════════ */}
+      {/* ═══════════ FEATURED DESTINATIONS ═══════════ */}
       <section className="py-24 bg-background">
         <div className="container">
           <div className="flex justify-between items-end mb-12">
             <div>
               <h2 className="text-4xl font-bold tracking-tighter mb-2">Explore Thailand</h2>
-              <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">Curated guides for the Land of Smiles</p>
+              <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
+                Curated guides for the Land of Smiles
+              </p>
             </div>
             <Button variant="outline" className="hidden md:flex gap-2 group">
               View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -319,17 +449,27 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity group-hover:opacity-90" />
                   <div className="absolute bottom-0 left-0 p-8 w-full">
                     <h3 className="text-3xl font-bold text-white mb-2 tracking-tight">{t(dest.nameKey)}</h3>
-                    <p className="text-gray-300 text-sm line-clamp-2 mb-4">
-                      {t(dest.descKey)}
-                    </p>
+                    <p className="text-gray-300 text-sm line-clamp-2 mb-4">{t(dest.descKey)}</p>
                   </div>
                 </Link>
                 <div className="p-6 grid grid-cols-2 gap-3 mt-auto bg-card">
-                  <a href={`https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=${dest.agodaCityId}`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">Agoda Hotels</Button>
+                  <a
+                    href={`https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=${AGODA_CID}&city=${dest.agodaCityId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">
+                      Agoda Hotels
+                    </Button>
                   </a>
-                  <a href="https://www.klook.com/en-US/country/4-thailand-things-to-do/" target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">View Tours</Button>
+                  <a
+                    href="https://www.klook.com/en-US/country/4-thailand-things-to-do/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">
+                      View Tours
+                    </Button>
                   </a>
                 </div>
               </div>
@@ -338,104 +478,32 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ TRIP EXAMPLE BOX (ORIGINAL) ═══════════ */}
-      <section className="py-24 bg-muted/30 border-y border-border">
+      {/* ═══════════ WHY GOTRAVEL ═══════════ */}
+      <section className="py-16 bg-muted/30 border-y border-border">
         <div className="container">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter leading-tight">
-                Your Thailand<br />
-                <span className="text-primary">Travel Expert.</span>
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We simplify your journey by connecting you with the most trusted travel partners in Southeast Asia. Plan, book, and go—all in one place.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
-                {[
-                  { icon: Plane, title: "Flights", desc: "Best connections via Aviasales", link: `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&locale=en")}` },
-                  { icon: Hotel, title: "Agoda Stays", desc: "Best hotel deals on Agoda", link: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932" },
-                  { icon: Ticket, title: "Experiences", desc: "Adventures by Klook", link: "https://www.klook.com/en-US/country/4-thailand-things-to-do/" },
-                  { icon: Car, title: "Transfers", desc: "Reliable rides via Welcome Pickups", link: "https://www.welcomepickups.com/" },
-                ].map((item, i) => (
-                  <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="group block space-y-2 hover:bg-background/50 p-4 -mx-4 rounded-lg transition-colors">
-                    <div className="w-10 h-10 bg-primary/10 flex items-center justify-center rounded-none mb-2 group-hover:bg-primary group-hover:text-white transition-colors">
-                      <item.icon className="w-5 h-5 text-primary group-hover:text-white" />
-                    </div>
-                    <h4 className="font-bold flex items-center gap-2">{item.title} <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></h4>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
-                  </a>
-                ))}
+          <h2 className="text-3xl font-bold tracking-tighter text-center mb-10">
+            Why <span className="text-primary">GoTravelAsia</span>?
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { icon: Plane, title: "500+ Routes", desc: "Compare flights across Southeast Asia via Aviasales" },
+              { icon: Hotel, title: "Best Hotel Deals", desc: "Direct access to Agoda's lowest rates" },
+              { icon: CheckCircle, title: "Trusted Partners", desc: "Aviasales, Trip.com, Agoda, 12Go, Klook" },
+              { icon: MapPin, title: "Myanmar Focused", desc: "Specialized routes from Yangon & Mandalay" },
+            ].map((item, i) => (
+              <div key={i} className="text-center space-y-3">
+                <div className="w-12 h-12 mx-auto bg-primary/10 flex items-center justify-center">
+                  <item.icon className="w-6 h-6 text-primary" />
+                </div>
+                <h4 className="font-bold">{item.title}</h4>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary to-accent opacity-20 blur-2xl" />
-              <div className="relative bg-background border border-border p-8 shadow-2xl">
-                <div className="flex items-center justify-between mb-8 border-b border-border pb-4">
-                  <span className="font-mono text-sm text-muted-foreground">TRIP_EXAMPLE: #TH8829</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider">Estimated Cost</span>
-                </div>
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 group">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600">
-                      <Plane className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <h5 className="font-bold text-sm">Flight to Chiang Mai</h5>
-                      <p className="text-xs text-muted-foreground font-mono mt-1">BKK → CNX • 1h 15m</p>
-                    </div>
-                    <a href={`https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=BKK&destination_iata=CNX&one_way=true&adults=1&locale=en")}`} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="ghost" className="text-xs font-mono uppercase text-primary hover:text-primary hover:bg-primary/10">Check Price</Button>
-                    </a>
-                  </div>
-
-                  <div className="flex items-center gap-4 group">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 text-indigo-600">
-                      <Hotel className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <h5 className="font-bold text-sm">Boutique Hotel</h5>
-                      <p className="text-xs text-muted-foreground font-mono mt-1">3 Nights • Nimman</p>
-                    </div>
-                    <a href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=18296" target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="ghost" className="text-xs font-mono uppercase text-primary hover:text-primary hover:bg-primary/10">Agoda Check</Button>
-                    </a>
-                  </div>
-
-                  <div className="flex items-center gap-4 group">
-                    <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center flex-shrink-0 text-pink-600">
-                      <Ticket className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <h5 className="font-bold text-sm">Doi Inthanon Tour</h5>
-                      <p className="text-xs text-muted-foreground font-mono mt-1">Full Day • Guided</p>
-                    </div>
-                    <a href="https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/" target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="ghost" className="text-xs font-mono uppercase text-primary hover:text-primary hover:bg-primary/10">View Tours</Button>
-                    </a>
-                  </div>
-
-                  <div className="pt-4 border-t border-border flex justify-between items-center">
-                    <span className="font-bold text-sm text-muted-foreground">Total Estimate</span>
-                    <span className="font-mono text-lg font-bold text-foreground">~฿7,200</span>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <a href={`https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=CNX&one_way=true&adults=1&locale=en")}`} target="_blank" rel="noopener noreferrer">
-                    <Button className="w-full font-mono uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors h-12">
-                      Book This Trip Now
-                    </Button>
-                  </a>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════ NEWSLETTER (ORIGINAL) ═══════════ */}
+      {/* ═══════════ NEWSLETTER ═══════════ */}
       <section className="py-24 bg-primary text-primary-foreground">
         <div className="container text-center max-w-2xl">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tighter mb-4">Don't Miss the Next Deal</h2>
@@ -448,13 +516,14 @@ export default function Home() {
               placeholder="Enter your email address"
               className="flex-1 h-12 px-4 bg-white/10 border border-white/20 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
-            <Button size="lg" className="bg-secondary text-secondary-foreground hover:bg-white hover:text-primary font-bold px-8">
+            <Button
+              size="lg"
+              className="bg-secondary text-secondary-foreground hover:bg-white hover:text-primary font-bold px-8"
+            >
               Subscribe
             </Button>
           </form>
-          <p className="text-xs text-primary-foreground/60 mt-4 font-mono">
-            No spam. Unsubscribe anytime.
-          </p>
+          <p className="text-xs text-primary-foreground/60 mt-4 font-mono">No spam. Unsubscribe anytime.</p>
         </div>
       </section>
     </Layout>
