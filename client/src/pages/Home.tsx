@@ -200,7 +200,8 @@ export default function Home() {
   }, []);
 
   const buildRouteUrl = useCallback((origin: string, dest: string) => {
-    const targetUrl = `https://www.aviasales.com/search?origin_iata=${origin}&destination_iata=${dest}&one_way=true&adults=1&locale=en&currency=USD`;
+    const defaultDate = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+    const targetUrl = `https://www.aviasales.com/search?origin_iata=${origin}&destination_iata=${dest}&depart_date=${defaultDate}&one_way=true&adults=1&locale=en&currency=USD`;
     return `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
   }, []);
 
