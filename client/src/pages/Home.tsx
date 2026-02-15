@@ -462,7 +462,7 @@ export default function Home() {
                     </Button>
                   </a>
                   <a
-                    href="https://www.klook.com/en-US/country/4-thailand-things-to-do/"
+                    href="https://www.klook.com/en-US/country/4-thailand-things-to-do/?aid=111750"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

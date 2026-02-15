@@ -60,7 +60,7 @@ export default function Bangkok() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/city/4-bangkok-things-to-do/",
+        klook: "https://www.klook.com/city/4-bangkok-things-to-do/?aid=111750",
         kiwi: "https://www.kiwi.com/en/search/results/anywhere/bangkok-thailand",
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/bangkok-10000045",
         welcomePickups: "https://www.welcomepickups.com/bangkok/",

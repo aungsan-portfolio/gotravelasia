@@ -41,7 +41,7 @@ export default function Phuket() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/6-phuket-things-to-do/",
+        klook: "https://www.klook.com/en-US/city/6-phuket-things-to-do/?aid=111750",
         kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/phuket-thailand",
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/region/phuket-10000088",
         welcomePickups: "https://www.welcomepickups.com/phuket/",

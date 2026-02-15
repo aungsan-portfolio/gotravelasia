@@ -38,7 +38,7 @@ export default function ChiangRai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/9-chiang-rai-things-to-do/",
+        klook: "https://www.klook.com/en-US/city/9-chiang-rai-things-to-do/?aid=111750",
         kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/chiang-rai-thailand",
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/province/chiang-rai-10000002",
         welcomePickups: "https://www.welcomepickups.com/",

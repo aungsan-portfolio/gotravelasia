@@ -35,7 +35,7 @@ export default function Pai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/", // Pai activities often listed under Chiang Mai region
+        klook: "https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/?aid=111750", // Pai activities often listed under Chiang Mai region
         kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/chiang-mai-thailand",
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/pai-district-10000216",
         welcomePickups: "https://www.welcomepickups.com/",

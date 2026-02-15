@@ -123,7 +123,7 @@ export default function ChiangMai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/",
+        klook: "https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/?aid=111750",
         kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/chiang-mai-thailand",
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/chiang-mai-10000008",
         welcomePickups: "https://www.welcomepickups.com/chiang-mai/",

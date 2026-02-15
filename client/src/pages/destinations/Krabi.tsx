@@ -39,7 +39,7 @@ export default function Krabi() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/7-krabi-things-to-do/",
+        klook: "https://www.klook.com/en-US/city/7-krabi-things-to-do/?aid=111750",
         kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/krabi-thailand",
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/province/krabi-10000005",
         welcomePickups: "https://www.welcomepickups.com/krabi/",

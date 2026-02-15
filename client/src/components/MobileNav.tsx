@@ -121,7 +121,7 @@ export default function MobileNav() {
                                 Agoda
                             </a>
                             <a
-                                href="https://www.klook.com/en-US/country/4-thailand-things-to-do/"
+                                href="https://www.klook.com/en-US/country/4-thailand-things-to-do/?aid=111750"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
