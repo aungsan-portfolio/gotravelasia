@@ -198,9 +198,9 @@ export default function Home() {
     return `${TRIP_COM_BASE}?${params.toString()}`;
   }, []);
 
-  const buildRouteUrl = useCallback((origin: string, dest: string) => {
-    const defaultDate = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-    const targetUrl = `https://www.aviasales.com/search?origin_iata=${origin}&destination_iata=${dest}&depart_date=${defaultDate}&one_way=true&adults=1&locale=en&currency=USD`;
+  const buildRouteUrl = useCallback((origin: string, dest: string, dealDate?: string) => {
+    const searchDate = dealDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+    const targetUrl = `https://www.aviasales.com/search?origin_iata=${origin}&destination_iata=${dest}&depart_date=${searchDate}&one_way=true&adults=1&locale=en&currency=USD`;
     return `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
   }, []);
 
@@ -295,16 +295,22 @@ export default function Home() {
             <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
               {meta.updated_at ? `Updated ${meta.updated_at}` : "Indicative starting prices"}
             </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Prices may change. Click to see current availability.
+            </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {ROUTE_CONFIG.map((route) => {
               const matchedDeal = deals.find(
                 (d) => d.origin === route.origin && (d.destination === route.dest || (route.dest === "BKK" && d.destination === "DMK"))
               );
+              const displayDate = matchedDeal?.date
+                ? new Date(matchedDeal.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : null;
               return (
                 <a
                   key={`${route.origin}-${route.dest}`}
-                  href={buildRouteUrl(route.origin, route.dest)}
+                  href={buildRouteUrl(route.origin, route.dest, matchedDeal?.date)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
@@ -315,6 +321,11 @@ export default function Home() {
                   <div className="text-2xl font-bold font-mono text-primary group-hover:text-white">
                     {matchedDeal ? `from $${Math.round(matchedDeal.price)}` : "Check Price"}
                   </div>
+                  {displayDate && (
+                    <div className="text-xs text-muted-foreground group-hover:text-gray-300 mt-1 font-mono">
+                      on {displayDate}
+                    </div>
+                  )}
                 </a>
               );
             })}
