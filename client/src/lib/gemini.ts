@@ -4,7 +4,7 @@
  * Includes model fallback chain and retry logic for rate limiting.
  */
 
-const GEMINI_API_KEY = "AIzaSyBn5El-oSWpBBSSAcfNI6YjBb_vCAOIADI";
+const GEMINI_API_KEY = "AIzaSyDhSgXLnfbBiy7R46Du1Qtg6PjnvsLxcD4";
 
 // Model fallback chain — try flash first, fallback to flash-lite
 const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
