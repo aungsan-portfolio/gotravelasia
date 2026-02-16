@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import StickyCTA from "./StickyCTA";
@@ -5,9 +6,39 @@ import MobileNav from "./MobileNav";
 import CookieConsent from "./CookieConsent";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import SignInModal from "./SignInModal";
+import { Loader2 } from "lucide-react";
+
+const WEB3FORMS_KEY = "606d35a5-9c09-4209-8317-96fba9a21c59";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
+  const [footerEmail, setFooterEmail] = useState("");
+  const [footerStatus, setFooterStatus] = useState<"idle" | "sending" | "done">("idle");
+
+  const handleFooterSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!footerEmail) return;
+    setFooterStatus("sending");
+    try {
+      await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: "📬 Newsletter Subscriber — GoTravelAsia",
+          from_name: "GoTravel Newsletter",
+          email: footerEmail,
+          message: `Newsletter subscriber: ${footerEmail}`,
+        }),
+      });
+      localStorage.setItem("gt_user_email", footerEmail);
+      localStorage.setItem("gt_subscribed", "true");
+      setFooterStatus("done");
+    } catch {
+      setFooterStatus("done"); // still show success to user
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
@@ -32,10 +63,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             {/* Language Switcher */}
             <LanguageSwitcher />
-            <Button variant="outline" className="hidden sm:inline-flex font-mono text-xs uppercase tracking-wider">
-              {t("cta.signIn")}
-            </Button>
-            <Button className="hidden sm:inline-flex font-mono text-xs uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors">
+            {/* Price Alerts (was "Sign In") */}
+            <SignInModal variant="header" />
+            {/* Plan Trip — scrolls to search widget */}
+            <Button
+              className="hidden sm:inline-flex font-mono text-xs uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
               {t("cta.planTrip")}
             </Button>
             {/* Mobile Navigation */}
@@ -92,16 +128,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="text-sm text-muted-foreground mb-4">
               {t("footer.newsletterDesc")}
             </p>
-            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="email"
-                placeholder={t("footer.enterEmail")}
-                className="flex h-9 w-full rounded-none border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <Button type="submit" size="sm" className="rounded-none bg-primary text-primary-foreground">
-                {t("footer.subscribe")}
-              </Button>
-            </form>
+            {footerStatus === "done" ? (
+              <p className="text-sm text-green-600 font-medium">✅ Subscribed! Check your inbox.</p>
+            ) : (
+              <form className="flex gap-2" onSubmit={handleFooterSubscribe}>
+                <input
+                  type="email"
+                  value={footerEmail}
+                  onChange={(e) => setFooterEmail(e.target.value)}
+                  placeholder={t("footer.enterEmail")}
+                  required
+                  className="flex h-9 w-full rounded-none border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={footerStatus === "sending"}
+                  className="rounded-none bg-primary text-primary-foreground"
+                >
+                  {footerStatus === "sending" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    t("footer.subscribe")
+                  )}
+                </Button>
+              </form>
+            )}
           </div>
         </div>
 

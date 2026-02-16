@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X, Plane, MapPin, BookOpen, Mail } from "lucide-react";
+import SignInModal from "./SignInModal";
 
 export default function MobileNav() {
     const [open, setOpen] = useState(false);
@@ -89,10 +90,14 @@ export default function MobileNav() {
 
                     {/* CTAs */}
                     <div className="border-t border-border pt-6 space-y-3">
-                        <Button variant="outline" className="w-full justify-start font-mono text-xs uppercase">
-                            {t("cta.signIn")}
-                        </Button>
-                        <Button className="w-full justify-start font-mono text-xs uppercase bg-secondary text-secondary-foreground hover:bg-primary hover:text-white">
+                        <SignInModal variant="mobile" />
+                        <Button
+                            className="w-full justify-start font-mono text-xs uppercase bg-secondary text-secondary-foreground hover:bg-primary hover:text-white"
+                            onClick={() => {
+                                setOpen(false);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                        >
                             {t("cta.planTrip")}
                         </Button>
                     </div>
