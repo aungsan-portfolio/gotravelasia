@@ -7,6 +7,7 @@ import CookieConsent from "./CookieConsent";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import SignInModal from "./SignInModal";
+import TripPlannerChat from "./TripPlannerChat";
 import { Loader2 } from "lucide-react";
 
 const WEB3FORMS_KEY = "606d35a5-9c09-4209-8317-96fba9a21c59";
@@ -15,6 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const [footerEmail, setFooterEmail] = useState("");
   const [footerStatus, setFooterStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [chatOpen, setChatOpen] = useState(false);
 
   const handleFooterSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,20 +67,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <LanguageSwitcher />
             {/* Price Alerts (was "Sign In") */}
             <SignInModal variant="header" />
-            {/* Plan Trip — scrolls to search widget */}
+            {/* Plan Trip — opens AI chat */}
             <Button
               className="hidden sm:inline-flex font-mono text-xs uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors"
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
+              onClick={() => setChatOpen(true)}
             >
               {t("cta.planTrip")}
             </Button>
             {/* Mobile Navigation */}
-            <MobileNav />
+            <MobileNav onPlanTrip={() => setChatOpen(true)} />
           </div>
         </div>
       </header>
+
+      {/* AI Trip Planner Chat */}
+      <TripPlannerChat isOpen={chatOpen} onClose={() => setChatOpen(false)} />
 
       {/* Main Content */}
       <main className="flex-1">

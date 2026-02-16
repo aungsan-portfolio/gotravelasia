@@ -6,7 +6,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Menu, X, Plane, MapPin, BookOpen, Mail } from "lucide-react";
 import SignInModal from "./SignInModal";
 
-export default function MobileNav() {
+interface MobileNavProps {
+    onPlanTrip?: () => void;
+}
+
+export default function MobileNav({ onPlanTrip }: MobileNavProps) {
     const [open, setOpen] = useState(false);
     const { t } = useTranslation();
 
@@ -95,7 +99,7 @@ export default function MobileNav() {
                             className="w-full justify-start font-mono text-xs uppercase bg-secondary text-secondary-foreground hover:bg-primary hover:text-white"
                             onClick={() => {
                                 setOpen(false);
-                                window.scrollTo({ top: 0, behavior: "smooth" });
+                                onPlanTrip?.();
                             }}
                         >
                             {t("cta.planTrip")}
