@@ -288,51 +288,102 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ POPULAR ROUTES (Auto-updated from bot data) ═══════════ */}
+      {/* ═══════════ POPULAR ROUTES — Premium Cards (Auto-updated from bot data) ═══════════ */}
       <section className="py-16 bg-background border-b border-border">
         <div className="container">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tighter mb-2">
               Popular Routes from Myanmar
             </h2>
-            <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
-              {meta.updated_at ? `Updated ${meta.updated_at}` : "Indicative starting prices"}
+            <p className="text-muted-foreground font-myanmar text-base mt-1">
+              ရန်ကုန်・မန္တလေး ကနေ စျေးချိုဆုံး ခရီးစဉ်များ
             </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Prices may change. Click to see current availability.
+            <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider mt-2">
+              {meta.updated_at ? `Updated ${meta.updated_at}` : "Indicative starting prices"} · Prices may change
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {ROUTE_CONFIG.map((route) => {
-              const matchedDeal = deals.find(
-                (d) => d.origin === route.origin && (d.destination === route.dest || (route.dest === "BKK" && d.destination === "DMK"))
-              );
-              const displayDate = matchedDeal?.date
-                ? new Date(matchedDeal.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : null;
-              return (
-                <a
-                  key={`${route.origin}-${route.dest}`}
-                  href={buildRouteUrl(route.origin, route.dest, matchedDeal?.date)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
-                >
-                  <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary mb-2">
-                    {route.from} → {route.to}
-                  </div>
-                  <div className="text-2xl font-bold font-mono text-primary group-hover:text-white">
-                    {matchedDeal ? `from $${Math.round(matchedDeal.price)}` : "Check Price"}
-                  </div>
-                  {displayDate && (
-                    <div className="text-xs text-muted-foreground group-hover:text-gray-300 mt-1 font-mono">
-                      on {displayDate}
+
+          {loading && (
+            <div className="text-center py-12 text-muted-foreground">Loading deals…</div>
+          )}
+
+          {error && (
+            <div className="text-center py-12 text-destructive">Failed to load deals. Please refresh.</div>
+          )}
+
+          {!loading && !error && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {ROUTE_CONFIG.map((route) => {
+                const matchedDeal = deals.find(
+                  (d) => d.origin === route.origin && (d.destination === route.dest || (route.dest === "BKK" && d.destination === "DMK"))
+                );
+                const displayDate = matchedDeal?.date
+                  ? new Date(matchedDeal.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                  : null;
+
+                // Map destination to real image (fallback to gradient)
+                const DEST_IMAGES: Record<string, string> = {
+                  BKK: "/images/bangkok.jpg", DMK: "/images/bangkok.jpg",
+                  CNX: "/images/chiang-mai.jpg", HKT: "/images/phuket.jpg",
+                  SIN: "/images/tokyo.jpg", KUL: "/images/bali.jpg",
+                  SGN: "/images/krabi.jpg", HAN: "/images/chiang-rai.jpg",
+                  PNH: "/images/pai.jpg",
+                };
+                const destImage = DEST_IMAGES[route.dest];
+
+                return (
+                  <a
+                    key={`${route.origin}-${route.dest}`}
+                    href={buildRouteUrl(route.origin, route.dest, matchedDeal?.date)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative block rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Card Image */}
+                    <div className="relative h-44 sm:h-48 overflow-hidden">
+                      {destImage ? (
+                        <img
+                          src={destImage}
+                          alt={`${route.from} to ${route.to}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary/40" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                      {/* Price Badge */}
+                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm shadow-sm text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
+                        {matchedDeal ? `$${Math.round(matchedDeal.price)}` : "Check"}
+                      </div>
+
+                      {/* Route Name Overlay */}
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <div className="text-white font-bold text-lg leading-tight">
+                          {route.from} → {route.to}
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5 font-mono uppercase tracking-wider">
+                          {matchedDeal?.airline || "Multiple airlines"}
+                          {displayDate && ` · ${displayDate}`}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </a>
-              );
-            })}
-          </div>
+
+                    {/* Card Bottom */}
+                    <div className="bg-card border border-border border-t-0 rounded-b-2xl px-4 py-3 flex items-center justify-between group-hover:bg-primary group-hover:border-primary transition-colors">
+                      <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary">
+                        {route.origin}–{route.dest}
+                      </span>
+                      <span className="text-xs font-bold text-primary group-hover:text-white transition-colors">
+                        View Deal →
+                      </span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
