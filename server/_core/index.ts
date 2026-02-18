@@ -35,6 +35,75 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // Gemini Chat Proxy
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { contents } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY;
+
+      if (!apiKey) {
+        res.status(500).json({ error: "Server misconfiguration: API key missing" });
+        return;
+      }
+
+      if (!contents) {
+        res.status(400).json({ error: "Missing contents" });
+        return;
+      }
+
+      // Try flash first, then flash-lite (fallback logic can be here or simplified)
+      // For now, simple implementation with one model, or keep the retry logic here if preferred.
+      // Let's implement the loop here for robustness.
+      const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+
+      let lastError = null;
+
+      for (const model of MODELS) {
+        try {
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents,
+              generationConfig: {
+                temperature: 0.7,
+                topP: 0.9,
+                topK: 40,
+                maxOutputTokens: 1024,
+              },
+            }),
+          });
+
+          if (response.status === 429) {
+            console.log(`Rate limited on ${model}, trying next...`);
+            continue;
+          }
+
+          if (!response.ok) {
+            console.error(`Gemini ${model} error (${response.status}):`, await response.text());
+            continue;
+          }
+
+          const data = await response.json();
+          res.json(data);
+          return; // Success
+        } catch (err) {
+          console.error(`Gemini ${model} exception:`, err);
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("All models failed");
+
+    } catch (error) {
+      console.error("Chat proxy error:", error);
+      res.status(500).json({ error: "Failed to process chat request" });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

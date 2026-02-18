@@ -33,7 +33,7 @@ export interface ChatMessage {
 }
 
 /**
- * Send message with model fallback + retry on rate limits.
+ * Send message via server-side proxy.
  */
 export async function sendChatMessage(
     history: ChatMessage[],
@@ -49,55 +49,31 @@ export async function sendChatMessage(
         { role: "user", parts: [{ text: userMessage }] },
     ];
 
-    const body = JSON.stringify({
-        contents,
-        generationConfig: {
-            temperature: 0.7,
-            topP: 0.9,
-            topK: 40,
-            maxOutputTokens: 1024,
-        },
-    });
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents }),
+        });
 
-    // Try each model in the fallback chain
-    for (const model of MODELS) {
-        // Up to 2 retries per model
-        for (let attempt = 0; attempt < 2; attempt++) {
-            try {
-                const response = await fetch(getApiUrl(model), {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body,
-                });
-
-                if (response.status === 429) {
-                    // Rate limited — wait and retry or try next model
-                    const waitMs = (attempt + 1) * 2000; // 2s, 4s
-                    console.log(`Rate limited on ${model}. Waiting ${waitMs}ms...`);
-                    await new Promise((r) => setTimeout(r, waitMs));
-                    continue;
-                }
-
-                if (!response.ok) {
-                    console.error(`Gemini ${model} error (${response.status})`);
-                    break; // Try next model
-                }
-
-                const data = await response.json();
-
-                if (data?.candidates?.[0]?.finishReason === "SAFETY") {
-                    return "I can only help with travel-related questions. Could you rephrase? ✈️";
-                }
-
-                const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) return text;
-            } catch (err) {
-                console.error(`Gemini ${model} fetch error:`, err);
-                break; // Try next model
-            }
+        if (!response.ok) {
+            const err = await response.json();
+            console.error("Chat API Error:", err);
+            return "Sorry, I'm having trouble connecting to the server. Please try again later. 🙏";
         }
-    }
 
-    // All models failed
-    return "Our AI is currently busy. Please try again in about 30 seconds — the free tier has per-minute limits. 🙏";
+        const data = await response.json();
+
+        if (data?.candidates?.[0]?.finishReason === "SAFETY") {
+            return "I can only help with travel-related questions. Could you rephrase? ✈️";
+        }
+
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+
+        return "Thinking..."; // Should not happen if API returns text
+    } catch (err) {
+        console.error("Chat Proxy Fetch Error:", err);
+        return "Connection error. Please check your internet. 📶";
+    }
 }
