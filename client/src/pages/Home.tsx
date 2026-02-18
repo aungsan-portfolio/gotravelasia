@@ -294,38 +294,28 @@ export default function Home() {
           <p className="text-center text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-6">
             Compare prices from trusted travel brands
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
             {[
-              { name: "Aviasales", url: "https://www.aviasales.com", color: "#00B261", label: "Flights" },
-              { name: "Trip.com", url: "https://www.trip.com", color: "#287DFA", label: "Flights" },
-              { name: "Agoda", url: "https://www.agoda.com", color: "#E1262B", label: "Hotels" },
-              { name: "12Go", url: "https://12go.asia", color: "#F5A623", label: "Transport" },
-              { name: "Klook", url: "https://www.klook.com", color: "#FF5722", label: "Activities" },
+              { name: "Aviasales", url: "https://www.aviasales.com", logo: "/images/partners/aviasales.svg" },
+              { name: "Trip.com", url: "https://www.trip.com", logo: "/images/partners/tripcom.svg" },
+              { name: "Agoda", url: "https://www.agoda.com", logo: "/images/partners/agoda.svg" },
+              { name: "12Go", url: "https://12go.asia", logo: "/images/partners/12go.svg" },
+              { name: "Klook", url: "https://www.klook.com", logo: "/images/partners/klook.svg" },
             ].map((partner) => (
               <a
                 key={partner.name}
                 href={partner.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-3 px-5 py-3 bg-background border border-border rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all"
+                className="group hover:scale-105 hover:shadow-md transition-all rounded-md overflow-hidden"
+                title={`Search on ${partner.name}`}
               >
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center text-white font-black text-sm shrink-0"
-                  style={{ backgroundColor: partner.color }}
-                >
-                  {partner.name.charAt(0)}
-                </div>
-                <div className="flex flex-col">
-                  <span
-                    className="text-sm font-extrabold tracking-tight leading-tight"
-                    style={{ color: partner.color }}
-                  >
-                    {partner.name}
-                  </span>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                    {partner.label}
-                  </span>
-                </div>
+                <img
+                  src={partner.logo}
+                  alt={`${partner.name} logo`}
+                  className="h-10 md:h-12 w-auto"
+                  loading="lazy"
+                />
               </a>
             ))}
           </div>
