@@ -61,13 +61,6 @@ const COUNTRY_FLAGS: Record<string, string> = {
     Philippines: "🇵🇭",
 };
 
-const CURRENCIES = [
-    { code: "USD" as const, symbol: "$", label: "🇺🇸 USD" },
-    { code: "THB" as const, symbol: "฿", label: "🇹🇭 THB" },
-] as const;
-
-type CurrencyCode = (typeof CURRENCIES)[number]["code"];
-
 // Dynamic grouping by country for <optgroup>
 const DESTINATION_GROUPS = AIRPORTS.reduce<
     { key: string; label: string; options: Airport[] }[]
@@ -123,7 +116,6 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
-    const [currency, setCurrency] = useState<CurrencyCode>("USD");
     const [priceHint, setPriceHint] = useState("Check rates");
     const [openPax, setOpenPax] = useState(false);
 
@@ -135,7 +127,6 @@ export default function FlightWidget() {
     const cabinLabel =
         CABIN_OPTIONS.find((opt) => opt.value === cabinClass)?.label || "Economy";
     const travelerLabel = formatTravelerLabel(adults, children, infants);
-    const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
 
     // Clamp infants ≤ adults
     useEffect(() => {
@@ -202,13 +193,13 @@ export default function FlightWidget() {
                 ) as { price?: number } | undefined;
 
                 if (foundDeal && typeof foundDeal.price === "number") {
-                    setPriceHint(`From ${currencySymbol}${foundDeal.price}`);
+                    setPriceHint(`From $${foundDeal.price}`);
                 } else {
                     setPriceHint("Check rates");
                 }
             })
             .catch(() => setPriceHint("Check rates"));
-    }, [origin, destination, currencySymbol]);
+    }, [origin, destination]);
 
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
@@ -239,7 +230,7 @@ export default function FlightWidget() {
             infants: String(infants),
             trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
             locale: "en",
-            currency: currency,
+            currency: "USD",
         });
         if (returnDate) {
             params.set("return_date", returnDate);
@@ -485,28 +476,6 @@ export default function FlightWidget() {
                         </div>
                     </div>
                 )}
-            </div>
-
-            {/* CURRENCY TOGGLE */}
-            <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Currency:</span>
-                <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden">
-                    {CURRENCIES.map((c) => (
-                        <button
-                            key={c.code}
-                            type="button"
-                            onClick={() => setCurrency(c.code)}
-                            className={[
-                                "px-3 py-1.5 text-xs font-bold transition-colors",
-                                currency === c.code
-                                    ? "bg-gray-900 text-white"
-                                    : "bg-white text-gray-600 hover:bg-gray-50",
-                            ].join(" ")}
-                        >
-                            {c.label}
-                        </button>
-                    ))}
-                </div>
             </div>
 
             {/* ACTION AREA */}
