@@ -288,6 +288,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══════════ PARTNER LOGOS TRUST STRIP ═══════════ */}
+      <section className="py-6 bg-muted/20 border-b border-border">
+        <div className="container">
+          <p className="text-center text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+            Trusted by travelers • Powered by leading travel brands
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+            {[
+              { name: "Aviasales", url: "https://www.aviasales.com", emoji: "✈️" },
+              { name: "Trip.com", url: "https://www.trip.com", emoji: "🌍" },
+              { name: "Agoda", url: "https://www.agoda.com", emoji: "🏨" },
+              { name: "12Go", url: "https://12go.asia", emoji: "🚌" },
+              { name: "Klook", url: "https://www.klook.com", emoji: "🎫" },
+            ].map((partner) => (
+              <a
+                key={partner.name}
+                href={partner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-muted transition-colors group"
+              >
+                <span className="text-xl">{partner.emoji}</span>
+                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors tracking-tight">
+                  {partner.name}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════ POPULAR ROUTES (Auto-updated from bot data) ═══════════ */}
       <section className="py-16 bg-background border-b border-border">
         <div className="container">
@@ -540,6 +571,124 @@ export default function Home() {
                 <h4 className="font-bold">{item.title}</h4>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ DESTINATION QUICK LINKS ═══════════ */}
+      <section className="py-12 bg-background border-b border-border">
+        <div className="container">
+          <h2 className="text-2xl font-bold tracking-tighter mb-6">Quick Links</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {[
+              { text: "Flights: Yangon → Bangkok", origin: "RGN", dest: "BKK" },
+              { text: "Flights: Yangon → Singapore", origin: "RGN", dest: "SIN" },
+              { text: "Flights: Yangon → Chiang Mai", origin: "RGN", dest: "CNX" },
+              { text: "Flights: Yangon → Phuket", origin: "RGN", dest: "HKT" },
+              { text: "Flights: Yangon → KL", origin: "RGN", dest: "KUL" },
+              { text: "Flights: Mandalay → Bangkok", origin: "MDL", dest: "BKK" },
+              { text: "Flights: Yangon → Hanoi", origin: "RGN", dest: "HAN" },
+              { text: "Flights: Yangon → Ho Chi Minh", origin: "RGN", dest: "SGN" },
+              { text: "Flights: Yangon → Phnom Penh", origin: "RGN", dest: "PNH" },
+              { text: "Flights: Mandalay → Chiang Mai", origin: "MDL", dest: "CNX" },
+            ].map((link) => (
+              <a
+                key={`${link.origin}-${link.dest}`}
+                href={buildRouteUrl(link.origin, link.dest)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono text-primary hover:text-primary/80 hover:underline py-1 truncate"
+              >
+                {link.text}
+              </a>
+            ))}
+            {[
+              { text: "Transport: Bangkok → Chiang Mai", slug: "bangkok/chiang-mai" },
+              { text: "Transport: Bangkok → Phuket", slug: "bangkok/phuket" },
+              { text: "Transport: Bangkok → Pattaya", slug: "bangkok/pattaya" },
+              { text: "Transport: Bangkok → Koh Samui", slug: "bangkok/koh-samui" },
+              { text: "Transport: Chiang Mai → Pai", slug: "chiang-mai/pai" },
+              { text: "Transport: Phuket → Krabi", slug: "phuket/krabi" },
+              { text: "Transport: Bangkok → Hua Hin", slug: "bangkok/hua-hin" },
+              { text: "Transport: Bangkok → Koh Phangan", slug: "bangkok/koh-phangan" },
+              { text: "Transport: Chiang Mai → Chiang Rai", slug: "chiang-mai/chiang-rai" },
+              { text: "Transport: Bangkok → Koh Tao", slug: "bangkok/koh-tao" },
+            ].map((link) => (
+              <a
+                key={link.slug}
+                href={`https://12go.asia/en/travel/${link.slug}?referer=14566451&z=14566451`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono text-primary hover:text-primary/80 hover:underline py-1 truncate"
+              >
+                {link.text}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ HOW IT WORKS + FAQ (SEO CONTENT) ═══════════ */}
+      <section className="py-16 bg-muted/20 border-b border-border">
+        <div className="container max-w-4xl">
+          <h2 className="text-3xl font-bold tracking-tighter text-center mb-4">
+            How <span className="text-primary">GoTravelAsia</span> Works
+          </h2>
+          <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+            GoTravelAsia is a free travel comparison platform built for travelers from Myanmar.
+            We search across multiple airlines, hotels, and transport providers to find you the best deals
+            for your next trip to Thailand and Southeast Asia.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            {[
+              { step: "1", title: "Search", desc: "Enter your destination and travel dates. We compare real-time prices from Aviasales, Trip.com, Agoda, and 12Go." },
+              { step: "2", title: "Compare", desc: "See side-by-side pricing for flights, hotels, buses, trains, and ferries. Filter by price, duration, or provider." },
+              { step: "3", title: "Book", desc: "Click through to the provider with the best deal. Book directly on their platform — no markup, no hidden fees." },
+            ].map((item) => (
+              <div key={item.step} className="text-center space-y-3">
+                <div className="w-10 h-10 mx-auto bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg rounded-full">
+                  {item.step}
+                </div>
+                <h4 className="font-bold text-lg">{item.title}</h4>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* FAQ */}
+          <h3 className="text-2xl font-bold tracking-tighter text-center mb-6">Frequently Asked Questions</h3>
+          <div className="space-y-3">
+            {[
+              {
+                q: "How do I find cheap flights from Myanmar?",
+                a: "Use our flight search to compare prices from airlines like Myanmar Airways International (MAI), Thai AirAsia, and Thai Lion Air. We scan multiple booking platforms including Aviasales and Trip.com to find the lowest fares for routes from Yangon and Mandalay."
+              },
+              {
+                q: "Is GoTravelAsia free to use?",
+                a: "Yes! GoTravelAsia is completely free. We earn a small commission from our travel partners when you book through our links, but this never affects the price you pay."
+              },
+              {
+                q: "What transport options are available in Thailand?",
+                a: "Thailand has excellent transport options including VIP buses, sleeper trains, ferries, minivans, and domestic flights. We compare prices from providers like Nakhonchai Air, State Railway of Thailand, Lomprayah, and Bangkok Airways via 12Go.asia."
+              },
+              {
+                q: "How often are prices updated?",
+                a: "Flight prices are automatically updated every 6 hours using real-time data from the Travelpayouts API. Transport prices are also refreshed every 6 hours. Hotel prices are shown in real-time when you search."
+              },
+              {
+                q: "Can I use the AI Trip Planner?",
+                a: "Yes! Our AI Trip Planner is powered by Google Gemini and can help you plan your perfect Thailand itinerary. Just tell it your budget, interests, and travel dates, and it'll create a personalized plan."
+              },
+            ].map((faq, i) => (
+              <details key={i} className="group bg-card border border-border rounded-lg">
+                <summary className="flex items-center justify-between p-4 cursor-pointer font-medium hover:bg-muted/50 transition-colors">
+                  <span>{faq.q}</span>
+                  <span className="text-muted-foreground group-open:rotate-45 transition-transform text-xl">+</span>
+                </summary>
+                <p className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+              </details>
             ))}
           </div>
         </div>
