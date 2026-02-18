@@ -138,7 +138,7 @@ const ROUTE_CONFIG = [
 const TABS = [
   { id: "flights" as const, icon: "✈️", label: "Flights" },
   { id: "hotels" as const, icon: "🏨", label: "Hotels" },
-  { id: "transport" as const, icon: "🚌", label: "Transport" },
+  { id: "transport" as const, icon: "🚌", label: "Transport in Thailand" },
 ];
 
 /* ═══════════════════════════════════════════════════════════ */
