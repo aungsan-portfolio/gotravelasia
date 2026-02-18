@@ -249,7 +249,7 @@ export default function FlightWidget() {
         window.open(tpUrl, "_blank", "noopener,noreferrer");
     };
 
-    const handleAgodaSearch = () => {
+    const handleTripComSearch = () => {
         if (origin === destination) {
             alert("Origin and destination cannot be the same");
             return;
@@ -258,25 +258,23 @@ export default function FlightWidget() {
             alert("Please select a departure date");
             return;
         }
-        // Agoda flight search deep link
-        const agodaParams = new URLSearchParams({
-            site_id: "1922489",
-            tag: "gotravel-flights",
-            site_type: "1",
-            origin: origin,
-            destination: destination,
-            departureDate: departDate,
-            adults: String(adults),
-            children: String(children),
-            infants: String(infants),
-            currency: currency,
-            locale: "en-us",
+        // Trip.com flight affiliate deep link
+        const tripParams = new URLSearchParams({
+            locale: "en_US",
+            dcity: origin,
+            acity: destination,
+            ddate: departDate,
+            class: cabinClass === "C" || cabinClass === "F" ? "C" : "Y",
+            quantity: String(adults + children),
+            searchBoxArg: "t",
+            Allianceid: "7796167",
+            SID: "293794502",
         });
         if (returnDate) {
-            agodaParams.set("returnDate", returnDate);
+            tripParams.set("rdate", returnDate);
         }
-        const agodaUrl = `https://www.agoda.com/flights/results?${agodaParams.toString()}`;
-        window.open(agodaUrl, "_blank", "noopener,noreferrer");
+        const tripUrl = `https://www.trip.com/flights?${tripParams.toString()}`;
+        window.open(tripUrl, "_blank", "noopener,noreferrer");
     };
 
     return (
@@ -541,12 +539,12 @@ export default function FlightWidget() {
                         </span>
                     </button>
                     <button
-                        onClick={handleAgodaSearch}
-                        aria-label={`Compare prices on Agoda for ${getSelectedCountry()}`}
-                        className="w-full md:w-auto bg-white hover:bg-red-50 text-red-600 font-bold py-3 px-6 rounded-xl border-2 border-red-200 hover:border-red-400 transition-all flex items-center justify-center gap-2 text-sm"
+                        onClick={handleTripComSearch}
+                        aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
+                        className="w-full md:w-auto bg-white hover:bg-blue-50 text-blue-600 font-bold py-3 px-6 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all flex items-center justify-center gap-2 text-sm"
                     >
                         <ExternalLink className="w-4 h-4" />
-                        <span>Check Agoda</span>
+                        <span>Compare on Trip.com</span>
                     </button>
                 </div>
             </div>
