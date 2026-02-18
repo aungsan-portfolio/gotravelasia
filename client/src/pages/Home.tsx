@@ -289,30 +289,43 @@ export default function Home() {
       </section>
 
       {/* ═══════════ PARTNER LOGOS TRUST STRIP ═══════════ */}
-      <section className="py-6 bg-muted/20 border-b border-border">
+      <section className="py-8 bg-card border-b border-border">
         <div className="container">
-          <p className="text-center text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
-            Trusted by travelers • Powered by leading travel brands
+          <p className="text-center text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-6">
+            Compare prices from trusted travel brands
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
             {[
-              { name: "Aviasales", url: "https://www.aviasales.com", emoji: "✈️" },
-              { name: "Trip.com", url: "https://www.trip.com", emoji: "🌍" },
-              { name: "Agoda", url: "https://www.agoda.com", emoji: "🏨" },
-              { name: "12Go", url: "https://12go.asia", emoji: "🚌" },
-              { name: "Klook", url: "https://www.klook.com", emoji: "🎫" },
+              { name: "Aviasales", url: "https://www.aviasales.com", color: "#00B261", label: "Flights" },
+              { name: "Trip.com", url: "https://www.trip.com", color: "#287DFA", label: "Flights" },
+              { name: "Agoda", url: "https://www.agoda.com", color: "#E1262B", label: "Hotels" },
+              { name: "12Go", url: "https://12go.asia", color: "#F5A623", label: "Transport" },
+              { name: "Klook", url: "https://www.klook.com", color: "#FF5722", label: "Activities" },
             ].map((partner) => (
               <a
                 key={partner.name}
                 href={partner.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-muted transition-colors group"
+                className="group flex items-center gap-3 px-5 py-3 bg-background border border-border rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all"
               >
-                <span className="text-xl">{partner.emoji}</span>
-                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors tracking-tight">
-                  {partner.name}
-                </span>
+                <div
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-white font-black text-sm shrink-0"
+                  style={{ backgroundColor: partner.color }}
+                >
+                  {partner.name.charAt(0)}
+                </div>
+                <div className="flex flex-col">
+                  <span
+                    className="text-sm font-extrabold tracking-tight leading-tight"
+                    style={{ color: partner.color }}
+                  >
+                    {partner.name}
+                  </span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    {partner.label}
+                  </span>
+                </div>
               </a>
             ))}
           </div>
