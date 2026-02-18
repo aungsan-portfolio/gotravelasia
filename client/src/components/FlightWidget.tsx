@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
     Plane,
     Calendar,
@@ -9,6 +9,7 @@ import {
     ChevronDown,
     Minus,
     Plus,
+    ExternalLink,
 } from "lucide-react";
 
 // --- CONFIG DATA ---
@@ -38,6 +39,13 @@ const AIRPORTS = [
     // 🇰🇭 Cambodia (Niche/Direct)
     { code: "PNH", name: "Phnom Penh", country: "Cambodia" },
     { code: "REP", name: "Siem Reap", country: "Cambodia" },
+
+    // 🇮🇩 Indonesia (SEA Hub)
+    { code: "CGK", name: "Jakarta (Soekarno-Hatta)", country: "Indonesia" },
+    { code: "DPS", name: "Bali (Ngurah Rai)", country: "Indonesia" },
+
+    // 🇵🇭 Philippines (SEA Hub)
+    { code: "MNL", name: "Manila (Ninoy Aquino)", country: "Philippines" },
 ] as const;
 
 type Airport = (typeof AIRPORTS)[number];
@@ -49,7 +57,16 @@ const COUNTRY_FLAGS: Record<string, string> = {
     Malaysia: "🇲🇾",
     Vietnam: "🇻🇳",
     Cambodia: "🇰🇭",
+    Indonesia: "🇮🇩",
+    Philippines: "🇵🇭",
 };
+
+const CURRENCIES = [
+    { code: "USD" as const, symbol: "$", label: "🇺🇸 USD" },
+    { code: "THB" as const, symbol: "฿", label: "🇹🇭 THB" },
+] as const;
+
+type CurrencyCode = (typeof CURRENCIES)[number]["code"];
 
 // Dynamic grouping by country for <optgroup>
 const DESTINATION_GROUPS = AIRPORTS.reduce<
@@ -106,6 +123,7 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
+    const [currency, setCurrency] = useState<CurrencyCode>("USD");
     const [priceHint, setPriceHint] = useState("Check rates");
     const [openPax, setOpenPax] = useState(false);
 
@@ -117,6 +135,7 @@ export default function FlightWidget() {
     const cabinLabel =
         CABIN_OPTIONS.find((opt) => opt.value === cabinClass)?.label || "Economy";
     const travelerLabel = formatTravelerLabel(adults, children, infants);
+    const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
 
     // Clamp infants ≤ adults
     useEffect(() => {
@@ -183,13 +202,13 @@ export default function FlightWidget() {
                 ) as { price?: number } | undefined;
 
                 if (foundDeal && typeof foundDeal.price === "number") {
-                    setPriceHint(`From $${foundDeal.price}`);
+                    setPriceHint(`From ${currencySymbol}${foundDeal.price}`);
                 } else {
                     setPriceHint("Check rates");
                 }
             })
             .catch(() => setPriceHint("Check rates"));
-    }, [origin, destination]);
+    }, [origin, destination, currencySymbol]);
 
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
@@ -220,7 +239,7 @@ export default function FlightWidget() {
             infants: String(infants),
             trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
             locale: "en",
-            currency: "USD",
+            currency: currency,
         });
         if (returnDate) {
             params.set("return_date", returnDate);
@@ -228,6 +247,36 @@ export default function FlightWidget() {
         const targetUrl = `https://www.aviasales.com/search?${params.toString()}`;
         const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`;
         window.open(tpUrl, "_blank", "noopener,noreferrer");
+    };
+
+    const handleAgodaSearch = () => {
+        if (origin === destination) {
+            alert("Origin and destination cannot be the same");
+            return;
+        }
+        if (!departDate) {
+            alert("Please select a departure date");
+            return;
+        }
+        // Agoda flight search deep link
+        const agodaParams = new URLSearchParams({
+            site_id: "1922489",
+            tag: "gotravel-flights",
+            site_type: "1",
+            origin: origin,
+            destination: destination,
+            departureDate: departDate,
+            adults: String(adults),
+            children: String(children),
+            infants: String(infants),
+            currency: currency,
+            locale: "en-us",
+        });
+        if (returnDate) {
+            agodaParams.set("returnDate", returnDate);
+        }
+        const agodaUrl = `https://www.agoda.com/flights/results?${agodaParams.toString()}`;
+        window.open(agodaUrl, "_blank", "noopener,noreferrer");
     };
 
     return (
@@ -303,8 +352,8 @@ export default function FlightWidget() {
                     </label>
                     <div
                         className={`flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent transition-all ${returnDate
-                                ? "border-gray-300 bg-gray-50"
-                                : "group-hover:border-gray-300"
+                            ? "border-gray-300 bg-gray-50"
+                            : "group-hover:border-gray-300"
                             }`}
                     >
                         <ArrowRightLeft
@@ -440,6 +489,28 @@ export default function FlightWidget() {
                 )}
             </div>
 
+            {/* CURRENCY TOGGLE */}
+            <div className="flex items-center gap-2 mb-4">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Currency:</span>
+                <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden">
+                    {CURRENCIES.map((c) => (
+                        <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => setCurrency(c.code)}
+                            className={[
+                                "px-3 py-1.5 text-xs font-bold transition-colors",
+                                currency === c.code
+                                    ? "bg-gray-900 text-white"
+                                    : "bg-white text-gray-600 hover:bg-gray-50",
+                            ].join(" ")}
+                        >
+                            {c.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {/* ACTION AREA */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
                 {/* Price Hint from Bot Data */}
@@ -457,17 +528,27 @@ export default function FlightWidget() {
                     </div>
                 </div>
 
-                <button
-                    onClick={handleSearch}
-                    aria-label={`Search ${returnDate ? "round-trip" : "one-way"} ${cabinLabel} flights to ${getSelectedCountry()}`}
-                    className="w-full md:w-auto bg-black hover:bg-gray-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-3 group"
-                >
-                    <Plane className="w-5 h-5 fill-current group-hover:rotate-45 transition-transform duration-300" />
-                    <span>
-                        Search {returnDate ? "Round-trip" : "One-way"} in {cabinLabel} to{" "}
-                        {getSelectedCountry()}
-                    </span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                    <button
+                        onClick={handleSearch}
+                        aria-label={`Search ${returnDate ? "round-trip" : "one-way"} ${cabinLabel} flights to ${getSelectedCountry()}`}
+                        className="w-full md:w-auto bg-black hover:bg-gray-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-3 group"
+                    >
+                        <Plane className="w-5 h-5 fill-current group-hover:rotate-45 transition-transform duration-300" />
+                        <span>
+                            Search {returnDate ? "Round-trip" : "One-way"} to{" "}
+                            {getSelectedCountry()}
+                        </span>
+                    </button>
+                    <button
+                        onClick={handleAgodaSearch}
+                        aria-label={`Compare prices on Agoda for ${getSelectedCountry()}`}
+                        className="w-full md:w-auto bg-white hover:bg-red-50 text-red-600 font-bold py-3 px-6 rounded-xl border-2 border-red-200 hover:border-red-400 transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Check Agoda</span>
+                    </button>
+                </div>
             </div>
         </div>
     );
