@@ -218,7 +218,7 @@ FALLBACK_PRICES: dict[str, list[dict]] = {
 
 def build_affiliate_url(slug_from: str, slug_to: str) -> str:
     """Build 12Go.asia affiliate URL with tracking params."""
-    return f"https://12go.asia/en/travel/{slug_from}/{slug_to}?referer={AFFILIATE_ID}&z={AFFILIATE_ID}"
+    return f"https://12go.asia/en/travel/{slug_from}/{slug_to}?referer={AFFILIATE_ID}&z={AFFILIATE_ID}&sub_id=transport_schedule"
 
 
 def scrape_route(slug_from: str, slug_to: str) -> Optional[list[dict]]:

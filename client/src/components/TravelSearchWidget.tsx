@@ -44,7 +44,7 @@ const buildCustomerUrl = ({ fromCity, toCity, travelDate }: BuildUrlParams): str
 
     // Fallback to homepage if invalid
     if (!origin || !destination || origin === destination) {
-        return "https://12go.asia/en";
+        return "https://12go.asia/en?z=14566451&sub_id=transport_widget";
     }
 
     const routeUrl = new URL(`https://12go.asia/en/travel/${origin}/${destination}`);
@@ -54,6 +54,7 @@ const buildCustomerUrl = ({ fromCity, toCity, travelDate }: BuildUrlParams): str
     // ✅ DOUBLE LOCK TRACKING (အရေးကြီးသည်)
     routeUrl.searchParams.set("referer", AFFILIATE_ID);
     routeUrl.searchParams.set("z", AFFILIATE_ID);
+    routeUrl.searchParams.set("sub_id", "transport_widget");
 
     return routeUrl.toString();
 };

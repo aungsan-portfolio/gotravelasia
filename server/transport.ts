@@ -57,7 +57,7 @@ function mockSchedules(from: string, to: string): TransportSchedule[] {
         currency: 'THB',
         seats: 12,
         rating: 4.8,
-        bookingUrl: 'https://www.12go.asia/en/travel/bus/bangkok-chiang-mai',
+        bookingUrl: 'https://12go.asia/en/travel/bangkok/chiang-mai?z=14566451&sub_id=transport_api',
       },
       {
         id: '2',
@@ -98,7 +98,7 @@ function mockSchedules(from: string, to: string): TransportSchedule[] {
         currency: 'THB',
         seats: 15,
         rating: 4.5,
-        bookingUrl: 'https://www.12go.asia/en/travel/bus/bangkok-phuket',
+        bookingUrl: 'https://12go.asia/en/travel/bangkok/phuket?z=14566451&sub_id=transport_api',
       },
       {
         id: '5',
@@ -126,7 +126,7 @@ function mockSchedules(from: string, to: string): TransportSchedule[] {
         currency: 'THB',
         seats: 10,
         rating: 4.8,
-        bookingUrl: 'https://www.12go.asia/en/travel/bus/chiang-mai-bangkok',
+        bookingUrl: 'https://12go.asia/en/travel/chiang-mai/bangkok?z=14566451&sub_id=transport_api',
       },
     ],
     'PHK-KBI': [
@@ -141,7 +141,7 @@ function mockSchedules(from: string, to: string): TransportSchedule[] {
         currency: 'THB',
         seats: 8,
         rating: 4.6,
-        bookingUrl: 'https://www.12go.asia/en/travel/bus/phuket-krabi',
+        bookingUrl: 'https://12go.asia/en/travel/phuket/krabi?z=14566451&sub_id=transport_api',
       },
     ],
   };
@@ -178,7 +178,7 @@ export async function searchTransport(
     to,
     date,
     schedules,
-    affiliateLink: `https://www.12go.asia/en/travel/bus/${from.toLowerCase()}-${to.toLowerCase()}`,
+    affiliateLink: `https://12go.asia/en/travel/${from.toLowerCase()}-${to.toLowerCase()}?z=14566451&sub_id=transport_api`,
   };
 }
 

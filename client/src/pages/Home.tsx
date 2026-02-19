@@ -299,7 +299,7 @@ export default function Home() {
               { name: "Aviasales", url: "https://www.aviasales.com", logo: "/images/partners/aviasales.svg" },
               { name: "Trip.com", url: "https://www.trip.com", logo: "/images/partners/tripcom.svg" },
               { name: "Agoda", url: "https://www.agoda.com", logo: "https://cdn0.agoda.net/images/bimi/agoda-tiny-bimi-2.svg" },
-              { name: "12Go", url: "https://12go.asia", logo: "/images/partners/12go.svg" },
+              { name: "12Go", url: "https://12go.asia/?z=14566451&sub_id=partner_strip", logo: "/images/partners/12go.svg" },
               { name: "Klook", url: "https://www.klook.com", logo: "/images/partners/klook.svg" },
             ].map((partner) => (
               <a
@@ -620,7 +620,7 @@ export default function Home() {
             ].map((link) => (
               <a
                 key={link.slug}
-                href={`https://12go.asia/en/travel/${link.slug}?referer=14566451&z=14566451`}
+                href={`https://12go.asia/en/travel/${link.slug}?referer=14566451&z=14566451&sub_id=homepage_quicklink`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-mono text-primary hover:text-primary/80 hover:underline py-1 truncate"
