@@ -232,9 +232,9 @@ export default function Home() {
   return (
     <Layout>
       {/* ═══════════ HERO + TABBED SEARCH ═══════════ */}
-      <section className="relative min-h-[60vh] md:min-h-[65vh] flex flex-col justify-end pb-6 overflow-hidden">
+      <section className="relative min-h-[60vh] md:min-h-[65vh] flex flex-col justify-end pb-6">
         {/* Background */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img
             src="/images/hero-travel.jpg"
             alt="Southeast Asia Travel"
