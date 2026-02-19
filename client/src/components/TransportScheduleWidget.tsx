@@ -22,6 +22,7 @@ import {
     Loader2,
     RefreshCw,
 } from "lucide-react";
+import { FeaturedTrainCard } from "./FeaturedTrainCard";
 
 // ──────────────────────────────────────────────
 // Types (matches transport.json structure)
@@ -261,6 +262,9 @@ export default function TransportScheduleWidget() {
                         </Badge>
                     )}
                 </div>
+
+                {/* ✨ FEATURED JOURNEY CARD (BKK-CNX Only) ✨ */}
+                <FeaturedTrainCard from={query.from} to={query.to} />
 
                 {options.length === 0 ? (
                     <Card className="p-8 text-center border border-border">
