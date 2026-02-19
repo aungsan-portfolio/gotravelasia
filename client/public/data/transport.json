@@ -35,6 +35,30 @@
         },
         {
           "type": "Train",
+          "provider": "CNR 1st Class AC Sleeper",
+          "price": 1650,
+          "duration": "13 hours",
+          "departure": "18:10",
+          "arrival": "07:15 (+1)",
+          "rating": 4.9,
+          "currency": "THB",
+          "availability": "High Demand",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=transport_schedule"
+        },
+        {
+          "type": "Train",
+          "provider": "CNR 2nd Class AC Sleeper",
+          "price": 950,
+          "duration": "13 hours",
+          "departure": "18:10",
+          "arrival": "07:15 (+1)",
+          "rating": 4.7,
+          "currency": "THB",
+          "availability": "Available",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=transport_schedule"
+        },
+        {
+          "type": "Train",
           "provider": "State Railway (Sleeper)",
           "price": 1350,
           "duration": "12 hours",
@@ -70,6 +94,30 @@
           "arrival": "18:00",
           "rating": 4.3,
           "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
+        },
+        {
+          "type": "Train",
+          "provider": "CNR 1st Class AC Sleeper",
+          "price": 1650,
+          "duration": "13 hours",
+          "departure": "18:00",
+          "arrival": "06:50 (+1)",
+          "rating": 4.9,
+          "currency": "THB",
+          "availability": "High Demand",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
+        },
+        {
+          "type": "Train",
+          "provider": "CNR 2nd Class AC Sleeper",
+          "price": 950,
+          "duration": "13 hours",
+          "departure": "18:00",
+          "arrival": "06:50 (+1)",
+          "rating": 4.7,
+          "currency": "THB",
+          "availability": "Available",
           "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
         },
         {
@@ -812,5 +860,83 @@
         }
       ]
     }
-  ]
+  ],
+  "featuredTrains": {
+    "Bangkok-Chiang Mai": {
+      "trainNumber": "9",
+      "trainName": "Uttraphimuk Special Express (CNR)",
+      "departure": "18:10",
+      "arrival": "07:15 (+1)",
+      "duration": "13 hours",
+      "frequency": "Daily",
+      "classes": [
+        {
+          "class": "1st Class AC Sleeper",
+          "price": 1650,
+          "availability": "High Demand — Book 60-90 days ahead",
+          "features": [
+            "Private Lockable Cabin (2 Berth)",
+            "Touchscreen & USB Charging",
+            "Wash Basin & Mirror",
+            "Shared Hot Shower"
+          ]
+        },
+        {
+          "class": "2nd Class AC Sleeper",
+          "price": 950,
+          "availability": "Available — Book 30-60 days ahead",
+          "features": [
+            "Comfortable Open-Plan Berths",
+            "Privacy Curtains",
+            "Power Outlet at every berth",
+            "Clean Bedding Provided"
+          ]
+        }
+      ],
+      "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?z=14566451&sub_id=featured_train",
+      "tips": [
+        "Lower berths have windows and more space — book early for best picks",
+        "Dining car serves Thai food and drinks — bring snacks too",
+        "Hua Lamphong (Bangkok) or Krung Thep Aphiwat station — check your ticket"
+      ]
+    },
+    "Chiang Mai-Bangkok": {
+      "trainNumber": "10",
+      "trainName": "Uttraphimuk Special Express (CNR)",
+      "departure": "18:00",
+      "arrival": "06:50 (+1)",
+      "duration": "13 hours",
+      "frequency": "Daily",
+      "classes": [
+        {
+          "class": "1st Class AC Sleeper",
+          "price": 1650,
+          "availability": "High Demand — Book 60-90 days ahead",
+          "features": [
+            "Private Lockable Cabin (2 Berth)",
+            "Touchscreen & USB Charging",
+            "Wash Basin & Mirror",
+            "Shared Hot Shower"
+          ]
+        },
+        {
+          "class": "2nd Class AC Sleeper",
+          "price": 950,
+          "availability": "Available — Book 30-60 days ahead",
+          "features": [
+            "Comfortable Open-Plan Berths",
+            "Privacy Curtains",
+            "Power Outlet at every berth",
+            "Clean Bedding Provided"
+          ]
+        }
+      ],
+      "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?z=14566451&sub_id=featured_train",
+      "tips": [
+        "Lower berths have windows and more space — book early for best picks",
+        "Dining car serves Thai food and drinks — bring snacks too",
+        "Chiang Mai station is central — easy taxi/songthaew to Old City"
+      ]
+    }
+  }
 }

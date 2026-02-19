@@ -103,11 +103,15 @@ FALLBACK_PRICES: dict[str, list[dict]] = {
     "Bangkok-Chiang Mai": [
         {"type": "Bus", "provider": "Transport Co (VIP)", "price": 650, "duration": "10 hours", "departure": "08:00", "arrival": "18:00", "rating": 4.3},
         {"type": "Bus", "provider": "Nakhonchai Air", "price": 750, "duration": "9h 30m", "departure": "20:00", "arrival": "05:30 (+1)", "rating": 4.5},
+        {"type": "Train", "provider": "CNR 1st Class AC Sleeper", "price": 1500, "duration": "13 hours", "departure": "18:10", "arrival": "07:15 (+1)", "rating": 4.9, "availability": "High Demand"},
+        {"type": "Train", "provider": "CNR 2nd Class AC Sleeper", "price": 850, "duration": "13 hours", "departure": "18:10", "arrival": "07:15 (+1)", "rating": 4.7, "availability": "Available"},
         {"type": "Train", "provider": "State Railway (Sleeper)", "price": 1200, "duration": "12 hours", "departure": "19:00", "arrival": "07:00 (+1)", "rating": 4.6},
         {"type": "Flight", "provider": "Various Airlines", "price": 1500, "duration": "1h 20m", "departure": "Various", "arrival": "Various", "rating": 4.8},
     ],
     "Chiang Mai-Bangkok": [
         {"type": "Bus", "provider": "Transport Co (VIP)", "price": 650, "duration": "10 hours", "departure": "08:00", "arrival": "18:00", "rating": 4.3},
+        {"type": "Train", "provider": "CNR 1st Class AC Sleeper", "price": 1500, "duration": "13 hours", "departure": "18:00", "arrival": "06:50 (+1)", "rating": 4.9, "availability": "High Demand"},
+        {"type": "Train", "provider": "CNR 2nd Class AC Sleeper", "price": 850, "duration": "13 hours", "departure": "18:00", "arrival": "06:50 (+1)", "rating": 4.7, "availability": "Available"},
         {"type": "Train", "provider": "State Railway (Sleeper)", "price": 1200, "duration": "12 hours", "departure": "17:00", "arrival": "05:00 (+1)", "rating": 4.6},
         {"type": "Flight", "provider": "Various Airlines", "price": 1400, "duration": "1h 20m", "departure": "Various", "arrival": "Various", "rating": 4.8},
     ],
@@ -354,14 +358,78 @@ def build_transport_data() -> dict:
     }
 
     log.info(f"\n📊 Results: {scrape_success} scraped, {fallback_used} fallback, {len(routes_data)} total routes")
-    return result
+
+    # ─── Featured Train Data (BKK-CNX Special Express) ───
+    featured_trains = {
+        "Bangkok-Chiang Mai": {
+            "trainNumber": "9",
+            "trainName": "Uttraphimuk Special Express (CNR)",
+            "departure": "18:10",
+            "arrival": "07:15 (+1)",
+            "duration": "13 hours",
+            "frequency": "Daily",
+            "classes": [
+                {
+                    "class": "1st Class AC Sleeper",
+                    "price": apply_price_buffer(1500, "Train"),
+                    "availability": "High Demand — Book 60-90 days ahead",
+                    "features": ["Private Lockable Cabin (2 Berth)", "Touchscreen & USB Charging", "Wash Basin & Mirror", "Shared Hot Shower"],
+                },
+                {
+                    "class": "2nd Class AC Sleeper",
+                    "price": apply_price_buffer(850, "Train"),
+                    "availability": "Available — Book 30-60 days ahead",
+                    "features": ["Comfortable Open-Plan Berths", "Privacy Curtains", "Power Outlet at every berth", "Clean Bedding Provided"],
+                },
+            ],
+            "bookingUrl": f"https://12go.asia/en/travel/bangkok/chiang-mai?z={AFFILIATE_ID}&sub_id=featured_train",
+            "tips": [
+                "Lower berths have windows and more space — book early for best picks",
+                "Dining car serves Thai food and drinks — bring snacks too",
+                "Hua Lamphong (Bangkok) or Krung Thep Aphiwat station — check your ticket",
+            ],
+        },
+        "Chiang Mai-Bangkok": {
+            "trainNumber": "10",
+            "trainName": "Uttraphimuk Special Express (CNR)",
+            "departure": "18:00",
+            "arrival": "06:50 (+1)",
+            "duration": "13 hours",
+            "frequency": "Daily",
+            "classes": [
+                {
+                    "class": "1st Class AC Sleeper",
+                    "price": apply_price_buffer(1500, "Train"),
+                    "availability": "High Demand — Book 60-90 days ahead",
+                    "features": ["Private Lockable Cabin (2 Berth)", "Touchscreen & USB Charging", "Wash Basin & Mirror", "Shared Hot Shower"],
+                },
+                {
+                    "class": "2nd Class AC Sleeper",
+                    "price": apply_price_buffer(850, "Train"),
+                    "availability": "Available — Book 30-60 days ahead",
+                    "features": ["Comfortable Open-Plan Berths", "Privacy Curtains", "Power Outlet at every berth", "Clean Bedding Provided"],
+                },
+            ],
+            "bookingUrl": f"https://12go.asia/en/travel/chiang-mai/bangkok?z={AFFILIATE_ID}&sub_id=featured_train",
+            "tips": [
+                "Lower berths have windows and more space — book early for best picks",
+                "Dining car serves Thai food and drinks — bring snacks too",
+                "Chiang Mai station is central — easy taxi/songthaew to Old City",
+            ],
+        },
+    }
+
+    return result, featured_trains
 
 
 def main():
     dry_run = "--dry-run" in sys.argv
 
     log.info("🚀 GoTravel Price Bot starting...")
-    data = build_transport_data()
+    data, featured_trains = build_transport_data()
+
+    # Merge featured trains into data
+    data["featuredTrains"] = featured_trains
 
     if dry_run:
         log.info("🔍 DRY RUN — Preview:")
