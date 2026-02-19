@@ -114,21 +114,33 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                             <TabsContent value="exterior" className="h-full m-0 p-0">
                                 <img
                                     src="/images/trains/cnr-exterior.jpg"
-                                    alt="Thai Railways CNR Red Train"
+                                    alt="CNR Special Express Train — Bangkok to Chiang Mai"
+                                    width={800}
+                                    height={500}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                                 />
                             </TabsContent>
                             <TabsContent value="1st-class" className="h-full m-0 p-0">
                                 <img
                                     src="/images/trains/cnr-1st-class.jpg"
-                                    alt="1st Class Sleeper Cabin"
+                                    alt="CNR 1st Class Private Cabin with Lockable Door"
+                                    width={800}
+                                    height={500}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                                 />
                             </TabsContent>
                             <TabsContent value="2nd-class" className="h-full m-0 p-0">
                                 <img
                                     src="/images/trains/cnr-2nd-class.jpg"
-                                    alt="2nd Class Sleeper Berths"
+                                    alt="CNR 2nd Class AC Sleeper Berths with Curtains"
+                                    width={800}
+                                    height={500}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                                 />
                             </TabsContent>
