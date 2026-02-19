@@ -1,14 +1,6 @@
 import { useState, useMemo, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import {
     Bus,
     Train,
@@ -243,35 +235,29 @@ export default function TransportScheduleWidget() {
                     {/* From */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium">From</label>
-                        <Select value={from} onValueChange={handleFromChange}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {cities.map((city) => (
-                                    <SelectItem key={city} value={city}>
-                                        {city}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <select
+                            value={from}
+                            onChange={(e) => handleFromChange(e.target.value)}
+                            className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                            {cities.map((city) => (
+                                <option key={city} value={city}>{city}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* To */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium">To</label>
-                        <Select value={to} onValueChange={setTo}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {filteredToCities.map((city) => (
-                                    <SelectItem key={city} value={city}>
-                                        {city}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <select
+                            value={to}
+                            onChange={(e) => setTo(e.target.value)}
+                            className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                            {filteredToCities.map((city) => (
+                                <option key={city} value={city}>{city}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Search button */}
@@ -298,14 +284,14 @@ export default function TransportScheduleWidget() {
                     <div className="flex items-center gap-2">
                         {(loading || isPending) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
                         {loadError && (
-                            <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
+                            <span className="inline-flex items-center rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-700">
                                 Offline data (live schedules unavailable)
-                            </Badge>
+                            </span>
                         )}
                         {options.length > 0 && (
-                            <Badge variant="outline" className="text-xs">
+                            <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">
                                 {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
-                            </Badge>
+                            </span>
                         )}
                     </div>
                 </div>
