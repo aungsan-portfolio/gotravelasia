@@ -298,7 +298,7 @@ export default function Home() {
             {[
               { name: "Aviasales", url: "https://www.aviasales.com", logo: "/images/partners/aviasales.svg" },
               { name: "Trip.com", url: "https://www.trip.com", logo: "/images/partners/tripcom.svg" },
-              { name: "Agoda", url: "https://www.agoda.com", logo: "/images/partners/agoda.svg" },
+              { name: "Agoda", url: "https://www.agoda.com", logo: "https://cdn0.agoda.net/images/bimi/agoda-tiny-bimi-2.svg" },
               { name: "12Go", url: "https://12go.asia", logo: "/images/partners/12go.svg" },
               { name: "Klook", url: "https://www.klook.com", logo: "/images/partners/klook.svg" },
             ].map((partner) => (
