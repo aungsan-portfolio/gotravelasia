@@ -113,21 +113,21 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
 
                             <TabsContent value="exterior" className="h-full m-0 p-0">
                                 <img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/201701_SRT_CNR_Second_Class_Sleeper_Coaches_as_023_at_Bangkok_Station.jpg/1024px-201701_SRT_CNR_Second_Class_Sleeper_Coaches_as_023_at_Bangkok_Station.jpg"
+                                    src="/images/trains/cnr-exterior.jpg"
                                     alt="Thai Railways CNR Red Train"
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                                 />
                             </TabsContent>
                             <TabsContent value="1st-class" className="h-full m-0 p-0">
                                 <img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/201701_Cabin_Corridor_of_SRT_CNR_First_Class_Sleeper_Coach.jpg/1024px-201701_Cabin_Corridor_of_SRT_CNR_First_Class_Sleeper_Coach.jpg"
-                                    alt="1st Class Sleeper Cabin Corridor"
+                                    src="/images/trains/cnr-1st-class.jpg"
+                                    alt="1st Class Sleeper Cabin"
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                                 />
                             </TabsContent>
                             <TabsContent value="2nd-class" className="h-full m-0 p-0">
                                 <img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/201701_Beds_at_SRT_CNR_Second_Class_Sleeper_Coach_%282%29.jpg/1024px-201701_Beds_at_SRT_CNR_Second_Class_Sleeper_Coach_%282%29.jpg"
+                                    src="/images/trains/cnr-2nd-class.jpg"
                                     alt="2nd Class Sleeper Berths"
                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                                 />
