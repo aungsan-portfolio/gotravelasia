@@ -234,7 +234,7 @@ export default function Home() {
       {/* ═══════════ HERO + TABBED SEARCH ═══════════ */}
       <section className="relative min-h-[60vh] md:min-h-[65vh] flex flex-col justify-end pb-6">
         {/* Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img
             src="/images/hero-travel.jpg"
             alt="Southeast Asia Travel"
@@ -285,7 +285,14 @@ export default function Home() {
             <div className="p-4 md:p-6">
               {activeTab === "flights" && <FlightWidget />}
               {activeTab === "hotels" && <HotelsSearchForm />}
-              {activeTab === "transport" && <TransportScheduleWidget />}
+              {activeTab === "transport" && (
+                <div
+                  className="w-full overflow-y-auto max-h-[550px] md:max-h-none relative z-10"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  <TransportScheduleWidget />
+                </div>
+              )}
             </div>
           </div>
         </div>

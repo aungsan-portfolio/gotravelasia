@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Badge import removed — using native spans for mobile compatibility
+// Radix Tabs removed — causes touch/scroll freeze on mobile browsers
 import {
     Train, Wifi, Snowflake, Coffee, Ticket, ExternalLink,
     CalendarClock, AlertTriangle, Lightbulb,
@@ -152,12 +152,11 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
     return (
         <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center gap-2 mb-3">
-                <Badge
-                    variant="default"
-                    className="bg-red-600 hover:bg-red-700 text-white border-none px-3 py-1 text-xs uppercase tracking-wider shadow-sm"
+                <span
+                    className="inline-flex items-center rounded-md bg-red-600 hover:bg-red-700 text-white border-none px-3 py-1 text-xs uppercase tracking-wider shadow-sm"
                 >
                     🌟 Featured Journey
-                </Badge>
+                </span>
                 <span className="text-sm text-muted-foreground font-medium">
                     most popular choice
                 </span>
@@ -167,82 +166,39 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-5">
                     {/* ── Image Showcase ── */}
                     <div className="lg:col-span-2 relative bg-slate-100 overflow-hidden aspect-[16/10] lg:aspect-auto lg:h-full">
-                        <Tabs
-                            value={activeTab}
-                            onValueChange={(v) =>
-                                setActiveTab(v as "exterior" | "1st-class" | "2nd-class")
-                            }
-                            className="h-full w-full relative"
-                        >
-                            <div className="absolute top-4 left-4 z-20">
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-black/70 text-white backdrop-blur-md border-none text-xs"
-                                >
-                                    Special Express CNR
-                                </Badge>
-                            </div>
+                        {/* Image — state-driven, no Radix portals */}
+                        <img
+                            src={activeTab === "exterior" ? exteriorImg : activeTab === "1st-class" ? firstImg : secondImg}
+                            alt={activeTab === "exterior" ? "CNR Special Express Train" : activeTab === "1st-class" ? "CNR 1st Class Private Cabin" : "CNR 2nd Class AC Sleeper"}
+                            className="w-full h-full object-cover absolute inset-0"
+                            loading="lazy"
+                            decoding="async"
+                        />
 
-                            <div className="absolute bottom-4 left-4 right-4 z-20">
-                                <TabsList className="grid w-full grid-cols-3 bg-black/60 backdrop-blur-md border-white/10 text-white p-1 rounded-lg">
-                                    <TabsTrigger
-                                        value="exterior"
-                                        className="text-sm py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white"
-                                    >
-                                        Train
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="1st-class"
-                                        className="text-sm py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white"
-                                    >
-                                        1st Class
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="2nd-class"
-                                        className="text-sm py-2 data-[state=active]:bg-red-600 data-[state=active]:text-white"
-                                    >
-                                        2nd Class
-                                    </TabsTrigger>
-                                </TabsList>
-                            </div>
+                        {/* Label */}
+                        <div className="absolute top-4 left-4 z-20">
+                            <span className="inline-flex items-center bg-black/70 text-white backdrop-blur-md border-none text-xs px-2.5 py-1 rounded-md">
+                                Special Express CNR
+                            </span>
+                        </div>
 
-                            <TabsContent
-                                value="exterior"
-                                className="m-0 p-0 absolute inset-0"
-                            >
-                                <img
-                                    src={exteriorImg}
-                                    alt="CNR Special Express Train — Bangkok to Chiang Mai"
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    decoding="async"
-                                />
-                            </TabsContent>
-                            <TabsContent
-                                value="1st-class"
-                                className="m-0 p-0 absolute inset-0"
-                            >
-                                <img
-                                    src={firstImg}
-                                    alt="CNR 1st Class Private Cabin with Lockable Door"
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    decoding="async"
-                                />
-                            </TabsContent>
-                            <TabsContent
-                                value="2nd-class"
-                                className="m-0 p-0 absolute inset-0"
-                            >
-                                <img
-                                    src={secondImg}
-                                    alt="CNR 2nd Class AC Sleeper Berths with Curtains"
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    decoding="async"
-                                />
-                            </TabsContent>
-                        </Tabs>
+                        {/* Tab buttons — simple native buttons */}
+                        <div className="absolute bottom-4 left-4 right-4 z-20">
+                            <div className="grid w-full grid-cols-3 bg-black/60 backdrop-blur-md border-white/10 p-1 rounded-lg">
+                                {(["exterior", "1st-class", "2nd-class"] as const).map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`text-sm py-2 rounded-md transition-colors ${activeTab === tab
+                                            ? "bg-red-600 text-white"
+                                            : "text-white/70 hover:text-white"
+                                            }`}
+                                    >
+                                        {tab === "exterior" ? "Train" : tab === "1st-class" ? "1st Class" : "2nd Class"}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     {/* ── Right: Content & Booking ── */}
@@ -276,18 +232,18 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                                 {firstClass && (
                                     <div
                                         className={`p-4 rounded-xl border transition-all ${isFirstActive
-                                                ? "bg-red-50 border-red-200 shadow-sm"
-                                                : "bg-white border-slate-100 hover:border-red-100"
+                                            ? "bg-red-50 border-red-200 shadow-sm"
+                                            : "bg-white border-slate-100 hover:border-red-100"
                                             }`}
                                     >
                                         <h4 className="font-bold text-red-700 mb-1 flex items-center gap-2">
                                             <Ticket className="w-4 h-4" /> {firstClass.class}
                                         </h4>
-                                        <Badge
-                                            className={`mb-2 text-[10px] font-medium border ${getAvailabilityColor(firstClass.availability)}`}
+                                        <span
+                                            className={`inline-flex items-center rounded-md px-2 py-0.5 mb-2 text-[10px] font-medium border ${getAvailabilityColor(firstClass.availability)}`}
                                         >
                                             {firstClass.availability}
-                                        </Badge>
+                                        </span>
                                         <ul className="text-sm space-y-1 text-slate-600">
                                             {firstClass.features.map((f, i) => (
                                                 <li key={i} className="flex items-center gap-2">
@@ -305,18 +261,18 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                                 {secondClass && (
                                     <div
                                         className={`p-4 rounded-xl border transition-all ${isSecondActive
-                                                ? "bg-red-50 border-red-200 shadow-sm"
-                                                : "bg-white border-slate-100 hover:border-red-100"
+                                            ? "bg-red-50 border-red-200 shadow-sm"
+                                            : "bg-white border-slate-100 hover:border-red-100"
                                             }`}
                                     >
                                         <h4 className="font-bold text-red-700 mb-1 flex items-center gap-2">
                                             <Ticket className="w-4 h-4" /> {secondClass.class}
                                         </h4>
-                                        <Badge
-                                            className={`mb-2 text-[10px] font-medium border ${getAvailabilityColor(secondClass.availability)}`}
+                                        <span
+                                            className={`inline-flex items-center rounded-md px-2 py-0.5 mb-2 text-[10px] font-medium border ${getAvailabilityColor(secondClass.availability)}`}
                                         >
                                             {secondClass.availability}
-                                        </Badge>
+                                        </span>
                                         <ul className="text-sm space-y-1 text-slate-600">
                                             {secondClass.features.map((f, i) => (
                                                 <li key={i} className="flex items-center gap-2">
