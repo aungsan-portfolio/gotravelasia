@@ -136,9 +136,9 @@ const ROUTE_CONFIG = [
 
 /* ─── Tab Config ─── */
 const TABS = [
-  { id: "flights" as const, icon: "✈️", label: "Flights" },
-  { id: "hotels" as const, icon: "🏨", label: "Hotels" },
-  { id: "transport" as const, icon: "🚌", label: "Transport in Thailand" },
+  { id: "flights" as const, icon: "✈️", label: "Flights", mobileLabel: "Flights" },
+  { id: "hotels" as const, icon: "🏨", label: "Hotels", mobileLabel: "Hotels" },
+  { id: "transport" as const, icon: "🚌", label: "Transport in Thailand", mobileLabel: "Transport" },
 ];
 
 /* ═══════════════════════════════════════════════════════════ */
@@ -267,13 +267,16 @@ export default function Home() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 md:py-5 flex items-center justify-center gap-2 md:gap-3 transition-all font-mono text-xs md:text-sm uppercase tracking-widest ${activeTab === tab.id
+                  className={`py-3 md:py-5 flex items-center justify-center gap-1.5 md:gap-3 transition-all font-mono text-[10px] md:text-sm uppercase tracking-wider md:tracking-widest ${activeTab === tab.id
                     ? "bg-white/10 text-secondary border-b-2 border-secondary"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                     }`}
                 >
-                  <span className="text-xl md:text-2xl">{tab.icon}</span>
-                  <span className="font-bold">{tab.label}</span>
+                  <span className="text-lg md:text-2xl">{tab.icon}</span>
+                  <span className="font-bold truncate">
+                    <span className="hidden md:inline">{tab.label}</span>
+                    <span className="md:hidden">{tab.mobileLabel}</span>
+                  </span>
                 </button>
               ))}
             </div>
