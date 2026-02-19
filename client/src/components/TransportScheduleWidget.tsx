@@ -224,11 +224,9 @@ export default function TransportScheduleWidget() {
                         <Search className="w-5 h-5 text-primary" />
                         Search Transport
                     </h3>
-                    {data.lastUpdated && (
-                        <span className="text-xs text-muted-foreground font-mono">
-                            {formatLastUpdated(data.lastUpdated)}
-                        </span>
-                    )}
+                    <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
+                        Estimated Prices • 2026
+                    </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
