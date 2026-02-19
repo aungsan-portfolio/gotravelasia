@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,6 @@ import {
     ExternalLink,
     Search,
     Loader2,
-    RefreshCw,
 } from "lucide-react";
 import { FeaturedTrainCard } from "./FeaturedTrainCard";
 
@@ -98,48 +97,68 @@ const assetUrl = (path: string) => {
 };
 
 // ──────────────────────────────────────────────
+// Fallback data – renders instantly before fetch
+// ──────────────────────────────────────────────
+const FALLBACK_DATA: TransportData = {
+    lastUpdated: new Date().toISOString(),
+    routes: [
+        {
+            from: "Bangkok",
+            to: "Chiang Mai",
+            options: [
+                {
+                    type: "Train",
+                    provider: "State Railway of Thailand",
+                    price: 950,
+                    currency: "THB",
+                    duration: "13h",
+                    departure: "18:10",
+                    arrival: "07:15 (+1)",
+                    bookingUrl: "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=fallback_train",
+                },
+                {
+                    type: "Flight",
+                    provider: "Thai AirAsia",
+                    price: 1890,
+                    currency: "THB",
+                    duration: "1h 10m",
+                    departure: "08:00",
+                    arrival: "09:10",
+                    bookingUrl: "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=fallback_flight",
+                },
+            ],
+        },
+    ],
+};
+
+// ──────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────
 
 export default function TransportScheduleWidget() {
-    const [data, setData] = useState<TransportData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
+    const [data, setData] = useState<TransportData>(FALLBACK_DATA);
+    const [isPending, startTransition] = useTransition();
     const [from, setFrom] = useState("Bangkok");
     const [to, setTo] = useState("Chiang Mai");
     const [query, setQuery] = useState({ from: "Bangkok", to: "Chiang Mai" });
 
-    // Fetch transport.json with timeout for mobile reliability
+    // Background fetch – UI is never blocked
     useEffect(() => {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-        fetch(assetUrl("data/transport.json"), { signal: controller.signal })
+        fetch(assetUrl("data/transport.json"), { signal: controller.signal, cache: "force-cache" })
             .then(async (res) => {
-                if (!res.ok) throw new Error("Failed to load");
-                const ct = res.headers.get("content-type") || "";
-                if (!ct.includes("application/json")) throw new Error("Not JSON");
-                return res.json();
+                if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
+                const json = await res.json();
+                startTransition(() => setData(json));
             })
-            .then((json: TransportData) => {
-                setData(json);
-                setLoading(false);
-            })
-            .catch(() => {
-                setError(true);
-                setLoading(false);
-            })
-            .finally(() => clearTimeout(timeout));
+            .catch(() => { }); // fallback data stays in place
 
-        return () => {
-            controller.abort();
-            clearTimeout(timeout);
-        };
+        return () => controller.abort();
     }, []);
 
     // Extract available cities from loaded data
     const cities = useMemo(() => {
-        if (!data) return [];
         const citySet = new Set<string>();
         data.routes.forEach((r) => {
             citySet.add(r.from);
@@ -156,7 +175,6 @@ export default function TransportScheduleWidget() {
 
     // Get matching schedule options (sorted cheapest first)
     const options = useMemo(() => {
-        if (!data) return [];
         const route = data.routes.find(
             (r) => r.from === query.from && r.to === query.to
         );
@@ -176,34 +194,6 @@ export default function TransportScheduleWidget() {
     const handleSearch = () => {
         setQuery({ from, to });
     };
-
-    // ── Loading State ──
-    if (loading) {
-        return (
-            <Card className="p-12 text-center border border-border">
-                <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-3" />
-                <p className="text-muted-foreground">Loading transport schedules...</p>
-            </Card>
-        );
-    }
-
-    // ── Error State ──
-    if (error || !data) {
-        return (
-            <Card className="p-12 text-center border border-border">
-                <p className="text-muted-foreground mb-4">
-                    Unable to load transport data. Please refresh or try again later.
-                </p>
-                <Button
-                    variant="outline"
-                    onClick={() => window.location.reload()}
-                    className="gap-2"
-                >
-                    <RefreshCw className="w-4 h-4" /> Retry
-                </Button>
-            </Card>
-        );
-    }
 
     return (
         <div className="w-full space-y-6">
@@ -277,25 +267,34 @@ export default function TransportScheduleWidget() {
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
                         {query.to}
                     </h4>
-                    {options.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                            {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
-                        </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isPending && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        {options.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                                {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
+                            </Badge>
+                        )}
+                    </div>
                 </div>
 
                 {/* ✨ FEATURED JOURNEY CARD (BKK-CNX Only) ✨ */}
                 <FeaturedTrainCard from={query.from} to={query.to} />
 
-                {options.length === 0 ? (
-                    <Card className="p-8 text-center border border-border">
-                        <p className="text-muted-foreground">
-                            No schedules found for this route. Try different cities.
-                        </p>
-                    </Card>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {options.map((option, idx) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {options.length === 0 ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <Card key={i} className="p-5 animate-pulse">
+                                <div className="h-4 bg-muted rounded w-24 mb-4" />
+                                <div className="h-6 bg-muted rounded w-3/4 mb-6" />
+                                <div className="space-y-3">
+                                    <div className="h-4 bg-muted rounded w-full" />
+                                    <div className="h-4 bg-muted rounded w-2/3" />
+                                </div>
+                                <div className="h-10 bg-muted rounded mt-6" />
+                            </Card>
+                        ))
+                    ) : (
+                        options.map((option, idx) => (
                             <Card
                                 key={idx}
                                 className={`p-5 border hover:shadow-lg transition-all duration-200 flex flex-col ${idx === 0 ? "border-primary/50 ring-1 ring-primary/20" : "border-border"
@@ -369,9 +368,9 @@ export default function TransportScheduleWidget() {
                                     </Button>
                                 </a>
                             </Card>
-                        ))}
-                    </div>
-                )}
+                        ))
+                    )}
+                </div>
             </div>
 
             {/* ── Affiliate Disclosure ── */}
