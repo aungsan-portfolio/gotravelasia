@@ -88,6 +88,16 @@ const formatLastUpdated = (isoDate: string): string => {
 };
 
 // ──────────────────────────────────────────────
+// Vite basePath-safe asset URL
+// ──────────────────────────────────────────────
+const assetUrl = (path: string) => {
+    const base = (import.meta as any)?.env?.BASE_URL ?? "/";
+    const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+    const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    return `${normalizedBase}${normalizedPath}`;
+};
+
+// ──────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────
 
@@ -99,11 +109,16 @@ export default function TransportScheduleWidget() {
     const [to, setTo] = useState("Chiang Mai");
     const [query, setQuery] = useState({ from: "Bangkok", to: "Chiang Mai" });
 
-    // Fetch transport.json from public/data/
+    // Fetch transport.json with timeout for mobile reliability
     useEffect(() => {
-        fetch("/data/transport.json")
-            .then((res) => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        fetch(assetUrl("data/transport.json"), { signal: controller.signal })
+            .then(async (res) => {
                 if (!res.ok) throw new Error("Failed to load");
+                const ct = res.headers.get("content-type") || "";
+                if (!ct.includes("application/json")) throw new Error("Not JSON");
                 return res.json();
             })
             .then((json: TransportData) => {
@@ -113,7 +128,13 @@ export default function TransportScheduleWidget() {
             .catch(() => {
                 setError(true);
                 setLoading(false);
-            });
+            })
+            .finally(() => clearTimeout(timeout));
+
+        return () => {
+            controller.abort();
+            clearTimeout(timeout);
+        };
     }, []);
 
     // Extract available cities from loaded data
