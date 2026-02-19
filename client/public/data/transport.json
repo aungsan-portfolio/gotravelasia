@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-02-19T06:50:02.931919+00:00",
+  "lastUpdated": "2026-02-19T12:41:30.544048+00:00",
   "affiliateId": "14566451",
   "totalRoutes": 26,
   "scrapeStats": {
@@ -35,26 +35,14 @@
         },
         {
           "type": "Train",
-          "provider": "CNR 1st Class AC Sleeper",
-          "price": 1650,
-          "duration": "13 hours",
-          "departure": "18:10",
-          "arrival": "07:15 (+1)",
-          "rating": 4.9,
-          "currency": "THB",
-          "availability": "High Demand",
-          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=transport_schedule"
-        },
-        {
-          "type": "Train",
           "provider": "CNR 2nd Class AC Sleeper",
           "price": 950,
           "duration": "13 hours",
           "departure": "18:10",
           "arrival": "07:15 (+1)",
           "rating": 4.7,
-          "currency": "THB",
           "availability": "Available",
+          "currency": "THB",
           "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=transport_schedule"
         },
         {
@@ -65,6 +53,18 @@
           "departure": "19:00",
           "arrival": "07:00 (+1)",
           "rating": 4.6,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=transport_schedule"
+        },
+        {
+          "type": "Train",
+          "provider": "CNR 1st Class AC Sleeper",
+          "price": 1650,
+          "duration": "13 hours",
+          "departure": "18:10",
+          "arrival": "07:15 (+1)",
+          "rating": 4.9,
+          "availability": "High Demand",
           "currency": "THB",
           "bookingUrl": "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=transport_schedule"
         },
@@ -98,26 +98,14 @@
         },
         {
           "type": "Train",
-          "provider": "CNR 1st Class AC Sleeper",
-          "price": 1650,
-          "duration": "13 hours",
-          "departure": "18:00",
-          "arrival": "06:50 (+1)",
-          "rating": 4.9,
-          "currency": "THB",
-          "availability": "High Demand",
-          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
-        },
-        {
-          "type": "Train",
           "provider": "CNR 2nd Class AC Sleeper",
           "price": 950,
           "duration": "13 hours",
           "departure": "18:00",
           "arrival": "06:50 (+1)",
           "rating": 4.7,
-          "currency": "THB",
           "availability": "Available",
+          "currency": "THB",
           "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
         },
         {
@@ -128,6 +116,18 @@
           "departure": "17:00",
           "arrival": "05:00 (+1)",
           "rating": 4.6,
+          "currency": "THB",
+          "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
+        },
+        {
+          "type": "Train",
+          "provider": "CNR 1st Class AC Sleeper",
+          "price": 1650,
+          "duration": "13 hours",
+          "departure": "18:00",
+          "arrival": "06:50 (+1)",
+          "rating": 4.9,
+          "availability": "High Demand",
           "currency": "THB",
           "bookingUrl": "https://12go.asia/en/travel/chiang-mai/bangkok?referer=14566451&z=14566451&sub_id=transport_schedule"
         },
