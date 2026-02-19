@@ -138,24 +138,52 @@ const FALLBACK_DATA: TransportData = {
 export default function TransportScheduleWidget() {
     const [data, setData] = useState<TransportData>(FALLBACK_DATA);
     const [isPending, startTransition] = useTransition();
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [from, setFrom] = useState("Bangkok");
     const [to, setTo] = useState("Chiang Mai");
     const [query, setQuery] = useState({ from: "Bangkok", to: "Chiang Mai" });
 
-    // Background fetch – UI is never blocked
+    // Background fetch – UI always shows fallback, upgrades to live data when ready
     useEffect(() => {
+        let cancelled = false;
         const controller = new AbortController();
 
-        fetch(assetUrl("data/transport.json"), { signal: controller.signal, cache: "force-cache" })
-            .then(async (res) => {
-                if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
-                const json = await res.json();
-                startTransition(() => setData(json));
-            })
-            .catch(() => { }); // fallback data stays in place
+        async function load() {
+            setLoading(true);
+            setLoadError(null);
 
-        return () => controller.abort();
-    }, []);
+            try {
+                const res = await fetch(assetUrl("data/transport.json"), {
+                    signal: controller.signal,
+                    cache: "no-store",
+                });
+
+                if (!res.ok) throw new Error(`transport.json ${res.status}`);
+
+                const ct = res.headers.get("content-type") || "";
+                if (!ct.includes("application/json")) throw new Error("transport.json not JSON");
+
+                const json = await res.json();
+                if (!cancelled) {
+                    startTransition(() => setData(json));
+                }
+            } catch (e: any) {
+                if (!cancelled) {
+                    setLoadError(e?.message || "Failed to load transport schedules");
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+
+        load();
+
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
+    }, [startTransition]);
 
     // Extract available cities from loaded data
     const cities = useMemo(() => {
@@ -268,7 +296,12 @@ export default function TransportScheduleWidget() {
                         {query.to}
                     </h4>
                     <div className="flex items-center gap-2">
-                        {isPending && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        {(loading || isPending) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        {loadError && (
+                            <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
+                                Offline data (live schedules unavailable)
+                            </Badge>
+                        )}
                         {options.length > 0 && (
                             <Badge variant="outline" className="text-xs">
                                 {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
@@ -282,17 +315,33 @@ export default function TransportScheduleWidget() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {options.length === 0 ? (
-                        Array.from({ length: 3 }).map((_, i) => (
-                            <Card key={i} className="p-5 animate-pulse">
-                                <div className="h-4 bg-muted rounded w-24 mb-4" />
-                                <div className="h-6 bg-muted rounded w-3/4 mb-6" />
-                                <div className="space-y-3">
-                                    <div className="h-4 bg-muted rounded w-full" />
-                                    <div className="h-4 bg-muted rounded w-2/3" />
-                                </div>
-                                <div className="h-10 bg-muted rounded mt-6" />
+                        loading ? (
+                            // Skeleton cards only while fetch is in progress
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <Card key={i} className="p-5 animate-pulse border border-border">
+                                    <div className="h-4 bg-muted rounded w-24 mb-4" />
+                                    <div className="h-6 bg-muted rounded w-3/4 mb-6" />
+                                    <div className="space-y-3">
+                                        <div className="h-4 bg-muted rounded w-full" />
+                                        <div className="h-4 bg-muted rounded w-2/3" />
+                                    </div>
+                                    <div className="h-10 bg-muted rounded mt-6" />
+                                </Card>
+                            ))
+                        ) : (
+                            // Fetch done but no data for this route
+                            <Card className="p-6 border border-dashed col-span-full">
+                                <p className="font-semibold">No schedules found for this route.</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Try a different From/To, or we may not have data yet.
+                                </p>
+                                {loadError && (
+                                    <p className="text-sm text-amber-700 mt-2">
+                                        Live data failed to load — showing fallback routes only.
+                                    </p>
+                                )}
                             </Card>
-                        ))
+                        )
                     ) : (
                         options.map((option, idx) => (
                             <Card
