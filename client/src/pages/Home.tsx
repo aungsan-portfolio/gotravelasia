@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Loader2 } from "lucide-react";
+import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Loader2, Wifi, Zap, Smartphone } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
@@ -427,6 +427,78 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ AIRALO eSIM BANNER ═══════════ */}
+      <section className="py-12 bg-white">
+        <div className="container max-w-5xl">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-3xl p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400 opacity-10 rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+              <div className="flex-1 space-y-6">
+                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold tracking-wider uppercase border border-white/20">
+                  <Wifi className="w-4 h-4" /> Recommended
+                </div>
+                <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+                  Stay Connected in Thailand
+                </h2>
+                <p className="text-blue-100 text-lg max-w-lg">
+                  Skip the airport queues and high roaming fees. Get an Airalo eSIM delivered instantly. Keep your WhatsApp number and enjoy 5G speeds everywhere.
+                </p>
+
+                <ul className="space-y-3 font-medium text-blue-50">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-300" />
+                    Instant delivery via Email/App
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Smartphone className="w-5 h-5 text-green-300" />
+                    No physical SIM card swapping
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Zap className="w-5 h-5 text-green-300" />
+                    Data packages starting from $4.50
+                  </li>
+                </ul>
+
+                <div className="pt-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <a
+                    href="https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2Fthailand-esim"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button size="lg" className="bg-white text-blue-700 hover:bg-gray-100 text-lg font-bold px-8 py-6 h-auto shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                      Get Thailand eSIM <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </a>
+                  <span className="text-sm text-blue-200/80 font-mono">Powered by Airalo</span>
+                </div>
+              </div>
+
+              <div className="hidden md:block w-1/3 perspective-1000">
+                <div className="relative transform rotate-y-[-15deg] rotate-x-[5deg] hover:rotate-y-0 hover:rotate-x-0 transition-transform duration-500">
+                  <div className="absolute inset-0 bg-blue-400 rounded-3xl blur-2xl opacity-40"></div>
+                  <img
+                    src="/images/destinations/hero.jpg"
+                    alt="Thailand Travel"
+                    className="relative rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10"
+                    style={{ aspectRatio: '4/5', objectFit: 'cover' }}
+                  />
+                  {/* Floating Elements */}
+                  <div className="absolute -top-4 -right-4 bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center animate-bounce">
+                    <span className="text-3xl">🚀</span>
+                  </div>
+                  <div className="absolute -bottom-6 -left-6 bg-white/90 backdrop-blur p-4 rounded-2xl shadow-xl border border-white/20 animate-pulse">
+                    <div className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">5G Coverage</div>
+                    <div className="font-mono text-gray-800 font-bold">Dtac Network</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
