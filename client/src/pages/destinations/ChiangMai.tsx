@@ -128,7 +128,7 @@ export default function ChiangMai() {
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/chiang-mai-10000008",
         welcomePickups: "https://www.welcomepickups.com/chiang-mai/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://www.airalo.com/thailand-esim"
+        esim: "https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2Fthailand-esim"
       }}
     />
   );

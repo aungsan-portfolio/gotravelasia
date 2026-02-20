@@ -42,7 +42,7 @@ export default function StickyCTA() {
     ctaSubtext = "Coverage starts at $3/day";
   } else if (location.includes("esim")) {
     ctaText = "Get eSIM Data";
-    ctaLink = "https://www.airalo.com/";
+    ctaLink = "https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2F";
     ctaSubtext = "Instant activation";
   } else if (location.includes("destinations")) {
     ctaText = "Book Your Trip";
