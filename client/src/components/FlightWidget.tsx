@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
     Plane,
-    Calendar,
+    Calendar as CalendarIcon,
     MapPin,
     Users,
     ArrowRightLeft,
@@ -10,7 +10,11 @@ import {
     Minus,
     Plus,
     ExternalLink,
+    X,
 } from "lucide-react";
+import { format, isValid } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // --- CONFIG DATA ---
 const MARKER_ID = "697202";
@@ -106,8 +110,16 @@ function formatTravelerLabel(
     return total === 1 ? "1 Traveler" : `${total} Travelers`;
 }
 
+/* ─── THB Converter Helper ─── */
+const USD_TO_THB_RATE = 34; // Static conversion rate
+const formatTHB = (usdPrice: number) => {
+    const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
+    return `฿${thbPrice.toLocaleString()}`;
+};
+
 export default function FlightWidget() {
     const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+    const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today]);
     const [origin, setOrigin] = useState("RGN");
     const [destination, setDestination] = useState("BKK");
     const [departDate, setDepartDate] = useState(today);
@@ -116,8 +128,46 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
-    const [priceHint, setPriceHint] = useState<string | null>(null);
+    const [lowestPrice, setLowestPrice] = useState<number | null>(null);
     const [openPax, setOpenPax] = useState(false);
+    const [calendarOpen, setCalendarOpen] = useState(false);
+    const [calendarMode, setCalendarMode] = useState<"depart" | "return">("depart");
+
+    // Parse YYYY-MM-DD string to Date object
+    const departDateObj = useMemo(() => {
+        if (!departDate) return undefined;
+        const d = new Date(departDate + "T00:00:00");
+        return isValid(d) ? d : undefined;
+    }, [departDate]);
+    const returnDateObj = useMemo(() => {
+        if (!returnDate) return undefined;
+        const d = new Date(returnDate + "T00:00:00");
+        return isValid(d) ? d : undefined;
+    }, [returnDate]);
+
+    // Format date for display
+    const formatDisplay = (dateStr: string) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr + "T00:00:00");
+        return isValid(d) ? format(d, "EEE, MMM d") : dateStr;
+    };
+
+    const handleCalendarSelect = (date: Date | undefined) => {
+        if (!date) return;
+        const isoStr = format(date, "yyyy-MM-dd");
+        if (calendarMode === "depart") {
+            setDepartDate(isoStr);
+            // If return date exists and is before new depart, clear it
+            if (returnDate && returnDate < isoStr) {
+                setReturnDate("");
+            }
+            // Auto-advance to return date selection
+            setCalendarMode("return");
+        } else {
+            setReturnDate(isoStr);
+            setCalendarOpen(false);
+        }
+    };
 
     const popoverRef = useRef<HTMLDivElement | null>(null);
     const paxTriggerRef = useRef<HTMLButtonElement>(null);
@@ -182,7 +232,7 @@ export default function FlightWidget() {
     // Fetch price hints dynamically
     useEffect(() => {
         if (returnDate) {
-            setPriceHint(null);
+            setLowestPrice(null);
             return;
         }
 
@@ -194,14 +244,14 @@ export default function FlightWidget() {
                     (r: any) => r.origin === origin && r.destination === destination
                 );
                 if (route && route.price) {
-                    setPriceHint(`From $${Math.round(route.price)}`);
+                    setLowestPrice(route.price);
                 } else {
-                    setPriceHint(null);
+                    setLowestPrice(null);
                 }
             })
             .catch((err) => {
-                console.error("Failed to load flight_data.json", err);
-                setPriceHint(null);
+                console.error("Error fetching price hints:", err);
+                setLowestPrice(null);
             });
     }, [origin, destination, returnDate]);
 
@@ -327,40 +377,128 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Dates */}
-                    <div className="flex flex-col sm:flex-row flex-[1.6] border-b lg:border-b-0 lg:border-r border-gray-200">
-                        <div className="relative flex-1 min-w-[130px] border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center px-3 py-2.5 h-full">
-                                <Calendar className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
-                                <div className="flex flex-col w-full overflow-hidden">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Depart</span>
-                                    <input
-                                        type="date"
-                                        value={departDate}
-                                        min={today}
-                                        onChange={(e) => setDepartDate(e.target.value)}
-                                        className="w-full bg-transparent font-bold text-gray-900 outline-none cursor-pointer text-sm"
-                                    />
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                        <div className="flex flex-col sm:flex-row flex-[1.6] border-b lg:border-b-0 lg:border-r border-gray-200">
+                            {/* Depart trigger */}
+                            <PopoverTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
+                                    className={`relative flex-1 min-w-[130px] border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
+                                        }`}
+                                >
+                                    <div className="flex items-center px-3 py-2.5 h-full">
+                                        <CalendarIcon className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
+                                        <div className="flex flex-col w-full overflow-hidden">
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Depart</span>
+                                            <span className="font-bold text-gray-900 text-sm truncate">
+                                                {departDate ? formatDisplay(departDate) : "Select date"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </button>
+                            </PopoverTrigger>
+
+                            {/* Return trigger */}
+                            <button
+                                type="button"
+                                onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
+                                className={`relative flex-1 min-w-[130px] group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
+                                    }`}
+                            >
+                                <div className="flex items-center px-3 py-2.5 h-full">
+                                    <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
+                                    <div className="flex flex-col w-full overflow-hidden">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
+                                            Return <span className="text-[9px] text-gray-400 font-normal normal-case hidden xl:inline">(Optional)</span>
+                                        </span>
+                                        <span className={`font-bold text-sm truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
+                                            {returnDate ? formatDisplay(returnDate) : "Add return"}
+                                        </span>
+                                    </div>
+                                    {returnDate && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
+                                            className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                                            aria-label="Clear return date"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    )}
                                 </div>
-                            </div>
+                            </button>
                         </div>
-                        <div className="relative flex-1 min-w-[130px] group hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center px-3 py-2.5 h-full">
-                                <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
-                                <div className="flex flex-col w-full overflow-hidden">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
-                                        Return <span className="text-[9px] text-gray-400 font-normal normal-case hidden xl:inline">(Optional)</span>
+
+                        {/* Calendar Popover */}
+                        <PopoverContent
+                            className="w-auto p-0 shadow-2xl border border-gray-200 rounded-2xl"
+                            align="center"
+                            sideOffset={8}
+                        >
+                            <div className="p-4">
+                                {/* Mode tabs */}
+                                <div className="flex gap-2 mb-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCalendarMode("depart")}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${calendarMode === "depart"
+                                            ? "bg-gray-900 text-white shadow-md"
+                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                            }`}
+                                    >
+                                        Departure{departDate ? ` · ${formatDisplay(departDate)}` : ""}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCalendarMode("return")}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${calendarMode === "return"
+                                            ? "bg-gray-900 text-white shadow-md"
+                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                            }`}
+                                    >
+                                        Return{returnDate ? ` · ${formatDisplay(returnDate)}` : ""}
+                                    </button>
+                                </div>
+
+                                <Calendar
+                                    mode="single"
+                                    numberOfMonths={typeof window !== "undefined" && window.innerWidth < 640 ? 1 : 2}
+                                    selected={calendarMode === "depart" ? departDateObj : returnDateObj}
+                                    onSelect={handleCalendarSelect}
+                                    defaultMonth={calendarMode === "depart" ? (departDateObj || todayDate) : (returnDateObj || departDateObj || todayDate)}
+                                    disabled={[
+                                        { before: calendarMode === "return" && departDateObj ? departDateObj : todayDate },
+                                    ]}
+                                    modifiers={{
+                                        departHighlight: departDateObj ? [departDateObj] : [],
+                                        returnHighlight: returnDateObj ? [returnDateObj] : [],
+                                    }}
+                                    modifiersClassNames={{
+                                        departHighlight: "!bg-blue-600 !text-white rounded-md",
+                                        returnHighlight: "!bg-amber-500 !text-white rounded-md",
+                                    }}
+                                    className="[--cell-size:40px]"
+                                />
+
+                                {/* Quick actions */}
+                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                                    <span className="text-xs text-gray-400">
+                                        {calendarMode === "depart" ? "Select departure date" : "Select return date (optional)"}
                                     </span>
-                                    <input
-                                        type="date"
-                                        value={returnDate}
-                                        min={departDate}
-                                        onChange={(e) => setReturnDate(e.target.value)}
-                                        className={`w-full bg-transparent font-bold outline-none cursor-pointer text-sm ${returnDate ? "text-gray-900" : "text-gray-400"}`}
-                                    />
+                                    {calendarMode === "return" && (
+                                        <button
+                                            type="button"
+                                            onClick={() => { setReturnDate(""); setCalendarOpen(false); }}
+                                            className="text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors"
+                                        >
+                                            Skip return
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </PopoverContent>
+                    </Popover>
 
                     {/* Travelers & Class (Popover Trigger) */}
                     <div className="relative flex-[1.3] min-w-[150px] group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
@@ -456,13 +594,13 @@ export default function FlightWidget() {
             {/* ACTION AREA & Secondary Buttons */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
-                    {priceHint && !returnDate && (
+                    {lowestPrice && !returnDate && (
                         <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-100">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
-                            <span className="text-sm font-bold">Cheapest {priceHint}</span>
+                            <span className="text-sm font-bold">Cheapest from ${lowestPrice} ({formatTHB(lowestPrice)})</span>
                         </div>
                     )}
                 </div>
