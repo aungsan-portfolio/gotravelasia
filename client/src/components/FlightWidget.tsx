@@ -273,220 +273,191 @@ export default function FlightWidget() {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto bg-white rounded-3xl shadow-xl p-4 md:p-6 border border-gray-100">
-            {/* ROW 1: ROUTE & DATES */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div className="relative group">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">
-                        From
-                    </label>
-                    <div className="flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent group-hover:border-gray-300 transition-all">
-                        <MapPin className="w-5 h-5 text-gray-500 mr-3 shrink-0" />
-                        <select
-                            value={origin}
-                            onChange={(e) => setOrigin(e.target.value)}
-                            className="w-full bg-transparent font-bold text-gray-700 outline-none appearance-none cursor-pointer truncate"
-                        >
-                            {AIRPORTS.map((city) => (
-                                <option key={city.code} value={city.code}>
-                                    {city.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            {/* SEARCH ROW */}
+            <div className="flex flex-col lg:flex-row gap-3">
 
-                <div className="relative group">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">
-                        To
-                    </label>
-                    <div className="flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent group-hover:border-gray-300 transition-all">
-                        <Plane className="w-5 h-5 text-gray-500 mr-3 shrink-0" />
-                        <select
-                            value={destination}
-                            onChange={(e) => setDestination(e.target.value)}
-                            className="w-full bg-transparent font-bold text-gray-700 outline-none appearance-none cursor-pointer truncate"
-                        >
-                            {DESTINATION_GROUPS.map((group) => (
-                                <optgroup key={group.key} label={group.label}>
-                                    {group.options.map((dest) => (
-                                        <option key={dest.code} value={dest.code}>
-                                            {dest.name}
+                {/* Inputs Wrapper (White bordered box) */}
+                <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-sm border border-gray-200">
+
+                    {/* Origin */}
+                    <div className="relative flex-1 border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-4 py-2.5 h-full">
+                            <MapPin className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                            <div className="flex flex-col w-full overflow-hidden">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">From</span>
+                                <select
+                                    value={origin}
+                                    onChange={(e) => setOrigin(e.target.value)}
+                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate"
+                                >
+                                    {AIRPORTS.map((city) => (
+                                        <option key={city.code} value={city.code}>
+                                            {city.name}
                                         </option>
                                     ))}
-                                </optgroup>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="relative group">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">
-                        Depart
-                    </label>
-                    <div className="flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent group-hover:border-gray-300 transition-all">
-                        <Calendar className="w-5 h-5 text-gray-500 mr-3 shrink-0" />
-                        <input
-                            type="date"
-                            value={departDate}
-                            min={today}
-                            onChange={(e) => setDepartDate(e.target.value)}
-                            className="w-full bg-transparent font-bold text-gray-700 outline-none cursor-pointer"
-                        />
-                    </div>
-                </div>
-
-                <div className="relative group">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block flex justify-between">
-                        <span>Return</span>
-                        <span className="text-[10px] text-gray-300 font-normal normal-case self-end">
-                            (Optional)
-                        </span>
-                    </label>
-                    <div
-                        className={`flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent transition-all ${returnDate
-                            ? "border-gray-300 bg-gray-50"
-                            : "group-hover:border-gray-300"
-                            }`}
-                    >
-                        <ArrowRightLeft
-                            className={`w-5 h-5 mr-3 shrink-0 ${returnDate ? "text-gray-600" : "text-gray-400"
-                                }`}
-                        />
-                        <input
-                            type="date"
-                            value={returnDate}
-                            min={departDate}
-                            onChange={(e) => setReturnDate(e.target.value)}
-                            className={`w-full bg-transparent font-bold outline-none cursor-pointer ${returnDate ? "text-gray-700" : "text-gray-400"
-                                }`}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* ROW 2: TRAVELERS & CLASS (popover) */}
-            <div className="mb-6 relative" ref={popoverRef}>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">
-                    Travelers & Class
-                </label>
-
-                <button
-                    ref={paxTriggerRef}
-                    type="button"
-                    aria-expanded={openPax}
-                    aria-controls="pax-panel"
-                    onClick={() => setOpenPax((v) => !v)}
-                    className="w-full flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-transparent hover:border-gray-300 transition-all"
-                >
-                    <div className="flex items-center gap-3 min-w-0">
-                        <Users className="w-5 h-5 text-gray-600 shrink-0" />
-                        <span className="font-bold text-gray-800 truncate">
-                            {travelerLabel}, {cabinLabel}
-                        </span>
-                    </div>
-                    <ChevronDown
-                        className={`w-5 h-5 text-gray-500 transition-transform ${openPax ? "rotate-180" : ""
-                            }`}
-                    />
-                </button>
-
-                {/* Popover panel */}
-                {openPax && (
-                    <div
-                        id="pax-panel"
-                        role="dialog"
-                        aria-modal="false"
-                        className="absolute z-50 mt-2 w-full max-w-sm rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-4 max-h-[70vh] overflow-auto animate-in fade-in zoom-in-95"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm font-black text-gray-900">
-                                Passengers
+                                </select>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setOpenPax(false)}
-                                className="text-xs font-bold text-gray-500 hover:text-gray-800"
-                            >
-                                Close
-                            </button>
                         </div>
+                    </div>
 
-                        <div className="space-y-3">
-                            <PaxStepper
-                                label="Adults"
-                                sub="12+"
-                                value={adults}
-                                min={1}
-                                max={9}
-                                onChange={setAdults}
-                            />
-                            <PaxStepper
-                                label="Children"
-                                sub="2–11"
-                                value={children}
-                                min={0}
-                                max={8}
-                                onChange={setChildren}
-                            />
-                            <PaxStepper
-                                label="Infants"
-                                sub="Under 2"
-                                value={infants}
-                                min={0}
-                                max={adults}
-                                onChange={setInfants}
-                            />
+                    {/* Destination */}
+                    <div className="relative flex-1 border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-4 py-2.5 h-full">
+                            <Plane className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                            <div className="flex flex-col w-full overflow-hidden">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">To</span>
+                                <select
+                                    value={destination}
+                                    onChange={(e) => setDestination(e.target.value)}
+                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate"
+                                >
+                                    {DESTINATION_GROUPS.map((group) => (
+                                        <optgroup key={group.key} label={group.label}>
+                                            {group.options.map((dest) => (
+                                                <option key={dest.code} value={dest.code}>
+                                                    {dest.name}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div className="pt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Armchair className="w-4 h-4 text-gray-600" />
-                                    <div className="text-sm font-black text-gray-900">
-                                        Cabin class
+                    {/* Dates */}
+                    <div className="flex flex-col sm:flex-row flex-[1.2] border-b lg:border-b-0 lg:border-r border-gray-200">
+                        <div className="relative flex-1 border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center px-4 py-2.5 h-full">
+                                <Calendar className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                                <div className="flex flex-col w-full overflow-hidden">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Depart</span>
+                                    <input
+                                        type="date"
+                                        value={departDate}
+                                        min={today}
+                                        onChange={(e) => setDepartDate(e.target.value)}
+                                        className="w-full bg-transparent font-bold text-gray-900 outline-none cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="relative flex-1 group hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center px-4 py-2.5 h-full">
+                                <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
+                                <div className="flex flex-col w-full overflow-hidden">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex justify-between">
+                                        Return <span className="text-[9px] text-gray-400 font-normal normal-case">(Optional)</span>
+                                    </span>
+                                    <input
+                                        type="date"
+                                        value={returnDate}
+                                        min={departDate}
+                                        onChange={(e) => setReturnDate(e.target.value)}
+                                        className={`w-full bg-transparent font-bold outline-none cursor-pointer ${returnDate ? "text-gray-900" : "text-gray-400"}`}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Travelers & Class (Popover Trigger) */}
+                    <div className="relative flex-1 group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
+                        <button
+                            ref={paxTriggerRef}
+                            type="button"
+                            aria-expanded={openPax}
+                            aria-controls="pax-panel"
+                            onClick={() => setOpenPax((v) => !v)}
+                            className="w-full h-full text-left"
+                        >
+                            <div className="flex items-center px-4 py-2.5 h-full">
+                                <Users className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                                <div className="flex flex-col w-full min-w-0">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Travelers & Class</span>
+                                    <span className="font-bold text-gray-900 truncate">
+                                        {travelerLabel}, {cabinLabel}
+                                    </span>
+                                </div>
+                                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openPax ? "rotate-180" : ""}`} />
+                            </div>
+                        </button>
+
+                        {/* Popover content */}
+                        {openPax && (
+                            <div
+                                id="pax-panel"
+                                role="dialog"
+                                aria-modal="false"
+                                className="absolute right-0 z-50 mt-2 w-full min-w-[300px] max-w-sm rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-4 max-h-[70vh] overflow-auto animate-in fade-in zoom-in-95"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="text-sm font-black text-gray-900">Passengers</div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenPax(false)}
+                                        className="text-xs font-bold text-gray-500 hover:text-gray-800"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <PaxStepper label="Adults" sub="12+" value={adults} min={1} max={9} onChange={setAdults} />
+                                    <PaxStepper label="Children" sub="2–11" value={children} min={0} max={8} onChange={setChildren} />
+                                    <PaxStepper label="Infants" sub="Under 2" value={infants} min={0} max={adults} onChange={setInfants} />
+
+                                    <div className="pt-3 border-t border-gray-100">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Armchair className="w-4 h-4 text-gray-600" />
+                                            <div className="text-sm font-black text-gray-900">Cabin class</div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {CABIN_OPTIONS.map((opt) => {
+                                                const active = opt.value === cabinClass;
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => setCabinClass(opt.value)}
+                                                        className={["px-3 py-2 rounded-xl text-sm font-bold border transition", active ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"].join(" ")}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end pt-3">
+                                        <button ref={doneButtonRef} type="button" onClick={() => setOpenPax(false)} className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-sm">
+                                            Done
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {CABIN_OPTIONS.map((opt) => {
-                                        const active = opt.value === cabinClass;
-                                        return (
-                                            <button
-                                                key={opt.value}
-                                                type="button"
-                                                onClick={() => setCabinClass(opt.value)}
-                                                className={[
-                                                    "px-3 py-2 rounded-xl text-sm font-bold border transition",
-                                                    active
-                                                        ? "border-gray-900 bg-gray-900 text-white"
-                                                        : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50",
-                                                ].join(" ")}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
                             </div>
-
-                            <div className="flex justify-end pt-3">
-                                <button
-                                    ref={doneButtonRef}
-                                    type="button"
-                                    onClick={() => setOpenPax(false)}
-                                    className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-sm"
-                                >
-                                    Done
-                                </button>
-                            </div>
-                        </div>
+                        )}
                     </div>
-                )}
+                </div>
+
+                {/* Primary Search Button Container */}
+                <div className="flex shrink-0">
+                    <button
+                        onClick={handleSearch}
+                        className="w-full lg:w-auto bg-[#FECD00] hover:bg-[#E5B800] text-gray-900 font-extrabold py-3.5 px-8 rounded-xl lg:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-lg h-full"
+                        aria-label="Search Flights"
+                    >
+                        Search
+                    </button>
+                </div>
             </div>
 
-            {/* ACTION AREA */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
+            {/* ACTION AREA & Secondary Buttons */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
                     {priceHint && !returnDate && (
-                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl w-fit">
+                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-100">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -498,20 +469,9 @@ export default function FlightWidget() {
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
                     <button
-                        onClick={handleSearch}
-                        aria-label={`Search ${returnDate ? "round-trip" : "one-way"} ${cabinLabel} flights to ${getSelectedCountry()}`}
-                        className="w-full md:w-auto bg-black hover:bg-gray-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-3 group"
-                    >
-                        <Plane className="w-5 h-5 fill-current group-hover:rotate-45 transition-transform duration-300" />
-                        <span>
-                            Search {returnDate ? "Round-trip" : "One-way"} to{" "}
-                            {getSelectedCountry()}
-                        </span>
-                    </button>
-                    <button
                         onClick={handleTripComSearch}
                         aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
-                        className="w-full md:w-auto bg-white hover:bg-blue-50 text-blue-600 font-bold py-3 px-6 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all flex items-center justify-center gap-2 text-sm"
+                        className="w-full md:w-auto bg-white hover:bg-blue-50 text-blue-600 font-bold py-2.5 px-6 rounded-xl border border-blue-200 hover:border-blue-400 transition-all flex items-center justify-center gap-2 text-sm"
                     >
                         <ExternalLink className="w-4 h-4" />
                         <span>Compare on Trip.com</span>

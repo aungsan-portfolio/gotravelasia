@@ -141,6 +141,21 @@ const TABS = [
   { id: "transport" as const, icon: "🚌", label: "Transport in Thailand", mobileLabel: "Transport" },
 ];
 
+/* ─── Route Images Helper (Phase 2 UI Redesign) ─── */
+const getRouteImage = (dest: string) => {
+  const images: Record<string, string> = {
+    BKK: "/images/bangkok.jpg",
+    CNX: "/images/chiang-mai.jpg",
+    HKT: "/images/phuket.jpg",
+    SIN: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=800&q=80",
+    KUL: "https://images.unsplash.com/photo-1596422846543-75c6fc197f0a?w=800&q=80",
+    HAN: "https://images.unsplash.com/photo-1555921015-5532091f6026?w=800&q=80",
+    SGN: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=800&q=80",
+    PNH: "https://images.unsplash.com/photo-1600021644788-7e3f200c968f?w=800&q=80",
+  };
+  return images[dest] || "/images/hero-travel.jpg";
+};
+
 /* ═══════════════════════════════════════════════════════════ */
 
 export default function Home() {
@@ -233,44 +248,45 @@ export default function Home() {
   return (
     <Layout>
       {/* ═══════════ HERO + TABBED SEARCH ═══════════ */}
-      <section className="relative min-h-[60vh] md:min-h-[65vh] flex flex-col justify-end pb-6">
-        {/* Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <img
-            src="/images/hero-travel.jpg"
-            alt="Southeast Asia Travel"
-            className="w-full h-full object-cover grayscale contrast-125 brightness-75"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-primary/30 to-transparent opacity-90" />
-        </div>
-
+      <section className="relative pt-24 pb-16 overflow-hidden bg-[#f0f2f5]">
         <div className="container relative z-10">
-          {/* Hero Text */}
-          <div className="text-center text-white mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-3">
-              {t("hero.title")}
-              <br />
-              <span className="text-primary">{t("hero.country")}</span>
-            </h1>
-            <p className="text-lg md:text-xl text-secondary font-mono uppercase tracking-[0.15em] mb-2 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-100">
-              {t("hero.slogan")}
-            </p>
-            <p className="text-sm text-white/50 font-mono uppercase tracking-widest">
-              Compare Flights • Hotels • Transport from Myanmar
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12">
+            {/* Hero Text (Left) */}
+            <div className="text-left animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <h1 className="text-5xl md:text-6xl lg:text-[72px] font-extrabold tracking-tighter mb-4 text-gray-900 leading-[1.1]">
+                {t("hero.title")}
+                <br />
+                <span className="text-primary">{t("hero.country")}</span>
+              </h1>
+              <p className="text-xl text-gray-600 font-medium mb-4 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-100 leading-relaxed">
+                {t("hero.slogan")}
+              </p>
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-8 h-px bg-gray-300"></span> Compare Flights • Hotels • Transport from Myanmar
+              </p>
+            </div>
+
+            {/* Travel Image Grid (Right) - Inspired by Cheapflights */}
+            <div className="hidden lg:grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
+              <img src="/images/bangkok.jpg" alt="Bangkok" className="rounded-2xl object-cover h-[320px] w-full shadow-lg" loading="lazy" />
+              <div className="grid grid-rows-2 gap-4">
+                <img src="/images/chiang-mai.jpg" alt="Chiang Mai" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
+                <img src="/images/phuket.jpg" alt="Phuket" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
+              </div>
+            </div>
           </div>
 
           {/* ── Tabbed Search Card ── */}
-          <div className="bg-primary/90 supports-[backdrop-filter]:bg-primary/80 backdrop-blur-xl border border-white/15 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             {/* Tab Buttons */}
-            <div className="grid grid-cols-3 border-b border-white/10">
+            <div className="flex border-b border-gray-100 bg-gray-50/50 rounded-t-2xl overflow-hidden">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-3 md:py-5 flex items-center justify-center gap-1.5 md:gap-3 transition-all font-mono text-[10px] md:text-sm uppercase tracking-wider md:tracking-widest ${activeTab === tab.id
-                    ? "bg-white/10 text-secondary border-b-2 border-secondary"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                  className={`flex-1 py-4 md:py-5 flex items-center justify-center gap-2 transition-all font-bold text-sm md:text-base ${activeTab === tab.id
+                    ? "bg-white text-gray-900 border-b-2 border-primary shadow-[0_-2px_10px_rgb(0,0,0,0.02)] relative z-10"
+                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100/50"
                     }`}
                 >
                   <span className="text-lg md:text-2xl">{tab.icon}</span>
@@ -333,18 +349,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ POPULAR ROUTES (Navigation Only) ═══════════ */}
-      <section className="py-16 bg-background border-b border-border">
+      {/* ═══════════ POPULAR ROUTES (Deals Carousel) ═══════════ */}
+      <section className="py-16 bg-[#f8f9fa] border-b border-gray-100 overflow-hidden">
         <div className="container">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tighter mb-2">
-              Popular Routes from Myanmar
+          <div className="mb-8">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-gray-900">
+              Trending Flights from Myanmar
             </h2>
-            <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
-              Direct flights & best connections
+            <p className="text-gray-500 font-medium text-lg">
+              Explore live deals and direct connections.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          <div className="flex overflow-x-auto gap-4 pb-8 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar">
             {ROUTE_CONFIG.map((route) => {
               const routeDeal = deals.find(d => d.origin === route.origin && d.destination === route.dest);
               return (
@@ -353,22 +370,44 @@ export default function Home() {
                   href={buildRouteUrl(route.origin, route.dest, routeDeal?.date)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
+                  className="group block min-w-[280px] md:min-w-[320px] bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 snap-start flex flex-col"
                 >
-                  <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary mb-2">
-                    {route.from} → {route.to}
+                  <div className="relative h-48 overflow-hidden bg-gray-100">
+                    <img
+                      src={getRouteImage(route.dest)}
+                      alt={route.to}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-900 shadow-sm flex items-center gap-1">
+                      <Plane className="w-3 h-3" /> Direct
+                    </div>
                   </div>
-                  {routeDeal ? (
-                    <div className="text-lg font-bold font-mono text-emerald-600 group-hover:text-white flex items-center justify-center gap-2">
-                      <span>From ${Math.round(routeDeal.price)}</span>
-                      <ArrowRight className="w-4 h-4" />
+
+                  <div className="p-5 flex flex-col flex-grow">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{route.to}</h3>
+                    <div className="text-sm font-medium text-gray-500 mb-4 flex items-center gap-2">
+                      {route.from} <ArrowRight className="w-3 h-3 text-gray-400" /> {route.to}
                     </div>
-                  ) : (
-                    <div className="text-lg font-bold font-mono text-primary group-hover:text-white flex items-center justify-center gap-2">
-                      <span>Check Price</span>
-                      <ArrowRight className="w-4 h-4" />
+
+                    <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                      {routeDeal ? (
+                        <>
+                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Economy</div>
+                          <div className="text-xl font-black text-emerald-600">
+                            From ${Math.round(routeDeal.price)}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Check Fares</div>
+                          <div className="text-lg font-black text-blue-600 group-hover:text-blue-700 flex items-center gap-1">
+                            Search <ArrowRight className="w-4 h-4" />
+                          </div>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </a>
               );
             })}
