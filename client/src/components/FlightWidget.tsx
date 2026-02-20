@@ -281,15 +281,15 @@ export default function FlightWidget() {
                 <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-sm border border-gray-200">
 
                     {/* Origin */}
-                    <div className="relative flex-1 border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-4 py-2.5 h-full">
-                            <MapPin className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                    <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-3 py-2.5 h-full">
+                            <MapPin className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">From</span>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">From</span>
                                 <select
                                     value={origin}
                                     onChange={(e) => setOrigin(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate"
+                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base"
                                 >
                                     {AIRPORTS.map((city) => (
                                         <option key={city.code} value={city.code}>
@@ -302,15 +302,15 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Destination */}
-                    <div className="relative flex-1 border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-4 py-2.5 h-full">
-                            <Plane className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                    <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-3 py-2.5 h-full">
+                            <Plane className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">To</span>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">To</span>
                                 <select
                                     value={destination}
                                     onChange={(e) => setDestination(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate"
+                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base"
                                 >
                                     {DESTINATION_GROUPS.map((group) => (
                                         <optgroup key={group.key} label={group.label}>
@@ -327,35 +327,35 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Dates */}
-                    <div className="flex flex-col sm:flex-row flex-[1.2] border-b lg:border-b-0 lg:border-r border-gray-200">
-                        <div className="relative flex-1 border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center px-4 py-2.5 h-full">
-                                <Calendar className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                    <div className="flex flex-col sm:flex-row flex-[1.6] border-b lg:border-b-0 lg:border-r border-gray-200">
+                        <div className="relative flex-1 min-w-[130px] border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center px-3 py-2.5 h-full">
+                                <Calendar className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
                                 <div className="flex flex-col w-full overflow-hidden">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Depart</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Depart</span>
                                     <input
                                         type="date"
                                         value={departDate}
                                         min={today}
                                         onChange={(e) => setDepartDate(e.target.value)}
-                                        className="w-full bg-transparent font-bold text-gray-900 outline-none cursor-pointer"
+                                        className="w-full bg-transparent font-bold text-gray-900 outline-none cursor-pointer text-sm"
                                     />
                                 </div>
                             </div>
                         </div>
-                        <div className="relative flex-1 group hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center px-4 py-2.5 h-full">
-                                <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
+                        <div className="relative flex-1 min-w-[130px] group hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center px-3 py-2.5 h-full">
+                                <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
                                 <div className="flex flex-col w-full overflow-hidden">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex justify-between">
-                                        Return <span className="text-[9px] text-gray-400 font-normal normal-case">(Optional)</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
+                                        Return <span className="text-[9px] text-gray-400 font-normal normal-case hidden xl:inline">(Optional)</span>
                                     </span>
                                     <input
                                         type="date"
                                         value={returnDate}
                                         min={departDate}
                                         onChange={(e) => setReturnDate(e.target.value)}
-                                        className={`w-full bg-transparent font-bold outline-none cursor-pointer ${returnDate ? "text-gray-900" : "text-gray-400"}`}
+                                        className={`w-full bg-transparent font-bold outline-none cursor-pointer text-sm ${returnDate ? "text-gray-900" : "text-gray-400"}`}
                                     />
                                 </div>
                             </div>
@@ -363,7 +363,7 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Travelers & Class (Popover Trigger) */}
-                    <div className="relative flex-1 group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
+                    <div className="relative flex-[1.3] min-w-[150px] group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
                         <button
                             ref={paxTriggerRef}
                             type="button"
@@ -372,15 +372,15 @@ export default function FlightWidget() {
                             onClick={() => setOpenPax((v) => !v)}
                             className="w-full h-full text-left"
                         >
-                            <div className="flex items-center px-4 py-2.5 h-full">
-                                <Users className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
-                                <div className="flex flex-col w-full min-w-0">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Travelers & Class</span>
-                                    <span className="font-bold text-gray-900 truncate">
+                            <div className="flex items-center px-3 py-2.5 h-full">
+                                <Users className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
+                                <div className="flex flex-col w-full overflow-hidden">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Travelers & Class</span>
+                                    <span className="font-bold text-gray-900 truncate text-sm">
                                         {travelerLabel}, {cabinLabel}
                                     </span>
                                 </div>
-                                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openPax ? "rotate-180" : ""}`} />
+                                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 ml-1 transition-transform shrink-0 ${openPax ? "rotate-180" : ""}`} />
                             </div>
                         </button>
 
