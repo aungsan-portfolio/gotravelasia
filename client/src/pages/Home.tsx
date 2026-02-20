@@ -332,7 +332,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ POPULAR ROUTES (Auto-updated from bot data) ═══════════ */}
+      {/* ═══════════ POPULAR ROUTES (Navigation Only) ═══════════ */}
       <section className="py-16 bg-background border-b border-border">
         <div className="container">
           <div className="text-center mb-10">
@@ -340,24 +340,16 @@ export default function Home() {
               Popular Routes from Myanmar
             </h2>
             <p className="text-muted-foreground font-mono uppercase text-sm tracking-wider">
-              {meta.updated_at ? `Updated ${meta.updated_at}` : "Indicative starting prices"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Prices may change. Click to see current availability.
+              Direct flights & best connections
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {ROUTE_CONFIG.map((route) => {
-              const matchedDeal = deals.find(
-                (d) => d.origin === route.origin && (d.destination === route.dest || (route.dest === "BKK" && d.destination === "DMK"))
-              );
-              const displayDate = matchedDeal?.date
-                ? new Date(matchedDeal.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : null;
+              const routeDeal = deals.find(d => d.origin === route.origin && d.destination === route.dest);
               return (
                 <a
                   key={`${route.origin}-${route.dest}`}
-                  href={buildRouteUrl(route.origin, route.dest, matchedDeal?.date)}
+                  href={buildRouteUrl(route.origin, route.dest, routeDeal?.date)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group block bg-card border border-border p-5 hover:bg-primary hover:border-primary transition-all hover:-translate-y-0.5 hover:shadow-lg text-center"
@@ -365,146 +357,21 @@ export default function Home() {
                   <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-secondary mb-2">
                     {route.from} → {route.to}
                   </div>
-                  <div className="text-2xl font-bold font-mono text-primary group-hover:text-white">
-                    {matchedDeal ? `from $${Math.round(matchedDeal.price)}` : "Check Price"}
-                  </div>
-                  {displayDate && (
-                    <div className="text-xs text-muted-foreground group-hover:text-gray-300 mt-1 font-mono">
-                      on {displayDate}
+                  {routeDeal ? (
+                    <div className="text-lg font-bold font-mono text-emerald-600 group-hover:text-white flex items-center justify-center gap-2">
+                      <span>From ${Math.round(routeDeal.price)}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  ) : (
+                    <div className="text-lg font-bold font-mono text-primary group-hover:text-white flex items-center justify-center gap-2">
+                      <span>Check Price</span>
+                      <ArrowRight className="w-4 h-4" />
                     </div>
                   )}
                 </a>
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* ═══════════ LIVE FLIGHT DEALS ═══════════ */}
-      <section className="py-12 md:py-20 bg-muted/20 border-b border-border">
-        <div className="container px-4 md:px-6">
-          <div className="mb-6 md:mb-8">
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tighter mb-1">Live Flight Deals</h2>
-            <p className="text-muted-foreground font-mono uppercase text-xs md:text-sm tracking-wider">
-              {updatedText ? `Updated ${updatedText}` : "Real-time prices from airlines"}
-            </p>
-          </div>
-
-          {meta.overall_cheapest && (
-            <div className="mb-6 md:mb-8 bg-green-50 border border-green-200 rounded-lg p-3 md:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-              <p className="font-bold text-green-800 text-sm md:text-base">
-                🔥 Best Deal: {originMap[meta.overall_cheapest.origin] || meta.overall_cheapest.origin} →{" "}
-                {destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} — $
-                {meta.overall_cheapest.price}
-                <span className="block sm:inline text-xs sm:text-sm font-normal text-green-600 sm:ml-2 mt-1 sm:mt-0">
-                  ({meta.overall_cheapest.airline} on {meta.overall_cheapest.date})
-                </span>
-              </p>
-              <Button
-                size="sm"
-                className="bg-green-600 text-white hover:bg-green-700 font-mono uppercase text-xs w-full sm:w-auto min-h-[44px]"
-                aria-label={`Book best deal flight to ${destMap[meta.overall_cheapest.destination] || meta.overall_cheapest.destination} for $${meta.overall_cheapest.price}`}
-                onClick={() => {
-                  track("deal_click_aviasales", meta.overall_cheapest as unknown as Record<string, unknown>);
-                  openNewTab(buildAviasalesUrl(meta.overall_cheapest!));
-                }}
-              >
-                Book Now <ExternalLink className="ml-1 w-3 h-3" />
-              </Button>
-            </div>
-          )}
-
-          {loading ? (
-            <p className="text-center text-muted-foreground animate-pulse py-16 font-mono text-sm">Loading latest deals...</p>
-          ) : error ? (
-            <p className="text-center text-red-500 py-16 font-mono text-sm">Failed to load deals. Please refresh.</p>
-          ) : deals.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16 font-mono text-sm">No deals right now. Check back soon!</p>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              {deals.map((deal) => {
-                const aviaUrl = buildAviasalesUrl(deal);
-                const tripUrl = buildTripComUrl(deal);
-                const flagMap: Record<string, string> = {
-                  BKK: "🇹🇭", DMK: "🇹🇭", CNX: "🇹🇭", HKT: "🇹🇭",
-                  SIN: "🇸🇬", KUL: "🇲🇾", SGN: "🇻🇳", HAN: "🇻🇳",
-                  PNH: "🇰🇭", RGN: "🇲🇲", MDL: "🇲🇲",
-                };
-                const daysUntil = Math.max(0, Math.ceil(
-                  (new Date(deal.date).getTime() - Date.now()) / 86400000
-                ));
-                const daysLabel = daysUntil === 0 ? "Today" : daysUntil === 1 ? "Tomorrow" : `in ${daysUntil} days`;
-                const originName = originMap[deal.origin] || deal.origin;
-                const destName = destMap[deal.destination] || deal.destination;
-
-                return (
-                  <div
-                    key={`${deal.origin}-${deal.destination}-${deal.date}`}
-                    className="bg-card border border-border rounded-lg p-4 md:p-6 hover:shadow-lg transition-all group"
-                    role="article"
-                    aria-label={`Flight deal: ${originName} to ${destName} for $${deal.price}`}
-                  >
-                    {/* Row 1: Route + Price */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base md:text-lg font-bold truncate">
-                          {flagMap[deal.origin] || ""} {originName} → {flagMap[deal.destination] || ""} {destName}
-                        </h3>
-                        <p className="text-xs text-muted-foreground font-mono mt-1 truncate">
-                          {deal.airline} {deal.flight_num || ""} • {deal.date}
-                        </p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-2xl md:text-3xl font-bold text-primary">${deal.price}</p>
-                      </div>
-                    </div>
-
-                    {/* Row 2: Badges */}
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded">
-                        ✈️ Direct
-                      </span>
-                      <span className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-mono rounded">
-                        📅 {daysLabel}
-                      </span>
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wider rounded">
-                        Deal
-                      </span>
-                    </div>
-
-                    {/* Row 3: Buttons — side by side, touch-safe */}
-                    <div className="flex gap-3">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-primary text-primary-foreground font-mono uppercase text-xs hover:bg-primary/90 min-h-[44px]"
-                        aria-label={`Book ${originName} to ${destName} on Aviasales for $${deal.price}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          track("deal_click_aviasales", deal as unknown as Record<string, unknown>);
-                          openNewTab(aviaUrl);
-                        }}
-                      >
-                        Aviasales <ExternalLink className="ml-1 w-3 h-3" />
-                      </Button>
-                      <a
-                        href={tripUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Compare ${originName} to ${destName} price on Trip.com`}
-                        className="flex-1 inline-flex items-center justify-center text-xs font-mono uppercase border border-border rounded-md hover:bg-muted transition-colors min-h-[44px] px-3"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          track("deal_click_tripcom", deal as unknown as Record<string, unknown>);
-                        }}
-                      >
-                        Trip.com <ExternalLink className="ml-1 w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </section>
 

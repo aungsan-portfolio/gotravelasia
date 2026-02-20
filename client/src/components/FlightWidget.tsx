@@ -116,7 +116,7 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
-    const [priceHint, setPriceHint] = useState("Check rates");
+    const [priceHint, setPriceHint] = useState<string | null>(null);
     const [openPax, setOpenPax] = useState(false);
 
     const popoverRef = useRef<HTMLDivElement | null>(null);
@@ -179,27 +179,31 @@ export default function FlightWidget() {
         paxTriggerRef.current?.focus();
     }, [openPax]);
 
-    // Price hint from bot data
+    // Fetch price hints dynamically
     useEffect(() => {
-        fetch("/data/flight_data.json")
-            .then((res) => {
-                if (!res.ok) throw new Error("Failed to load flight_data.json");
-                return res.json();
-            })
-            .then((data) => {
-                const foundDeal = data.routes?.find(
-                    (d: { origin?: string; destination?: string }) =>
-                        d.origin === origin && d.destination === destination
-                ) as { price?: number } | undefined;
+        if (returnDate) {
+            setPriceHint(null);
+            return;
+        }
 
-                if (foundDeal && typeof foundDeal.price === "number") {
-                    setPriceHint(`From $${foundDeal.price}`);
+        fetch("/data/flight_data.json?v=" + new Date().getTime())
+            .then((res) => res.json())
+            .then((data) => {
+                const routes = data.routes || [];
+                const route = routes.find(
+                    (r: any) => r.origin === origin && r.destination === destination
+                );
+                if (route && route.price) {
+                    setPriceHint(`From $${Math.round(route.price)}`);
                 } else {
-                    setPriceHint("Check rates");
+                    setPriceHint(null);
                 }
             })
-            .catch(() => setPriceHint("Check rates"));
-    }, [origin, destination]);
+            .catch((err) => {
+                console.error("Failed to load flight_data.json", err);
+                setPriceHint(null);
+            });
+    }, [origin, destination, returnDate]);
 
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
@@ -480,19 +484,16 @@ export default function FlightWidget() {
 
             {/* ACTION AREA */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
-                {/* Price Hint from Bot Data */}
-                <div className="flex items-center gap-3 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 w-full md:w-auto justify-center md:justify-start">
-                    <div className="relative flex h-3 w-3">
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-emerald-600 font-bold uppercase leading-none">
-                            Best Price Estimate
-                        </span>
-                        <span className="text-sm font-black text-emerald-800 leading-tight">
-                            {priceHint}
-                        </span>
-                    </div>
+                <div className="flex-1">
+                    {priceHint && !returnDate && (
+                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl w-fit">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-sm font-bold">Cheapest {priceHint}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">

@@ -217,194 +217,36 @@ export default function TransportScheduleWidget() {
 
     return (
         <div className="w-full space-y-6">
-            {/* ── Search Form ── */}
-            <Card className="p-6 bg-card border border-border">
+            {/* ── 12Go Official Search Iframe ── */}
+            <Card className="p-4 md:p-6 bg-card border border-border overflow-hidden">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold flex items-center gap-2">
                         <Search className="w-5 h-5 text-primary" />
                         Search Transport
                     </h3>
-                    <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-                        Estimated Prices • 2026
+                    <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded hidden sm:inline-block">
+                        Powered by 12Go
                     </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* From */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">From</label>
-                        <select
-                            value={from}
-                            onChange={(e) => handleFromChange(e.target.value)}
-                            className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                            {cities.map((city) => (
-                                <option key={city} value={city}>{city}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* To */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">To</label>
-                        <select
-                            value={to}
-                            onChange={(e) => setTo(e.target.value)}
-                            className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                            {filteredToCities.map((city) => (
-                                <option key={city} value={city}>{city}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Search button */}
-                    <div className="flex items-end">
-                        <Button
-                            onClick={handleSearch}
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                            <Search className="w-4 h-4 mr-2" />
-                            Search
-                        </Button>
+                <div className="w-full relative" style={{ minHeight: "350px" }}>
+                    {/* The 12Go Iframe */}
+                    <div style={{ width: "100%", margin: "0 auto" }}>
+                        <iframe
+                            src="https://12go.asia/en/iframe?partner=14566451&language=en"
+                            width="100%"
+                            height="350"
+                            frameBorder="0"
+                            scrolling="no"
+                            title="12Go Transport Search"
+                            className="bg-transparent"
+                        ></iframe>
                     </div>
                 </div>
             </Card>
 
-            {/* ── Results ── */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-bold text-lg flex items-center gap-2">
-                        {query.from}
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        {query.to}
-                    </h4>
-                    <div className="flex items-center gap-2">
-                        {(loading || isPending) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-                        {loadError && (
-                            <span className="inline-flex items-center rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-700">
-                                Offline data (live schedules unavailable)
-                            </span>
-                        )}
-                        {options.length > 0 && (
-                            <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                                {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
-                            </span>
-                        )}
-                    </div>
-                </div>
-
-                {/* ✨ FEATURED JOURNEY CARD (BKK-CNX Only) ✨ */}
-                <FeaturedTrainCard from={query.from} to={query.to} />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {options.length === 0 ? (
-                        loading ? (
-                            // Skeleton cards only while fetch is in progress
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <Card key={i} className="p-5 animate-pulse border border-border">
-                                    <div className="h-4 bg-muted rounded w-24 mb-4" />
-                                    <div className="h-6 bg-muted rounded w-3/4 mb-6" />
-                                    <div className="space-y-3">
-                                        <div className="h-4 bg-muted rounded w-full" />
-                                        <div className="h-4 bg-muted rounded w-2/3" />
-                                    </div>
-                                    <div className="h-10 bg-muted rounded mt-6" />
-                                </Card>
-                            ))
-                        ) : (
-                            // Fetch done but no data for this route
-                            <Card className="p-6 border border-dashed col-span-full">
-                                <p className="font-semibold">No schedules found for this route.</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Try a different From/To, or we may not have data yet.
-                                </p>
-                                {loadError && (
-                                    <p className="text-sm text-amber-700 mt-2">
-                                        Live data failed to load — showing fallback routes only.
-                                    </p>
-                                )}
-                            </Card>
-                        )
-                    ) : (
-                        options.map((option, idx) => (
-                            <Card
-                                key={idx}
-                                className={`p-5 border hover:shadow-lg transition-all duration-200 flex flex-col ${idx === 0 ? "border-primary/50 ring-1 ring-primary/20" : "border-border"
-                                    }`}
-                            >
-                                {/* Cheapest badge */}
-                                {idx === 0 && (
-                                    <div className="mb-3">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-primary text-primary-foreground rounded-sm">
-                                            Best Price
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Header: type + badge */}
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        {getTypeIcon(option.type)}
-                                        <span className="font-bold">{option.type}</span>
-                                    </div>
-                                    <span
-                                        className={`text-xs px-2 py-0.5 rounded-full border ${getTypeBadgeColor(option.type)}`}
-                                    >
-                                        {option.type}
-                                    </span>
-                                </div>
-
-                                {/* Provider */}
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    {option.provider}
-                                </p>
-
-                                {/* Details */}
-                                <div className="space-y-2 mb-4 flex-1">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Clock className="w-4 h-4 text-muted-foreground" />
-                                        <span>{option.duration}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                                        <span>
-                                            {option.departure} → {option.arrival}
-                                        </span>
-                                    </div>
-                                    {option.rating && (
-                                        <div className="flex items-center gap-1 text-sm">
-                                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                            <span className="font-medium">{option.rating}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Price */}
-                                <p className="text-xs text-muted-foreground mb-1">Starting from</p>
-                                <p className="text-2xl font-bold text-primary mb-4">
-                                    ฿{option.price.toLocaleString()}
-                                </p>
-
-                                {/* Book CTA */}
-                                <a
-                                    href={option.bookingUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block mt-auto"
-                                >
-                                    <Button
-                                        size="sm"
-                                        className="w-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors font-mono uppercase text-xs"
-                                    >
-                                        Book Now <ExternalLink className="w-3 h-3 ml-1" />
-                                    </Button>
-                                </a>
-                            </Card>
-                        ))
-                    )}
-                </div>
-            </div>
+            {/* ✨ FEATURED JOURNEY CARD (BKK-CNX Only) ✨ */}
+            <FeaturedTrainCard from="Bangkok" to="Chiang Mai" />
 
             {/* ── Affiliate Disclosure ── */}
             <div className="p-4 bg-muted/30 border border-border rounded-lg text-xs text-muted-foreground">
