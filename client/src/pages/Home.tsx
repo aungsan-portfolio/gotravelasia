@@ -467,7 +467,7 @@ export default function Home() {
 
                 <div className="pt-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                   <a
-                    href="https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2Fthailand-esim"
+                    href="https://airalo.tpx.gr/rLWEywcV"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

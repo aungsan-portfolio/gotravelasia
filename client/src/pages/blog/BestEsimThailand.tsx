@@ -15,7 +15,7 @@ const data: MoneyPageData = {
       pros: ["Instant activation", "Keep your home number active", "Cheap data packages"],
       cons: ["Data only (no voice calls)", "Slightly more than local street price"],
       ctaText: "Get eSIM",
-      affiliateLink: "https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2Fthailand-esim",
+      affiliateLink: "https://airalo.tpx.gr/rLWEywcV",
       price: "$9.90 for 50GB"
     },
     {

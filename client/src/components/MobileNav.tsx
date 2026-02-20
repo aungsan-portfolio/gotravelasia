@@ -138,7 +138,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                 {t("nav.tours")}
                             </a>
                             <a
-                                href="https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2Fthailand-esim"
+                                href="https://airalo.tpx.gr/rLWEywcV"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"

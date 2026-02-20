@@ -40,7 +40,7 @@ export default function Pai() {
         traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/pai-district-10000216",
         welcomePickups: "https://www.welcomepickups.com/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://invol.co/aff_m?aff_id=1072854&source=gotravel&url=https%3A%2F%2Fwww.airalo.com%2Fthailand-esim"
+        esim: "https://airalo.tpx.gr/rLWEywcV"
       }}
     />
   );
