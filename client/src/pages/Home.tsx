@@ -154,7 +154,8 @@ export default function Home() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/data/flight_data.json", { cache: "no-store" })
+    // Bust Vercel's Edge Cache by appending a dynamic timestamp query parameter
+    fetch(`/data/flight_data.json?t=${new Date().getTime()}`, { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load flight_data.json");
         return res.json();
