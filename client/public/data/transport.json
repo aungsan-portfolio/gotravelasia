@@ -1,7 +1,11 @@
 {
-  "lastUpdated": "2026-02-20T00:00:00.000000+00:00",
+  "lastUpdated": "2026-02-20T06:43:29.034207+00:00",
   "affiliateId": "14566451",
   "totalRoutes": 26,
+  "scrapeStats": {
+    "success": 0,
+    "fallback": 26
+  },
   "routes": [
     {
       "from": "Bangkok",

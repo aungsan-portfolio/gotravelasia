@@ -1,0 +1,51 @@
+﻿commit 837011f4b2136bb7c76aaf27fb9f4ee4f12546e1
+Author: Aung San <littlebossfoodhouse@gmail.com>
+Date:   Fri Feb 20 00:25:35 2026 +0700
+
+    chore: remove scrapers and transition to static data for Terms compliance
+
+M	client/public/data/transport.json
+M	client/src/components/TransportScheduleWidget.tsx
+D	scripts/flight_bot.py
+D	scripts/price_bot.py
+M	scripts/requirements.txt
+
+commit 19096048e40e4f4e7f688737ef116afd9437ce77
+Author: Aung San <littlebossfoodhouse@gmail.com>
+Date:   Thu Feb 19 22:04:26 2026 +0700
+
+    fix: wrap transport widget in scroll container + remove all Radix components for mobile compatibility
+    
+    - Add scroll wrapper with -webkit-overflow-scrolling:touch and max-h-[550px] on mobile
+    - Add pointer-events-none to hero background overlay
+    - Replace Radix Tabs with native buttons in FeaturedTrainCard
+    - Replace all Badge components with native spans
+    - Remove Radix Select/Tabs/Badge imports from transport widget flow
+
+M	client/src/components/FeaturedTrainCard.tsx
+M	client/src/pages/Home.tsx
+
+commit 74f5338bee0f3776944ed2e0ecd0139df48f2950
+Author: Aung San <littlebossfoodhouse@gmail.com>
+Date:   Thu Feb 19 21:08:16 2026 +0700
+
+    fix: mobile-friendly tab labels and responsive layout improvements
+
+M	client/src/pages/Home.tsx
+
+commit 3440e8230bc4e73f89fb3d5b89cacf6082c2347e
+Author: GoTravel Price Bot <bot@gotravel.asia>
+Date:   Thu Feb 19 12:54:16 2026 +0000
+
+    ≡ƒñû Auto-update flight prices [2026-02-19 12:54 UTC]
+
+M	client/public/data/flight_data.json
+
+commit 531512eab194ae76b9f7b94a754b7be6fad6544a
+Author: GoTravel Price Bot <bot@gotravel.asia>
+Date:   Thu Feb 19 12:41:52 2026 +0000
+
+    ≡ƒñû Auto-update prices [2026-02-19 12:41 UTC]
+
+M	client/public/data/flight_data.json
+M	client/public/data/transport.json
