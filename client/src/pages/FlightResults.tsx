@@ -5,32 +5,51 @@ const TPWL_SCRIPT_URL = "https://tpwidg.com/wl_web/main.js?wl_id=12942";
 
 export default function FlightResults() {
     useEffect(() => {
+        // Read flightSearch param from URL (passed by FlightWidget)
+        const urlParams = new URLSearchParams(window.location.search);
+        const flightSearch = urlParams.get("flightSearch");
+
         // Set Travelpayouts configuration before loading the script
         (window as any).TPWL_CONFIGURATION = {
             ...(window as any).TPWL_CONFIGURATION,
-            resultsURL: "https://gotravel-asia.vercel.app/flights/results",
+            resultsURL: window.location.origin + "/flights/results",
         };
 
         // Check if script is already loaded
         const existingScript = document.querySelector(
-            `script[src="${TPWL_SCRIPT_URL}"]`
+            `script[src^="https://tpwidg.com/wl_web/main.js"]`
         );
-        if (!existingScript) {
-            const script = document.createElement("script");
-            script.async = true;
-            script.type = "module";
-            script.src = TPWL_SCRIPT_URL;
-            document.head.appendChild(script);
+
+        if (existingScript) {
+            // Script already loaded — remove and re-add to trigger re-init
+            existingScript.remove();
         }
 
-        // Cleanup: remove script on unmount to prevent duplicates on re-navigation
-        return () => {
-            // Travelpayouts widget handles its own state, so we only clean up
-            // the search container's contents to allow re-render on next visit
-            const searchEl = document.getElementById("tpwl-search");
+        const script = document.createElement("script");
+        script.async = true;
+        script.type = "module";
+        // Append flightSearch param to script URL so widget auto-searches
+        script.src = flightSearch
+            ? `${TPWL_SCRIPT_URL}&flightSearch=${flightSearch}`
+            : TPWL_SCRIPT_URL;
+        document.head.appendChild(script);
+
+        // Hide the loading hint once tickets appear
+        const observer = new MutationObserver(() => {
             const ticketsEl = document.getElementById("tpwl-tickets");
-            if (searchEl) searchEl.innerHTML = "";
-            if (ticketsEl) ticketsEl.innerHTML = "";
+            const hintEl = document.getElementById("tpwl-loading-hint");
+            if (ticketsEl && ticketsEl.children.length > 0 && hintEl) {
+                hintEl.style.display = "none";
+            }
+        });
+
+        const ticketsEl = document.getElementById("tpwl-tickets");
+        if (ticketsEl) {
+            observer.observe(ticketsEl, { childList: true, subtree: true });
+        }
+
+        return () => {
+            observer.disconnect();
         };
     }, []);
 
@@ -73,10 +92,10 @@ export default function FlightResults() {
                     {/* Loading hint (hidden once results appear) */}
                     <div id="tpwl-loading-hint" className="text-center py-12 text-gray-400">
                         <p className="text-lg font-medium">
-                            👆 Use the search form above to find flights
+                            ✈️ Searching for the best flights...
                         </p>
                         <p className="text-sm mt-2">
-                            Enter your origin, destination, and dates to see live prices
+                            Please wait while we compare prices across 100+ airlines
                         </p>
                     </div>
                 </div>

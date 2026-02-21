@@ -343,8 +343,28 @@ export default function FlightWidget() {
             timestamp: Date.now(),
         });
 
-        // Navigate to internal Flight Results page (White Label)
-        window.location.href = "/flights/results";
+        // Build Travelpayouts White Label flightSearch param
+        // Format: ORIGIN_DDMM_DEST[_DDMM]_[class]_adults_children_infants
+        const formatDDMM = (dateStr: string) => {
+            const [, mm, dd] = dateStr.split("-"); // YYYY-MM-DD
+            return dd + mm; // DDMM
+        };
+        const cabinCode: Record<string, string> = {
+            economy: "",
+            premium_economy: "w",
+            business: "c",
+            first: "f",
+        };
+        const classPrefix = cabinCode[cabinClass] || "";
+
+        let flightSearch = `${origin}${formatDDMM(departDate)}${destination}`;
+        if (returnDate) {
+            flightSearch += formatDDMM(returnDate);
+        }
+        flightSearch += `${classPrefix}${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
+
+        // Navigate to internal Flight Results page with search params
+        window.location.href = `/flights/results?flightSearch=${flightSearch}`;
     };
 
     const handleTripComSearch = () => {
