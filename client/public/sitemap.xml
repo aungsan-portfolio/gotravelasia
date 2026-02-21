@@ -2,88 +2,88 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Homepage -->
   <url>
-    <loc>https://gotravelasia.com/</loc>
+    <loc>https://gotravel-asia.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
   <!-- Thailand Destinations -->
   <url>
-    <loc>https://gotravelasia.com/thailand/bangkok</loc>
+    <loc>https://gotravel-asia.vercel.app/thailand/bangkok</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/thailand/chiang-mai</loc>
+    <loc>https://gotravel-asia.vercel.app/thailand/chiang-mai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/thailand/phuket</loc>
+    <loc>https://gotravel-asia.vercel.app/thailand/phuket</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/thailand/krabi</loc>
+    <loc>https://gotravel-asia.vercel.app/thailand/krabi</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/thailand/pai</loc>
+    <loc>https://gotravel-asia.vercel.app/thailand/pai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/thailand/chiang-rai</loc>
+    <loc>https://gotravel-asia.vercel.app/thailand/chiang-rai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <!-- Blog -->
   <url>
-    <loc>https://gotravelasia.com/blog</loc>
+    <loc>https://gotravel-asia.vercel.app/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/blog/best-things-to-do-in-bangkok</loc>
+    <loc>https://gotravel-asia.vercel.app/blog/best-things-to-do-in-bangkok</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/blog/cheap-flights-to-bangkok</loc>
+    <loc>https://gotravel-asia.vercel.app/blog/cheap-flights-to-bangkok</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/blog/best-airport-transfers-in-bangkok</loc>
+    <loc>https://gotravel-asia.vercel.app/blog/best-airport-transfers-in-bangkok</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/blog/best-travel-insurance-for-thailand</loc>
+    <loc>https://gotravel-asia.vercel.app/blog/best-travel-insurance-for-thailand</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/blog/best-esim-for-thailand</loc>
+    <loc>https://gotravel-asia.vercel.app/blog/best-esim-for-thailand</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Legal Pages -->
   <url>
-    <loc>https://gotravelasia.com/privacy</loc>
+    <loc>https://gotravel-asia.vercel.app/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/terms</loc>
+    <loc>https://gotravel-asia.vercel.app/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://gotravelasia.com/contact</loc>
+    <loc>https://gotravel-asia.vercel.app/contact</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
