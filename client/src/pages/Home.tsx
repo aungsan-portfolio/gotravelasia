@@ -122,16 +122,16 @@ function HotelsSearchForm() {
 
 /* ─── Popular Routes Config (prices come from bot data) ─── */
 const ROUTE_CONFIG = [
-  { from: "Yangon", to: "Bangkok", origin: "RGN", dest: "BKK" },
-  { from: "Yangon", to: "Singapore", origin: "RGN", dest: "SIN" },
-  { from: "Yangon", to: "Chiang Mai", origin: "RGN", dest: "CNX" },
-  { from: "Mandalay", to: "Bangkok", origin: "MDL", dest: "BKK" },
-  { from: "Yangon", to: "KL", origin: "RGN", dest: "KUL" },
-  { from: "Yangon", to: "Hanoi", origin: "RGN", dest: "HAN" },
-  { from: "Yangon", to: "Phuket", origin: "RGN", dest: "HKT" },
-  { from: "Mandalay", to: "Chiang Mai", origin: "MDL", dest: "CNX" },
-  { from: "Yangon", to: "Ho Chi Minh", origin: "RGN", dest: "SGN" },
-  { from: "Yangon", to: "Phnom Penh", origin: "RGN", dest: "PNH" },
+  { from: "Yangon", to: "Bangkok", origin: "RGN", dest: "BKK", fallbackPrice: 45 },
+  { from: "Yangon", to: "Singapore", origin: "RGN", dest: "SIN", fallbackPrice: 110 },
+  { from: "Yangon", to: "Chiang Mai", origin: "RGN", dest: "CNX", fallbackPrice: 120 },
+  { from: "Mandalay", to: "Bangkok", origin: "MDL", dest: "BKK", fallbackPrice: 65 },
+  { from: "Yangon", to: "KL", origin: "RGN", dest: "KUL", fallbackPrice: 75 },
+  { from: "Yangon", to: "Hanoi", origin: "RGN", dest: "HAN", fallbackPrice: 130 },
+  { from: "Yangon", to: "Phuket", origin: "RGN", dest: "HKT", fallbackPrice: 140 },
+  { from: "Mandalay", to: "Chiang Mai", origin: "MDL", dest: "CNX", fallbackPrice: 150 },
+  { from: "Yangon", to: "Ho Chi Minh", origin: "RGN", dest: "SGN", fallbackPrice: 125 },
+  { from: "Yangon", to: "Phnom Penh", origin: "RGN", dest: "PNH", fallbackPrice: 180 },
 ];
 
 /* ─── Tab Config ─── */
@@ -147,13 +147,20 @@ const getRouteImage = (dest: string) => {
     BKK: "/images/bangkok.jpg",
     CNX: "/images/chiang-mai.jpg",
     HKT: "/images/phuket.jpg",
-    SIN: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=800&q=80",
-    KUL: "https://images.unsplash.com/photo-1596422846543-75c6fc197f0a?w=800&q=80",
-    HAN: "https://images.unsplash.com/photo-1555921015-5532091f6026?w=800&q=80",
-    SGN: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=800&q=80",
-    PNH: "https://images.unsplash.com/photo-1600021644788-7e3f200c968f?w=800&q=80",
+    SIN: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Singapore_Marina_Bay_Sands_and_ArtScience_Museum_2017.jpg/800px-Singapore_Marina_Bay_Sands_and_ArtScience_Museum_2017.jpg",
+    KUL: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Kuala_Lumpur_skyline_%282017%29.jpg/800px-Kuala_Lumpur_skyline_%282017%29.jpg",
+    HAN: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Hoan_Kiem_Lake%2C_Hanoi%2C_Vietnam.jpg/800px-Hoan_Kiem_Lake%2C_Hanoi%2C_Vietnam.jpg",
+    SGN: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Ho_Chi_Minh_City_Skyline_%28Night%29.jpg/800px-Ho_Chi_Minh_City_Skyline_%28Night%29.jpg",
+    PNH: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Phnom_Penh_Royal_Palace_%281%29.jpg/800px-Phnom_Penh_Royal_Palace_%281%29.jpg",
   };
   return images[dest] || "/images/hero-travel.jpg";
+};
+
+/* ─── THB Converter Helper ─── */
+const USD_TO_THB_RATE = 34; // Approximate static rate
+const formatTHB = (usdPrice: number) => {
+  const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
+  return `฿${thbPrice.toLocaleString()}`;
 };
 
 /* ═══════════════════════════════════════════════════════════ */
@@ -391,11 +398,11 @@ export default function Home() {
                     </div>
 
                     <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                      {routeDeal ? (
+                      {routeDeal || route.fallbackPrice ? (
                         <>
                           <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Economy</div>
                           <div className="text-xl font-black text-emerald-600">
-                            From ${Math.round(routeDeal.price)}
+                            From {formatTHB(routeDeal ? routeDeal.price : route.fallbackPrice!)}
                           </div>
                         </>
                       ) : (
