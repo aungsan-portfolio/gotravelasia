@@ -12,6 +12,7 @@ import Phuket from "./pages/destinations/Phuket";
 import Krabi from "./pages/destinations/Krabi";
 import Pai from "./pages/destinations/Pai";
 import ChiangRai from "./pages/destinations/ChiangRai";
+import FlightResults from "./pages/FlightResults";
 
 // Legal & Company Pages
 import TermsAndPrivacy from "./pages/PrivacyPolicy";
@@ -38,6 +39,9 @@ function Router() {
       <Route path="/thailand/krabi" component={Krabi} />
       <Route path="/thailand/pai" component={Pai} />
       <Route path="/thailand/chiang-rai" component={ChiangRai} />
+
+      {/* Flight Search Results (Travelpayouts White Label) */}
+      <Route path="/flights/results" component={FlightResults} />
 
       {/* Blog & Money Pages */}
       <Route path="/blog" component={Blog} />

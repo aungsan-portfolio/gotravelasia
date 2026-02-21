@@ -343,7 +343,8 @@ export default function FlightWidget() {
             timestamp: Date.now(),
         });
 
-        window.open(tpUrl, "_blank", "noopener,noreferrer");
+        // Navigate to internal Flight Results page (White Label)
+        window.location.href = "/flights/results";
     };
 
     const handleTripComSearch = () => {
