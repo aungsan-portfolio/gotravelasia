@@ -376,7 +376,7 @@ export default function FlightWidget() {
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 overflow-x-hidden">
             {/* SEARCH ROW */}
             <div className="flex flex-col lg:flex-row gap-3">
 

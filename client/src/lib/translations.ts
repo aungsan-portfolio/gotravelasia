@@ -50,7 +50,7 @@ export const translations: Record<Language, Translations> = {
         viewTours: "View Tours",
         bookThisTrip: "Book This Trip Now",
         planTrip: "Plan Trip",
-        signIn: "Sign In",
+        signIn: "Get Price Alerts",
 
         // Footer
         aboutUs: "About Us",
@@ -112,7 +112,7 @@ export const translations: Record<Language, Translations> = {
         viewTours: "ခရီးစဉ်များကြည့်ပါ",
         bookThisTrip: "ဤခရီးကို ယခုမှာယူပါ",
         planTrip: "ခရီးစီစဉ်ပါ",
-        signIn: "ဝင်ရောက်ပါ",
+        signIn: "စျေးနှုန်းသတိပေးချက်",
 
         // Footer
         aboutUs: "ကျွန်ုပ်တို့အကြောင်း",

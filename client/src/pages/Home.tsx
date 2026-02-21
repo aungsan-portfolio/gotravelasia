@@ -2,12 +2,11 @@ import { useState, useCallback } from "react";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Loader2, Wifi, Zap, Smartphone } from "lucide-react";
+import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Wifi, Zap, Smartphone } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
 import FlightWidget from "@/components/FlightWidget";
-import { WEB3FORMS_KEY } from "@/lib/config";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useFlightData } from "@/hooks/useFlightData";
 import type { Deal } from "@/hooks/useFlightData";
@@ -470,88 +469,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════ NEWSLETTER ═══════════ */}
-      <NewsletterSection />
     </Layout>
   );
 }
 
-/* ── Newsletter with Web3Forms ── */
-function NewsletterSection() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setStatus("sending");
-    try {
-      const res = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_key: WEB3FORMS_KEY,
-          subject: "📬 Newsletter Subscriber — GoTravelAsia",
-          from_name: "GoTravel Newsletter",
-          email,
-          message: `Homepage newsletter subscriber: ${email}`,
-        }),
-      });
-      if (!res.ok) throw new Error("Submission failed");
-      localStorage.setItem("gt_user_email", email);
-      localStorage.setItem("gt_subscribed", "true");
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    }
-  };
-
-  return (
-    <section className="py-24 bg-primary text-primary-foreground">
-      <div className="container text-center max-w-2xl">
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tighter mb-4">Don't Miss the Next Deal</h2>
-        <p className="text-primary-foreground/80 mb-8 text-lg">
-          Join thousands of travelers getting the best Thailand travel tips and deals.
-        </p>
-        {status === "done" ? (
-          <div className="flex items-center justify-center gap-2 text-lg font-medium">
-            <CheckCircle className="w-6 h-6" />
-            <span>You're in! Watch your inbox for exclusive deals.</span>
-          </div>
-        ) : (
-          <>
-            {status === "error" && (
-              <p className="text-red-200 text-sm mb-4 font-medium">Something went wrong. Please try again.</p>
-            )}
-            <form className="flex flex-col sm:flex-row gap-4" onSubmit={handleSubmit}>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-                required
-                className="flex-1 h-12 px-4 bg-white/10 border border-white/20 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
-              />
-              <Button
-                size="lg"
-                type="submit"
-                disabled={status === "sending"}
-                className="bg-secondary text-secondary-foreground hover:bg-white hover:text-primary font-bold px-8"
-              >
-                {status === "sending" ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Subscribe"
-                )}
-              </Button>
-            </form>
-          </>
-        )}
-        <p className="text-xs text-primary-foreground/60 mt-4 font-mono">No spam. Unsubscribe anytime.</p>
-      </div>
-    </section>
-  );
-}
