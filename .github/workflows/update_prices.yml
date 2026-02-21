@@ -46,4 +46,8 @@ jobs:
           git config user.email "bot@gotravel.asia"
           git add client/public/data/transport.json client/public/data/flight_data.json
           git commit -m "🤖 Auto-update prices [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          
+          # Pull latest changes before pushing to avoid conflicts
+          git pull --rebase origin main
+          
           git push
