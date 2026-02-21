@@ -147,11 +147,11 @@ const getRouteImage = (dest: string) => {
     BKK: "/images/bangkok.jpg",
     CNX: "/images/chiang-mai.jpg",
     HKT: "/images/phuket.jpg",
-    SIN: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Singapore_Marina_Bay_Sands_and_ArtScience_Museum_2017.jpg/800px-Singapore_Marina_Bay_Sands_and_ArtScience_Museum_2017.jpg",
-    KUL: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Kuala_Lumpur_skyline_%282017%29.jpg/800px-Kuala_Lumpur_skyline_%282017%29.jpg",
-    HAN: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Hoan_Kiem_Lake%2C_Hanoi%2C_Vietnam.jpg/800px-Hoan_Kiem_Lake%2C_Hanoi%2C_Vietnam.jpg",
-    SGN: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Ho_Chi_Minh_City_Skyline_%28Night%29.jpg/800px-Ho_Chi_Minh_City_Skyline_%28Night%29.jpg",
-    PNH: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Phnom_Penh_Royal_Palace_%281%29.jpg/800px-Phnom_Penh_Royal_Palace_%281%29.jpg",
+    SIN: "/images/destinations/singapore.jpg",
+    KUL: "/images/destinations/kuala-lumpur.jpg",
+    HAN: "/images/destinations/hanoi.jpg",
+    SGN: "/images/destinations/ho-chi-minh.jpg",
+    PNH: "/images/destinations/phnom-penh.jpg",
   };
   return images[dest] || "/images/hero-travel.jpg";
 };
