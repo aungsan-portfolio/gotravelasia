@@ -29,9 +29,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/requirements.txt
       
-      - name: Run transport price bot
-        run: python scripts/price_bot.py
-      
       - name: Run flight price bot
         env:
           TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
