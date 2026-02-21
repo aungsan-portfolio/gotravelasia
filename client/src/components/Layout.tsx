@@ -9,8 +9,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import SignInModal from "./SignInModal";
 import TripPlannerChat from "./TripPlannerChat";
 import { Loader2 } from "lucide-react";
-
-const WEB3FORMS_KEY = "606d35a5-9c09-4209-8317-96fba9a21c59";
+import { WEB3FORMS_KEY } from "@/lib/config";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
@@ -48,7 +47,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="GoTravel Logo" className="h-[50px] w-auto object-contain" />
+            <img src="/logo.webp" alt="GoTravel Logo" className="h-[50px] w-auto object-contain" />
             <div className="hidden lg:flex flex-col">
               <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground leading-none">Travel Guides • Stays • Experiences</span>
             </div>
@@ -98,7 +97,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="container grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <Link href="/" className="block mb-4">
-              <img src="/logo.png" alt="GoTravel Logo" className="h-12 w-auto object-contain" />
+              <img src="/logo.webp" alt="GoTravel Logo" className="h-12 w-auto object-contain" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Thailand Travel Guides & Planning for Myanmar and International Travelers. Crafting Unforgettable Journeys.

@@ -1,6 +1,12 @@
 import { Link } from "wouter";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function TermsAndPrivacy() {
+  usePageMeta({
+    title: "Privacy Policy & Terms",
+    description: "GoTravel Asia privacy policy, terms of service, affiliate disclosure, and cookie policy.",
+  });
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 prose prose-lg dark:prose-invert">
       <h1 className="text-4xl font-bold mb-8">Terms of Service & Privacy Policy</h1>

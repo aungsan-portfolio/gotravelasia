@@ -4,7 +4,7 @@ export default function ChiangMai() {
   return (
     <DestinationPage
       name="Chiang Mai"
-      heroImage="/images/chiang-mai.jpg" // You might need to update this image path or ensure the image exists
+      heroImage="/images/chiang-mai.webp"
       description="The cultural heart of Northern Thailand. Explore ancient temples, misty mountains, and vibrant night markets in this laid-back city."
       bestTime="November to February (Cool Season)"
       currency="Thai Baht (THB)"

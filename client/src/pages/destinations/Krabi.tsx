@@ -4,7 +4,7 @@ export default function Krabi() {
   return (
     <DestinationPage
       name="Krabi"
-      heroImage="/images/krabi.jpg"
+      heroImage="/images/krabi.webp"
       description="Home to limestone cliffs, clear emerald waters, and the famous Railay Beach."
       bestTime="November to April"
       currency="Thai Baht (THB)"

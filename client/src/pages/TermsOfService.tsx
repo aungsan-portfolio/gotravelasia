@@ -1,7 +1,13 @@
 import { Link } from "wouter";
 import Layout from "@/components/Layout";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function TermsOfService() {
+    usePageMeta({
+        title: "Terms of Service",
+        description: "GoTravel Asia terms of service, usage conditions, and user guidelines for our travel comparison platform.",
+    });
+
     return (
         <Layout>
             <section className="py-24 bg-background">

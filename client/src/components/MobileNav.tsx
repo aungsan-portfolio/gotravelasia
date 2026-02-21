@@ -38,7 +38,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
             <SheetContent side="right" className="w-[300px] sm:w-[350px]">
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
-                        <img src="/logo.png" alt="GoTravel Logo" className="h-8 w-auto" />
+                        <img src="/logo.webp" alt="GoTravel Logo" className="h-8 w-auto" />
                     </SheetTitle>
                 </SheetHeader>
 

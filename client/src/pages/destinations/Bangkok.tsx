@@ -4,7 +4,7 @@ export default function Bangkok() {
   return (
     <DestinationPage
       name="Bangkok"
-      heroImage="/images/bangkok.jpg"
+      heroImage="/images/bangkok.webp"
       description="Bangkok is a sensory overload in the best way possible. From the golden spires of the Grand Palace to the neon-lit streets of Sukhumvit, this city blends ancient tradition with hyper-modernity. It's the world's street food capital, a shopper's paradise, and the gateway to Southeast Asia."
       bestTime="November to February"
       currency="Thai Baht (THB)"

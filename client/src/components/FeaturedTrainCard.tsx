@@ -145,9 +145,9 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
     const isSecondActive = activeTab === "2nd-class";
 
     // Vite-safe image paths
-    const exteriorImg = assetUrl("images/trains/cnr-exterior.jpg");
-    const firstImg = assetUrl("images/trains/cnr-1st-class.jpg");
-    const secondImg = assetUrl("images/trains/cnr-2nd-class.jpg");
+    const exteriorImg = assetUrl("images/trains/cnr-exterior.webp");
+    const firstImg = assetUrl("images/trains/cnr-1st-class.webp");
+    const secondImg = assetUrl("images/trains/cnr-2nd-class.webp");
 
     return (
         <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

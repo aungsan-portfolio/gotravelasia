@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
 import FlightWidget from "@/components/FlightWidget";
+import { WEB3FORMS_KEY } from "@/lib/config";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 /* ─── Types & Constants ─── */
 type Deal = {
@@ -144,16 +146,16 @@ const TABS = [
 /* ─── Route Images Helper (Phase 2 UI Redesign) ─── */
 const getRouteImage = (dest: string) => {
   const images: Record<string, string> = {
-    BKK: "/images/bangkok.jpg",
-    CNX: "/images/chiang-mai.jpg",
-    HKT: "/images/phuket.jpg",
-    SIN: "/images/destinations/singapore.jpg",
-    KUL: "/images/destinations/kuala-lumpur.jpg",
-    HAN: "/images/destinations/hanoi.jpg",
-    SGN: "/images/destinations/ho-chi-minh.jpg",
-    PNH: "/images/destinations/phnom-penh.jpg",
+    BKK: "/images/bangkok.webp",
+    CNX: "/images/chiang-mai.webp",
+    HKT: "/images/phuket.webp",
+    SIN: "/images/destinations/singapore.webp",
+    KUL: "/images/destinations/kuala-lumpur.webp",
+    HAN: "/images/destinations/hanoi.webp",
+    SGN: "/images/destinations/ho-chi-minh.webp",
+    PNH: "/images/destinations/phnom-penh.webp",
   };
-  return images[dest] || "/images/hero-travel.jpg";
+  return images[dest] || "/images/hero-travel.webp";
 };
 
 /* ─── THB Converter Helper ─── */
@@ -166,6 +168,11 @@ const formatTHB = (usdPrice: number) => {
 /* ═══════════════════════════════════════════════════════════ */
 
 export default function Home() {
+  usePageMeta({
+    title: "Find Cheapest Flights & Bus Tickets to Thailand",
+    description: "Compare flights, hotels, and transport from Myanmar to Thailand, Singapore, and Vietnam. Instant price comparison and direct booking with GoTravel Asia.",
+  });
+
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
 
@@ -247,9 +254,9 @@ export default function Home() {
   const updatedText = meta.updated_at || meta.updated || "";
 
   const featuredDestinations = [
-    { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.jpg", link: "/thailand/chiang-mai", agodaCityId: 18296 },
-    { nameKey: "destinations.bangkok", descKey: "destinations.bangkokDesc", image: "/images/bangkok.jpg", link: "/thailand/bangkok", agodaCityId: 15932 },
-    { nameKey: "destinations.phuket", descKey: "destinations.phuketDesc", image: "/images/phuket.jpg", link: "/thailand/phuket", agodaCityId: 16639 },
+    { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.webp", link: "/thailand/chiang-mai", agodaCityId: 18296 },
+    { nameKey: "destinations.bangkok", descKey: "destinations.bangkokDesc", image: "/images/bangkok.webp", link: "/thailand/bangkok", agodaCityId: 15932 },
+    { nameKey: "destinations.phuket", descKey: "destinations.phuketDesc", image: "/images/phuket.webp", link: "/thailand/phuket", agodaCityId: 16639 },
   ];
 
   return (
@@ -275,10 +282,10 @@ export default function Home() {
 
             {/* Travel Image Grid (Right) - Inspired by Cheapflights */}
             <div className="hidden lg:grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-              <img src="/images/bangkok.jpg" alt="Bangkok" className="rounded-2xl object-cover h-[320px] w-full shadow-lg" loading="lazy" />
+              <img src="/images/bangkok.webp" alt="Bangkok" className="rounded-2xl object-cover h-[320px] w-full shadow-lg" loading="lazy" />
               <div className="grid grid-rows-2 gap-4">
-                <img src="/images/chiang-mai.jpg" alt="Chiang Mai" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
-                <img src="/images/phuket.jpg" alt="Phuket" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
+                <img src="/images/chiang-mai.webp" alt="Chiang Mai" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
+                <img src="/images/phuket.webp" alt="Phuket" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
               </div>
             </div>
           </div>
@@ -530,7 +537,7 @@ export default function Home() {
                 <div className="relative transform rotate-y-[-15deg] rotate-x-[5deg] hover:rotate-y-0 hover:rotate-x-0 transition-transform duration-500">
                   <div className="absolute inset-0 bg-blue-400 rounded-3xl blur-2xl opacity-40"></div>
                   <img
-                    src="/images/hero-travel.jpg"
+                    src="/images/hero-travel.webp"
                     alt="Thailand Travel"
                     className="relative rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10"
                     style={{ aspectRatio: '4/5', objectFit: 'cover' }}
@@ -713,7 +720,7 @@ function NewsletterSection() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          access_key: "606d35a5-9c09-4209-8317-96fba9a21c59",
+          access_key: WEB3FORMS_KEY,
           subject: "📬 Newsletter Subscriber — GoTravelAsia",
           from_name: "GoTravel Newsletter",
           email,

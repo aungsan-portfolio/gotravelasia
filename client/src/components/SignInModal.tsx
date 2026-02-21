@@ -14,11 +14,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, Loader2, Mail, X } from "lucide-react";
+import { WEB3FORMS_KEY } from "@/lib/config";
 
 // ──────────────────────────────────────────────
 // Config
 // ──────────────────────────────────────────────
-const WEB3FORMS_KEY = "606d35a5-9c09-4209-8317-96fba9a21c59";
 const LS_EMAIL_KEY = "gt_user_email";
 const LS_SUBSCRIBED_KEY = "gt_subscribed";
 

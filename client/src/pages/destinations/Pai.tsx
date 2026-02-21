@@ -4,7 +4,7 @@ export default function Pai() {
   return (
     <DestinationPage
       name="Pai"
-      heroImage="/images/pai.jpg"
+      heroImage="/images/pai.webp"
       description="A bohemian mountain town known for its relaxed vibe, hot springs, and Pai Canyon."
       bestTime="November to February"
       currency="Thai Baht (THB)"

@@ -4,7 +4,7 @@ export default function ChiangRai() {
   return (
     <DestinationPage
       name="Chiang Rai"
-      heroImage="/images/chiang-rai.jpg"
+      heroImage="/images/chiang-rai.webp"
       description="Home to the famous White Temple, Blue Temple, and the Golden Triangle."
       bestTime="November to February"
       currency="Thai Baht (THB)"

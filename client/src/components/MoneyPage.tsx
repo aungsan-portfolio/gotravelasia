@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Check, X, Star, ArrowRight, ExternalLink } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export interface Product {
   name: string;
@@ -26,6 +27,11 @@ export interface MoneyPageData {
 }
 
 export default function MoneyPage({ data }: { data: MoneyPageData }) {
+  usePageMeta({
+    title: data.title,
+    description: data.subtitle,
+  });
+
   return (
     <Layout>
       <article className="max-w-4xl mx-auto px-4 py-12 md:py-20">

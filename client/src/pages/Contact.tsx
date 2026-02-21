@@ -1,7 +1,13 @@
 import { Link } from "wouter";
 import Layout from "@/components/Layout";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Contact() {
+    usePageMeta({
+        title: "Contact Us",
+        description: "Get in touch with GoTravel Asia for travel inquiries, partnership opportunities, or feedback about our Thailand travel guides.",
+    });
+
     return (
         <Layout>
             <section className="py-24 bg-background">

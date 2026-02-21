@@ -2,6 +2,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ExternalLink, MapPin } from "lucide-react";
 import TransportScheduleWidget from "./TransportScheduleWidget";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export interface DestinationPageProps {
   name: string;
@@ -25,6 +26,11 @@ export interface DestinationPageProps {
 }
 
 export default function DestinationPage(props: DestinationPageProps) {
+  usePageMeta({
+    title: `${props.name} Travel Guide - Thailand`,
+    description: props.description,
+  });
+
   return (
     <Layout>
       {/* Hero Section */}
