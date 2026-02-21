@@ -42,8 +42,8 @@ export default function Phuket() {
       ]}
       affiliateLinks={{
         klook: "https://www.klook.com/en-US/city/6-phuket-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/phuket-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/region/phuket-10000088",
+        kiwi: `https://tp.media/r?marker=697202&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=HKT&one_way=true&adults=1&locale=en&currency=USD")}`,
+        traveloka: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=16639",
         welcomePickups: "https://www.welcomepickups.com/phuket/",
         insurance: "https://ektatraveling.com/",
         esim: "https://airalo.tpx.gr/rLWEywcV"

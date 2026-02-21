@@ -14,7 +14,7 @@ import { WEB3FORMS_KEY } from "@/lib/config";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const [footerEmail, setFooterEmail] = useState("");
-  const [footerStatus, setFooterStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [footerStatus, setFooterStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [chatOpen, setChatOpen] = useState(false);
 
   const handleFooterSubscribe = async (e: React.FormEvent) => {
@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (!footerEmail) return;
     setFooterStatus("sending");
     try {
-      await fetch("https://api.web3forms.com/submit", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -33,11 +33,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           message: `Newsletter subscriber: ${footerEmail}`,
         }),
       });
+      if (!res.ok) throw new Error("Submission failed");
       localStorage.setItem("gt_user_email", footerEmail);
       localStorage.setItem("gt_subscribed", "true");
       setFooterStatus("done");
     } catch {
-      setFooterStatus("done"); // still show success to user
+      setFooterStatus("error");
     }
   };
 
@@ -131,7 +132,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {t("footer.newsletterDesc")}
             </p>
             {footerStatus === "done" ? (
-              <p className="text-sm text-green-600 font-medium">✅ Subscribed! Check your inbox.</p>
+              <p className="text-sm text-green-600 font-medium">Subscribed! Check your inbox.</p>
+            ) : footerStatus === "error" ? (
+              <p className="text-sm text-red-500 font-medium">Something went wrong. Please try again later.</p>
             ) : (
               <form className="flex gap-2" onSubmit={handleFooterSubscribe}>
                 <input

@@ -143,17 +143,17 @@ const TABS = [
   { id: "transport" as const, icon: "🚌", label: "Transport in Thailand", mobileLabel: "Transport" },
 ];
 
-/* ─── Route Images Helper (Phase 2 UI Redesign) ─── */
+/* ─── Route Images Helper ─── */
 const getRouteImage = (dest: string) => {
   const images: Record<string, string> = {
     BKK: "/images/bangkok.webp",
     CNX: "/images/chiang-mai.webp",
     HKT: "/images/phuket.webp",
-    SIN: "/images/destinations/singapore.webp",
-    KUL: "/images/destinations/kuala-lumpur.webp",
-    HAN: "/images/destinations/hanoi.webp",
-    SGN: "/images/destinations/ho-chi-minh.webp",
-    PNH: "/images/destinations/phnom-penh.webp",
+    SIN: "/images/hero-travel.webp",
+    KUL: "/images/hero-travel.webp",
+    HAN: "/images/hero-travel.webp",
+    SGN: "/images/hero-travel.webp",
+    PNH: "/images/hero-travel.webp",
   };
   return images[dest] || "/images/hero-travel.webp";
 };
@@ -439,9 +439,11 @@ export default function Home() {
                 Curated guides for the Land of Smiles
               </p>
             </div>
-            <Button variant="outline" className="hidden md:flex gap-2 group">
-              View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <Link href="/blog">
+              <Button variant="outline" className="hidden md:flex gap-2 group">
+                View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -709,14 +711,14 @@ export default function Home() {
 /* ── Newsletter with Web3Forms ── */
 function NewsletterSection() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setStatus("sending");
     try {
-      await fetch("https://api.web3forms.com/submit", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -727,11 +729,12 @@ function NewsletterSection() {
           message: `Homepage newsletter subscriber: ${email}`,
         }),
       });
+      if (!res.ok) throw new Error("Submission failed");
       localStorage.setItem("gt_user_email", email);
       localStorage.setItem("gt_subscribed", "true");
       setStatus("done");
     } catch {
-      setStatus("done");
+      setStatus("error");
     }
   };
 
@@ -748,31 +751,36 @@ function NewsletterSection() {
             <span>You're in! Watch your inbox for exclusive deals.</span>
           </div>
         ) : (
-          <form className="flex flex-col sm:flex-row gap-4" onSubmit={handleSubmit}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              required
-              className="flex-1 h-12 px-4 bg-white/10 border border-white/20 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
-            />
-            <Button
-              size="lg"
-              type="submit"
-              disabled={status === "sending"}
-              className="bg-secondary text-secondary-foreground hover:bg-white hover:text-primary font-bold px-8"
-            >
-              {status === "sending" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                "Subscribe"
-              )}
-            </Button>
-          </form>
+          <>
+            {status === "error" && (
+              <p className="text-red-200 text-sm mb-4 font-medium">Something went wrong. Please try again.</p>
+            )}
+            <form className="flex flex-col sm:flex-row gap-4" onSubmit={handleSubmit}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                required
+                className="flex-1 h-12 px-4 bg-white/10 border border-white/20 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+              />
+              <Button
+                size="lg"
+                type="submit"
+                disabled={status === "sending"}
+                className="bg-secondary text-secondary-foreground hover:bg-white hover:text-primary font-bold px-8"
+              >
+                {status === "sending" ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Subscribe"
+                )}
+              </Button>
+            </form>
+          </>
         )}
         <p className="text-xs text-primary-foreground/60 mt-4 font-mono">No spam. Unsubscribe anytime.</p>
       </div>

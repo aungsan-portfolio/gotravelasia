@@ -30,11 +30,11 @@ export default function StickyCTA() {
 
   if (location.includes("flights")) {
     ctaText = "Find Cheap Flights";
-    ctaLink = "https://www.kiwi.com/en/";
+    ctaLink = `https://tp.media/r?marker=697202&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=BKK&one_way=true&adults=1&locale=en&currency=USD")}`;
     ctaSubtext = "Save up to 40%";
   } else if (location.includes("hotels") || location.includes("stay")) {
     ctaText = "Check Hotel Rates";
-    ctaLink = "https://www.traveloka.com/en-th/";
+    ctaLink = "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932";
     ctaSubtext = "Free cancellation available";
   } else if (location.includes("insurance")) {
     ctaText = "Get Insured Now";

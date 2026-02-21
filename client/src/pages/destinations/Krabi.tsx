@@ -40,8 +40,8 @@ export default function Krabi() {
       ]}
       affiliateLinks={{
         klook: "https://www.klook.com/en-US/city/7-krabi-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/krabi-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/province/krabi-10000005",
+        kiwi: `https://tp.media/r?marker=697202&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=KBV&one_way=true&adults=1&locale=en&currency=USD")}`,
+        traveloka: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=17071",
         welcomePickups: "https://www.welcomepickups.com/krabi/",
         insurance: "https://ektatraveling.com/",
         esim: "https://airalo.tpx.gr/rLWEywcV"

@@ -114,7 +114,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <a
-                                href="https://www.kiwi.com/en/search/results/yangon-myanmar/thailand"
+                                href={`https://tp.media/r?marker=697202&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=BKK&one_way=true&adults=1&locale=en&currency=USD")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
