@@ -530,7 +530,7 @@ export default function Home() {
                 <div className="relative transform rotate-y-[-15deg] rotate-x-[5deg] hover:rotate-y-0 hover:rotate-x-0 transition-transform duration-500">
                   <div className="absolute inset-0 bg-blue-400 rounded-3xl blur-2xl opacity-40"></div>
                   <img
-                    src="/images/destinations/hero.jpg"
+                    src="/images/hero-travel.jpg"
                     alt="Thailand Travel"
                     className="relative rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10"
                     style={{ aspectRatio: '4/5', objectFit: 'cover' }}
