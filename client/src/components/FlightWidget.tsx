@@ -11,6 +11,10 @@ import {
     Plus,
     ExternalLink,
     X,
+    Search,
+    Trash2,
+    TrendingUp,
+    TrendingDown,
 } from "lucide-react";
 import { format, isValid } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -116,6 +120,43 @@ const formatTHB = (usdPrice: number) => {
     const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
     return `฿${thbPrice.toLocaleString()}`;
 };
+
+/* ─── Recent Searches (localStorage) ─── */
+const LS_KEY = "gt_recent_searches";
+const MAX_RECENT = 5;
+
+interface RecentSearchRecord {
+    origin: string;
+    destination: string;
+    departDate: string;
+    returnDate: string;
+    priceAtSearch: number | null; // USD price when user searched
+    timestamp: number;
+}
+
+function loadRecentSearches(): RecentSearchRecord[] {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRecentSearch(record: RecentSearchRecord) {
+    const existing = loadRecentSearches();
+    // Remove duplicate route
+    const filtered = existing.filter(
+        (s) => !(s.origin === record.origin && s.destination === record.destination)
+    );
+    // Prepend new, cap at MAX_RECENT
+    const updated = [record, ...filtered].slice(0, MAX_RECENT);
+    localStorage.setItem(LS_KEY, JSON.stringify(updated));
+}
+
+function clearRecentSearches() {
+    localStorage.removeItem(LS_KEY);
+}
 
 export default function FlightWidget() {
     const today = useMemo(() => new Date().toISOString().split("T")[0], []);
@@ -291,6 +332,17 @@ export default function FlightWidget() {
         }
         const targetUrl = `https://www.aviasales.com/search?${params.toString()}`;
         const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`;
+
+        // Save to recent searches
+        saveRecentSearch({
+            origin,
+            destination,
+            departDate,
+            returnDate,
+            priceAtSearch: lowestPrice,
+            timestamp: Date.now(),
+        });
+
         window.open(tpUrl, "_blank", "noopener,noreferrer");
     };
 
@@ -615,6 +667,195 @@ export default function FlightWidget() {
                         <span>Compare on Trip.com</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Recent Searches */}
+            <RecentSearches
+                onReSearch={(s) => {
+                    setOrigin(s.origin);
+                    setDestination(s.destination);
+                    setDepartDate(s.departDate);
+                    setReturnDate(s.returnDate);
+                }}
+            />
+        </div>
+    );
+}
+
+/* ── RecentSearches sub-component ── */
+function RecentSearches({
+    onReSearch,
+}: {
+    onReSearch: (s: RecentSearchRecord) => void;
+}) {
+    const [searches, setSearches] = useState<RecentSearchRecord[]>([]);
+    const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        const saved = loadRecentSearches();
+        setSearches(saved);
+        setLoaded(true);
+
+        // Fetch current prices
+        fetch("/data/flight_data.json?v=" + Date.now())
+            .then((r) => r.json())
+            .then((data) => {
+                const map: Record<string, number> = {};
+                for (const route of data.routes || []) {
+                    map[`${route.origin}-${route.destination}`] = route.price;
+                }
+                setCurrentPrices(map);
+            })
+            .catch(() => { });
+    }, []);
+
+    const handleClear = () => {
+        clearRecentSearches();
+        setSearches([]);
+    };
+
+    if (!loaded || searches.length === 0) return null;
+
+    const getAirportName = (code: string) => {
+        const a = AIRPORTS.find((ap) => ap.code === code);
+        return a ? a.name.split("(")[0].trim() : code;
+    };
+
+    return (
+        <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-black text-gray-900">
+                    Your recent searches
+                </h3>
+                <button
+                    type="button"
+                    onClick={handleClear}
+                    className="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
+                >
+                    <Trash2 className="w-3 h-3" />
+                    Clear
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {searches.slice(0, 3).map((s, i) => {
+                    const routeKey = `${s.origin}-${s.destination}`;
+                    const currentPrice = currentPrices[routeKey] ?? null;
+                    const savedPrice = s.priceAtSearch;
+
+                    let priceBadge: { label: string; color: string; icon: React.ReactNode } | null = null;
+                    if (currentPrice !== null && savedPrice !== null && savedPrice > 0) {
+                        const diff = currentPrice - savedPrice;
+                        const pct = Math.round((Math.abs(diff) / savedPrice) * 100);
+                        if (diff > 0) {
+                            priceBadge = {
+                                label: `Price increase`,
+                                color: "bg-red-100 text-red-700",
+                                icon: <TrendingUp className="w-3 h-3" />,
+                            };
+                        } else if (diff < 0) {
+                            priceBadge = {
+                                label: `Price drop`,
+                                color: "bg-emerald-100 text-emerald-700",
+                                icon: <TrendingDown className="w-3 h-3" />,
+                            };
+                        }
+                    }
+
+                    const displayDate = s.departDate
+                        ? (() => {
+                            const d = new Date(s.departDate + "T00:00:00");
+                            return isValid(d) ? format(d, "EEE d/M") : s.departDate;
+                        })()
+                        : "";
+                    const displayReturnDate = s.returnDate
+                        ? (() => {
+                            const d = new Date(s.returnDate + "T00:00:00");
+                            return isValid(d) ? format(d, "EEE d/M") : s.returnDate;
+                        })()
+                        : "";
+
+                    return (
+                        <div
+                            key={`${routeKey}-${i}`}
+                            className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg hover:border-gray-300 transition-all group"
+                        >
+                            {/* Route header */}
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                                    <Plane className="w-4 h-4 text-gray-600" />
+                                </div>
+                                <div className="font-bold text-gray-900 text-sm">
+                                    {s.origin} <span className="text-gray-400">▸</span> {s.destination}
+                                </div>
+                            </div>
+
+                            {/* Airport names */}
+                            <div className="text-xs text-gray-500 mb-2">
+                                {getAirportName(s.origin)} → {getAirportName(s.destination)}
+                            </div>
+
+                            {/* Dates and trip type */}
+                            <div className="text-xs text-gray-500 mb-3">
+                                {displayDate}
+                                {displayReturnDate ? ` ▸ ${displayReturnDate}` : ""}
+                                <span className="text-gray-400 ml-1">
+                                    · {s.returnDate ? "Return" : "One way"}
+                                </span>
+                            </div>
+
+                            {/* Price badge */}
+                            {priceBadge && (
+                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold mb-2 ${priceBadge.color}`}>
+                                    {priceBadge.icon}
+                                    {priceBadge.label}
+                                </div>
+                            )}
+
+                            {/* Prices */}
+                            <div className="flex items-end justify-between">
+                                <div>
+                                    {currentPrice !== null ? (
+                                        <>
+                                            <div className="text-xl font-black text-gray-900">
+                                                ${currentPrice}
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                                {formatTHB(currentPrice)}
+                                            </div>
+                                            {savedPrice !== null && savedPrice !== currentPrice && (
+                                                <div className="text-xs text-gray-400 line-through">
+                                                    Was ${savedPrice}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : savedPrice !== null ? (
+                                        <>
+                                            <div className="text-xl font-black text-gray-900">
+                                                ${savedPrice}
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                                {formatTHB(savedPrice)}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-sm text-gray-400">Price unavailable</div>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => onReSearch(s)}
+                                    className="w-10 h-10 rounded-xl bg-[#FECD00] hover:bg-[#E5B800] flex items-center justify-center transition-colors shadow-sm group-hover:shadow-md"
+                                    aria-label="Search again"
+                                >
+                                    <Search className="w-4 h-4 text-gray-900" />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
