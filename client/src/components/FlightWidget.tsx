@@ -19,6 +19,7 @@ import {
 import { format, isValid } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 
 // --- CONFIG DATA ---
 const MARKER_ID = "697202";
@@ -270,31 +271,10 @@ export default function FlightWidget() {
         paxTriggerRef.current?.focus();
     }, [openPax]);
 
-    // Fetch price hints dynamically
+    const priceHint = usePriceHint(origin, destination, !!returnDate);
     useEffect(() => {
-        if (returnDate) {
-            setLowestPrice(null);
-            return;
-        }
-
-        fetch("/data/flight_data.json?v=" + new Date().getTime())
-            .then((res) => res.json())
-            .then((data) => {
-                const routes = data.routes || [];
-                const route = routes.find(
-                    (r: any) => r.origin === origin && r.destination === destination
-                );
-                if (route && route.price) {
-                    setLowestPrice(route.price);
-                } else {
-                    setLowestPrice(null);
-                }
-            })
-            .catch((err) => {
-                console.error("Error fetching price hints:", err);
-                setLowestPrice(null);
-            });
-    }, [origin, destination, returnDate]);
+        setLowestPrice(priceHint);
+    }, [priceHint]);
 
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
@@ -713,23 +693,13 @@ function RecentSearches({
     const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
     const [loaded, setLoaded] = useState(false);
 
+    const cachedPriceMap = useFlightPriceMap();
     useEffect(() => {
         const saved = loadRecentSearches();
         setSearches(saved);
         setLoaded(true);
-
-        // Fetch current prices
-        fetch("/data/flight_data.json?v=" + Date.now())
-            .then((r) => r.json())
-            .then((data) => {
-                const map: Record<string, number> = {};
-                for (const route of data.routes || []) {
-                    map[`${route.origin}-${route.destination}`] = route.price;
-                }
-                setCurrentPrices(map);
-            })
-            .catch(() => { });
-    }, []);
+        setCurrentPrices(cachedPriceMap);
+    }, [cachedPriceMap]);
 
     const handleClear = () => {
         clearRecentSearches();

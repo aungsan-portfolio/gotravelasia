@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -9,22 +9,10 @@ import TransportScheduleWidget from "@/components/TransportScheduleWidget";
 import FlightWidget from "@/components/FlightWidget";
 import { WEB3FORMS_KEY } from "@/lib/config";
 import { usePageMeta } from "@/hooks/usePageMeta";
-
-/* ─── Types & Constants ─── */
-type Deal = {
-  origin: string;
-  destination: string;
-  date: string;
-  price: number;
-  airline: string;
-  flight_num?: string;
-};
-
-type Meta = {
-  updated?: string;
-  updated_at?: string;
-  overall_cheapest?: Deal;
-};
+import { useFlightData } from "@/hooks/useFlightData";
+import type { Deal } from "@/hooks/useFlightData";
+import HeroSection from "@/components/HeroSection";
+import DealsCarousel from "@/components/DealsCarousel";
 
 const AFFILIATE_MARKER = "697202";
 const TRIP_COM_BASE = "https://www.trip.com/flights";
@@ -122,50 +110,6 @@ function HotelsSearchForm() {
   );
 }
 
-/* ─── Popular Routes Config (prices come from bot data) ─── */
-const ROUTE_CONFIG = [
-  { from: "Yangon", to: "Bangkok", origin: "RGN", dest: "BKK", fallbackPrice: 45 },
-  { from: "Yangon", to: "Singapore", origin: "RGN", dest: "SIN", fallbackPrice: 110 },
-  { from: "Yangon", to: "Chiang Mai", origin: "RGN", dest: "CNX", fallbackPrice: 120 },
-  { from: "Mandalay", to: "Bangkok", origin: "MDL", dest: "BKK", fallbackPrice: 65 },
-  { from: "Yangon", to: "KL", origin: "RGN", dest: "KUL", fallbackPrice: 75 },
-  { from: "Yangon", to: "Hanoi", origin: "RGN", dest: "HAN", fallbackPrice: 130 },
-  { from: "Yangon", to: "Phuket", origin: "RGN", dest: "HKT", fallbackPrice: 140 },
-  { from: "Mandalay", to: "Chiang Mai", origin: "MDL", dest: "CNX", fallbackPrice: 150 },
-  { from: "Yangon", to: "Ho Chi Minh", origin: "RGN", dest: "SGN", fallbackPrice: 125 },
-  { from: "Yangon", to: "Phnom Penh", origin: "RGN", dest: "PNH", fallbackPrice: 180 },
-];
-
-/* ─── Tab Config ─── */
-const TABS = [
-  { id: "flights" as const, icon: "✈️", label: "Flights", mobileLabel: "Flights" },
-  { id: "hotels" as const, icon: "🏨", label: "Hotels", mobileLabel: "Hotels" },
-  { id: "transport" as const, icon: "🚌", label: "Transport in Thailand", mobileLabel: "Transport" },
-];
-
-/* ─── Route Images Helper ─── */
-const getRouteImage = (dest: string) => {
-  const images: Record<string, string> = {
-    BKK: "/images/bangkok.webp",
-    CNX: "/images/chiang-mai.webp",
-    HKT: "/images/phuket.webp",
-    SIN: "/images/hero-travel.webp",
-    KUL: "/images/hero-travel.webp",
-    HAN: "/images/hero-travel.webp",
-    SGN: "/images/hero-travel.webp",
-    PNH: "/images/hero-travel.webp",
-  };
-  return images[dest] || "/images/hero-travel.webp";
-};
-
-/* ─── THB Converter Helper ─── */
-const USD_TO_THB_RATE = 34; // Approximate static rate
-const formatTHB = (usdPrice: number) => {
-  const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
-  return `฿${thbPrice.toLocaleString()}`;
-};
-
-/* ═══════════════════════════════════════════════════════════ */
 
 export default function Home() {
   usePageMeta({
@@ -176,30 +120,7 @@ export default function Home() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
 
-  /* ─── Live Deal State ─── */
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [meta, setMeta] = useState<Meta>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    // Bust Vercel's Edge Cache by appending a dynamic timestamp query parameter
-    fetch(`/data/flight_data.json?t=${new Date().getTime()}`, { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load flight_data.json");
-        return res.json();
-      })
-      .then((data) => {
-        setDeals((data.routes || []) as Deal[]);
-        setMeta((data.meta || {}) as Meta);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Fetch error:", err);
-        setError(true);
-        setLoading(false);
-      });
-  }, []);
+  const { deals, meta, loading, error } = useFlightData();
 
   const originMap: Record<string, string> = { RGN: "Yangon", MDL: "Mandalay" };
   const destMap: Record<string, string> = {
@@ -261,173 +182,20 @@ export default function Home() {
 
   return (
     <Layout>
-      {/* ═══════════ HERO + TABBED SEARCH ═══════════ */}
-      <section className="relative pt-24 pb-16 overflow-hidden bg-[#f0f2f5]">
-        <div className="container relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12">
-            {/* Hero Text (Left) */}
-            <div className="text-left animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              <h1 className="text-5xl md:text-6xl lg:text-[72px] font-extrabold tracking-tighter mb-4 text-gray-900 leading-[1.1]">
-                {t("hero.title")}
-                <br />
-                <span className="text-primary">{t("hero.country")}</span>
-              </h1>
-              <p className="text-xl text-gray-600 font-medium mb-4 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-100 leading-relaxed">
-                {t("hero.slogan")}
-              </p>
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                <span className="w-8 h-px bg-gray-300"></span> Compare Flights • Hotels • Transport from Myanmar
-              </p>
-            </div>
-
-            {/* Travel Image Grid (Right) - Inspired by Cheapflights */}
-            <div className="hidden lg:grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-              <img src="/images/bangkok.webp" alt="Bangkok" className="rounded-2xl object-cover h-[320px] w-full shadow-lg" loading="lazy" />
-              <div className="grid grid-rows-2 gap-4">
-                <img src="/images/chiang-mai.webp" alt="Chiang Mai" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
-                <img src="/images/phuket.webp" alt="Phuket" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
-              </div>
-            </div>
+      <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
+        {activeTab === "flights" && <FlightWidget />}
+        {activeTab === "hotels" && <HotelsSearchForm />}
+        {activeTab === "transport" && (
+          <div
+            className="w-full overflow-y-auto max-h-[550px] md:max-h-none relative z-10"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <TransportScheduleWidget />
           </div>
+        )}
+      </HeroSection>
 
-          {/* ── Tabbed Search Card ── */}
-          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            {/* Tab Buttons */}
-            <div className="flex border-b border-gray-100 bg-gray-50/50 rounded-t-2xl overflow-hidden">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-4 md:py-5 flex items-center justify-center gap-2 transition-all font-bold text-sm md:text-base ${activeTab === tab.id
-                    ? "bg-white text-gray-900 border-b-2 border-primary shadow-[0_-2px_10px_rgb(0,0,0,0.02)] relative z-10"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100/50"
-                    }`}
-                >
-                  <span className="text-lg md:text-2xl">{tab.icon}</span>
-                  <span className="font-bold truncate">
-                    <span className="hidden md:inline">{tab.label}</span>
-                    <span className="md:hidden">{tab.mobileLabel}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-4 md:p-6">
-              {activeTab === "flights" && <FlightWidget />}
-              {activeTab === "hotels" && <HotelsSearchForm />}
-              {activeTab === "transport" && (
-                <div
-                  className="w-full overflow-y-auto max-h-[550px] md:max-h-none relative z-10"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
-                >
-                  <TransportScheduleWidget />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ PARTNER LOGOS TRUST STRIP ═══════════ */}
-      <section className="py-8 bg-card border-b border-border">
-        <div className="container">
-          <p className="text-center text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-6">
-            Compare prices from trusted travel brands
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
-            {[
-              { name: "Aviasales", url: "https://www.aviasales.com", logo: "/images/partners/aviasales.svg" },
-              { name: "Trip.com", url: "https://www.trip.com", logo: "/images/partners/tripcom.svg" },
-              { name: "Agoda", url: "https://www.agoda.com", logo: "https://cdn0.agoda.net/images/bimi/agoda-tiny-bimi-2.svg" },
-              { name: "12Go", url: "https://12go.asia/?z=14566451&sub_id=partner_strip", logo: "/images/partners/12go.svg" },
-              { name: "Klook", url: "https://www.klook.com", logo: "/images/partners/klook.svg" },
-            ].map((partner) => (
-              <a
-                key={partner.name}
-                href={partner.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group hover:scale-105 hover:shadow-md transition-all rounded-md overflow-hidden"
-                title={`Search on ${partner.name}`}
-              >
-                <img
-                  src={partner.logo}
-                  alt={`${partner.name} logo`}
-                  className="h-10 md:h-12 w-auto"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ POPULAR ROUTES (Deals Carousel) ═══════════ */}
-      <section className="py-16 bg-[#f8f9fa] border-b border-gray-100 overflow-hidden">
-        <div className="container">
-          <div className="mb-8">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-gray-900">
-              Trending Flights from Myanmar
-            </h2>
-            <p className="text-gray-500 font-medium text-lg">
-              Explore live deals and direct connections.
-            </p>
-          </div>
-
-          <div className="flex overflow-x-auto gap-4 pb-8 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar">
-            {ROUTE_CONFIG.map((route) => {
-              const routeDeal = deals.find(d => d.origin === route.origin && d.destination === route.dest);
-              return (
-                <a
-                  key={`${route.origin}-${route.dest}`}
-                  href={buildRouteUrl(route.origin, route.dest, routeDeal?.date)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block min-w-[280px] md:min-w-[320px] bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 snap-start flex flex-col"
-                >
-                  <div className="relative h-48 overflow-hidden bg-gray-100">
-                    <img
-                      src={getRouteImage(route.dest)}
-                      alt={route.to}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-900 shadow-sm flex items-center gap-1">
-                      <Plane className="w-3 h-3" /> Direct
-                    </div>
-                  </div>
-
-                  <div className="p-5 flex flex-col flex-grow">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{route.to}</h3>
-                    <div className="text-sm font-medium text-gray-500 mb-4 flex items-center gap-2">
-                      {route.from} <ArrowRight className="w-3 h-3 text-gray-400" /> {route.to}
-                    </div>
-
-                    <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                      {routeDeal || route.fallbackPrice ? (
-                        <>
-                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Economy</div>
-                          <div className="text-xl font-black text-emerald-600">
-                            From {formatTHB(routeDeal ? routeDeal.price : route.fallbackPrice!)}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Check Fares</div>
-                          <div className="text-lg font-black text-blue-600 group-hover:text-blue-700 flex items-center gap-1">
-                            Search <ArrowRight className="w-4 h-4" />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <DealsCarousel deals={deals} buildRouteUrl={buildRouteUrl} />
 
       {/* ═══════════ FEATURED DESTINATIONS ═══════════ */}
       <section className="py-24 bg-background">

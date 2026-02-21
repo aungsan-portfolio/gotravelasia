@@ -52,9 +52,17 @@ scripts/          - Utility scripts
 - **Image Optimization**: All destination images converted from JPG/PNG (6-8MB each) to WebP (~130-195KB each, ~97% reduction). Logo compressed.
 - **Security**: Hardcoded WEB3FORMS_KEY moved to `VITE_WEB3FORMS_KEY` env var. Centralized config in `client/src/lib/config.ts`.
 - **SEO**: Added `usePageMeta` hook (`client/src/hooks/usePageMeta.ts`) for per-page dynamic title and meta description on all routes.
+- **Affiliate Fixes**: Replaced all untracked Kiwi.com/Traveloka links with tracked Aviasales (marker 697202) and Agoda (CID 1959281) links across StickyCTA, MobileNav, and all destination pages.
+- **Newsletter Fix**: Both newsletter forms now properly show error messages on submission failure instead of silently showing success.
+- **Dead Code Cleanup**: Removed 5 unused component files (FlightSearchWidget, TravelSearchWidget, ComponentShowcase, DashboardLayout, DashboardLayoutSkeleton) and 37 unused shadcn UI components.
+- **Flight Data Caching**: Created `useFlightData` hook to fetch flight_data.json once and share across Home, FlightWidget, and RecentSearches (was fetched 3x per page load).
+- **Home.tsx Split**: Extracted HeroSection and DealsCarousel into separate components, reducing Home.tsx from 782 to 557 lines.
 
 ## Key Patterns
 - `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO meta tags per route
+- `client/src/hooks/useFlightData.ts` - Shared flight data fetching hook (single fetch, cached in memory)
 - `client/src/lib/config.ts` - Centralized config for API keys and affiliate IDs
+- `client/src/components/HeroSection.tsx` - Hero + tabbed search + partner logos section
+- `client/src/components/DealsCarousel.tsx` - Trending flights carousel with route cards
 - `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO)
 - `client/src/components/MoneyPage.tsx` - Shared component for all blog/review pages (auto-sets SEO)
