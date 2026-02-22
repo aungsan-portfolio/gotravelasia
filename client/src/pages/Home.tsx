@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Wifi, Zap, Smartphone } from "lucide-react";
+import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Wifi, Zap, Smartphone, Shield } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
@@ -55,16 +55,16 @@ function HotelsSearchForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="text-xs text-secondary uppercase font-bold mb-1 block font-mono tracking-wider">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Destination
           </label>
           <select
             name="city"
             defaultValue="bangkok-th"
-            className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none font-medium"
+            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-sm min-h-[48px]"
           >
             {HOTEL_CITIES.map((city) => (
               <option key={city.slug} value={city.slug}>
@@ -74,7 +74,7 @@ function HotelsSearchForm() {
           </select>
         </div>
         <div>
-          <label className="text-xs text-secondary uppercase font-bold mb-1 block font-mono tracking-wider">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Check-in
           </label>
           <input
@@ -84,11 +84,11 @@ function HotelsSearchForm() {
             min={today}
             onChange={(e) => setCheckIn(e.target.value)}
             required
-            className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none"
+            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-sm min-h-[48px]"
           />
         </div>
         <div>
-          <label className="text-xs text-secondary uppercase font-bold mb-1 block font-mono tracking-wider">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Check-out
           </label>
           <input
@@ -96,15 +96,15 @@ function HotelsSearchForm() {
             name="checkOut"
             min={minCheckOut}
             required
-            className="w-full p-4 bg-background text-foreground border border-border focus:ring-2 focus:ring-primary outline-none"
+            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-sm min-h-[48px]"
           />
         </div>
       </div>
       <Button
         type="submit"
-        className="w-full md:w-auto md:self-end font-mono uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors h-12 px-10"
+        className="w-full md:w-auto md:self-end bg-[#FECD00] hover:bg-[#E5B800] text-gray-900 font-extrabold transition-colors h-12 px-10 rounded-xl text-base"
       >
-        Search Hotels on Agoda 🏨
+        Search Hotels on Agoda
       </Button>
     </form>
   );
@@ -330,79 +330,121 @@ export default function Home() {
       </section>
 
       {/* ═══════════ WHY GOTRAVEL ═══════════ */}
-      <section className="py-16 bg-muted/30 border-y border-border">
+      <section className="py-16 bg-white border-y border-gray-100">
         <div className="container">
-          <h2 className="text-3xl font-bold tracking-tighter text-center mb-10">
-            Why <span className="text-primary">GoTravelAsia</span>?
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
+              Why travelers trust <span className="text-primary">GoTravelAsia</span>
+            </h2>
+            <p className="text-gray-500 max-w-2xl mx-auto">
+              We compare real-time prices from multiple providers so you always get the best deal. No markup, no hidden fees.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Plane, title: "500+ Routes", desc: "Compare flights across Southeast Asia via Aviasales" },
-              { icon: Hotel, title: "Best Hotel Deals", desc: "Direct access to Agoda's lowest rates" },
-              { icon: CheckCircle, title: "Trusted Partners", desc: "Aviasales, Trip.com, Agoda, 12Go, Klook" },
-              { icon: MapPin, title: "Myanmar Focused", desc: "Specialized routes from Yangon & Mandalay" },
+              { icon: Plane, title: "500+ Flight Routes", desc: "Real-time prices from Aviasales & Trip.com across Southeast Asia", stat: "Updated every 6 hours", color: "bg-blue-50 text-blue-600" },
+              { icon: Hotel, title: "Lowest Hotel Rates", desc: "Direct access to Agoda's inventory for 8 cities in Thailand & Asia", stat: "Free cancellation available", color: "bg-amber-50 text-amber-600" },
+              { icon: Shield, title: "6 Trusted Partners", desc: "Book directly on Aviasales, Agoda, Trip.com, 12Go, Klook & Airalo", stat: "No middleman markup", color: "bg-emerald-50 text-emerald-600" },
+              { icon: MapPin, title: "Built for Myanmar", desc: "Specialized routes from Yangon & Mandalay with Burmese language support", stat: "Myanmar Kyat display", color: "bg-purple-50 text-purple-600" },
             ].map((item, i) => (
-              <div key={i} className="text-center space-y-3">
-                <div className="w-12 h-12 mx-auto bg-primary/10 flex items-center justify-center">
-                  <item.icon className="w-6 h-6 text-primary" />
+              <div key={i} className="relative p-6 rounded-2xl border border-gray-100 bg-gray-50/50 hover:shadow-lg hover:border-gray-200 transition-all group">
+                <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mb-4`}>
+                  <item.icon className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold">{item.title}</h4>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
+                <h4 className="font-extrabold text-gray-900 mb-2">{item.title}</h4>
+                <p className="text-sm text-gray-500 mb-3 leading-relaxed">{item.desc}</p>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                  <CheckCircle className="w-3 h-3" />
+                  {item.stat}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════ DESTINATION QUICK LINKS ═══════════ */}
-      <section className="py-12 bg-background border-b border-border">
+      {/* ═══════════ POPULAR ROUTES ═══════════ */}
+      <section className="py-16 bg-gray-50 border-b border-gray-100">
         <div className="container">
-          <h2 className="text-2xl font-bold tracking-tighter mb-6">Quick Links</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-            {[
-              { text: "Flights: Yangon → Bangkok", origin: "RGN", dest: "BKK" },
-              { text: "Flights: Yangon → Singapore", origin: "RGN", dest: "SIN" },
-              { text: "Flights: Yangon → Chiang Mai", origin: "RGN", dest: "CNX" },
-              { text: "Flights: Yangon → Phuket", origin: "RGN", dest: "HKT" },
-              { text: "Flights: Yangon → KL", origin: "RGN", dest: "KUL" },
-              { text: "Flights: Mandalay → Bangkok", origin: "MDL", dest: "BKK" },
-              { text: "Flights: Yangon → Hanoi", origin: "RGN", dest: "HAN" },
-              { text: "Flights: Yangon → Ho Chi Minh", origin: "RGN", dest: "SGN" },
-              { text: "Flights: Yangon → Phnom Penh", origin: "RGN", dest: "PNH" },
-              { text: "Flights: Mandalay → Chiang Mai", origin: "MDL", dest: "CNX" },
-            ].map((link) => (
-              <a
-                key={`${link.origin}-${link.dest}`}
-                href={buildRouteUrl(link.origin, link.dest)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-mono text-primary hover:text-primary/80 hover:underline py-1 truncate"
-              >
-                {link.text}
-              </a>
-            ))}
-            {[
-              { text: "Transport: Bangkok → Chiang Mai", slug: "bangkok/chiang-mai" },
-              { text: "Transport: Bangkok → Phuket", slug: "bangkok/phuket" },
-              { text: "Transport: Bangkok → Pattaya", slug: "bangkok/pattaya" },
-              { text: "Transport: Bangkok → Koh Samui", slug: "bangkok/koh-samui" },
-              { text: "Transport: Chiang Mai → Pai", slug: "chiang-mai/pai" },
-              { text: "Transport: Phuket → Krabi", slug: "phuket/krabi" },
-              { text: "Transport: Bangkok → Hua Hin", slug: "bangkok/hua-hin" },
-              { text: "Transport: Bangkok → Koh Phangan", slug: "bangkok/koh-phangan" },
-              { text: "Transport: Chiang Mai → Chiang Rai", slug: "chiang-mai/chiang-rai" },
-              { text: "Transport: Bangkok → Koh Tao", slug: "bangkok/koh-tao" },
-            ].map((link) => (
-              <a
-                key={link.slug}
-                href={`https://12go.asia/en/travel/${link.slug}?referer=14566451&z=14566451&sub_id=homepage_quicklink`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-mono text-primary hover:text-primary/80 hover:underline py-1 truncate"
-              >
-                {link.text}
-              </a>
-            ))}
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">Popular Routes</h2>
+            <p className="text-gray-500">Search and compare prices for the most popular flight and transport routes</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Plane className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-gray-900">Flights from Myanmar</h3>
+                  <p className="text-xs text-gray-500">Compare on Aviasales & Trip.com</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { text: "Yangon to Bangkok", origin: "RGN", dest: "BKK" },
+                  { text: "Yangon to Singapore", origin: "RGN", dest: "SIN" },
+                  { text: "Yangon to Chiang Mai", origin: "RGN", dest: "CNX" },
+                  { text: "Yangon to Phuket", origin: "RGN", dest: "HKT" },
+                  { text: "Yangon to Kuala Lumpur", origin: "RGN", dest: "KUL" },
+                  { text: "Mandalay to Bangkok", origin: "MDL", dest: "BKK" },
+                  { text: "Yangon to Hanoi", origin: "RGN", dest: "HAN" },
+                  { text: "Yangon to Ho Chi Minh", origin: "RGN", dest: "SGN" },
+                  { text: "Yangon to Phnom Penh", origin: "RGN", dest: "PNH" },
+                  { text: "Mandalay to Chiang Mai", origin: "MDL", dest: "CNX" },
+                ].map((link) => (
+                  <a
+                    key={`${link.origin}-${link.dest}`}
+                    href={buildRouteUrl(link.origin, link.dest)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors group min-h-[44px]"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                    <span className="font-medium">{link.text}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <ExternalLink className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-gray-900">Transport in Thailand</h3>
+                  <p className="text-xs text-gray-500">Buses, trains & ferries via 12Go</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { text: "Bangkok to Chiang Mai", slug: "bangkok/chiang-mai" },
+                  { text: "Bangkok to Phuket", slug: "bangkok/phuket" },
+                  { text: "Bangkok to Pattaya", slug: "bangkok/pattaya" },
+                  { text: "Bangkok to Koh Samui", slug: "bangkok/koh-samui" },
+                  { text: "Chiang Mai to Pai", slug: "chiang-mai/pai" },
+                  { text: "Phuket to Krabi", slug: "phuket/krabi" },
+                  { text: "Bangkok to Hua Hin", slug: "bangkok/hua-hin" },
+                  { text: "Bangkok to Koh Phangan", slug: "bangkok/koh-phangan" },
+                  { text: "Chiang Mai to Chiang Rai", slug: "chiang-mai/chiang-rai" },
+                  { text: "Bangkok to Koh Tao", slug: "bangkok/koh-tao" },
+                ].map((link) => (
+                  <a
+                    key={link.slug}
+                    href={`https://12go.asia/en/travel/${link.slug}?referer=14566451&z=14566451&sub_id=homepage_quicklink`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group min-h-[44px]"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                    <span className="font-medium">{link.text}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>

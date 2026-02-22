@@ -382,7 +382,7 @@ export default function FlightWidget() {
 
                     {/* Origin */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-3 py-2.5 h-full">
+                        <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                             <MapPin className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">From</span>
@@ -403,7 +403,7 @@ export default function FlightWidget() {
 
                     {/* Destination */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-3 py-2.5 h-full">
+                        <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                             <Plane className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">To</span>
@@ -437,7 +437,7 @@ export default function FlightWidget() {
                                     className={`relative flex-1 min-w-[130px] border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
                                         }`}
                                 >
-                                    <div className="flex items-center px-3 py-2.5 h-full">
+                                    <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                         <CalendarIcon className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
                                         <div className="flex flex-col w-full overflow-hidden">
                                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Depart</span>
@@ -456,7 +456,7 @@ export default function FlightWidget() {
                                 className={`relative flex-1 min-w-[130px] group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
                                     }`}
                             >
-                                <div className="flex items-center px-3 py-2.5 h-full">
+                                <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                     <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
                                     <div className="flex flex-col w-full overflow-hidden">
                                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
@@ -560,7 +560,7 @@ export default function FlightWidget() {
                             onClick={() => setOpenPax((v) => !v)}
                             className="w-full h-full text-left"
                         >
-                            <div className="flex items-center px-3 py-2.5 h-full">
+                            <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                 <Users className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
                                 <div className="flex flex-col w-full overflow-hidden">
                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Travelers & Class</span>
