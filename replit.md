@@ -57,12 +57,15 @@ scripts/          - Utility scripts
 - **Dead Code Cleanup**: Removed 5 unused component files (FlightSearchWidget, TravelSearchWidget, ComponentShowcase, DashboardLayout, DashboardLayoutSkeleton) and 37 unused shadcn UI components.
 - **Flight Data Caching**: Created `useFlightData` hook to fetch flight_data.json once and share across Home, FlightWidget, and RecentSearches (was fetched 3x per page load).
 - **Home.tsx Split**: Extracted HeroSection and DealsCarousel into separate components, reducing Home.tsx from 782 to 557 lines.
+- **UI/UX Polish**: Privacy Policy wrapped in Layout (header/footer visible). CookieConsent/StickyCTA overlap fixed on mobile. "Sign In" renamed to "Get Price Alerts". Duplicate homepage newsletter removed.
+- **Partners Marquee**: Extracted partner logos into `Partners.tsx` with CSS-only infinite scroll, GPU-accelerated (`translate3d` + `will-change`), gradient edge masks, greyscale-to-color hover, pause-on-hover. Agoda logo switched to local SVG.
 
 ## Key Patterns
 - `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO meta tags per route
 - `client/src/hooks/useFlightData.ts` - Shared flight data fetching hook (single fetch, cached in memory)
 - `client/src/lib/config.ts` - Centralized config for API keys and affiliate IDs
-- `client/src/components/HeroSection.tsx` - Hero + tabbed search + partner logos section
+- `client/src/components/HeroSection.tsx` - Hero + tabbed search section (renders Partners)
+- `client/src/components/Partners.tsx` - GPU-accelerated infinite marquee of partner logos
 - `client/src/components/DealsCarousel.tsx` - Trending flights carousel with route cards
 - `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO)
 - `client/src/components/MoneyPage.tsx` - Shared component for all blog/review pages (auto-sets SEO)
