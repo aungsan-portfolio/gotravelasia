@@ -4,8 +4,10 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Blog() {
   usePageMeta({
-    title: "Travel Journal - Expert Guides & Tips",
-    description: "Expert travel guides, tips, and hacks for Thailand, Singapore, and Southeast Asia. Flight deals, hotel reviews, and insider travel advice.",
+    title: "Southeast Asia Travel Blog - Guides, Tips & Deals",
+    description: "Expert travel guides for Southeast Asia. Tips on cheap flights to Thailand, hotel reviews, transport hacks, and insider advice for traveling Asia on a budget.",
+    path: "/blog",
+    keywords: "travel asia blog, southeast asia travel tips, thailand travel guide, cheap flights asia, bangkok travel advice, asia budget travel",
   });
 
   const posts = [

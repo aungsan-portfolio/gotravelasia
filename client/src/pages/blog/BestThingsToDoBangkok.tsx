@@ -5,6 +5,8 @@ const data: MoneyPageData = {
   subtitle: "From ancient temples to rooftop bars, here are the absolute must-do experiences in Thailand's capital.",
   author: "GoTravel Team",
   updatedDate: "January 2026",
+  seoPath: "/blog/best-things-to-do-in-bangkok",
+  seoKeywords: "things to do bangkok, bangkok travel guide, travel asia bangkok, southeast asia attractions, bangkok sightseeing, bangkok activities 2026",
   intro: "Bangkok is a city that never sleeps. It's a chaotic, colorful, and captivating mix of old and new. Whether you're a culture vulture, a foodie, or a party animal, there's something here for you. We've curated the top experiences you simply can't miss.",
   products: [
     {

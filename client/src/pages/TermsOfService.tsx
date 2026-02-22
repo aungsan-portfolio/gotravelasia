@@ -5,7 +5,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 export default function TermsOfService() {
     usePageMeta({
         title: "Terms of Service",
-        description: "GoTravel Asia terms of service, usage conditions, and user guidelines for our travel comparison platform.",
+        description: "GoTravel Asia terms of service, usage conditions, and user guidelines for our Southeast Asia travel comparison platform.",
+        path: "/terms",
     });
 
     return (

@@ -12,6 +12,7 @@ import { useFlightData } from "@/hooks/useFlightData";
 import type { Deal } from "@/hooks/useFlightData";
 import HeroSection from "@/components/HeroSection";
 import DealsCarousel from "@/components/DealsCarousel";
+import { FAQJsonLd } from "@/components/JsonLd";
 
 const AFFILIATE_MARKER = "697202";
 const TRIP_COM_BASE = "https://www.trip.com/flights";
@@ -112,8 +113,10 @@ function HotelsSearchForm() {
 
 export default function Home() {
   usePageMeta({
-    title: "Find Cheapest Flights & Bus Tickets to Thailand",
-    description: "Compare flights, hotels, and transport from Myanmar to Thailand, Singapore, and Vietnam. Instant price comparison and direct booking with GoTravel Asia.",
+    title: "Compare Cheap Flights, Hotels & Transport in Southeast Asia",
+    description: "Travel Asia on a budget. Compare cheap flights, hotels, buses, and trains across Thailand, Singapore, and Vietnam. Book from Myanmar with instant price comparison on GoTravel Asia.",
+    path: "/",
+    keywords: "travel asia, southeast asia travel, cheap flights thailand, bangkok flights, chiang mai hotels, phuket deals, thailand transport, myanmar to thailand flights, asia travel comparison",
   });
 
   const { t } = useTranslation();
@@ -433,6 +436,13 @@ export default function Home() {
           </div>
 
           {/* FAQ */}
+          <FAQJsonLd faqs={[
+            { question: "How do I find cheap flights from Myanmar?", answer: "Use our flight search to compare prices from airlines like Myanmar Airways International (MAI), Thai AirAsia, and Thai Lion Air. We scan multiple booking platforms including Aviasales and Trip.com to find the lowest fares for routes from Yangon and Mandalay." },
+            { question: "Is GoTravelAsia free to use?", answer: "Yes! GoTravelAsia is completely free. We earn a small commission from our travel partners when you book through our links, but this never affects the price you pay." },
+            { question: "What transport options are available in Thailand?", answer: "Thailand has excellent transport options including VIP buses, sleeper trains, ferries, minivans, and domestic flights. We compare prices from providers like Nakhonchai Air, State Railway of Thailand, Lomprayah, and Bangkok Airways via 12Go.asia." },
+            { question: "How often are prices updated?", answer: "Flight prices are automatically updated every 6 hours using real-time data from the Travelpayouts API. Transport prices are also refreshed every 6 hours. Hotel prices are shown in real-time when you search." },
+            { question: "Can I use the AI Trip Planner?", answer: "Yes! Our AI Trip Planner is powered by Google Gemini and can help you plan your perfect Thailand itinerary. Just tell it your budget, interests, and travel dates, and it'll create a personalized plan." },
+          ]} />
           <h3 className="text-2xl font-bold tracking-tighter text-center mb-6">Frequently Asked Questions</h3>
           <div className="space-y-3">
             {[

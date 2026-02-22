@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ExternalLink, MapPin } from "lucide-react";
 import TransportScheduleWidget from "./TransportScheduleWidget";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { BreadcrumbJsonLd } from "@/components/JsonLd";
 
 export interface DestinationPageProps {
   name: string;
@@ -11,6 +12,7 @@ export interface DestinationPageProps {
   bestTime: string;
   currency: string;
   language: string;
+  slug?: string;
   sections: {
     title: string;
     content: string; // HTML string
@@ -26,13 +28,21 @@ export interface DestinationPageProps {
 }
 
 export default function DestinationPage(props: DestinationPageProps) {
+  const slug = props.slug || props.name.toLowerCase().replace(/\s+/g, "-");
   usePageMeta({
-    title: `${props.name} Travel Guide - Thailand`,
-    description: props.description,
+    title: `${props.name} Travel Guide 2026 - Hotels, Flights & Things to Do`,
+    description: `Plan your trip to ${props.name}, Thailand. ${props.description.slice(0, 120)}. Compare cheap flights, hotels, and transport with GoTravel Asia.`,
+    path: `/thailand/${slug}`,
+    ogImage: props.heroImage.startsWith("http") ? props.heroImage : undefined,
+    keywords: `${props.name.toLowerCase()} travel guide, ${props.name.toLowerCase()} thailand, travel asia ${props.name.toLowerCase()}, cheap flights ${props.name.toLowerCase()}, ${props.name.toLowerCase()} hotels, things to do ${props.name.toLowerCase()}, southeast asia travel`,
   });
 
   return (
     <Layout>
+      <BreadcrumbJsonLd items={[
+        { name: "Thailand", path: "/" },
+        { name: props.name, path: `/thailand/${slug}` },
+      ]} />
       {/* Hero Section */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">

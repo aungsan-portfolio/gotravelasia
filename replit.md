@@ -59,13 +59,16 @@ scripts/          - Utility scripts
 - **Home.tsx Split**: Extracted HeroSection and DealsCarousel into separate components, reducing Home.tsx from 782 to 557 lines.
 - **UI/UX Polish**: Privacy Policy wrapped in Layout (header/footer visible). CookieConsent/StickyCTA overlap fixed on mobile. "Sign In" renamed to "Get Price Alerts". Duplicate homepage newsletter removed.
 - **Partners Marquee**: Extracted partner logos into `Partners.tsx` with CSS-only infinite scroll, GPU-accelerated (`translate3d` + `will-change`), gradient edge masks, greyscale-to-color hover, pause-on-hover. Agoda logo switched to local SVG.
+- **SEO Optimization (Feb 2026)**: Enhanced `usePageMeta` hook to set OG tags, Twitter cards, canonical URLs, and keywords per page. Added JSON-LD structured data (WebSite, TravelAgency, FAQPage, BreadcrumbList). All page titles/descriptions optimized for "Travel Asia" / "Southeast Asia" keywords. Sitemap updated with `<lastmod>` dates and missing pages. `robots.txt` and `index.html` base tags updated.
+- **Performance Fix (Feb 2026)**: Removed `useTransition` from TransportScheduleWidget (was causing potential re-fetch loop via `[startTransition]` dependency). Fixed "Maximum update depth exceeded" by memoizing `useFlightPriceMap` and removing unnecessary `useEffect`/`useState` chains in FlightWidget.
 
 ## Key Patterns
-- `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO meta tags per route
+- `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO: title, description, OG tags, Twitter cards, canonical URL, keywords per route
 - `client/src/hooks/useFlightData.ts` - Shared flight data fetching hook (single fetch, cached in memory)
 - `client/src/lib/config.ts` - Centralized config for API keys and affiliate IDs
+- `client/src/components/JsonLd.tsx` - JSON-LD structured data components (WebsiteJsonLd, BreadcrumbJsonLd, FAQJsonLd)
 - `client/src/components/HeroSection.tsx` - Hero + tabbed search section (renders Partners)
 - `client/src/components/Partners.tsx` - GPU-accelerated infinite marquee of partner logos
 - `client/src/components/DealsCarousel.tsx` - Trending flights carousel with route cards
-- `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO)
-- `client/src/components/MoneyPage.tsx` - Shared component for all blog/review pages (auto-sets SEO)
+- `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO + breadcrumbs)
+- `client/src/components/MoneyPage.tsx` - Shared component for all blog/review pages (auto-sets SEO + breadcrumbs)

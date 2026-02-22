@@ -5,6 +5,8 @@ const data: MoneyPageData = {
   subtitle: "Medical bills in Thailand can be shocking. Here's how to protect yourself from accidents, theft, and cancellations.",
   author: "GoTravel Team",
   updatedDate: "January 2026",
+  seoPath: "/blog/best-travel-insurance-for-thailand",
+  seoKeywords: "travel insurance thailand, southeast asia travel insurance, travel asia insurance, thailand medical insurance, best insurance for asia travel",
   intro: "Thailand is amazing, but it has risks. Motorbike accidents are the #1 cause of tourist hospitalization. 'Bali Belly' (food poisoning) is common. And flight delays happen. You need insurance that actually pays out.",
   products: [
     {

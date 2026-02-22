@@ -5,6 +5,8 @@ const data: MoneyPageData = {
   subtitle: "Stay connected the moment you land. We tested the top eSIM providers to see which one offers the best speed and value.",
   author: "GoTravel Team",
   updatedDate: "January 2026",
+  seoPath: "/blog/best-esim-for-thailand",
+  seoKeywords: "esim thailand, airalo thailand, travel asia sim card, southeast asia esim, thailand data plan, best sim card thailand",
   intro: "Gone are the days of hunting for a SIM card kiosk at the airport. eSIMs allow you to download a data plan to your phone before you even leave home. But is it worth it compared to a local SIM?",
   products: [
     {

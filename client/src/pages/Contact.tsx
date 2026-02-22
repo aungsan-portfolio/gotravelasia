@@ -4,8 +4,9 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function Contact() {
     usePageMeta({
-        title: "Contact Us",
-        description: "Get in touch with GoTravel Asia for travel inquiries, partnership opportunities, or feedback about our Thailand travel guides.",
+        title: "Contact Us - GoTravel Asia",
+        description: "Get in touch with GoTravel Asia for travel inquiries, partnership opportunities, or feedback about our Southeast Asia travel guides and flight comparison tools.",
+        path: "/contact",
     });
 
     return (

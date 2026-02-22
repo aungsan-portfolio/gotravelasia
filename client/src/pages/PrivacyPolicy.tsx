@@ -5,7 +5,8 @@ import Layout from "@/components/Layout";
 export default function TermsAndPrivacy() {
   usePageMeta({
     title: "Privacy Policy & Terms",
-    description: "GoTravel Asia privacy policy, terms of service, affiliate disclosure, and cookie policy.",
+    description: "GoTravel Asia privacy policy, terms of service, affiliate disclosure, and cookie policy for our Southeast Asia travel comparison platform.",
+    path: "/privacy",
   });
 
   return (
