@@ -44,7 +44,7 @@ export default function StickyCTA() {
     ctaText = "Get eSIM Data";
     ctaLink = "https://airalo.tpx.gr/rLWEywcV";
     ctaSubtext = "Instant activation";
-  } else if (location.includes("destinations")) {
+  } else if (location.includes("thailand")) {
     ctaText = "Book Your Trip";
     ctaLink = "#flights"; // Jump to flights section
     ctaSubtext = "Start planning today";

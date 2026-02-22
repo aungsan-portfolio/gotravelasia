@@ -37,10 +37,10 @@ export default function TermsOfService() {
                                 We maintain affiliate relationships with the following partners:
                             </p>
                             <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                                <li>Kiwi.com (flight bookings)</li>
+                                <li>Aviasales (flight bookings)</li>
                                 <li>Agoda (hotel accommodations)</li>
                                 <li>Klook (tours and activities)</li>
-                                <li>Welcome Pickups (airport transfers)</li>
+                                <li>12Go (transport and transfers)</li>
                                 <li>Airalo (eSIM services)</li>
                                 <li>EKTA Traveling (travel insurance)</li>
                             </ul>
