@@ -68,12 +68,20 @@ scripts/          - Utility scripts
   - Added image loading/decoding/fetchPriority attributes for above-fold hero images
   - Vite manualChunks: vendor (react), router (wouter), query (tanstack/trpc), ui (radix), i18n bundles
 
+- **UX Competitive Improvements (Feb 2026)**:
+  - Search-first hero layout: search bar moved above hero images, centered compact heading
+  - TrustBar component (`client/src/components/TrustBar.tsx`): 4 trust signal stats (500+ routes, 6 partners, 6hr updates, 0% markup)
+  - FlightWidget mobile tap targets increased to min-h-[52px], hotel form inputs to min-h-[48px] with rounded-xl styling
+  - Popular Routes section: 2-column card grid (blue flights / green transport) with categorized affiliate links
+  - "Why GoTravelAsia" section: detailed cards with colored icon badges and verified stat chips
+
 ## Key Patterns
 - `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO: title, description, OG tags, Twitter cards, canonical URL, keywords per route
 - `client/src/hooks/useFlightData.ts` - Shared flight data fetching hook (single fetch, cached in memory)
 - `client/src/lib/config.ts` - Centralized config for API keys and affiliate IDs
 - `client/src/components/JsonLd.tsx` - JSON-LD structured data components (WebsiteJsonLd, BreadcrumbJsonLd, FAQJsonLd)
-- `client/src/components/HeroSection.tsx` - Hero + tabbed search section (renders Partners)
+- `client/src/components/TrustBar.tsx` - Trust signals bar (500+ routes, 6 partners, 6hr updates, 0% markup)
+- `client/src/components/HeroSection.tsx` - Hero + tabbed search section (renders Partners + TrustBar)
 - `client/src/components/Partners.tsx` - GPU-accelerated infinite marquee of partner logos
 - `client/src/components/DealsCarousel.tsx` - Trending flights carousel with route cards
 - `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO + breadcrumbs)
