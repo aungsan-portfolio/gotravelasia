@@ -29,7 +29,7 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
               {t("hero.title")} <span className="text-primary">{t("hero.country")}</span>
             </h1>
             <p className="text-base md:text-lg text-gray-500 font-medium max-w-xl mx-auto">
-              Compare flights, hotels & transport from Myanmar across 6 trusted partners
+              Travel More. Pay Less.
             </p>
           </div>
 
