@@ -239,3 +239,64 @@
     transform: translate3d(-50%, 0, 0);
   }
 }
+
+/* ═══════════ TRAVELPAYOUTS WHITE LABEL OVERRIDES ═══════════ */
+.tpwl-page *,
+.tpwl-page [class*="TPWL"] *,
+.tpwl-page .TPWL-widget *,
+.tpwl-page .TPWL-template-wrapper *,
+#tpwl-search *,
+#tpwl-tickets * {
+  font-family: "Inter", "Noto Sans Myanmar", ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.tpwl-page input,
+.tpwl-page select,
+.tpwl-page button,
+.tpwl-page textarea,
+.TPWL-widget input,
+.TPWL-widget select,
+.TPWL-widget button {
+  font-family: "Inter", "Noto Sans Myanmar", ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+}
+
+.tpwl-page [class*="ticket"],
+.tpwl-page [class*="Ticket"] {
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+.tpwl-page [class*="ticket"]:hover,
+.tpwl-page [class*="Ticket"]:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.tpwl-page [class*="price"],
+.tpwl-page [class*="Price"] {
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.tpwl-page [class*="btn"],
+.tpwl-page [class*="Btn"],
+.tpwl-page [class*="button"],
+.tpwl-page [class*="Button"],
+.TPWL-widget button {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+}
+
+#tpwl-search input {
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.tpwl-page [class*="powered"] {
+  opacity: 0.35 !important;
+  font-size: 10px !important;
+}

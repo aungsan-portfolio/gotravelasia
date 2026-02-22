@@ -1,22 +1,20 @@
 import { useEffect } from "react";
 import Layout from "@/components/Layout";
-import { ArrowLeft, Plane, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Plane, ShieldCheck, Clock, TrendingDown } from "lucide-react";
+import { AFFILIATE } from "@/lib/config";
 
-const TPWL_SCRIPT_URL = "https://tpwidg.com/wl_web/main.js?wl_id=12942";
+const TPWL_SCRIPT_URL = `https://tpwidg.com/wl_web/main.js?wl_id=${AFFILIATE.TPWL_ID}`;
 
 export default function FlightResults() {
     useEffect(() => {
-        // Read flightSearch param from URL (passed by FlightWidget)
         const urlParams = new URLSearchParams(window.location.search);
         const flightSearch = urlParams.get("flightSearch");
 
-        // Set Travelpayouts configuration before loading the script
         (window as any).TPWL_CONFIGURATION = {
             ...(window as any).TPWL_CONFIGURATION,
             resultsURL: window.location.origin + "/flights/results",
         };
 
-        // Check if script is already loaded
         const existingScript = document.querySelector(
             `script[src^="https://tpwidg.com/wl_web/main.js"]`
         );
@@ -33,7 +31,6 @@ export default function FlightResults() {
             : TPWL_SCRIPT_URL;
         document.head.appendChild(script);
 
-        // Hide the loading hint once tickets appear
         const observer = new MutationObserver(() => {
             const ticketsEl = document.getElementById("tpwl-tickets");
             const hintEl = document.getElementById("tpwl-loading-hint");
@@ -54,119 +51,108 @@ export default function FlightResults() {
 
     return (
         <Layout>
-            {/* ═══════════ HERO HEADER ═══════════ */}
-            <section className="relative pt-20 pb-8 overflow-hidden" style={{
-                background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #3b82f6 100%)"
-            }}>
-                {/* Decorative elements */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-32 -left-20 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-                    <div className="absolute top-1/2 right-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-                </div>
+            <div className="tpwl-page">
+                <section className="relative pt-16 pb-10 overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        <div className="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+                        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-purple-500/8 rounded-full blur-3xl" />
+                    </div>
 
-                <div className="container max-w-6xl relative z-10">
-                    {/* Back button */}
-                    <a
-                        href="/"
-                        className="inline-flex items-center gap-2 text-blue-100 hover:text-white text-sm font-medium mb-6 transition-colors group"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Back to Home
-                    </a>
+                    <div className="container max-w-6xl relative z-10">
+                        <a
+                            href="/"
+                            className="inline-flex items-center gap-2 text-white/60 hover:text-white text-sm font-medium mb-5 transition-colors group"
+                        >
+                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                            Back to Home
+                        </a>
 
-                    {/* Title */}
-                    <div className="flex items-start gap-4 mb-6">
-                        <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-lg">
-                            <Plane className="w-7 h-7 text-white" />
+                        <div className="flex items-center gap-4 mb-5">
+                            <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/10">
+                                <Plane className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                                    Search & Compare Flights
+                                </h1>
+                                <p className="text-white/50 text-sm font-medium mt-0.5">
+                                    Compare prices from 100+ airlines
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                                Search & Compare Flights
-                            </h1>
-                            <p className="text-blue-100/80 text-sm md:text-base font-medium mt-1">
-                                Compare prices from 100+ airlines • Best deals guaranteed
+
+                        <div className="flex flex-wrap gap-3">
+                            {[
+                                { icon: ShieldCheck, text: "Secure booking" },
+                                { icon: TrendingDown, text: "Best price guarantee" },
+                                { icon: Clock, text: "Real-time prices" },
+                            ].map((badge, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-center gap-1.5 bg-white/8 backdrop-blur-sm rounded-full px-3 py-1 border border-white/10"
+                                >
+                                    <badge.icon className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="text-xs font-medium text-white/70">{badge.text}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="relative -mt-1" style={{ backgroundColor: "#eef1f6" }}>
+                    <div className="container max-w-6xl">
+                        <div className="bg-white rounded-2xl shadow-md border border-gray-200/60 p-3 md:p-5 -mt-4 relative z-20">
+                            <div id="tpwl-search"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-4 min-h-[60vh]" style={{ backgroundColor: "#eef1f6" }}>
+                    <div className="container max-w-6xl">
+                        <div id="tpwl-tickets"></div>
+
+                        <div id="tpwl-loading-hint" className="text-center py-20">
+                            <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-50 rounded-xl mb-4 animate-pulse">
+                                <Plane className="w-7 h-7 text-blue-500" />
+                            </div>
+                            <p className="text-lg font-bold text-gray-800 mb-1.5">
+                                Searching for the best flights...
+                            </p>
+                            <p className="text-sm text-gray-400 max-w-sm mx-auto">
+                                Comparing prices across 100+ airlines to find the cheapest deals.
                             </p>
                         </div>
                     </div>
+                </section>
 
-                    {/* Trust badges */}
-                    <div className="flex flex-wrap gap-4 mb-2">
-                        {[
-                            { icon: ShieldCheck, text: "Secure booking" },
-                            { icon: Plane, text: "500+ routes" },
-                        ].map((badge, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 border border-white/15"
-                            >
-                                <badge.icon className="w-3.5 h-3.5 text-emerald-300" />
-                                <span className="text-xs font-semibold text-white/90">{badge.text}</span>
+                <section className="py-8 bg-white border-t border-gray-100">
+                    <div className="container max-w-6xl">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                            <div className="space-y-1.5">
+                                <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-50 rounded-lg mb-1">
+                                    <ShieldCheck className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <h4 className="font-bold text-gray-800 text-sm">Secure Booking</h4>
+                                <p className="text-xs text-gray-500 leading-relaxed">All transactions are encrypted and processed by verified travel agencies</p>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══════════ SEARCH FORM ═══════════ */}
-            <section
-                className="relative -mt-2 pb-4"
-                style={{ backgroundColor: "#F0F2F5" }}
-            >
-                <div className="container max-w-6xl">
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6 -mt-4 relative z-20">
-                        {/* Travelpayouts Search Form renders here */}
-                        <div id="tpwl-search"></div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══════════ SEARCH RESULTS ═══════════ */}
-            <section
-                className="py-6 min-h-[60vh]"
-                style={{ backgroundColor: "#F0F2F5" }}
-            >
-                <div className="container max-w-6xl">
-                    {/* Travelpayouts Search Results render here */}
-                    <div id="tpwl-tickets"></div>
-
-                    {/* Loading hint */}
-                    <div id="tpwl-loading-hint" className="text-center py-16">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-2xl mb-4">
-                            <Plane className="w-8 h-8 text-blue-500 animate-pulse" />
-                        </div>
-                        <p className="text-xl font-bold text-gray-700 mb-2">
-                            ✈️ Searching for the best flights...
-                        </p>
-                        <p className="text-sm text-gray-400 max-w-md mx-auto">
-                            We're comparing prices across 100+ airlines to find you the cheapest deals. This usually takes a few seconds.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══════════ FOOTER TRUST SECTION ═══════════ */}
-            <section className="py-8 bg-white border-t border-gray-100">
-                <div className="container max-w-6xl">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                        <div className="space-y-2">
-                            <div className="text-2xl">🔒</div>
-                            <h4 className="font-bold text-gray-800 text-sm">Secure Booking</h4>
-                            <p className="text-xs text-gray-500">All transactions are encrypted and processed by verified travel agencies</p>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="text-2xl">💰</div>
-                            <h4 className="font-bold text-gray-800 text-sm">Best Price Guarantee</h4>
-                            <p className="text-xs text-gray-500">We compare hundreds of travel sites to find you the lowest fares</p>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="text-2xl">✅</div>
-                            <h4 className="font-bold text-gray-800 text-sm">Trusted Partners</h4>
-                            <p className="text-xs text-gray-500">Book through Aviasales, Trip.com, Agoda & other verified platforms</p>
+                            <div className="space-y-1.5">
+                                <div className="inline-flex items-center justify-center w-10 h-10 bg-emerald-50 rounded-lg mb-1">
+                                    <TrendingDown className="w-5 h-5 text-emerald-600" />
+                                </div>
+                                <h4 className="font-bold text-gray-800 text-sm">Best Price Guarantee</h4>
+                                <p className="text-xs text-gray-500 leading-relaxed">We compare hundreds of travel sites to find you the lowest fares</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <div className="inline-flex items-center justify-center w-10 h-10 bg-purple-50 rounded-lg mb-1">
+                                    <Plane className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <h4 className="font-bold text-gray-800 text-sm">Trusted Partners</h4>
+                                <p className="text-xs text-gray-500 leading-relaxed">Book through Aviasales, Trip.com, Agoda & other verified platforms</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
         </Layout>
     );
 }
