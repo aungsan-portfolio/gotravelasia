@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import Partners from "./Partners";
 
 const TABS = [
   { id: "flights" as const, icon: "✈️", label: "Flights", mobileLabel: "Flights" },
@@ -73,38 +74,7 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
         </div>
       </section>
 
-      <section className="py-8 bg-card border-b border-border">
-        <div className="container">
-          <p className="text-center text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-6">
-            Compare prices from trusted travel brands
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
-            {[
-              { name: "Aviasales", url: "https://www.aviasales.com", logo: "/images/partners/aviasales.svg" },
-              { name: "Trip.com", url: "https://www.trip.com", logo: "/images/partners/tripcom.svg" },
-              { name: "Agoda", url: "https://www.agoda.com", logo: "https://cdn0.agoda.net/images/bimi/agoda-tiny-bimi-2.svg" },
-              { name: "12Go", url: "https://12go.asia/?z=14566451&sub_id=partner_strip", logo: "/images/partners/12go.svg" },
-              { name: "Klook", url: "https://www.klook.com", logo: "/images/partners/klook.svg" },
-            ].map((partner) => (
-              <a
-                key={partner.name}
-                href={partner.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group hover:scale-105 hover:shadow-md transition-all rounded-md overflow-hidden"
-                title={`Search on ${partner.name}`}
-              >
-                <img
-                  src={partner.logo}
-                  alt={`${partner.name} logo`}
-                  className="h-10 md:h-12 w-auto"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
+      <Partners />
     </>
   );
 }
