@@ -7,6 +7,10 @@ type Deal = {
   price: number;
   airline: string;
   flight_num?: string;
+  transfers?: number;
+  airline_code?: string;
+  currency?: string;
+  found_at?: string;
 };
 
 type Meta = {
