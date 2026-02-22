@@ -15,9 +15,16 @@ import DealsCarousel from "@/components/DealsCarousel";
 import TrustReviews from "@/components/TrustReviews";
 import { FAQJsonLd } from "@/components/JsonLd";
 
-const AFFILIATE_MARKER = "697202";
-const TRIP_COM_BASE = "https://www.trip.com/flights";
-const AGODA_CID = "1959281";
+import {
+  AFFILIATE,
+  buildAviasalesUrl as buildAviasalesLink,
+  buildAgodaPartnerUrl,
+  buildKlookUrl,
+  buildTripComUrl as buildTripComLink,
+  build12GoUrl,
+} from "@/lib/config";
+
+const AGODA_CID = AFFILIATE.AGODA_CID;
 
 /* ─── Hotel Search Form ─── */
 const HOTEL_CITIES = [
@@ -51,7 +58,7 @@ function HotelsSearchForm() {
       return;
     }
 
-    const url = `https://www.agoda.com/city/${citySlug}.html?cid=${AGODA_CID}&checkIn=${checkInDate}&checkout=${checkOutDate}`;
+    const url = `https://www.agoda.com/city/${citySlug}.html?cid=${AGODA_CID}&checkIn=${checkInDate}&checkout=${checkOutDate}&utm_source=gotravelasia&utm_medium=affiliate`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -133,32 +140,15 @@ export default function Home() {
   };
 
   const buildAviasalesUrl = useCallback((d: Deal) => {
-    const params = new URLSearchParams({
-      origin_iata: d.origin,
-      destination_iata: d.destination,
-      depart_date: d.date,
-      one_way: "true",
-      adults: "1",
-      locale: "en",
-      currency: "USD",
-    });
-    const targetUrl = `https://www.aviasales.com/search?${params.toString()}`;
-    return `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
+    return buildAviasalesLink(d.origin, d.destination, d.date);
   }, []);
 
   const buildTripComUrl = useCallback((d: Deal) => {
-    const params = new URLSearchParams({
-      locale: "en_US", dcity: d.origin, acity: d.destination, ddate: d.date,
-      class: "Y", quantity: "1", searchBoxArg: "t",
-      Allianceid: "7796167", SID: "293794502",
-    });
-    return `${TRIP_COM_BASE}?${params.toString()}`;
+    return buildTripComLink(d.origin, d.destination, d.date);
   }, []);
 
   const buildRouteUrl = useCallback((origin: string, dest: string, dealDate?: string) => {
-    const searchDate = dealDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-    const targetUrl = `https://www.aviasales.com/search?origin_iata=${origin}&destination_iata=${dest}&depart_date=${searchDate}&one_way=true&adults=1&locale=en&currency=USD`;
-    return `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
+    return buildAviasalesLink(origin, dest, dealDate);
   }, []);
 
   const track = useCallback(
@@ -246,7 +236,7 @@ export default function Home() {
                 </Link>
                 <div className="p-5 grid grid-cols-2 gap-3 mt-auto">
                   <a
-                    href={`https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=${AGODA_CID}&city=${dest.agodaCityId}`}
+                    href={buildAgodaPartnerUrl(dest.agodaCityId)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -255,7 +245,7 @@ export default function Home() {
                     </Button>
                   </a>
                   <a
-                    href="https://www.klook.com/en-US/country/4-thailand-things-to-do/?aid=111750"
+                    href={buildKlookUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -306,7 +296,7 @@ export default function Home() {
 
                 <div className="pt-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                   <a
-                    href="https://airalo.tpx.gr/rLWEywcV"
+                    href={AFFILIATE.AIRALO_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -449,7 +439,7 @@ export default function Home() {
                 ].map((link) => (
                   <a
                     key={link.slug}
-                    href={`https://12go.asia/en/travel/${link.slug}?referer=14566451&z=14566451&sub_id=homepage_quicklink`}
+                    href={build12GoUrl(link.slug, "homepage_quicklink")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group min-h-[44px]"

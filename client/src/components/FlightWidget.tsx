@@ -22,7 +22,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 
 // --- CONFIG DATA ---
-const MARKER_ID = "697202";
+import { AFFILIATE } from "@/lib/config";
+const MARKER_ID = AFFILIATE.TRAVELPAYOUTS_MARKER;
 
 const AIRPORTS = [
     // 🇲🇲 Myanmar (Origin/Return Hubs) - Pinned to Top

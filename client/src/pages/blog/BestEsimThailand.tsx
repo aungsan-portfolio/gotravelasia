@@ -1,4 +1,5 @@
 import MoneyPage, { MoneyPageData } from "@/components/MoneyPage";
+import { AFFILIATE } from "@/lib/config";
 
 const data: MoneyPageData = {
   title: "Best eSIM for Thailand: Airalo vs. Local SIMs",
@@ -17,7 +18,7 @@ const data: MoneyPageData = {
       pros: ["Instant activation", "Keep your home number active", "Cheap data packages"],
       cons: ["Data only (no voice calls)", "Slightly more than local street price"],
       ctaText: "Get eSIM",
-      affiliateLink: "https://airalo.tpx.gr/rLWEywcV",
+      affiliateLink: AFFILIATE.AIRALO_URL,
       price: "$9.90 for 50GB"
     },
     {

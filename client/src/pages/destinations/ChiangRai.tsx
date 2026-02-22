@@ -1,4 +1,5 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function ChiangRai() {
   return (
@@ -38,12 +39,12 @@ export default function ChiangRai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/9-chiang-rai-things-to-do/?aid=111750",
-        kiwi: `https://tp.media/r?marker=697202&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=CEI&one_way=true&adults=1&locale=en&currency=USD")}`,
-        traveloka: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=18443",
+        klook: buildKlookUrl("/en-US/city/9-chiang-rai-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "CEI"),
+        traveloka: buildAgodaPartnerUrl(18443),
         welcomePickups: "https://www.welcomepickups.com/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

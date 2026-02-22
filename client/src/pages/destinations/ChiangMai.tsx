@@ -1,4 +1,5 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function ChiangMai() {
   return (
@@ -123,12 +124,12 @@ export default function ChiangMai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/?aid=111750",
-        kiwi: `https://tp.media/r?marker=697202&p=4114&u=${encodeURIComponent("https://www.aviasales.com/search?origin_iata=RGN&destination_iata=CNX&one_way=true&adults=1&locale=en&currency=USD")}`,
-        traveloka: "https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=18296",
+        klook: buildKlookUrl("/en-US/city/4-chiang-mai-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "CNX"),
+        traveloka: buildAgodaPartnerUrl(18296),
         welcomePickups: "https://www.welcomepickups.com/chiang-mai/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

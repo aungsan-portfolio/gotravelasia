@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plane, Search, ChevronDown } from "lucide-react";
-
-const AFFILIATE_MARKER = "697202";
+import { AFFILIATE, buildAviasalesUrl, build12GoUrl } from "@/lib/config";
 
 const POPULAR_ROUTES = [
   { label: "Yangon → Bangkok", origin: "RGN", dest: "BKK" },
@@ -26,9 +25,7 @@ export default function FloatingSearchBar() {
 
   const handleSearch = () => {
     const route = POPULAR_ROUTES[selectedRoute];
-    const searchDate = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-    const targetUrl = `https://www.aviasales.com/search?origin_iata=${route.origin}&destination_iata=${route.dest}&depart_date=${searchDate}&one_way=true&adults=1&locale=en&currency=USD`;
-    const url = `https://tp.media/r?marker=${AFFILIATE_MARKER}&p=4114&u=${encodeURIComponent(targetUrl)}`;
+    const url = buildAviasalesUrl(route.origin, route.dest);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -67,7 +64,7 @@ export default function FloatingSearchBar() {
           </div>
 
           <a
-            href="https://www.agoda.com/city/bangkok-th.html?cid=1959281"
+            href={`https://www.agoda.com/city/bangkok-th.html?cid=${AFFILIATE.AGODA_CID}`}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden md:flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0"
@@ -75,7 +72,7 @@ export default function FloatingSearchBar() {
             🏨 Hotels
           </a>
           <a
-            href="https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=floating_bar"
+            href={build12GoUrl("bangkok/chiang-mai", "floating_bar")}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0"

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { build12GoUrl } from "@/lib/config";
 import {
     Bus,
     Train,
@@ -106,7 +107,7 @@ const FALLBACK_DATA: TransportData = {
                     duration: "13h",
                     departure: "18:10",
                     arrival: "07:15 (+1)",
-                    bookingUrl: "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=fallback_train",
+                    bookingUrl: build12GoUrl("bangkok/chiang-mai", "fallback_train"),
                 },
                 {
                     type: "Flight",
@@ -116,7 +117,7 @@ const FALLBACK_DATA: TransportData = {
                     duration: "1h 10m",
                     departure: "08:00",
                     arrival: "09:10",
-                    bookingUrl: "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=fallback_flight",
+                    bookingUrl: build12GoUrl("bangkok/chiang-mai", "fallback_flight"),
                 },
             ],
         },

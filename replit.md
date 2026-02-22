@@ -81,10 +81,15 @@ scripts/          - Utility scripts
   - TrustReviews section (`client/src/components/TrustReviews.tsx`): 3 traveler testimonials + partner logo grid with role labels
   - Featured Destinations: "Hotels from $XX/night" price badges, star ratings, rounded-2xl cards with hover shadows
 
+- **Affiliate Centralization (Feb 2026)**:
+  - All affiliate IDs (Aviasales marker 697202, Agoda CID 1959281, 12Go referer 14566451, Klook AID 111750, Airalo, Trip.com) centralized in `client/src/lib/config.ts`
+  - Helper functions: `buildAviasalesUrl()`, `buildAgodaPartnerUrl()`, `build12GoUrl()`, `buildKlookUrl()`, `buildTripComUrl()` handle URL construction + tracking params
+  - All components (Home, StickyCTA, MobileNav, FloatingSearchBar, FlightWidget, TransportScheduleWidget, 6 destination pages, 2 blog pages) now import from config — zero hardcoded affiliate IDs
+
 ## Key Patterns
 - `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO: title, description, OG tags, Twitter cards, canonical URL, keywords per route
 - `client/src/hooks/useFlightData.ts` - Shared flight data fetching hook (single fetch, cached in memory)
-- `client/src/lib/config.ts` - Centralized config for API keys and affiliate IDs
+- `client/src/lib/config.ts` - **Single source of truth** for all affiliate IDs and URL builders (Aviasales, Agoda, 12Go, Klook, Trip.com, Airalo). All components import from here — zero hardcoded affiliate IDs elsewhere.
 - `client/src/components/JsonLd.tsx` - JSON-LD structured data components (WebsiteJsonLd, BreadcrumbJsonLd, FAQJsonLd)
 - `client/src/components/TrustBar.tsx` - Trust signals bar (500+ routes, 6 partners, 6hr updates, 0% markup)
 - `client/src/components/HeroSection.tsx` - Hero + tabbed search section (renders Partners + TrustBar)
