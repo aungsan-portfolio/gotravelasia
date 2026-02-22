@@ -50,6 +50,9 @@ export default function DestinationPage(props: DestinationPageProps) {
             src={props.heroImage} 
             alt={props.name} 
             className="w-full h-full object-cover grayscale contrast-125 brightness-75"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
         </div>

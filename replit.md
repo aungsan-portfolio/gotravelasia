@@ -61,6 +61,12 @@ scripts/          - Utility scripts
 - **Partners Marquee**: Extracted partner logos into `Partners.tsx` with CSS-only infinite scroll, GPU-accelerated (`translate3d` + `will-change`), gradient edge masks, greyscale-to-color hover, pause-on-hover. Agoda logo switched to local SVG.
 - **SEO Optimization (Feb 2026)**: Enhanced `usePageMeta` hook to set OG tags, Twitter cards, canonical URLs, and keywords per page. Added JSON-LD structured data (WebSite, TravelAgency, FAQPage, BreadcrumbList). All page titles/descriptions optimized for "Travel Asia" / "Southeast Asia" keywords. Sitemap updated with `<lastmod>` dates and missing pages. `robots.txt` and `index.html` base tags updated.
 - **Performance Fix (Feb 2026)**: Removed `useTransition` from TransportScheduleWidget (was causing potential re-fetch loop via `[startTransition]` dependency). Fixed "Maximum update depth exceeded" by memoizing `useFlightPriceMap` and removing unnecessary `useEffect`/`useState` chains in FlightWidget.
+- **Performance Optimization (Feb 2026)**: 
+  - React.lazy code splitting for all 18 route pages (only loads page code when visited)
+  - Converted 5 remaining JPG destination images to WebP. Removed unused 426KB logo.png
+  - Removed 22 unused packages (framer-motion, recharts, AWS SDK, 13 Radix UI, cmdk, input-otp, etc.)
+  - Added image loading/decoding/fetchPriority attributes for above-fold hero images
+  - Vite manualChunks: vendor (react), router (wouter), query (tanstack/trpc), ui (radix), i18n bundles
 
 ## Key Patterns
 - `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO: title, description, OG tags, Twitter cards, canonical URL, keywords per route

@@ -39,10 +39,10 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
             </div>
 
             <div className="hidden lg:grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-              <img src="/images/bangkok.webp" alt="Bangkok" className="rounded-2xl object-cover h-[320px] w-full shadow-lg" loading="lazy" />
+              <img src="/images/bangkok.webp" alt="Bangkok" className="rounded-2xl object-cover h-[320px] w-full shadow-lg" loading="eager" decoding="async" fetchPriority="high" />
               <div className="grid grid-rows-2 gap-4">
-                <img src="/images/chiang-mai.webp" alt="Chiang Mai" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
-                <img src="/images/phuket.webp" alt="Phuket" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" />
+                <img src="/images/chiang-mai.webp" alt="Chiang Mai" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" decoding="async" />
+                <img src="/images/phuket.webp" alt="Phuket" className="rounded-2xl object-cover h-[152px] w-full shadow-md" loading="lazy" decoding="async" />
               </div>
             </div>
           </div>
