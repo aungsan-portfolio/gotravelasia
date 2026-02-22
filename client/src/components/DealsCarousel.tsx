@@ -19,11 +19,11 @@ const getRouteImage = (dest: string) => {
     BKK: "/images/bangkok.webp",
     CNX: "/images/chiang-mai.webp",
     HKT: "/images/phuket.webp",
-    SIN: "/images/hero-travel.webp",
-    KUL: "/images/hero-travel.webp",
-    HAN: "/images/hero-travel.webp",
-    SGN: "/images/hero-travel.webp",
-    PNH: "/images/hero-travel.webp",
+    SIN: "/images/destinations/singapore.webp",
+    KUL: "/images/destinations/kuala-lumpur.webp",
+    HAN: "/images/destinations/hanoi.webp",
+    SGN: "/images/destinations/ho-chi-minh.webp",
+    PNH: "/images/destinations/phnom-penh.webp",
   };
   return images[dest] || "/images/hero-travel.webp";
 };
