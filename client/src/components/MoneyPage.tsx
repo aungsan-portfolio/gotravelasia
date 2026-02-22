@@ -1,6 +1,8 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Check, X, Star, ArrowRight, ExternalLink } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { BreadcrumbJsonLd } from "@/components/JsonLd";
 
 export interface Product {
   name: string;
@@ -23,11 +25,26 @@ export interface MoneyPageData {
   intro: string;
   products: Product[];
   conclusion: string;
+  seoPath?: string;
+  seoKeywords?: string;
 }
 
 export default function MoneyPage({ data }: { data: MoneyPageData }) {
+  usePageMeta({
+    title: data.title,
+    description: data.subtitle,
+    path: data.seoPath,
+    keywords: data.seoKeywords,
+  });
+
   return (
     <Layout>
+      {data.seoPath && (
+        <BreadcrumbJsonLd items={[
+          { name: "Blog", path: "/blog" },
+          { name: data.title, path: data.seoPath },
+        ]} />
+      )}
       <article className="max-w-4xl mx-auto px-4 py-12 md:py-20">
         {/* Header */}
         <header className="text-center mb-16">

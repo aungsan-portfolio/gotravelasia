@@ -41,7 +41,9 @@ const data: MoneyPageData = {
       price: "Free"
     }
   ],
-  conclusion: "For the absolute lowest price, start your search on Kiwi.com. Their algorithm is unmatched for finding creative routes. If you're already in Asia, check Airpaz for regional budget carrier deals."
+  conclusion: "For the absolute lowest price, start your search on Kiwi.com. Their algorithm is unmatched for finding creative routes. If you're already in Asia, check Airpaz for regional budget carrier deals.",
+  seoPath: "/blog/cheap-flights-to-bangkok",
+  seoKeywords: "cheap flights bangkok, travel asia flights, southeast asia cheap flights, myanmar to bangkok flights, budget flights thailand, flight comparison asia",
 };
 
 export default function CheapFlightsBangkok() {

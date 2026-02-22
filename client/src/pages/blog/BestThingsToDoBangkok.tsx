@@ -1,10 +1,13 @@
 import MoneyPage, { MoneyPageData } from "@/components/MoneyPage";
+import { buildKlookUrl } from "@/lib/config";
 
 const data: MoneyPageData = {
   title: "10 Best Things to Do in Bangkok (2026 Guide)",
   subtitle: "From ancient temples to rooftop bars, here are the absolute must-do experiences in Thailand's capital.",
   author: "GoTravel Team",
   updatedDate: "January 2026",
+  seoPath: "/blog/best-things-to-do-in-bangkok",
+  seoKeywords: "things to do bangkok, bangkok travel guide, travel asia bangkok, southeast asia attractions, bangkok sightseeing, bangkok activities 2026",
   intro: "Bangkok is a city that never sleeps. It's a chaotic, colorful, and captivating mix of old and new. Whether you're a culture vulture, a foodie, or a party animal, there's something here for you. We've curated the top experiences you simply can't miss.",
   products: [
     {
@@ -15,7 +18,7 @@ const data: MoneyPageData = {
       pros: ["Incredible architecture", "Deep cultural significance", "Must-see for first-timers"],
       cons: ["Very crowded", "Strict dress code", "Expensive entry fee"],
       ctaText: "Book Guided Tour",
-      affiliateLink: "https://www.klook.com/en-US/activity/grand-palace-bangkok/?aid=111750",
+      affiliateLink: buildKlookUrl("en-US/activity/grand-palace-bangkok/"),
       price: "$45 USD"
     },
     {
@@ -26,7 +29,7 @@ const data: MoneyPageData = {
       pros: ["Relaxing atmosphere", "Great views of lit-up temples", "Includes dinner"],
       cons: ["Food quality varies by boat", "Can be touristy"],
       ctaText: "Check Prices",
-      affiliateLink: "https://www.klook.com/en-US/activity/chao-phraya-dinner-cruise-bangkok/?aid=111750",
+      affiliateLink: buildKlookUrl("en-US/activity/chao-phraya-dinner-cruise-bangkok/"),
       price: "$35 USD"
     },
     {
@@ -37,7 +40,7 @@ const data: MoneyPageData = {
       pros: ["Unique experience", "Great for photography", "Try local snacks"],
       cons: ["Far from city center", "Very commercialized"],
       ctaText: "Book Day Trip",
-      affiliateLink: "https://www.klook.com/en-US/activity/damnoen-saduak-floating-market-bangkok/?aid=111750",
+      affiliateLink: buildKlookUrl("en-US/activity/damnoen-saduak-floating-market-bangkok/"),
       price: "$25 USD"
     },
     {
@@ -48,7 +51,7 @@ const data: MoneyPageData = {
       pros: ["Best view in Bangkok", "Glass floor thrill", "Rooftop bar"],
       cons: ["Not for those afraid of heights", "Lines can be long"],
       ctaText: "Get Tickets",
-      affiliateLink: "https://www.klook.com/en-US/activity/mahanakhon-skywalk-bangkok/?aid=111750",
+      affiliateLink: buildKlookUrl("en-US/activity/mahanakhon-skywalk-bangkok/"),
       price: "$28 USD"
     }
   ],

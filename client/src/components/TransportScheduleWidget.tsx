@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useTransition } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { build12GoUrl } from "@/lib/config";
 import {
     Bus,
     Train,
@@ -106,7 +107,7 @@ const FALLBACK_DATA: TransportData = {
                     duration: "13h",
                     departure: "18:10",
                     arrival: "07:15 (+1)",
-                    bookingUrl: "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=fallback_train",
+                    bookingUrl: build12GoUrl("bangkok/chiang-mai", "fallback_train"),
                 },
                 {
                     type: "Flight",
@@ -116,7 +117,7 @@ const FALLBACK_DATA: TransportData = {
                     duration: "1h 10m",
                     departure: "08:00",
                     arrival: "09:10",
-                    bookingUrl: "https://12go.asia/en/travel/bangkok/chiang-mai?referer=14566451&z=14566451&sub_id=fallback_flight",
+                    bookingUrl: build12GoUrl("bangkok/chiang-mai", "fallback_flight"),
                 },
             ],
         },
@@ -129,22 +130,17 @@ const FALLBACK_DATA: TransportData = {
 
 export default function TransportScheduleWidget() {
     const [data, setData] = useState<TransportData>(FALLBACK_DATA);
-    const [isPending, startTransition] = useTransition();
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [from, setFrom] = useState("Bangkok");
     const [to, setTo] = useState("Chiang Mai");
     const [query, setQuery] = useState({ from: "Bangkok", to: "Chiang Mai" });
 
-    // Background fetch – UI always shows fallback, upgrades to live data when ready
     useEffect(() => {
         let cancelled = false;
         const controller = new AbortController();
 
         async function load() {
-            setLoading(true);
-            setLoadError(null);
-
             try {
                 const res = await fetch(assetUrl("data/transport.json"), {
                     signal: controller.signal,
@@ -158,10 +154,10 @@ export default function TransportScheduleWidget() {
 
                 const json = await res.json();
                 if (!cancelled) {
-                    startTransition(() => setData(json));
+                    setData(json);
                 }
             } catch (e: any) {
-                if (!cancelled) {
+                if (!cancelled && e?.name !== "AbortError") {
                     setLoadError(e?.message || "Failed to load transport schedules");
                 }
             } finally {
@@ -175,7 +171,7 @@ export default function TransportScheduleWidget() {
             cancelled = true;
             controller.abort();
         };
-    }, [startTransition]);
+    }, []);
 
     // Extract available cities from loaded data
     const cities = useMemo(() => {
@@ -282,7 +278,7 @@ export default function TransportScheduleWidget() {
                         {query.to}
                     </h4>
                     <div className="flex items-center gap-2">
-                        {(loading || isPending) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        {loading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
                         {loadError && (
                             <span className="inline-flex items-center rounded-md border border-amber-300 px-2 py-0.5 text-xs text-amber-700">
                                 Offline data (live schedules unavailable)

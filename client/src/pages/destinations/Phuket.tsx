@@ -1,10 +1,11 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function Phuket() {
   return (
     <DestinationPage
       name="Phuket"
-      heroImage="/images/phuket.jpg"
+      heroImage="/images/phuket.webp"
       description="Thailand's largest island, famous for its stunning beaches, vibrant nightlife, and luxury resorts."
       bestTime="November to April"
       currency="Thai Baht (THB)"
@@ -41,12 +42,12 @@ export default function Phuket() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/6-phuket-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/phuket-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/region/phuket-10000088",
+        klook: buildKlookUrl("/en-US/city/6-phuket-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "HKT"),
+        traveloka: buildAgodaPartnerUrl(16639),
         welcomePickups: "https://www.welcomepickups.com/phuket/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

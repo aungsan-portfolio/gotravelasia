@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X, Plane, MapPin, BookOpen, Mail } from "lucide-react";
 import SignInModal from "./SignInModal";
+import { AFFILIATE, buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl } from "@/lib/config";
 
 interface MobileNavProps {
     onPlanTrip?: () => void;
@@ -38,7 +39,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
             <SheetContent side="right" className="w-[300px] sm:w-[350px]">
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
-                        <img src="/logo.png" alt="GoTravel Logo" className="h-8 w-auto" />
+                        <img src="/logo.webp" alt="GoTravel Logo" className="h-8 w-auto" />
                     </SheetTitle>
                 </SheetHeader>
 
@@ -114,7 +115,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <a
-                                href="https://www.kiwi.com/en/search/results/yangon-myanmar/thailand"
+                                href={buildAviasalesUrl("RGN", "BKK")}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
@@ -122,7 +123,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                 {t("nav.flights")}
                             </a>
                             <a
-                                href="https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959281&city=15932"
+                                href={buildAgodaPartnerUrl(15932)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
@@ -130,7 +131,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                 Agoda
                             </a>
                             <a
-                                href="https://www.klook.com/en-US/country/4-thailand-things-to-do/?aid=111750"
+                                href={buildKlookUrl()}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"
@@ -138,7 +139,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                 {t("nav.tours")}
                             </a>
                             <a
-                                href="https://airalo.tpx.gr/rLWEywcV"
+                                href={AFFILIATE.AIRALO_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-center py-2 px-3 bg-muted rounded-md hover:bg-muted/80 transition-colors"

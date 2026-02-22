@@ -1,10 +1,11 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function Krabi() {
   return (
     <DestinationPage
       name="Krabi"
-      heroImage="/images/krabi.jpg"
+      heroImage="/images/krabi.webp"
       description="Home to limestone cliffs, clear emerald waters, and the famous Railay Beach."
       bestTime="November to April"
       currency="Thai Baht (THB)"
@@ -39,12 +40,12 @@ export default function Krabi() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/7-krabi-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/krabi-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/province/krabi-10000005",
+        klook: buildKlookUrl("/en-US/city/7-krabi-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "KBV"),
+        traveloka: buildAgodaPartnerUrl(17071),
         welcomePickups: "https://www.welcomepickups.com/krabi/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

@@ -5,6 +5,8 @@ const data: MoneyPageData = {
   subtitle: "Don't get scammed by taxi drivers. Here are the safest, most reliable ways to get from the airport to your hotel.",
   author: "GoTravel Team",
   updatedDate: "January 2026",
+  seoPath: "/blog/best-airport-transfers-in-bangkok",
+  seoKeywords: "bangkok airport transfer, bkk airport to hotel, travel asia transport, bangkok taxi guide, suvarnabhumi transfer, don mueang airport transfer",
   intro: "Arriving in Bangkok can be overwhelming. The heat, the crowds, and the aggressive taxi touts. Pre-booking your transfer is the single best thing you can do to start your trip stress-free. We've compared the top services.",
   products: [
     {

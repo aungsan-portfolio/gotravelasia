@@ -1,10 +1,11 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function ChiangRai() {
   return (
     <DestinationPage
       name="Chiang Rai"
-      heroImage="/images/chiang-rai.jpg"
+      heroImage="/images/chiang-rai.webp"
       description="Home to the famous White Temple, Blue Temple, and the Golden Triangle."
       bestTime="November to February"
       currency="Thai Baht (THB)"
@@ -38,12 +39,12 @@ export default function ChiangRai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/9-chiang-rai-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/chiang-rai-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/province/chiang-rai-10000002",
+        klook: buildKlookUrl("/en-US/city/9-chiang-rai-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "CEI"),
+        traveloka: buildAgodaPartnerUrl(18443),
         welcomePickups: "https://www.welcomepickups.com/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

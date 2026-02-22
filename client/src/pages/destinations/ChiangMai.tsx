@@ -1,10 +1,11 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function ChiangMai() {
   return (
     <DestinationPage
       name="Chiang Mai"
-      heroImage="/images/chiang-mai.jpg" // You might need to update this image path or ensure the image exists
+      heroImage="/images/chiang-mai.webp"
       description="The cultural heart of Northern Thailand. Explore ancient temples, misty mountains, and vibrant night markets in this laid-back city."
       bestTime="November to February (Cool Season)"
       currency="Thai Baht (THB)"
@@ -123,12 +124,12 @@ export default function ChiangMai() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/en-US/city/4-chiang-mai-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/yangon-myanmar/chiang-mai-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/chiang-mai-10000008",
+        klook: buildKlookUrl("/en-US/city/4-chiang-mai-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "CNX"),
+        traveloka: buildAgodaPartnerUrl(18296),
         welcomePickups: "https://www.welcomepickups.com/chiang-mai/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

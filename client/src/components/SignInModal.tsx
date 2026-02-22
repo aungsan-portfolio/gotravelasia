@@ -14,11 +14,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, Loader2, Mail, X } from "lucide-react";
+import { WEB3FORMS_KEY } from "@/lib/config";
 
 // ──────────────────────────────────────────────
 // Config
 // ──────────────────────────────────────────────
-const WEB3FORMS_KEY = "606d35a5-9c09-4209-8317-96fba9a21c59";
 const LS_EMAIL_KEY = "gt_user_email";
 const LS_SUBSCRIBED_KEY = "gt_subscribed";
 
@@ -121,14 +121,14 @@ export default function SignInModal({
                 variant="outline"
                 className={`w-full justify-start font-mono text-xs uppercase ${className || ""}`}
             >
-                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Sign In"}
+                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Get Price Alerts"}
             </Button>
         ) : (
             <Button
                 variant="outline"
                 className={`hidden sm:inline-flex font-mono text-xs uppercase tracking-wider ${className || ""}`}
             >
-                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Sign In"}
+                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Get Price Alerts"}
             </Button>
         );
 
@@ -230,7 +230,7 @@ export default function SignInModal({
                             onClick={() => setStep(1)}
                             className="mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-center"
                         >
-                            ← Back to sign in options
+                            ← Back to options
                         </button>
 
                         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
@@ -259,8 +259,7 @@ export default function SignInModal({
 
                         {/* Benefits intro */}
                         <p className="text-gray-500 mt-4 text-[15px] font-medium leading-relaxed">
-                            Sign up to get some great benefits you're missing out on right
-                            now:
+                            Get price alerts and unlock benefits you're missing out on:
                         </p>
 
                         {/* Bullet points with gold checks */}

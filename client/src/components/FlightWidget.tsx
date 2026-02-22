@@ -19,9 +19,11 @@ import {
 import { format, isValid } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 
 // --- CONFIG DATA ---
-const MARKER_ID = "697202";
+import { AFFILIATE } from "@/lib/config";
+const MARKER_ID = AFFILIATE.TRAVELPAYOUTS_MARKER;
 
 const AIRPORTS = [
     // 🇲🇲 Myanmar (Origin/Return Hubs) - Pinned to Top
@@ -169,7 +171,7 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
-    const [lowestPrice, setLowestPrice] = useState<number | null>(null);
+    
     const [openPax, setOpenPax] = useState(false);
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [calendarMode, setCalendarMode] = useState<"depart" | "return">("depart");
@@ -270,31 +272,7 @@ export default function FlightWidget() {
         paxTriggerRef.current?.focus();
     }, [openPax]);
 
-    // Fetch price hints dynamically
-    useEffect(() => {
-        if (returnDate) {
-            setLowestPrice(null);
-            return;
-        }
-
-        fetch("/data/flight_data.json?v=" + new Date().getTime())
-            .then((res) => res.json())
-            .then((data) => {
-                const routes = data.routes || [];
-                const route = routes.find(
-                    (r: any) => r.origin === origin && r.destination === destination
-                );
-                if (route && route.price) {
-                    setLowestPrice(route.price);
-                } else {
-                    setLowestPrice(null);
-                }
-            })
-            .catch((err) => {
-                console.error("Error fetching price hints:", err);
-                setLowestPrice(null);
-            });
-    }, [origin, destination, returnDate]);
+    const lowestPrice = usePriceHint(origin, destination, !!returnDate);
 
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
@@ -396,7 +374,7 @@ export default function FlightWidget() {
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 overflow-x-hidden">
             {/* SEARCH ROW */}
             <div className="flex flex-col lg:flex-row gap-3">
 
@@ -405,7 +383,7 @@ export default function FlightWidget() {
 
                     {/* Origin */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-3 py-2.5 h-full">
+                        <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                             <MapPin className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">From</span>
@@ -426,7 +404,7 @@ export default function FlightWidget() {
 
                     {/* Destination */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-3 py-2.5 h-full">
+                        <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                             <Plane className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">To</span>
@@ -460,7 +438,7 @@ export default function FlightWidget() {
                                     className={`relative flex-1 min-w-[130px] border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
                                         }`}
                                 >
-                                    <div className="flex items-center px-3 py-2.5 h-full">
+                                    <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                         <CalendarIcon className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
                                         <div className="flex flex-col w-full overflow-hidden">
                                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Depart</span>
@@ -479,7 +457,7 @@ export default function FlightWidget() {
                                 className={`relative flex-1 min-w-[130px] group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
                                     }`}
                             >
-                                <div className="flex items-center px-3 py-2.5 h-full">
+                                <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                     <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
                                     <div className="flex flex-col w-full overflow-hidden">
                                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
@@ -583,7 +561,7 @@ export default function FlightWidget() {
                             onClick={() => setOpenPax((v) => !v)}
                             className="w-full h-full text-left"
                         >
-                            <div className="flex items-center px-3 py-2.5 h-full">
+                            <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                 <Users className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
                                 <div className="flex flex-col w-full overflow-hidden">
                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Travelers & Class</span>
@@ -710,25 +688,12 @@ function RecentSearches({
     onReSearch: (s: RecentSearchRecord) => void;
 }) {
     const [searches, setSearches] = useState<RecentSearchRecord[]>([]);
-    const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
     const [loaded, setLoaded] = useState(false);
 
+    const currentPrices = useFlightPriceMap();
     useEffect(() => {
-        const saved = loadRecentSearches();
-        setSearches(saved);
+        setSearches(loadRecentSearches());
         setLoaded(true);
-
-        // Fetch current prices
-        fetch("/data/flight_data.json?v=" + Date.now())
-            .then((r) => r.json())
-            .then((data) => {
-                const map: Record<string, number> = {};
-                for (const route of data.routes || []) {
-                    map[`${route.origin}-${route.destination}`] = route.price;
-                }
-                setCurrentPrices(map);
-            })
-            .catch(() => { });
     }, []);
 
     const handleClear = () => {

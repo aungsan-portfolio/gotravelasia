@@ -35,7 +35,7 @@ export default function CookieConsent() {
     if (!showBanner) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="fixed bottom-0 left-0 right-0 z-[60] p-4 mb-[60px] md:mb-0 animate-in slide-in-from-bottom-4 duration-500">
             <div className="container max-w-4xl">
                 <div className="bg-card border border-border shadow-lg p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="flex-1">

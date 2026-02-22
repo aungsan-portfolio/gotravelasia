@@ -1,10 +1,13 @@
 import MoneyPage, { MoneyPageData } from "@/components/MoneyPage";
+import { AFFILIATE } from "@/lib/config";
 
 const data: MoneyPageData = {
   title: "Best eSIM for Thailand: Airalo vs. Local SIMs",
   subtitle: "Stay connected the moment you land. We tested the top eSIM providers to see which one offers the best speed and value.",
   author: "GoTravel Team",
   updatedDate: "January 2026",
+  seoPath: "/blog/best-esim-for-thailand",
+  seoKeywords: "esim thailand, airalo thailand, travel asia sim card, southeast asia esim, thailand data plan, best sim card thailand",
   intro: "Gone are the days of hunting for a SIM card kiosk at the airport. eSIMs allow you to download a data plan to your phone before you even leave home. But is it worth it compared to a local SIM?",
   products: [
     {
@@ -15,7 +18,7 @@ const data: MoneyPageData = {
       pros: ["Instant activation", "Keep your home number active", "Cheap data packages"],
       cons: ["Data only (no voice calls)", "Slightly more than local street price"],
       ctaText: "Get eSIM",
-      affiliateLink: "https://airalo.tpx.gr/rLWEywcV",
+      affiliateLink: AFFILIATE.AIRALO_URL,
       price: "$9.90 for 50GB"
     },
     {

@@ -1,10 +1,11 @@
 import DestinationPage from "@/components/DestinationPage";
+import { buildAviasalesUrl, buildAgodaPartnerUrl, buildKlookUrl, AFFILIATE } from "@/lib/config";
 
 export default function Bangkok() {
   return (
     <DestinationPage
       name="Bangkok"
-      heroImage="/images/bangkok.jpg"
+      heroImage="/images/bangkok.webp"
       description="Bangkok is a sensory overload in the best way possible. From the golden spires of the Grand Palace to the neon-lit streets of Sukhumvit, this city blends ancient tradition with hyper-modernity. It's the world's street food capital, a shopper's paradise, and the gateway to Southeast Asia."
       bestTime="November to February"
       currency="Thai Baht (THB)"
@@ -60,12 +61,12 @@ export default function Bangkok() {
         }
       ]}
       affiliateLinks={{
-        klook: "https://www.klook.com/city/4-bangkok-things-to-do/?aid=111750",
-        kiwi: "https://www.kiwi.com/en/search/results/anywhere/bangkok-thailand",
-        traveloka: "https://www.traveloka.com/en-th/hotel/thailand/city/bangkok-10000045",
+        klook: buildKlookUrl("/city/4-bangkok-things-to-do/"),
+        kiwi: buildAviasalesUrl("RGN", "BKK"),
+        traveloka: buildAgodaPartnerUrl(15932),
         welcomePickups: "https://www.welcomepickups.com/bangkok/",
         insurance: "https://ektatraveling.com/",
-        esim: "https://airalo.tpx.gr/rLWEywcV"
+        esim: AFFILIATE.AIRALO_URL
       }}
     />
   );

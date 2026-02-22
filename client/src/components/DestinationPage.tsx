@@ -1,7 +1,9 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, ExternalLink, MapPin } from "lucide-react";
+import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, MapPin } from "lucide-react";
 import TransportScheduleWidget from "./TransportScheduleWidget";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { BreadcrumbJsonLd } from "@/components/JsonLd";
 
 export interface DestinationPageProps {
   name: string;
@@ -10,9 +12,10 @@ export interface DestinationPageProps {
   bestTime: string;
   currency: string;
   language: string;
+  slug?: string;
   sections: {
     title: string;
-    content: string; // HTML string
+    content: string;
   }[];
   affiliateLinks: {
     klook: string;
@@ -25,15 +28,30 @@ export interface DestinationPageProps {
 }
 
 export default function DestinationPage(props: DestinationPageProps) {
+  const slug = props.slug || props.name.toLowerCase().replace(/\s+/g, "-");
+  usePageMeta({
+    title: `${props.name} Travel Guide 2026 - Hotels, Flights & Things to Do`,
+    description: `Plan your trip to ${props.name}, Thailand. ${props.description.slice(0, 120)}. Compare cheap flights, hotels, and transport with GoTravel Asia.`,
+    path: `/thailand/${slug}`,
+    ogImage: props.heroImage.startsWith("http") ? props.heroImage : undefined,
+    keywords: `${props.name.toLowerCase()} travel guide, ${props.name.toLowerCase()} thailand, travel asia ${props.name.toLowerCase()}, cheap flights ${props.name.toLowerCase()}, ${props.name.toLowerCase()} hotels, things to do ${props.name.toLowerCase()}, southeast asia travel`,
+  });
+
   return (
     <Layout>
-      {/* Hero Section */}
+      <BreadcrumbJsonLd items={[
+        { name: "Thailand", path: "/" },
+        { name: props.name, path: `/thailand/${slug}` },
+      ]} />
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
             src={props.heroImage} 
             alt={props.name} 
             className="w-full h-full object-cover grayscale contrast-125 brightness-75"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90" />
         </div>
@@ -51,7 +69,6 @@ export default function DestinationPage(props: DestinationPageProps) {
         </div>
       </section>
 
-      {/* Quick Nav / Intro */}
       <section className="py-12 border-b border-border">
         <div className="container">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -88,7 +105,6 @@ export default function DestinationPage(props: DestinationPageProps) {
         </div>
       </section>
 
-      {/* Dynamic Sections */}
       {props.sections.map((section, index) => (
         <section key={index} className={`py-16 ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}>
           <div className="container">
@@ -101,7 +117,6 @@ export default function DestinationPage(props: DestinationPageProps) {
         </section>
       ))}
 
-      {/* Transport Widget */}
       <section className="py-16 bg-muted/30 border-b border-border">
         <div className="container">
           <h2 className="text-3xl font-bold tracking-tight mb-8">Getting Around Thailand</h2>
@@ -110,7 +125,6 @@ export default function DestinationPage(props: DestinationPageProps) {
         </div>
       </section>
 
-      {/* Affiliate Tools Grid */}
       <section className="py-24 bg-primary text-primary-foreground">
         <div className="container">
           <h2 className="text-3xl font-bold tracking-tight mb-12 text-center text-white">Plan Your Trip to {props.name}</h2>
@@ -118,27 +132,27 @@ export default function DestinationPage(props: DestinationPageProps) {
              <div className="bg-white/10 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors">
                 <Plane className="w-8 h-8 mb-4 text-white" />
                 <h3 className="font-bold text-lg mb-2 text-white">Find Cheap Flights</h3>
-                <p className="text-sm text-white/80 mb-4">Compare prices from all major airlines.</p>
+                <p className="text-sm text-white/80 mb-4">Compare prices on Aviasales from all major airlines.</p>
                 <Button variant="secondary" className="w-full" asChild>
-                  <a href={props.affiliateLinks.kiwi} target="_blank" rel="noopener noreferrer">Check Prices</a>
+                  <a href={props.affiliateLinks.kiwi} target="_blank" rel="noopener noreferrer">Search on Aviasales</a>
                 </Button>
              </div>
 
              <div className="bg-white/10 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors">
                 <Hotel className="w-8 h-8 mb-4 text-white" />
                 <h3 className="font-bold text-lg mb-2 text-white">Book Hotels</h3>
-                <p className="text-sm text-white/80 mb-4">Best deals on hotels and resorts.</p>
+                <p className="text-sm text-white/80 mb-4">Best deals on hotels and resorts via Agoda.</p>
                 <Button variant="secondary" className="w-full" asChild>
-                  <a href={props.affiliateLinks.traveloka} target="_blank" rel="noopener noreferrer">Find Stays</a>
+                  <a href={props.affiliateLinks.traveloka} target="_blank" rel="noopener noreferrer">Search on Agoda</a>
                 </Button>
              </div>
 
              <div className="bg-white/10 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors">
                 <Ticket className="w-8 h-8 mb-4 text-white" />
                 <h3 className="font-bold text-lg mb-2 text-white">Book Activities</h3>
-                <p className="text-sm text-white/80 mb-4">Tours, tickets, and local experiences.</p>
+                <p className="text-sm text-white/80 mb-4">Tours, tickets, and local experiences on Klook.</p>
                 <Button variant="secondary" className="w-full" asChild>
-                  <a href={props.affiliateLinks.klook} target="_blank" rel="noopener noreferrer">Explore</a>
+                  <a href={props.affiliateLinks.klook} target="_blank" rel="noopener noreferrer">Browse on Klook</a>
                 </Button>
              </div>
 
@@ -154,9 +168,9 @@ export default function DestinationPage(props: DestinationPageProps) {
              <div className="bg-white/10 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors">
                 <Wifi className="w-8 h-8 mb-4 text-white" />
                 <h3 className="font-bold text-lg mb-2 text-white">Get an eSIM</h3>
-                <p className="text-sm text-white/80 mb-4">Instant connectivity upon arrival.</p>
+                <p className="text-sm text-white/80 mb-4">Instant connectivity via Airalo.</p>
                 <Button variant="secondary" className="w-full" asChild>
-                  <a href={props.affiliateLinks.esim} target="_blank" rel="noopener noreferrer">Get Connected</a>
+                  <a href={props.affiliateLinks.esim} target="_blank" rel="noopener noreferrer">Get eSIM on Airalo</a>
                 </Button>
              </div>
 
