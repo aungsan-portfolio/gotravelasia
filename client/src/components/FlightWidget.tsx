@@ -170,7 +170,7 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
-    const [lowestPrice, setLowestPrice] = useState<number | null>(null);
+    
     const [openPax, setOpenPax] = useState(false);
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [calendarMode, setCalendarMode] = useState<"depart" | "return">("depart");
@@ -271,10 +271,7 @@ export default function FlightWidget() {
         paxTriggerRef.current?.focus();
     }, [openPax]);
 
-    const priceHint = usePriceHint(origin, destination, !!returnDate);
-    useEffect(() => {
-        setLowestPrice(priceHint);
-    }, [priceHint]);
+    const lowestPrice = usePriceHint(origin, destination, !!returnDate);
 
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
@@ -690,16 +687,13 @@ function RecentSearches({
     onReSearch: (s: RecentSearchRecord) => void;
 }) {
     const [searches, setSearches] = useState<RecentSearchRecord[]>([]);
-    const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
     const [loaded, setLoaded] = useState(false);
 
-    const cachedPriceMap = useFlightPriceMap();
+    const currentPrices = useFlightPriceMap();
     useEffect(() => {
-        const saved = loadRecentSearches();
-        setSearches(saved);
+        setSearches(loadRecentSearches());
         setLoaded(true);
-        setCurrentPrices(cachedPriceMap);
-    }, [cachedPriceMap]);
+    }, []);
 
     const handleClear = () => {
         clearRecentSearches();

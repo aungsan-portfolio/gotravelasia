@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 type Deal = {
   origin: string;
@@ -79,11 +79,13 @@ export function useFlightData() {
 
 export function useFlightPriceMap() {
   const { deals } = useFlightData();
-  const priceMap: Record<string, number> = {};
-  for (const route of deals) {
-    priceMap[`${route.origin}-${route.destination}`] = route.price;
-  }
-  return priceMap;
+  return useMemo(() => {
+    const priceMap: Record<string, number> = {};
+    for (const route of deals) {
+      priceMap[`${route.origin}-${route.destination}`] = route.price;
+    }
+    return priceMap;
+  }, [deals]);
 }
 
 export function usePriceHint(origin: string, destination: string, hasReturn: boolean) {
