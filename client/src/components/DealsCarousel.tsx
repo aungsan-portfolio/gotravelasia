@@ -35,6 +35,8 @@ const getRouteImage = (dest: string) => {
     HAN: "/images/destinations/hanoi.webp",
     SGN: "/images/destinations/ho-chi-minh.webp",
     PNH: "/images/destinations/phnom-penh.webp",
+    RGN: "/images/destinations/yangon.webp",
+    MDL: "/images/destinations/mandalay.webp",
   };
   return images[dest] || "/images/hero-travel.webp";
 };
@@ -71,7 +73,7 @@ export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselPro
         <div className="flex items-end justify-between mb-8">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
-              Travel deals under ฿{THB_THRESHOLD.toLocaleString()}
+              Best Flight Deals
             </h2>
             <p className="text-gray-500 font-medium text-base mt-1">
               Live prices from Myanmar — updated daily.
