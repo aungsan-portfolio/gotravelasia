@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import StickyCTA from "./StickyCTA";
+import FloatingSearchBar from "./FloatingSearchBar";
 import MobileNav from "./MobileNav";
 import CookieConsent from "./CookieConsent";
 import { Button } from "@/components/ui/button";
@@ -88,6 +89,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
+      <FloatingSearchBar />
       <StickyCTA />
 
       {/* Cookie Consent Banner */}

@@ -75,6 +75,12 @@ scripts/          - Utility scripts
   - Popular Routes section: 2-column card grid (blue flights / green transport) with categorized affiliate links
   - "Why GoTravelAsia" section: detailed cards with colored icon badges and verified stat chips
 
+- **Floating Search & Trust Features (Feb 2026)**:
+  - FloatingSearchBar (`client/src/components/FloatingSearchBar.tsx`): Compact search strip that appears below header on scroll (z-40), with route dropdown, Hotels/Transport quick links
+  - DealsCarousel enhanced with "From $XX" price badge, star ratings with review counts, "Price starting from" label
+  - TrustReviews section (`client/src/components/TrustReviews.tsx`): 3 traveler testimonials + partner logo grid with role labels
+  - Featured Destinations: "Hotels from $XX/night" price badges, star ratings, rounded-2xl cards with hover shadows
+
 ## Key Patterns
 - `client/src/hooks/usePageMeta.ts` - Hook for dynamic SEO: title, description, OG tags, Twitter cards, canonical URL, keywords per route
 - `client/src/hooks/useFlightData.ts` - Shared flight data fetching hook (single fetch, cached in memory)
@@ -83,6 +89,8 @@ scripts/          - Utility scripts
 - `client/src/components/TrustBar.tsx` - Trust signals bar (500+ routes, 6 partners, 6hr updates, 0% markup)
 - `client/src/components/HeroSection.tsx` - Hero + tabbed search section (renders Partners + TrustBar)
 - `client/src/components/Partners.tsx` - GPU-accelerated infinite marquee of partner logos
-- `client/src/components/DealsCarousel.tsx` - Trending flights carousel with route cards
+- `client/src/components/FloatingSearchBar.tsx` - Floating search bar that appears on scroll (Cheapflights-style)
+- `client/src/components/TrustReviews.tsx` - Traveler testimonials + partner logo grid with roles
+- `client/src/components/DealsCarousel.tsx` - Trending flights carousel with price badges, star ratings, and route cards
 - `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO + breadcrumbs)
 - `client/src/components/MoneyPage.tsx` - Shared component for all blog/review pages (auto-sets SEO + breadcrumbs)

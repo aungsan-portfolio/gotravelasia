@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Wifi, Zap, Smartphone, Shield } from "lucide-react";
+import { Plane, Hotel, ArrowRight, ExternalLink, MapPin, CheckCircle, Wifi, Zap, Smartphone, Shield, Star } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import TransportScheduleWidget from "@/components/TransportScheduleWidget";
@@ -12,6 +12,7 @@ import { useFlightData } from "@/hooks/useFlightData";
 import type { Deal } from "@/hooks/useFlightData";
 import HeroSection from "@/components/HeroSection";
 import DealsCarousel from "@/components/DealsCarousel";
+import TrustReviews from "@/components/TrustReviews";
 import { FAQJsonLd } from "@/components/JsonLd";
 
 const AFFILIATE_MARKER = "697202";
@@ -177,9 +178,9 @@ export default function Home() {
   const updatedText = meta.updated_at || meta.updated || "";
 
   const featuredDestinations = [
-    { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.webp", link: "/thailand/chiang-mai", agodaCityId: 18296 },
-    { nameKey: "destinations.bangkok", descKey: "destinations.bangkokDesc", image: "/images/bangkok.webp", link: "/thailand/bangkok", agodaCityId: 15932 },
-    { nameKey: "destinations.phuket", descKey: "destinations.phuketDesc", image: "/images/phuket.webp", link: "/thailand/phuket", agodaCityId: 16639 },
+    { nameKey: "destinations.chiangMai", descKey: "destinations.chiangMaiDesc", image: "/images/chiang-mai.webp", link: "/thailand/chiang-mai", agodaCityId: 18296, hotelFrom: 12, rating: 4.8, reviews: 3200 },
+    { nameKey: "destinations.bangkok", descKey: "destinations.bangkokDesc", image: "/images/bangkok.webp", link: "/thailand/bangkok", agodaCityId: 15932, hotelFrom: 15, rating: 4.7, reviews: 5400 },
+    { nameKey: "destinations.phuket", descKey: "destinations.phuketDesc", image: "/images/phuket.webp", link: "/thailand/phuket", agodaCityId: 16639, hotelFrom: 18, rating: 4.9, reviews: 4100 },
   ];
 
   return (
@@ -218,27 +219,39 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {featuredDestinations.map((dest, index) => (
-              <div key={index} className="group block bg-card border border-border flex flex-col h-full">
-                <Link href={dest.link} className="relative aspect-[4/5] overflow-hidden bg-muted block">
+              <div key={index} className="group bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col h-full shadow-sm hover:shadow-xl transition-all">
+                <Link href={dest.link} className="relative aspect-[4/5] overflow-hidden bg-gray-100 block">
                   <img
                     src={dest.image}
                     alt={t(dest.nameKey)}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity group-hover:opacity-90" />
-                  <div className="absolute bottom-0 left-0 p-8 w-full">
+                  <div className="absolute top-4 right-4 bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-extrabold shadow-lg">
+                    Hotels from ${dest.hotelFrom}/night
+                  </div>
+                  <div className="absolute bottom-0 left-0 p-6 w-full">
                     <h3 className="text-3xl font-bold text-white mb-2 tracking-tight">{t(dest.nameKey)}</h3>
-                    <p className="text-gray-300 text-sm line-clamp-2 mb-4">{t(dest.descKey)}</p>
+                    <p className="text-gray-300 text-sm line-clamp-2 mb-3">{t(dest.descKey)}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(dest.rating) ? "fill-amber-400 text-amber-400" : "fill-gray-400 text-gray-400"}`} />
+                        ))}
+                      </div>
+                      <span className="text-xs font-bold text-white">{dest.rating}</span>
+                      <span className="text-xs text-gray-300">({dest.reviews.toLocaleString()} reviews)</span>
+                    </div>
                   </div>
                 </Link>
-                <div className="p-6 grid grid-cols-2 gap-3 mt-auto bg-card">
+                <div className="p-5 grid grid-cols-2 gap-3 mt-auto">
                   <a
                     href={`https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=${AGODA_CID}&city=${dest.agodaCityId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">
-                      Agoda Hotels
+                    <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-lg min-h-[40px]">
+                      🏨 Agoda Hotels
                     </Button>
                   </a>
                   <a
@@ -246,8 +259,8 @@ export default function Home() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button variant="outline" size="sm" className="w-full text-xs font-mono uppercase">
-                      View Tours
+                    <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-lg min-h-[40px]">
+                      🎫 View Tours
                     </Button>
                   </a>
                 </div>
@@ -362,6 +375,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <TrustReviews />
 
       {/* ═══════════ POPULAR ROUTES ═══════════ */}
       <section className="py-16 bg-gray-50 border-b border-gray-100">
