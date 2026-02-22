@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updated_at": "2026-02-22 06:36",
+    "updated_at": "2026-02-22 06:40",
     "currency": "USD",
     "direct_only": true,
     "total_routes_scanned": 36,
@@ -16,7 +16,7 @@
       "date": "2026-07-14",
       "transfers": 0,
       "flight_num": "252",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     }
   },
   "routes": [
@@ -30,7 +30,7 @@
       "date": "2026-07-14",
       "transfers": 0,
       "flight_num": "252",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "BKK",
@@ -42,7 +42,7 @@
       "date": "2026-06-18",
       "transfers": 0,
       "flight_num": "253",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "DMK",
@@ -54,7 +54,7 @@
       "date": "2026-06-18",
       "transfers": 0,
       "flight_num": "253",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "KUL",
@@ -66,7 +66,7 @@
       "date": "2026-07-03",
       "transfers": 0,
       "flight_num": "502",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "BKK",
@@ -78,7 +78,7 @@
       "date": "2026-05-04",
       "transfers": 0,
       "flight_num": "338",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "DMK",
@@ -90,7 +90,7 @@
       "date": "2026-05-04",
       "transfers": 0,
       "flight_num": "361",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "RGN",
@@ -102,7 +102,7 @@
       "date": "2026-03-26",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "MDL",
@@ -114,7 +114,7 @@
       "date": "2026-02-27",
       "transfers": 0,
       "flight_num": "374",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "RGN",
@@ -126,7 +126,7 @@
       "date": "2026-10-06",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "RGN",
@@ -138,7 +138,7 @@
       "date": "2026-05-01",
       "transfers": 0,
       "flight_num": "237",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     },
     {
       "origin": "CNX",
@@ -150,7 +150,7 @@
       "date": "2026-02-25",
       "transfers": 0,
       "flight_num": "377",
-      "found_at": "2026-02-22 06:36"
+      "found_at": "2026-02-22 06:40"
     }
   ]
 }
