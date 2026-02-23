@@ -1,25 +1,37 @@
 {
   "meta": {
-    "updated_at": "2026-02-23 12:53",
+    "updated_at": "2026-02-23 18:51",
     "currency": "USD",
     "direct_only": true,
     "total_routes_scanned": 36,
-    "total_deals_found": 11,
+    "total_deals_found": 10,
     "errors": 4,
     "overall_cheapest": {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 121.0,
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 120.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "FD",
-      "date": "2026-06-18",
+      "date": "2026-05-21",
       "transfers": 0,
-      "flight_num": "253",
-      "found_at": "2026-02-23 12:53"
+      "flight_num": "252",
+      "found_at": "2026-02-23 18:51"
     }
   },
   "routes": [
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 120.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-21",
+      "transfers": 0,
+      "flight_num": "252",
+      "found_at": "2026-02-23 18:51"
+    },
     {
       "origin": "BKK",
       "destination": "RGN",
@@ -30,7 +42,7 @@
       "date": "2026-06-18",
       "transfers": 0,
       "flight_num": "253",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "DMK",
@@ -42,19 +54,7 @@
       "date": "2026-06-18",
       "transfers": 0,
       "flight_num": "253",
-      "found_at": "2026-02-23 12:53"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 130.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-01",
-      "transfers": 0,
-      "flight_num": "252",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "KUL",
@@ -66,7 +66,7 @@
       "date": "2026-08-28",
       "transfers": 0,
       "flight_num": "502",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "BKK",
@@ -78,7 +78,7 @@
       "date": "2026-05-04",
       "transfers": 0,
       "flight_num": "338",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "RGN",
@@ -90,7 +90,7 @@
       "date": "2026-03-26",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "DMK",
@@ -102,7 +102,7 @@
       "date": "2026-05-04",
       "transfers": 0,
       "flight_num": "361",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "MDL",
@@ -114,31 +114,19 @@
       "date": "2026-02-27",
       "transfers": 0,
       "flight_num": "374",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "RGN",
       "destination": "KUL",
-      "price": 260.0,
+      "price": 279.0,
       "currency": "USD",
       "airline_code": "FD",
       "airline": "FD",
-      "date": "2026-10-06",
+      "date": "2026-03-27",
       "transfers": 0,
       "flight_num": "254",
-      "found_at": "2026-02-23 12:53"
-    },
-    {
-      "origin": "CNX",
-      "destination": "RGN",
-      "price": 271.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-02-25",
-      "transfers": 0,
-      "flight_num": "377",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     },
     {
       "origin": "RGN",
@@ -150,7 +138,7 @@
       "date": "2026-03-01",
       "transfers": 0,
       "flight_num": "235",
-      "found_at": "2026-02-23 12:53"
+      "found_at": "2026-02-23 18:51"
     }
   ]
 }
