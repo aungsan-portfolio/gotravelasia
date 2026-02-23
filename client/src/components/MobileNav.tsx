@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Plane, Hotel, Bus } from "lucide-react";
 
 interface MobileNavProps {
     onPlanTrip?: () => void;
@@ -17,7 +17,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100">
                     <Menu className="w-6 h-6" />
                     <span className="sr-only">Open menu</span>
                 </Button>
@@ -33,21 +33,20 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                     <a href="/#flights" onClick={handleLinkClick}
                         className="flex items-center gap-3 py-3 px-3 text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium text-[15px]"
                     >
-                        <span className="text-xl">✈️</span> Flights
+                        <Plane className="w-5 h-5 text-gray-500" /> Flights
                     </a>
                     <a href="/#hotels" onClick={handleLinkClick}
                         className="flex items-center gap-3 py-3 px-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium text-[15px]"
                     >
-                        <span className="text-xl">🏨</span> Hotels
+                        <Hotel className="w-5 h-5 text-gray-400" /> Hotels
                     </a>
                     <a href="/#transport" onClick={handleLinkClick}
                         className="flex items-center gap-3 py-3 px-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium text-[15px]"
                     >
-                        <span className="text-xl">🚌</span> Transport
+                        <Bus className="w-5 h-5 text-gray-400" /> Transport
                     </a>
                 </nav>
             </SheetContent>
         </Sheet>
     );
 }
-

@@ -119,16 +119,16 @@ export default function SignInModal({
         variant === "mobile" ? (
             <Button
                 variant="outline"
-                className={`w-full justify-start font-mono text-xs uppercase ${className || ""}`}
+                className={`w-full justify-start text-sm ${className || ""}`}
             >
-                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Get Price Alerts"}
+                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Price Alerts"}
             </Button>
         ) : (
             <Button
                 variant="outline"
-                className={`hidden sm:inline-flex font-mono text-xs uppercase tracking-wider ${className || ""}`}
+                className={`hidden sm:inline-flex text-sm font-medium ${className || ""}`}
             >
-                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Get Price Alerts"}
+                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Price Alerts"}
             </Button>
         );
 
@@ -182,8 +182,8 @@ export default function SignInModal({
                                     key={route.id}
                                     onClick={() => handleRouteSelect(route.id)}
                                     className={`w-full h-12 text-left px-4 rounded-lg border transition-all text-sm font-medium ${selectedRoute === route.id
-                                            ? "border-[#581c87] bg-purple-50 text-[#581c87]"
-                                            : "border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50/50"
+                                        ? "border-[#581c87] bg-purple-50 text-[#581c87]"
+                                        : "border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50/50"
                                         }`}
                                 >
                                     {route.label}

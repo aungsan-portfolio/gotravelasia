@@ -68,11 +68,11 @@ export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselPro
   if (cheapDeals.length === 0) return null;
 
   return (
-    <section className="py-16 bg-[#f8f9fa] border-b border-gray-100 overflow-hidden">
+    <section className="py-16 bg-white border-b border-gray-100 overflow-hidden">
       <div className="container">
         <div className="flex items-end justify-between mb-8">
           <div>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
               Best Flight Deals
             </h2>
             <p className="text-gray-500 font-medium text-base mt-1">
@@ -103,7 +103,7 @@ export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselPro
                 href={buildRouteUrl(origin, dest, deal.date)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group block min-w-[260px] md:min-w-[280px] bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5 snap-start flex flex-col border border-gray-100"
+                className="group block min-w-[280px] md:min-w-[300px] bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgb(0,0,0,0.06)] hover:shadow-md transition-all hover:-translate-y-0.5 snap-start flex flex-col border border-gray-200"
               >
                 <div className="relative h-40 overflow-hidden bg-gray-100">
                   <img
@@ -135,7 +135,7 @@ export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselPro
                   <div className="mt-auto">
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-xs text-gray-400 font-medium">from</span>
-                      <span className="text-xl font-extrabold text-gray-900">
+                      <span className="text-xl font-bold text-gray-900">
                         ฿{thbPrice.toLocaleString()}
                       </span>
                     </div>

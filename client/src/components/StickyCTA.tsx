@@ -54,9 +54,9 @@ export default function StickyCTA() {
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border z-50 md:hidden animate-in slide-in-from-bottom-full duration-300">
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
-          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">{ctaSubtext}</p>
+          <p className="text-xs text-muted-foreground font-medium">{ctaSubtext}</p>
         </div>
-        <Button className="font-bold uppercase tracking-wider shadow-lg" asChild>
+        <Button className="font-semibold shadow-sm" asChild>
           <a href={ctaLink} target={ctaLink.startsWith("http") ? "_blank" : "_self"} rel="noopener noreferrer">
             {ctaText}
           </a>

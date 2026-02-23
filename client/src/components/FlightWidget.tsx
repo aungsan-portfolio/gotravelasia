@@ -660,7 +660,7 @@ export default function FlightWidget() {
                 <div className="flex shrink-0">
                     <button
                         onClick={handleSearch}
-                        className="w-full lg:w-auto bg-[#FECD00] hover:bg-[#E5B800] text-gray-900 font-extrabold py-3.5 px-8 rounded-xl lg:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-lg h-full"
+                        className="w-full lg:w-auto bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-8 rounded-xl lg:rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 text-lg h-full"
                         aria-label="Search Flights"
                     >
                         Search
@@ -859,7 +859,7 @@ function RecentSearches({
                                 <button
                                     type="button"
                                     onClick={() => onReSearch(s)}
-                                    className="w-10 h-10 rounded-xl bg-[#FECD00] hover:bg-[#E5B800] flex items-center justify-center transition-colors shadow-sm group-hover:shadow-md"
+                                    className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors shadow-sm group-hover:shadow-md"
                                     aria-label="Search again"
                                 >
                                     <Search className="w-4 h-4 text-gray-900" />

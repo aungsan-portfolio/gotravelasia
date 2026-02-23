@@ -101,7 +101,7 @@ function HotelsSearchForm() {
       </div>
       <Button
         type="submit"
-        className="w-full md:w-auto md:self-end bg-[#FECD00] hover:bg-[#E5B800] text-gray-900 font-extrabold transition-colors h-12 px-10 rounded-xl text-base"
+        className="w-full md:w-auto md:self-end bg-primary hover:bg-primary/90 text-white font-bold transition-colors h-12 px-10 rounded-xl text-base"
       >
         Search Hotels on Agoda
       </Button>
