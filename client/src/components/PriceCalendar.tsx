@@ -1,290 +1,255 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { DayPicker, type DayButtonProps } from "react-day-picker";
-import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
-import { format, isValid } from "date-fns";
-import { cn } from "@/lib/utils";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { format, isValid, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay } from "date-fns";
 
 const USD_TO_THB = 34;
 
+const TIER_CHEAP = 1485;
+const TIER_MID = 1600;
+
 type PriceEntry = {
-    price: number;
-    trip_class: number;
-    show_to_affiliates: boolean;
-    return_date: string;
-    origin: string;
-    destination: string;
-    number_of_changes: number;
-    gate: string;
-    found_at: string;
-    distance: number;
-    depart_date: string;
-    actual: boolean;
+  value: number;
+  price?: number;
 };
 
 type PriceMap = Record<string, number>;
 
-type PriceTier = "cheap" | "mid" | "expensive";
+type PriceTier = "cheap" | "mid" | "expensive" | "none";
 
-function getPriceTier(price: number, thresholds: { low: number; high: number }): PriceTier {
-    if (price <= thresholds.low) return "cheap";
-    if (price <= thresholds.high) return "mid";
-    return "expensive";
+function getTier(thbPrice: number): PriceTier {
+  if (thbPrice <= TIER_CHEAP) return "cheap";
+  if (thbPrice <= TIER_MID) return "mid";
+  return "expensive";
 }
 
-const TIER_STYLES: Record<PriceTier, string> = {
-    cheap: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    mid: "bg-amber-50 text-amber-700 border-amber-200",
-    expensive: "bg-red-50 text-red-600 border-red-200",
+const TIER_BG: Record<PriceTier, string> = {
+  cheap: "bg-green-300",
+  mid: "bg-amber-400",
+  expensive: "bg-pink-400",
+  none: "bg-gray-100",
 };
 
-const TIER_DOT: Record<PriceTier, string> = {
-    cheap: "bg-emerald-400",
-    mid: "bg-amber-400",
-    expensive: "bg-red-400",
+const TIER_TEXT: Record<PriceTier, string> = {
+  cheap: "text-gray-800",
+  mid: "text-gray-800",
+  expensive: "text-white",
+  none: "text-gray-400",
 };
 
-function computeThresholds(prices: number[]): { low: number; high: number } {
-    if (prices.length === 0) return { low: 0, high: 0 };
-    const sorted = [...prices].sort((a, b) => a - b);
-    const oneThird = Math.floor(sorted.length / 3);
-    return {
-        low: sorted[Math.max(oneThird - 1, 0)],
-        high: sorted[Math.max(oneThird * 2 - 1, 0)],
-    };
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
+
+function buildCalendarGrid(year: number, month: number) {
+  const firstDay = startOfMonth(new Date(year, month));
+  const lastDay = endOfMonth(new Date(year, month));
+  const startDow = getDay(firstDay);
+  const daysInMonth = lastDay.getDate();
+
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
 }
 
 type PriceCalendarProps = {
-    origin: string;
-    destination: string;
-    calendarMode: "depart" | "return";
-    selectedDepart?: Date;
-    selectedReturn?: Date;
-    onSelectDate: (date: Date | undefined) => void;
-    todayDate: Date;
+  origin: string;
+  destination: string;
+  calendarMode: "depart" | "return";
+  selectedDepart?: Date;
+  selectedReturn?: Date;
+  onSelectDate: (date: Date | undefined) => void;
+  todayDate: Date;
 };
 
 export default function PriceCalendar({
-    origin,
-    destination,
-    calendarMode,
-    selectedDepart,
-    selectedReturn,
-    onSelectDate,
-    todayDate,
+  origin,
+  destination,
+  calendarMode,
+  selectedDepart,
+  selectedReturn,
+  onSelectDate,
+  todayDate,
 }: PriceCalendarProps) {
-    const [priceMap, setPriceMap] = useState<PriceMap>({});
-    const [loading, setLoading] = useState(false);
-    const [displayMonth, setDisplayMonth] = useState<Date>(
-        calendarMode === "return" && selectedDepart
-            ? new Date(selectedDepart)
-            : selectedDepart || todayDate
-    );
+  const [priceMap, setPriceMap] = useState<PriceMap>({});
+  const [loading, setLoading] = useState(false);
+  const [baseMonth, setBaseMonth] = useState<Date>(() => {
+    if (calendarMode === "return" && selectedDepart) return startOfMonth(selectedDepart);
+    if (selectedDepart) return startOfMonth(selectedDepart);
+    return startOfMonth(todayDate);
+  });
 
-    const monthStr = useMemo(
-        () => format(displayMonth, "yyyy-MM"),
-        [displayMonth]
-    );
+  const leftMonth = baseMonth;
+  const rightMonth = addMonths(baseMonth, 1);
 
-    const nextMonthStr = useMemo(() => {
-        const next = new Date(displayMonth);
-        next.setMonth(next.getMonth() + 1);
-        return format(next, "yyyy-MM");
-    }, [displayMonth]);
+  const leftStr = format(leftMonth, "yyyy-MM");
+  const rightStr = format(rightMonth, "yyyy-MM");
 
-    const fetchPrices = useCallback(
-        async (mo: string) => {
-            if (origin === destination) return {};
-            try {
-                const params = new URLSearchParams({
-                    origin,
-                    destination,
-                    month: mo,
-                    currency: "usd",
-                });
-                const res = await fetch(`/api/calendar-prices?${params}`);
-                if (!res.ok) return {};
-                const data = await res.json();
-                if (!data.data) return {};
-                const map: PriceMap = {};
-                Object.entries(data.data).forEach(([dateStr, entry]) => {
-                    const e = entry as PriceEntry;
-                    if (e.price > 0) {
-                        map[dateStr] = e.price;
-                    }
-                });
-                return map;
-            } catch {
-                return {};
-            }
-        },
-        [origin, destination]
-    );
+  const fetchPrices = useCallback(
+    async (mo: string) => {
+      if (origin === destination) return {};
+      try {
+        const params = new URLSearchParams({ origin, destination, month: mo, currency: "usd" });
+        const res = await fetch(`/api/calendar-prices?${params}`);
+        if (!res.ok) return {};
+        const data = await res.json();
+        if (!data.data) return {};
+        const map: PriceMap = {};
+        Object.entries(data.data).forEach(([dateStr, entry]) => {
+          const e = entry as PriceEntry;
+          const price = e.value || e.price || 0;
+          if (price > 0) map[dateStr] = price;
+        });
+        return map;
+      } catch {
+        return {};
+      }
+    },
+    [origin, destination]
+  );
 
-    useEffect(() => {
-        if (origin === destination) {
-            setPriceMap({});
-            return;
-        }
+  useEffect(() => {
+    if (origin === destination) { setPriceMap({}); return; }
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([fetchPrices(leftStr), fetchPrices(rightStr)]).then(([m1, m2]) => {
+      if (!cancelled) {
+        setPriceMap({ ...m1, ...m2 });
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [origin, destination, leftStr, rightStr, fetchPrices]);
 
-        let cancelled = false;
-        setLoading(true);
+  const today = startOfDay(todayDate);
+  const disabledBefore = calendarMode === "return" && selectedDepart ? startOfDay(selectedDepart) : today;
 
-        Promise.all([fetchPrices(monthStr), fetchPrices(nextMonthStr)]).then(
-            ([m1, m2]) => {
-                if (!cancelled) {
-                    setPriceMap({ ...m1, ...m2 });
-                    setLoading(false);
-                }
-            }
-        );
+  const handlePrev = () => setBaseMonth(prev => subMonths(prev, 1));
+  const handleNext = () => setBaseMonth(prev => addMonths(prev, 1));
 
-        return () => {
-            cancelled = true;
-        };
-    }, [origin, destination, monthStr, nextMonthStr, fetchPrices]);
+  const canGoPrev = !isBefore(subMonths(baseMonth, 1), startOfMonth(today));
 
-    const thresholds = useMemo(() => {
-        const prices = Object.values(priceMap);
-        return computeThresholds(prices);
-    }, [priceMap]);
-
-    const selected = calendarMode === "depart" ? selectedDepart : selectedReturn;
-    const disabledBefore =
-        calendarMode === "return" && selectedDepart ? selectedDepart : todayDate;
-
-    const isMobile =
-        typeof window !== "undefined" && window.innerWidth < 640;
+  const renderMonth = (monthDate: Date) => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const cells = buildCalendarGrid(year, month);
+    const rows: (Date | null)[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      rows.push(cells.slice(i, i + 7));
+    }
 
     return (
-        <div className="relative">
-            {loading && (
-                <div className="absolute top-2 right-2 z-10">
-                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                </div>
-            )}
-
-            <DayPicker
-                mode="single"
-                numberOfMonths={isMobile ? 1 : 2}
-                selected={selected}
-                onSelect={onSelectDate}
-                month={displayMonth}
-                onMonthChange={setDisplayMonth}
-                disabled={[{ before: disabledBefore }]}
-                modifiers={{
-                    departHighlight: selectedDepart ? [selectedDepart] : [],
-                    returnHighlight: selectedReturn ? [selectedReturn] : [],
-                    hasPrice: (date: Date) => {
-                        const key = format(date, "yyyy-MM-dd");
-                        return key in priceMap;
-                    },
-                }}
-                modifiersClassNames={{
-                    departHighlight: "!bg-primary !text-white rounded-md",
-                    returnHighlight: "!bg-amber-500 !text-white rounded-md",
-                }}
-                className={cn(
-                    "bg-white p-3",
-                    "[--cell-size:52px] sm:[--cell-size:56px]"
-                )}
-                classNames={{
-                    months: "flex gap-6 flex-col md:flex-row",
-                    month: "flex flex-col w-full gap-3",
-                    nav: "flex items-center gap-1 w-full absolute top-0 inset-x-0 justify-between",
-                    month_caption: "flex items-center justify-center h-8 w-full px-10",
-                    caption_label: "text-sm font-semibold text-gray-900 select-none",
-                    weekdays: "flex",
-                    weekday: "text-gray-400 rounded-md flex-1 font-normal text-xs select-none text-center",
-                    week: "flex w-full mt-0.5",
-                    day: "relative w-full h-full p-0 text-center group/day select-none",
-                    today: "bg-gray-50 rounded-md",
-                    outside: "text-gray-300",
-                    disabled: "text-gray-300 opacity-50",
-                    hidden: "invisible",
-                }}
-                components={{
-                    Chevron: ({ orientation }) =>
-                        orientation === "left" ? (
-                            <ChevronLeftIcon className="size-4" />
-                        ) : (
-                            <ChevronRightIcon className="size-4" />
-                        ),
-                    DayButton: (props: DayButtonProps) => {
-                        const { day, modifiers, className, children, ...rest } = props;
-                        const dateKey = format(day.date, "yyyy-MM-dd");
-                        const price = priceMap[dateKey];
-                        const thbPrice = price ? Math.round(price * USD_TO_THB) : null;
-                        const tier = price ? getPriceTier(price, thresholds) : null;
-
-                        const isSelected =
-                            modifiers.selected ||
-                            modifiers.range_start ||
-                            modifiers.range_end;
-                        const isDisabled = modifiers.disabled;
-
-                        return (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled={isDisabled}
-                                data-selected-single={isSelected}
-                                className={cn(
-                                    "flex flex-col items-center justify-center gap-0 w-full h-full min-w-[var(--cell-size)] min-h-[var(--cell-size)] rounded-lg font-normal p-0.5 transition-colors",
-                                    isSelected && "!bg-primary !text-white",
-                                    !isSelected && !isDisabled && tier && "hover:ring-1 hover:ring-gray-200",
-                                    className
-                                )}
-                                {...rest}
-                            >
-                                <span className={cn(
-                                    "text-sm leading-none",
-                                    isSelected ? "font-bold" : "font-medium",
-                                    isDisabled && "text-gray-300"
-                                )}>
-                                    {day.date.getDate()}
-                                </span>
-
-                                {thbPrice && !isDisabled ? (
-                                    <span
-                                        className={cn(
-                                            "text-[9px] leading-none mt-0.5 px-1 py-px rounded font-medium tabular-nums",
-                                            isSelected
-                                                ? "text-white/80"
-                                                : tier
-                                                    ? TIER_STYLES[tier]
-                                                    : "text-gray-400"
-                                        )}
-                                    >
-                                        ฿{thbPrice >= 10000
-                                            ? `${(thbPrice / 1000).toFixed(1)}k`
-                                            : thbPrice.toLocaleString()}
-                                    </span>
-                                ) : !isDisabled && !modifiers.outside ? (
-                                    <span className="text-[9px] leading-none mt-0.5 text-transparent select-none">—</span>
-                                ) : null}
-                            </Button>
-                        );
-                    },
-                }}
-            />
-
-            {Object.keys(priceMap).length > 0 && (
-                <div className="flex items-center justify-center gap-4 pt-2 pb-1 border-t border-gray-50">
-                    <div className="flex items-center gap-1.5">
-                        <span className={cn("w-2 h-2 rounded-full", TIER_DOT.cheap)} />
-                        <span className="text-[10px] text-gray-500">Cheap</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className={cn("w-2 h-2 rounded-full", TIER_DOT.mid)} />
-                        <span className="text-[10px] text-gray-500">Average</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className={cn("w-2 h-2 rounded-full", TIER_DOT.expensive)} />
-                        <span className="text-[10px] text-gray-500">Expensive</span>
-                    </div>
-                </div>
-            )}
+      <div className="flex-1 min-w-0">
+        <div className="text-center font-bold text-gray-800 text-base mb-3">
+          {format(monthDate, "MMMM yyyy")}
         </div>
+
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {WEEKDAYS.map((d, i) => (
+            <div key={i} className="text-center text-xs font-medium text-gray-400 py-1">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {rows.map((row, ri) =>
+            row.map((cell, ci) => {
+              if (!cell) {
+                return <div key={`${ri}-${ci}`} className="h-11" />;
+              }
+
+              const dateKey = format(cell, "yyyy-MM-dd");
+              const priceUsd = priceMap[dateKey];
+              const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
+              const tier: PriceTier = thbPrice ? getTier(thbPrice) : "none";
+
+              const isDisabled = isBefore(cell, disabledBefore);
+              const isSelectedDepart = selectedDepart && isSameDay(cell, selectedDepart);
+              const isSelectedReturn = selectedReturn && isSameDay(cell, selectedReturn);
+              const isSelected = isSelectedDepart || isSelectedReturn;
+
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => onSelectDate(cell)}
+                  className={`
+                    h-11 rounded-lg flex items-center justify-center text-sm font-semibold
+                    transition-all duration-150 select-none
+                    ${isSelected
+                      ? "bg-gray-800 text-white ring-2 ring-gray-900 ring-offset-1"
+                      : isDisabled
+                        ? "bg-gray-50 text-gray-300 cursor-not-allowed"
+                        : `${TIER_BG[tier]} ${TIER_TEXT[tier]} hover:scale-105 hover:shadow-md cursor-pointer active:scale-95`
+                    }
+                  `}
+                >
+                  {cell.getDate()}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
     );
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          onClick={handlePrev}
+          disabled={!canGoPrev}
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-xs font-medium">Loading prices...</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleNext}
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="flex gap-6">
+        {renderMonth(leftMonth)}
+        {renderMonth(rightMonth)}
+      </div>
+
+      {Object.keys(priceMap).length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-14 h-7 rounded-md bg-green-300 text-gray-800 text-xs font-bold flex items-center justify-center">
+              ฿{TIER_CHEAP.toLocaleString()}+
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-14 h-7 rounded-md bg-amber-400 text-gray-800 text-xs font-bold flex items-center justify-center">
+              ฿{TIER_MID.toLocaleString()}+
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-14 h-7 rounded-md bg-pink-400 text-white text-xs font-bold flex items-center justify-center">
+              ฿1982+
+            </span>
+          </div>
+          <span className="text-xs text-gray-400 ml-1">
+            Estimated prices for return flights
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }

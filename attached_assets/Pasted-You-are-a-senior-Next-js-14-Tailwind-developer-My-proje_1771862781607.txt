@@ -1,0 +1,50 @@
+You are a senior Next.js 14 + Tailwind developer. My project is already running on Replit.
+
+I want the PriceCalendar to look EXACTLY like this screenshot I will describe:
+
+- Two months side-by-side: LEFT = March 2026, RIGHT = April 2026
+- Top navigation with <   March 2026     April 2026   >
+- Weekday headers: S M T W T F S (small gray text)
+- Each date is a rounded square (like border-radius 8px)
+- Default color for normal dates = orange (#fbbf24)
+- Cheap dates = light green (#86efac)
+- Medium dates = orange (#fbbf24)
+- Expensive dates = pink/red (#f472b6)
+- Some dates are black/dark (#1f2937) for selected or special
+- NO price text inside the date cells — only the day number (white or black text depending on color)
+- Bottom legend EXACTLY like screenshot:
+  • Green box "B1485+"
+  • Orange box "B1600+"
+  • Pink box "B1982+"
+  • Text on the right: "Estimated prices for return flights"
+
+Requirements:
+
+1. API route already exists: app/api/calendar-prices/route.ts (use it)
+
+2. Create/Update components/PriceCalendar.tsx:
+   - 'use client'
+   - Props: origin, destination, onSelect
+   - Fixed price tiers (not percentile):
+     - if price <= 1485 → light green
+     - if price <= 1600 → orange
+     - else → pink/red
+   - Show March 2026 + April 2026 hard-coded for now (2026-03 and 2026-04)
+   - Fetch both months from /api/calendar-prices
+   - Date cells: h-12 or h-14, flex center, hover:scale-105, cursor-pointer
+   - Selected dates get thick blue ring or black background
+   - Legend at bottom with colored rounded boxes + exact text
+   - Use date-fns for calendar generation
+   - Loading state: "ဈေးနှုန်းများ ရှာနေပါတယ်... ⏳"
+
+3. In FlightWidget popover:
+   - Make popover wider: className="w-[760px]"
+   - Replace old calendar with <PriceCalendar origin={origin} destination={destination} onSelect={handleSelect} />
+   - Keep depart/return tabs working
+
+After building:
+- Tell me exactly which files you changed
+- Give me the test command: type RGN → BKK and click Depart date field
+- Make sure it looks pixel-perfect to the screenshot I described
+
+Start building step by step now.

@@ -618,7 +618,7 @@ export default function FlightWidget() {
 
                         {/* Calendar Popover */}
                         <PopoverContent
-                            className="w-auto max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl"
+                            className="w-[760px] max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl"
                             align="center"
                             sideOffset={8}
                         >
