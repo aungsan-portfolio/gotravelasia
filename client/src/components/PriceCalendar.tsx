@@ -35,6 +35,11 @@ function buildCalendarGrid(year: number, month: number) {
   return cells;
 }
 
+function formatThb(val: number): string {
+  if (val >= 10000) return `B${(val / 1000).toFixed(1)}k`;
+  return `B${val.toLocaleString()}`;
+}
+
 type Thresholds = { p33: number; p66: number };
 
 function computeThresholds(priceMap: PriceMap): Thresholds | null {
@@ -253,19 +258,19 @@ export default function PriceCalendar({
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#86efac", color: "#1f2937" }}
           >
-            Cheapest
+            {thresholds ? `${formatThb(thresholds.p33)}\u2212` : "Cheapest"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
           >
-            Average
+            {thresholds ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
           >
-            Expensive
+            {thresholds ? `${formatThb(thresholds.p66)}+` : "Expensive"}
           </span>
           <span className="text-xs text-gray-400 ml-1">
             Estimated prices for return flights
