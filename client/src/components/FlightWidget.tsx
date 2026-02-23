@@ -163,15 +163,41 @@ function clearRecentSearches() {
 export default function FlightWidget() {
     const today = useMemo(() => new Date().toISOString().split("T")[0], []);
     const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today]);
-    const [origin, setOrigin] = useState("RGN");
-    const [destination, setDestination] = useState("BKK");
+    const [origin, setOrigin] = useState("BKK");
+    const [destination, setDestination] = useState("SIN");
     const [departDate, setDepartDate] = useState(today);
     const [returnDate, setReturnDate] = useState("");
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
-    
+
+    // Geo-detect user's country → auto-set origin airport (like Cheapflights)
+    useEffect(() => {
+        const COUNTRY_TO_AIRPORT: Record<string, string> = {
+            MM: "RGN", TH: "BKK", SG: "SIN", MY: "KUL",
+            VN: "SGN", KH: "PNH", ID: "CGK", PH: "MNL",
+            JP: "NRT", KR: "ICN", CN: "PEK", IN: "DEL",
+            AU: "SYD", HK: "HKG", TW: "TPE", LA: "VTE",
+        };
+        const cached = sessionStorage.getItem("gt_detected_origin");
+        if (cached && AIRPORTS.some(a => a.code === cached)) {
+            setOrigin(cached);
+            return;
+        }
+        fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+            .then(r => r.json())
+            .then(data => {
+                const code = COUNTRY_TO_AIRPORT[data.country_code] || "BKK";
+                if (AIRPORTS.some(a => a.code === code)) {
+                    setOrigin(code);
+                    sessionStorage.setItem("gt_detected_origin", code);
+                }
+            })
+            .catch(() => { /* keep default BKK */ });
+    }, []);
+
+
     const [openPax, setOpenPax] = useState(false);
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [calendarMode, setCalendarMode] = useState<"depart" | "return">("depart");

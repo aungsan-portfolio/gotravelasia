@@ -6,7 +6,7 @@ import TrustBar from "./TrustBar";
 const TABS = [
   { id: "flights" as const, icon: "✈️", label: "Flights", mobileLabel: "Flights" },
   { id: "hotels" as const, icon: "🏨", label: "Hotels", mobileLabel: "Hotels" },
-  { id: "transport" as const, icon: "🚌", label: "Transport in Thailand", mobileLabel: "Transport" },
+  { id: "transport" as const, icon: "🚌", label: "Transport", mobileLabel: "Transport" },
 ];
 
 type TabId = "flights" | "hotels" | "transport";
@@ -61,8 +61,8 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
           <div className="mt-6 md:mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
             <div className="hidden lg:grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-left-8 duration-700 delay-300">
               <img src="/images/bangkok.webp" alt="Bangkok" className="rounded-xl object-cover h-[180px] w-full shadow-md" loading="lazy" decoding="async" />
-              <img src="/images/chiang-mai.webp" alt="Chiang Mai" className="rounded-xl object-cover h-[180px] w-full shadow-md" loading="lazy" decoding="async" />
-              <img src="/images/phuket.webp" alt="Phuket" className="rounded-xl object-cover h-[180px] w-full shadow-md" loading="lazy" decoding="async" />
+              <img src="/images/destinations/singapore.webp" alt="Singapore" className="rounded-xl object-cover h-[180px] w-full shadow-md" loading="lazy" decoding="async" />
+              <img src="/images/bali.webp" alt="Bali" className="rounded-xl object-cover h-[180px] w-full shadow-md" loading="lazy" decoding="async" />
             </div>
             <div className="hidden lg:block animate-in fade-in slide-in-from-right-8 duration-700 delay-400">
               <TrustBar />

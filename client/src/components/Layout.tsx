@@ -6,7 +6,7 @@ import FloatingSearchBar from "./FloatingSearchBar";
 import MobileNav from "./MobileNav";
 import CookieConsent from "./CookieConsent";
 import { Button } from "@/components/ui/button";
-import { LanguageSwitcher } from "./LanguageSwitcher";
+// Language switcher removed — English-only for international Asia market
 import SignInModal from "./SignInModal";
 import TripPlannerChat from "./TripPlannerChat";
 import { Loader2 } from "lucide-react";
@@ -51,21 +51,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-3">
             <img src="/logo.webp" alt="GoTravel Logo" className="h-[50px] w-auto object-contain" />
             <div className="hidden lg:flex flex-col">
-              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground leading-none">Travel Guides • Stays • Experiences</span>
+              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground leading-none">Flights • Hotels • Transport</span>
             </div>
           </Link>
 
           <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
-            <Link href="/thailand/chiang-mai" className="hover:text-primary transition-colors">{t("destinations.chiangMai")}</Link>
-            <Link href="/thailand/bangkok" className="hover:text-primary transition-colors">{t("destinations.bangkok")}</Link>
-            <Link href="/thailand/phuket" className="hover:text-primary transition-colors">{t("destinations.phuket")}</Link>
-            <Link href="/thailand/krabi" className="hover:text-primary transition-colors">{t("destinations.krabi")}</Link>
-            <Link href="/blog" className="hover:text-primary transition-colors">{t("nav.blog")}</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Flights</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Hotels</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Transport</Link>
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* Price Alerts */}
             {/* Price Alerts (was "Sign In") */}
             <SignInModal variant="header" />
             {/* Plan Trip — opens AI chat */}
@@ -103,28 +100,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <img src="/logo.webp" alt="GoTravel Logo" className="h-12 w-auto object-contain" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Thailand Travel Guides & Planning for Myanmar and International Travelers. Crafting Unforgettable Journeys.
+              Compare cheap flights, hotels, buses and trains across Southeast Asia. Book smart, travel more.
             </p>
           </div>
 
           <div>
-            <h4 className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-4">{t("sections.featuredDestinations")}</h4>
+            <h4 className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-4">Destinations</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link href="/thailand/chiang-mai" className="hover:underline">{t("destinations.chiangMai")}</Link></li>
-              <li><Link href="/thailand/bangkok" className="hover:underline">{t("destinations.bangkok")}</Link></li>
-              <li><Link href="/thailand/phuket" className="hover:underline">{t("destinations.phuket")}</Link></li>
-              <li><Link href="/thailand/krabi" className="hover:underline">{t("destinations.krabi")}</Link></li>
-              <li><Link href="/thailand/pai" className="hover:underline">{t("destinations.pai")}</Link></li>
-              <li><Link href="/thailand/chiang-rai" className="hover:underline">{t("destinations.chiangRai")}</Link></li>
+              <li><Link href="/thailand/bangkok" className="hover:underline">Bangkok</Link></li>
+              <li><Link href="/thailand/chiang-mai" className="hover:underline">Chiang Mai</Link></li>
+              <li><Link href="/thailand/phuket" className="hover:underline">Phuket</Link></li>
+              <li><Link href="/thailand/krabi" className="hover:underline">Krabi</Link></li>
+              <li><Link href="/thailand/pai" className="hover:underline">Pai</Link></li>
+              <li><Link href="/thailand/chiang-rai" className="hover:underline">Chiang Rai</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-4">Company</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link href="/contact" className="hover:underline">{t("footer.contactUs")}</Link></li>
-              <li><Link href="/privacy" className="hover:underline">{t("footer.privacyPolicy")}</Link></li>
-              <li><Link href="/terms" className="hover:underline">{t("footer.termsOfService")}</Link></li>
+              <li><Link href="/blog" className="hover:underline">Travel Blog</Link></li>
+              <li><Link href="/contact" className="hover:underline">Contact Us</Link></li>
+              <li><Link href="/privacy" className="hover:underline">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:underline">Terms of Service</Link></li>
+              <li><a href="https://www.airalo.com/" target="_blank" rel="noopener noreferrer" className="hover:underline">Travel eSIM — Airalo</a></li>
             </ul>
           </div>
 
@@ -170,7 +169,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <strong>Disclosure:</strong> {t("footer.affiliateDisclosure")}
           </p>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 font-mono">
-            <p>© 2026 GoTravel — Crafting Unforgettable Journeys</p>
+            <p>© 2026 GoTravel Asia — Compare. Book. Travel.</p>
             <div className="flex gap-4">
               <a href="https://instagram.com/gotravelasia" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Instagram</a>
               <a href="https://twitter.com/gotravelasia" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Twitter</a>

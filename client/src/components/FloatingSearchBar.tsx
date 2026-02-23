@@ -3,12 +3,12 @@ import { Plane, Search, ChevronDown } from "lucide-react";
 import { AFFILIATE, buildAviasalesUrl, build12GoUrl } from "@/lib/config";
 
 const POPULAR_ROUTES = [
+  { label: "Bangkok → Singapore", origin: "BKK", dest: "SIN" },
+  { label: "Bangkok → Bali", origin: "BKK", dest: "DPS" },
+  { label: "Singapore → Bangkok", origin: "SIN", dest: "BKK" },
+  { label: "KL → Bangkok", origin: "KUL", dest: "BKK" },
   { label: "Yangon → Bangkok", origin: "RGN", dest: "BKK" },
-  { label: "Yangon → Singapore", origin: "RGN", dest: "SIN" },
-  { label: "Yangon → Chiang Mai", origin: "RGN", dest: "CNX" },
-  { label: "Yangon → Phuket", origin: "RGN", dest: "HKT" },
-  { label: "Mandalay → Bangkok", origin: "MDL", dest: "BKK" },
-  { label: "Yangon → KL", origin: "RGN", dest: "KUL" },
+  { label: "Hanoi → Bangkok", origin: "HAN", dest: "BKK" },
 ];
 
 export default function FloatingSearchBar() {
