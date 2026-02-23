@@ -474,8 +474,7 @@ export default function FlightWidget() {
         }
         flightSearch += `${classPrefix}${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
 
-        // Navigate to internal Flight Results page with search params
-        window.location.href = `/flights/results?flightSearch=${flightSearch}`;
+        window.open(tpUrl, "_blank");
     };
 
     const handleTripComSearch = () => {
