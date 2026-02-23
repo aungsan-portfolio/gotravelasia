@@ -22,8 +22,31 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 p-4 md:p-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-          {children}
+        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+          {/* Cheapflights-style clean tabs */}
+          <div className="flex border-b border-gray-100">
+            {([
+              { id: "flights" as const, icon: "✈️", label: "Flights" },
+              { id: "hotels" as const, icon: "🏨", label: "Hotels" },
+              { id: "transport" as const, icon: "🚌", label: "Transport" },
+            ]).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors ${activeTab === tab.id
+                    ? "text-gray-900 border-b-2 border-primary"
+                    : "text-gray-400 hover:text-gray-600"
+                  }`}
+              >
+                <span className="text-lg">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-4 md:p-6">
+            {children}
+          </div>
         </div>
       </div>
     </section>
