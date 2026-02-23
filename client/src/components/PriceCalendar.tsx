@@ -1,11 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay } from "date-fns";
 
 const USD_TO_THB = 34;
-
-const TIER_CHEAP = 1485;
-const TIER_MID = 1600;
 
 type PriceEntry = {
   value: number;
@@ -15,12 +12,6 @@ type PriceEntry = {
 type PriceMap = Record<string, number>;
 
 type PriceTier = "cheap" | "mid" | "expensive" | "none";
-
-function getTier(thbPrice: number): PriceTier {
-  if (thbPrice <= TIER_CHEAP) return "cheap";
-  if (thbPrice <= TIER_MID) return "mid";
-  return "expensive";
-}
 
 const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
   cheap: { bg: "#86efac", text: "#1f2937" },
@@ -42,6 +33,32 @@ function buildCalendarGrid(year: number, month: number) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
+}
+
+function formatThb(val: number): string {
+  if (val >= 10000) return `B${(val / 1000).toFixed(1)}k`;
+  return `B${val.toLocaleString()}`;
+}
+
+type Thresholds = { p33: number; p66: number };
+
+function computeThresholds(priceMap: PriceMap): Thresholds | null {
+  const thbPrices = Object.values(priceMap)
+    .map(usd => Math.round(usd * USD_TO_THB))
+    .sort((a, b) => a - b);
+
+  if (thbPrices.length < 3) return null;
+
+  const p33 = thbPrices[Math.floor(thbPrices.length / 3)];
+  const p66 = thbPrices[Math.floor((thbPrices.length * 2) / 3)];
+  return { p33, p66 };
+}
+
+function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
+  if (!thresholds) return "mid";
+  if (thbPrice <= thresholds.p33) return "cheap";
+  if (thbPrice <= thresholds.p66) return "mid";
+  return "expensive";
 }
 
 type PriceCalendarProps = {
@@ -113,6 +130,8 @@ export default function PriceCalendar({
     return () => { cancelled = true; };
   }, [origin, destination, leftStr, rightStr, fetchPrices]);
 
+  const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
+
   const today = startOfDay(todayDate);
   const disabledBefore = calendarMode === "return" && selectedDepart ? startOfDay(selectedDepart) : today;
 
@@ -150,7 +169,7 @@ export default function PriceCalendar({
               const dateKey = format(cell, "yyyy-MM-dd");
               const priceUsd = priceMap[dateKey];
               const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
-              const tier: PriceTier = thbPrice ? getTier(thbPrice) : "none";
+              const tier: PriceTier = thbPrice ? getTier(thbPrice, thresholds) : "none";
 
               const isDisabled = isBefore(cell, disabledBefore);
               const isSelectedDepart = selectedDepart && isSameDay(cell, selectedDepart);
@@ -238,19 +257,19 @@ export default function PriceCalendar({
           className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
           style={{ backgroundColor: "#86efac", color: "#1f2937" }}
         >
-          B{TIER_CHEAP.toLocaleString()}+
+          {thresholds ? formatThb(thresholds.p33) + "−" : "Cheapest"}
         </span>
         <span
           className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
           style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
         >
-          B{TIER_MID.toLocaleString()}+
+          {thresholds ? formatThb(thresholds.p33) + "–" + formatThb(thresholds.p66) : "Average"}
         </span>
         <span
           className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
           style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
         >
-          B1982+
+          {thresholds ? formatThb(thresholds.p66) + "+" : "Expensive"}
         </span>
         <span className="text-xs text-gray-400 ml-1">
           Estimated prices for return flights
