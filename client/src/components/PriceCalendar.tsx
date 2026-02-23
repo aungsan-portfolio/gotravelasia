@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { format, isValid, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay } from "date-fns";
+import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay } from "date-fns";
 
 const USD_TO_THB = 34;
 
@@ -22,18 +22,11 @@ function getTier(thbPrice: number): PriceTier {
   return "expensive";
 }
 
-const TIER_BG: Record<PriceTier, string> = {
-  cheap: "bg-green-300",
-  mid: "bg-amber-400",
-  expensive: "bg-pink-400",
-  none: "bg-gray-100",
-};
-
-const TIER_TEXT: Record<PriceTier, string> = {
-  cheap: "text-gray-800",
-  mid: "text-gray-800",
-  expensive: "text-white",
-  none: "text-gray-400",
+const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
+  cheap: { bg: "#86efac", text: "#1f2937" },
+  mid: { bg: "#fbbf24", text: "#1f2937" },
+  expensive: { bg: "#f472b6", text: "#ffffff" },
+  none: { bg: "#fbbf24", text: "#1f2937" },
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -139,23 +132,19 @@ export default function PriceCalendar({
 
     return (
       <div className="flex-1 min-w-0">
-        <div className="text-center font-bold text-gray-800 text-base mb-3">
-          {format(monthDate, "MMMM yyyy")}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 mb-1">
+        <div className="grid grid-cols-7 gap-[3px] mb-1">
           {WEEKDAYS.map((d, i) => (
-            <div key={i} className="text-center text-xs font-medium text-gray-400 py-1">
+            <div key={i} className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wide py-1">
               {d}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-[3px]">
           {rows.map((row, ri) =>
             row.map((cell, ci) => {
               if (!cell) {
-                return <div key={`${ri}-${ci}`} className="h-11" />;
+                return <div key={`${ri}-${ci}`} className="h-[46px]" />;
               }
 
               const dateKey = format(cell, "yyyy-MM-dd");
@@ -168,22 +157,30 @@ export default function PriceCalendar({
               const isSelectedReturn = selectedReturn && isSameDay(cell, selectedReturn);
               const isSelected = isSelectedDepart || isSelectedReturn;
 
+              const styles = TIER_STYLES[tier];
+
+              if (isDisabled) {
+                return (
+                  <div
+                    key={dateKey}
+                    className="h-[46px] rounded-lg flex items-center justify-center text-sm text-gray-300"
+                  >
+                    {cell.getDate()}
+                  </div>
+                );
+              }
+
               return (
                 <button
                   key={dateKey}
                   type="button"
-                  disabled={isDisabled}
                   onClick={() => onSelectDate(cell)}
-                  className={`
-                    h-11 rounded-lg flex items-center justify-center text-sm font-semibold
-                    transition-all duration-150 select-none
-                    ${isSelected
-                      ? "bg-gray-800 text-white ring-2 ring-gray-900 ring-offset-1"
-                      : isDisabled
-                        ? "bg-gray-50 text-gray-300 cursor-not-allowed"
-                        : `${TIER_BG[tier]} ${TIER_TEXT[tier]} hover:scale-105 hover:shadow-md cursor-pointer active:scale-95`
-                    }
-                  `}
+                  className="h-[46px] rounded-lg flex items-center justify-center text-sm font-semibold transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95"
+                  style={
+                    isSelected
+                      ? { backgroundColor: "#1f2937", color: "#ffffff", boxShadow: "0 0 0 2px #3b82f6, 0 0 0 4px #dbeafe" }
+                      : { backgroundColor: styles.bg, color: styles.text }
+                  }
                 >
                   {cell.getDate()}
                 </button>
@@ -197,59 +194,68 @@ export default function PriceCalendar({
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={handlePrev}
           disabled={!canGoPrev}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        {loading && (
-          <div className="flex items-center gap-2 text-gray-400">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-xs font-medium">Loading prices...</span>
-          </div>
-        )}
+        <div className="flex items-center gap-16">
+          <span className="text-base font-bold text-gray-800">
+            {format(leftMonth, "MMMM yyyy")}
+          </span>
+          <span className="text-base font-bold text-gray-800">
+            {format(rightMonth, "MMMM yyyy")}
+          </span>
+        </div>
 
         <button
           type="button"
           onClick={handleNext}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex gap-6">
-        {renderMonth(leftMonth)}
-        {renderMonth(rightMonth)}
-      </div>
-
-      {Object.keys(priceMap).length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block w-14 h-7 rounded-md bg-green-300 text-gray-800 text-xs font-bold flex items-center justify-center">
-              ฿{TIER_CHEAP.toLocaleString()}+
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block w-14 h-7 rounded-md bg-amber-400 text-gray-800 text-xs font-bold flex items-center justify-center">
-              ฿{TIER_MID.toLocaleString()}+
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block w-14 h-7 rounded-md bg-pink-400 text-white text-xs font-bold flex items-center justify-center">
-              ฿1982+
-            </span>
-          </div>
-          <span className="text-xs text-gray-400 ml-1">
-            Estimated prices for return flights
-          </span>
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-gray-500">
+          <span className="text-base">ဈေးနှုန်းများ ရှာနေပါတယ်... ⏳</span>
+        </div>
+      ) : (
+        <div className="flex gap-8">
+          {renderMonth(leftMonth)}
+          {renderMonth(rightMonth)}
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-200">
+        <span
+          className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+          style={{ backgroundColor: "#86efac", color: "#1f2937" }}
+        >
+          B{TIER_CHEAP.toLocaleString()}+
+        </span>
+        <span
+          className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+          style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
+        >
+          B{TIER_MID.toLocaleString()}+
+        </span>
+        <span
+          className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+          style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
+        >
+          B1982+
+        </span>
+        <span className="text-xs text-gray-400 ml-1">
+          Estimated prices for return flights
+        </span>
+      </div>
     </div>
   );
 }
