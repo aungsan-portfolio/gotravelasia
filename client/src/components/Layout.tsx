@@ -46,13 +46,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
       {/* Header — Cheapflights style */}
-      <header className="sticky top-0 z-50 bg-[#FED014] shadow-sm">
+      <header className="sticky top-0 z-50 bg-primary shadow-sm">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Menu */}
             <MobileNav onPlanTrip={() => setChatOpen(true)} />
             <Link href="/" className="flex items-center">
-              <img src="/logo.webp" alt="GoTravel Logo" className="h-[40px] w-auto object-contain" />
+              <img src="/logo.webp" alt="GoTravel Logo" className="h-[40px] w-auto object-contain brightness-0 invert" />
             </Link>
           </div>
 
