@@ -56,6 +56,44 @@ const AIRPORTS = [
 
     // 🇵🇭 Philippines (SEA Hub)
     { code: "MNL", name: "Manila (Ninoy Aquino)", country: "Philippines" },
+    { code: "CEB", name: "Cebu (Mactan)", country: "Philippines" },
+
+    // 🇹🇭 Thailand (Secondary)
+    { code: "CEI", name: "Chiang Rai", country: "Thailand" },
+    { code: "KBV", name: "Krabi", country: "Thailand" },
+
+    // 🇻🇳 Vietnam (Beach/Resort)
+    { code: "DAD", name: "Da Nang", country: "Vietnam" },
+
+    // 🇲🇾 Malaysia (Islands & Culture)
+    { code: "LGK", name: "Langkawi", country: "Malaysia" },
+    { code: "PEN", name: "Penang", country: "Malaysia" },
+    { code: "BKI", name: "Kota Kinabalu", country: "Malaysia" },
+
+    // 🇱🇦 Laos (Backpacker Trail)
+    { code: "VTE", name: "Vientiane", country: "Laos" },
+    { code: "LPQ", name: "Luang Prabang", country: "Laos" },
+
+    // 🇹🇼 Taiwan
+    { code: "TPE", name: "Taipei (Taoyuan)", country: "Taiwan" },
+
+    // 🇰🇷 South Korea
+    { code: "ICN", name: "Seoul (Incheon)", country: "South Korea" },
+
+    // 🇯🇵 Japan (Budget Routes)
+    { code: "NRT", name: "Tokyo (Narita)", country: "Japan" },
+    { code: "KIX", name: "Osaka (Kansai)", country: "Japan" },
+
+    // 🇭🇰 Hong Kong & Macau
+    { code: "HKG", name: "Hong Kong", country: "Hong Kong" },
+    { code: "MFM", name: "Macau", country: "Macau" },
+
+    // 🇮🇳 India (Myanmar Corridor)
+    { code: "CCU", name: "Kolkata", country: "India" },
+    { code: "DEL", name: "Delhi (Indira Gandhi)", country: "India" },
+
+    // 🇧🇳 Brunei
+    { code: "BWN", name: "Bandar Seri Begawan", country: "Brunei" },
 ] as const;
 
 type Airport = (typeof AIRPORTS)[number];
@@ -69,6 +107,14 @@ const COUNTRY_FLAGS: Record<string, string> = {
     Cambodia: "🇰🇭",
     Indonesia: "🇮🇩",
     Philippines: "🇵🇭",
+    Laos: "🇱🇦",
+    Taiwan: "🇹🇼",
+    "South Korea": "🇰🇷",
+    Japan: "🇯🇵",
+    "Hong Kong": "🇭🇰",
+    Macau: "🇲🇴",
+    India: "🇮🇳",
+    Brunei: "🇧🇳",
 };
 
 // Dynamic grouping by country for <optgroup>
@@ -160,10 +206,53 @@ function clearRecentSearches() {
     localStorage.removeItem(LS_KEY);
 }
 
+const CITY_TO_AIRPORT: Record<string, string> = {
+    yangon: "RGN", mandalay: "MDL",
+    bangkok: "BKK",
+    "chiang mai": "CNX", "chiangmai": "CNX",
+    phuket: "HKT",
+    "chiang rai": "CEI", "chiangrai": "CEI",
+    krabi: "KBV",
+    singapore: "SIN",
+    "kuala lumpur": "KUL", "kl": "KUL",
+    langkawi: "LGK",
+    penang: "PEN", "george town": "PEN",
+    "kota kinabalu": "BKI",
+    "ho chi minh": "SGN", "saigon": "SGN", "ho chi minh city": "SGN",
+    hanoi: "HAN",
+    "da nang": "DAD", "danang": "DAD",
+    "phnom penh": "PNH",
+    "siem reap": "REP",
+    jakarta: "CGK",
+    bali: "DPS", denpasar: "DPS",
+    manila: "MNL",
+    cebu: "CEB",
+    vientiane: "VTE",
+    "luang prabang": "LPQ",
+    taipei: "TPE",
+    seoul: "ICN", incheon: "ICN",
+    tokyo: "NRT",
+    osaka: "KIX",
+    "hong kong": "HKG",
+    macau: "MFM", "macao": "MFM",
+    kolkata: "CCU", "calcutta": "CCU",
+    delhi: "DEL", "new delhi": "DEL",
+    "bandar seri begawan": "BWN",
+};
+
+const COUNTRY_TO_AIRPORT: Record<string, string> = {
+    MM: "RGN", TH: "BKK", SG: "SIN", MY: "KUL",
+    VN: "SGN", KH: "PNH", ID: "CGK", PH: "MNL",
+    JP: "NRT", KR: "ICN", HK: "HKG", TW: "TPE",
+    LA: "VTE", IN: "DEL", BN: "BWN", MO: "MFM",
+};
+
+const DEFAULT_ORIGIN = "RGN";
+
 export default function FlightWidget() {
     const today = useMemo(() => new Date().toISOString().split("T")[0], []);
     const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today]);
-    const [origin, setOrigin] = useState("BKK");
+    const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
     const [destination, setDestination] = useState("SIN");
     const [departDate, setDepartDate] = useState(today);
     const [returnDate, setReturnDate] = useState("");
@@ -171,30 +260,48 @@ export default function FlightWidget() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
+    const [detectingLocation, setDetectingLocation] = useState(true);
 
-    // Geo-detect user's country → auto-set origin airport (like Cheapflights)
     useEffect(() => {
-        const COUNTRY_TO_AIRPORT: Record<string, string> = {
-            MM: "RGN", TH: "BKK", SG: "SIN", MY: "KUL",
-            VN: "SGN", KH: "PNH", ID: "CGK", PH: "MNL",
-            JP: "NRT", KR: "ICN", CN: "PEK", IN: "DEL",
-            AU: "SYD", HK: "HKG", TW: "TPE", LA: "VTE",
-        };
         const cached = sessionStorage.getItem("gt_detected_origin");
         if (cached && AIRPORTS.some(a => a.code === cached)) {
             setOrigin(cached);
+            setDetectingLocation(false);
             return;
         }
-        fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+
+        fetch("https://ipapi.co/json/", { signal: controller.signal })
             .then(r => r.json())
             .then(data => {
-                const code = COUNTRY_TO_AIRPORT[data.country_code] || "BKK";
-                if (AIRPORTS.some(a => a.code === code)) {
-                    setOrigin(code);
-                    sessionStorage.setItem("gt_detected_origin", code);
+                const city = (data.city || "").toLowerCase().trim();
+                let code = CITY_TO_AIRPORT[city];
+
+                if (!code || !AIRPORTS.some(a => a.code === code)) {
+                    code = COUNTRY_TO_AIRPORT[data.country_code];
                 }
+
+                if (!code || !AIRPORTS.some(a => a.code === code)) {
+                    code = DEFAULT_ORIGIN;
+                }
+
+                setOrigin(code);
+                sessionStorage.setItem("gt_detected_origin", code);
             })
-            .catch(() => { /* keep default BKK */ });
+            .catch(() => {
+                setOrigin(DEFAULT_ORIGIN);
+            })
+            .finally(() => {
+                clearTimeout(timeout);
+                setDetectingLocation(false);
+            });
+
+        return () => {
+            clearTimeout(timeout);
+            controller.abort();
+        };
     }, []);
 
 
@@ -410,9 +517,11 @@ export default function FlightWidget() {
                     {/* Origin */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
                         <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
-                            <MapPin className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
+                            <MapPin className={`w-5 h-5 mr-1.5 shrink-0 ${detectingLocation ? "text-primary animate-pulse" : "text-gray-400"}`} />
                             <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">From</span>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                                    {detectingLocation ? "Detecting..." : "From"}
+                                </span>
                                 <select
                                     value={origin}
                                     onChange={(e) => setOrigin(e.target.value)}
