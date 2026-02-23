@@ -672,6 +672,24 @@ export default function FlightWidget() {
                                         </button>
                                     )}
                                 </div>
+
+                                {departDate && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const depClean = departDate.replace(/-/g, "");
+                                            const retClean = returnDate ? returnDate.replace(/-/g, "") : "";
+                                            const searchPath = retClean
+                                                ? `${origin}${depClean}${destination}${retClean}`
+                                                : `${origin}${depClean}${destination}1`;
+                                            const url = `https://tp.media/r?marker=${AFFILIATE.TRAVELPAYOUTS_MARKER}&p=4114&u=${encodeURIComponent(`https://www.aviasales.com/search/${searchPath}`)}`;
+                                            window.open(url, "_blank");
+                                        }}
+                                        className="w-full mt-3 h-12 rounded-xl bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                                    >
+                                        🔍 Search on Aviasales
+                                    </button>
+                                )}
                             </div>
                         </PopoverContent>
                     </Popover>
