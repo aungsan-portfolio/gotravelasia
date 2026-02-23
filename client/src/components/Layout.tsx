@@ -45,35 +45,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
-      {/* Header */}
-      <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <img src="/logo.webp" alt="GoTravel Logo" className="h-[50px] w-auto object-contain" />
-            <div className="hidden lg:flex flex-col">
-              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground leading-none">Flights • Hotels • Transport</span>
-            </div>
-          </Link>
-
-          <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
-            <a href="/#flights" className="hover:text-primary transition-colors">Flights</a>
-            <a href="/#hotels" className="hover:text-primary transition-colors">Hotels</a>
-            <a href="/#transport" className="hover:text-primary transition-colors">Transport</a>
-          </nav>
+      {/* Header — Cheapflights style */}
+      <header className="sticky top-0 z-50 bg-[#FED014] shadow-sm">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Menu */}
+            <MobileNav onPlanTrip={() => setChatOpen(true)} />
+            <Link href="/" className="flex items-center">
+              <img src="/logo.webp" alt="GoTravel Logo" className="h-[40px] w-auto object-contain" />
+            </Link>
+          </div>
 
           <div className="flex items-center gap-3">
-            {/* Price Alerts */}
-            {/* Price Alerts (was "Sign In") */}
             <SignInModal variant="header" />
-            {/* Plan Trip — opens AI chat */}
-            <Button
-              className="hidden sm:inline-flex font-mono text-xs uppercase tracking-wider bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors"
-              onClick={() => setChatOpen(true)}
-            >
-              {t("cta.planTrip")}
-            </Button>
-            {/* Mobile Navigation */}
-            <MobileNav onPlanTrip={() => setChatOpen(true)} />
           </div>
         </div>
       </header>

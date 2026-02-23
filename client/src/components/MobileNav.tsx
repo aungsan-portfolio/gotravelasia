@@ -16,12 +16,12 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
     const { t } = useTranslation();
 
     const destinations = [
-        { nameKey: "destinations.chiangMai", href: "/thailand/chiang-mai" },
-        { nameKey: "destinations.bangkok", href: "/thailand/bangkok" },
-        { nameKey: "destinations.phuket", href: "/thailand/phuket" },
-        { nameKey: "destinations.krabi", href: "/thailand/krabi" },
-        { nameKey: "destinations.pai", href: "/thailand/pai" },
-        { nameKey: "destinations.chiangRai", href: "/thailand/chiang-rai" },
+        { name: "Bangkok", href: "/thailand/bangkok" },
+        { name: "Chiang Mai", href: "/thailand/chiang-mai" },
+        { name: "Phuket", href: "/thailand/phuket" },
+        { name: "Krabi", href: "/thailand/krabi" },
+        { name: "Pai", href: "/thailand/pai" },
+        { name: "Chiang Rai", href: "/thailand/chiang-rai" },
     ];
 
     const handleLinkClick = () => {
@@ -31,7 +31,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon">
                     <Menu className="w-6 h-6" />
                     <span className="sr-only">Open menu</span>
                 </Button>
@@ -44,11 +44,36 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                 </SheetHeader>
 
                 <nav className="mt-8 flex flex-col gap-6">
+                    {/* Search Tabs */}
+                    <div>
+                        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+                            <Plane className="w-4 h-4" />
+                            Search
+                        </div>
+                        <ul className="space-y-1">
+                            <li>
+                                <a href="/#flights" onClick={handleLinkClick}
+                                    className="block py-2 px-3 text-foreground hover:bg-muted rounded-md transition-colors font-medium"
+                                >✈️ Flights</a>
+                            </li>
+                            <li>
+                                <a href="/#hotels" onClick={handleLinkClick}
+                                    className="block py-2 px-3 text-foreground hover:bg-muted rounded-md transition-colors font-medium"
+                                >🏨 Hotels</a>
+                            </li>
+                            <li>
+                                <a href="/#transport" onClick={handleLinkClick}
+                                    className="block py-2 px-3 text-foreground hover:bg-muted rounded-md transition-colors font-medium"
+                                >🚌 Transport</a>
+                            </li>
+                        </ul>
+                    </div>
+
                     {/* Destinations */}
                     <div>
                         <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
                             <MapPin className="w-4 h-4" />
-                            {t("mobile.destinations")}
+                            Destinations
                         </div>
                         <ul className="space-y-1">
                             {destinations.map((dest) => (
@@ -58,7 +83,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                         onClick={handleLinkClick}
                                         className="block py-2 px-3 text-foreground hover:bg-muted rounded-md transition-colors"
                                     >
-                                        {t(dest.nameKey)}
+                                        {dest.name}
                                     </Link>
                                 </li>
                             ))}
@@ -69,7 +94,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                     <div>
                         <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
                             <BookOpen className="w-4 h-4" />
-                            {t("mobile.resources")}
+                            Resources
                         </div>
                         <ul className="space-y-1">
                             <li>
@@ -78,7 +103,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                     onClick={handleLinkClick}
                                     className="block py-2 px-3 text-foreground hover:bg-muted rounded-md transition-colors"
                                 >
-                                    {t("mobile.travelBlog")}
+                                    Travel Blog
                                 </Link>
                             </li>
                             <li>
@@ -87,7 +112,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                                     onClick={handleLinkClick}
                                     className="block py-2 px-3 text-foreground hover:bg-muted rounded-md transition-colors"
                                 >
-                                    {t("footer.contactUs")}
+                                    Contact Us
                                 </Link>
                             </li>
                         </ul>
