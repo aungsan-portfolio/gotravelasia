@@ -52,7 +52,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Hamburger Menu */}
             <MobileNav onPlanTrip={() => setChatOpen(true)} />
             <Link href="/" className="flex items-center">
-              <img src="/logo.webp" alt="GoTravel Logo" className="h-[40px] w-auto object-contain brightness-0 invert" />
+              <img src="/logo.webp" alt="GoTravel Logo" className="h-[40px] w-auto object-contain rounded-lg" />
             </Link>
           </div>
 
