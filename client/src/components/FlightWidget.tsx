@@ -17,8 +17,8 @@ import {
     TrendingDown,
 } from "lucide-react";
 import { format, isValid } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 
 // --- CONFIG DATA ---
@@ -618,7 +618,7 @@ export default function FlightWidget() {
 
                         {/* Calendar Popover */}
                         <PopoverContent
-                            className="w-auto p-0 shadow-2xl border border-gray-200 rounded-2xl"
+                            className="w-auto max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl"
                             align="center"
                             sideOffset={8}
                         >
@@ -647,24 +647,14 @@ export default function FlightWidget() {
                                     </button>
                                 </div>
 
-                                <Calendar
-                                    mode="single"
-                                    numberOfMonths={typeof window !== "undefined" && window.innerWidth < 640 ? 1 : 2}
-                                    selected={calendarMode === "depart" ? departDateObj : returnDateObj}
-                                    onSelect={handleCalendarSelect}
-                                    defaultMonth={calendarMode === "depart" ? (departDateObj || todayDate) : (returnDateObj || departDateObj || todayDate)}
-                                    disabled={[
-                                        { before: calendarMode === "return" && departDateObj ? departDateObj : todayDate },
-                                    ]}
-                                    modifiers={{
-                                        departHighlight: departDateObj ? [departDateObj] : [],
-                                        returnHighlight: returnDateObj ? [returnDateObj] : [],
-                                    }}
-                                    modifiersClassNames={{
-                                        departHighlight: "!bg-blue-600 !text-white rounded-md",
-                                        returnHighlight: "!bg-amber-500 !text-white rounded-md",
-                                    }}
-                                    className="[--cell-size:40px]"
+                                <PriceCalendar
+                                    origin={origin}
+                                    destination={destination}
+                                    calendarMode={calendarMode}
+                                    selectedDepart={departDateObj}
+                                    selectedReturn={returnDateObj}
+                                    onSelectDate={handleCalendarSelect}
+                                    todayDate={todayDate}
                                 />
 
                                 {/* Quick actions */}
