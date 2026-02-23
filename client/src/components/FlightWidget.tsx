@@ -22,8 +22,6 @@ import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 
 // --- CONFIG DATA ---
-import { AFFILIATE } from "@/lib/config";
-const MARKER_ID = AFFILIATE.TRAVELPAYOUTS_MARKER;
 
 const AIRPORTS = [
     // 🇲🇲 Myanmar (Origin/Return Hubs) - Pinned to Top
@@ -412,6 +410,24 @@ export default function FlightWidget() {
         return found ? found.country : "Asia";
     };
 
+    const buildFlightSearch = (dep: string, ret: string) => {
+        const formatDDMM = (dateStr: string) => {
+            const [, mm, dd] = dateStr.split("-");
+            return dd + mm;
+        };
+        const cabinCode: Record<string, string> = {
+            economy: "",
+            premium_economy: "w",
+            business: "c",
+            first: "f",
+        };
+        const classPrefix = cabinCode[cabinClass] || "";
+        let fs = `${origin}${formatDDMM(dep)}${destination}`;
+        if (ret) fs += formatDDMM(ret);
+        fs += `${classPrefix}${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
+        return fs;
+    };
+
     const handleSearch = () => {
         if (origin === destination) {
             alert("Origin and destination cannot be the same");
@@ -426,25 +442,6 @@ export default function FlightWidget() {
             return;
         }
 
-        const params = new URLSearchParams({
-            origin_iata: origin,
-            destination_iata: destination,
-            depart_date: departDate,
-            one_way: returnDate ? "false" : "true",
-            adults: String(adults),
-            children: String(children),
-            infants: String(infants),
-            trip_class: CABIN_TO_TRIP_CLASS[cabinClass] || "0",
-            locale: "en",
-            currency: "USD",
-        });
-        if (returnDate) {
-            params.set("return_date", returnDate);
-        }
-        const targetUrl = `https://www.aviasales.com/search?${params.toString()}`;
-        const tpUrl = `https://tp.media/r?marker=${MARKER_ID}&p=4114&u=${encodeURIComponent(targetUrl)}`;
-
-        // Save to recent searches
         saveRecentSearch({
             origin,
             destination,
@@ -454,27 +451,8 @@ export default function FlightWidget() {
             timestamp: Date.now(),
         });
 
-        // Build Travelpayouts White Label flightSearch param
-        // Format: ORIGIN_DDMM_DEST[_DDMM]_[class]_adults_children_infants
-        const formatDDMM = (dateStr: string) => {
-            const [, mm, dd] = dateStr.split("-"); // YYYY-MM-DD
-            return dd + mm; // DDMM
-        };
-        const cabinCode: Record<string, string> = {
-            economy: "",
-            premium_economy: "w",
-            business: "c",
-            first: "f",
-        };
-        const classPrefix = cabinCode[cabinClass] || "";
-
-        let flightSearch = `${origin}${formatDDMM(departDate)}${destination}`;
-        if (returnDate) {
-            flightSearch += formatDDMM(returnDate);
-        }
-        flightSearch += `${classPrefix}${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
-
-        window.open(tpUrl, "_blank");
+        const flightSearch = buildFlightSearch(departDate, returnDate);
+        window.location.href = `/flights/results?flightSearch=${flightSearch}`;
     };
 
     const handleTripComSearch = () => {
@@ -676,17 +654,12 @@ export default function FlightWidget() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const depClean = departDate.replace(/-/g, "");
-                                            const retClean = returnDate ? returnDate.replace(/-/g, "") : "";
-                                            const searchPath = retClean
-                                                ? `${origin}${depClean}${destination}${retClean}`
-                                                : `${origin}${depClean}${destination}1`;
-                                            const url = `https://tp.media/r?marker=${AFFILIATE.TRAVELPAYOUTS_MARKER}&p=4114&u=${encodeURIComponent(`https://www.aviasales.com/search/${searchPath}`)}`;
-                                            window.open(url, "_blank");
+                                            const flightSearch = buildFlightSearch(departDate, returnDate);
+                                            window.location.href = `/flights/results?flightSearch=${flightSearch}`;
                                         }}
                                         className="w-full mt-3 h-12 rounded-xl bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
                                     >
-                                        🔍 Search on Aviasales
+                                        🔍 Search Flights
                                     </button>
                                 )}
                             </div>
