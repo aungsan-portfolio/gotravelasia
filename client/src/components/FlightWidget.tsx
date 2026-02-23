@@ -507,7 +507,7 @@ export default function FlightWidget() {
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 overflow-x-hidden">
+        <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             {/* SEARCH ROW */}
             <div className="flex flex-col lg:flex-row gap-3">
 
@@ -687,7 +687,7 @@ export default function FlightWidget() {
                     </Popover>
 
                     {/* Travelers & Class (Popover Trigger) */}
-                    <div className="relative flex-[1.3] min-w-[150px] group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
+                    <div className="relative flex-[1.5] min-w-[180px] group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
                         <button
                             ref={paxTriggerRef}
                             type="button"
@@ -714,7 +714,7 @@ export default function FlightWidget() {
                                 id="pax-panel"
                                 role="dialog"
                                 aria-modal="false"
-                                className="absolute right-0 z-50 mt-2 w-full min-w-[300px] max-w-sm rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-4 max-h-[70vh] overflow-auto animate-in fade-in zoom-in-95"
+                                className="absolute right-0 top-full z-50 mt-2 w-full min-w-[300px] max-w-sm rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-4 max-h-[70vh] overflow-auto animate-in fade-in zoom-in-95"
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="text-sm font-black text-gray-900">Passengers</div>
