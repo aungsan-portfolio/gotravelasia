@@ -8,7 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 const USD_TO_THB = 34;
 
 type PriceEntry = {
-    value: number;
+    price: number;
     trip_class: number;
     show_to_affiliates: boolean;
     return_date: string;
@@ -109,8 +109,8 @@ export default function PriceCalendar({
                 const map: PriceMap = {};
                 Object.entries(data.data).forEach(([dateStr, entry]) => {
                     const e = entry as PriceEntry;
-                    if (e.value > 0) {
-                        map[dateStr] = e.value;
+                    if (e.price > 0) {
+                        map[dateStr] = e.price;
                     }
                 });
                 return map;
