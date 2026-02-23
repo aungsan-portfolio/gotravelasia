@@ -35,11 +35,6 @@ function buildCalendarGrid(year: number, month: number) {
   return cells;
 }
 
-function formatThb(val: number): string {
-  if (val >= 10000) return `B${(val / 1000).toFixed(1)}k`;
-  return `B${val.toLocaleString()}`;
-}
-
 type Thresholds = { p33: number; p66: number };
 
 function computeThresholds(priceMap: PriceMap): Thresholds | null {
@@ -252,28 +247,33 @@ export default function PriceCalendar({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-200">
-        <span
-          className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-          style={{ backgroundColor: "#86efac", color: "#1f2937" }}
-        >
-          {thresholds ? formatThb(thresholds.p33) + "−" : "Cheapest"}
-        </span>
-        <span
-          className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-          style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
-        >
-          {thresholds ? formatThb(thresholds.p33) + "–" + formatThb(thresholds.p66) : "Average"}
-        </span>
-        <span
-          className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-          style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
-        >
-          {thresholds ? formatThb(thresholds.p66) + "+" : "Expensive"}
-        </span>
-        <span className="text-xs text-gray-400 ml-1">
-          Estimated prices for return flights
-        </span>
+      <div className="mt-4 pt-3 border-t border-gray-200">
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            style={{ backgroundColor: "#86efac", color: "#1f2937" }}
+          >
+            Cheapest
+          </span>
+          <span
+            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
+          >
+            Average
+          </span>
+          <span
+            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
+          >
+            Expensive
+          </span>
+          <span className="text-xs text-gray-400 ml-1">
+            Estimated prices for return flights
+          </span>
+        </div>
+        <p className="text-[11px] text-gray-400 mt-1.5">
+          Live prices from Aviasales (real-time)
+        </p>
       </div>
     </div>
   );
