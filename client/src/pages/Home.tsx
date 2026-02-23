@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,20 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
   const { deals } = useFlightData();
+
+  // Read URL hash to switch tabs (connected to nav links)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash === "flights" || hash === "hotels" || hash === "transport") {
+        setActiveTab(hash);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
 
   const buildRouteUrl = useCallback((origin: string, dest: string, dealDate?: string) => {
     return buildAviasalesLink(origin, dest, dealDate);

@@ -56,9 +56,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
-            <Link href="/" className="hover:text-primary transition-colors">Flights</Link>
-            <Link href="/" className="hover:text-primary transition-colors">Hotels</Link>
-            <Link href="/" className="hover:text-primary transition-colors">Transport</Link>
+            <a href="/#flights" className="hover:text-primary transition-colors">Flights</a>
+            <a href="/#hotels" className="hover:text-primary transition-colors">Hotels</a>
+            <a href="/#transport" className="hover:text-primary transition-colors">Transport</a>
           </nav>
 
           <div className="flex items-center gap-3">
