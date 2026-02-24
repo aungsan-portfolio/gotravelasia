@@ -17,7 +17,7 @@ const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
   cheap: { bg: "#86efac", text: "#1f2937" },
   mid: { bg: "#fbbf24", text: "#1f2937" },
   expensive: { bg: "#f472b6", text: "#ffffff" },
-  none: { bg: "#fbbf24", text: "#1f2937" },
+  none: { bg: "transparent", text: "#374151" }, // Fixed: Should NOT be yellow
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -47,7 +47,9 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
     .map(usd => Math.round(usd * USD_TO_THB))
     .sort((a, b) => a - b);
 
-  if (thbPrices.length < 3) return null;
+  if (thbPrices.length === 0) return null;
+  if (thbPrices.length === 1) return { p33: thbPrices[0], p66: thbPrices[0] };
+  if (thbPrices.length === 2) return { p33: thbPrices[0], p66: thbPrices[1] };
 
   const p33 = thbPrices[Math.floor(thbPrices.length / 3)];
   const p66 = thbPrices[Math.floor((thbPrices.length * 2) / 3)];
@@ -55,7 +57,9 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
 }
 
 function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
-  if (!thresholds) return "mid";
+  if (!thresholds) return "none";
+  // If all prices are the same (e.g. only 1 price), default to "mid" (yellow) as fallback or "cheap" 
+  // If p33 == p66, thbPrice is either cheap or mid
   if (thbPrice <= thresholds.p33) return "cheap";
   if (thbPrice <= thresholds.p66) return "mid";
   return "expensive";
@@ -182,9 +186,9 @@ export default function PriceCalendar({
                 return (
                   <div
                     key={dateKey}
-                    className="h-[46px] rounded-lg flex items-center justify-center text-sm text-gray-300"
+                    className="h-[46px] rounded-lg flex flex-col items-center justify-center text-sm text-gray-300 pointer-events-none"
                   >
-                    {cell.getDate()}
+                    <span>{cell.getDate()}</span>
                   </div>
                 );
               }
@@ -194,14 +198,23 @@ export default function PriceCalendar({
                   key={dateKey}
                   type="button"
                   onClick={() => onSelectDate(cell)}
-                  className="h-[46px] rounded-lg flex items-center justify-center text-sm font-semibold transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95"
+                  className={`h-[46px] rounded-lg flex flex-col items-center justify-center transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95 ${tier === "none" && !isSelected ? "hover:bg-gray-50" : ""}`}
                   style={
                     isSelected
                       ? { backgroundColor: "#1f2937", color: "#ffffff", boxShadow: "0 0 0 2px #3b82f6, 0 0 0 4px #dbeafe" }
                       : { backgroundColor: styles.bg, color: styles.text }
                   }
                 >
-                  {cell.getDate()}
+                  <span className={`text-sm ${isSelected ? "font-bold" : "font-semibold"}`}>
+                    {cell.getDate()}
+                  </span>
+                  {thbPrice ? (
+                    <span className="text-[10px] leading-[1] mt-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.8)" : "inherit" }}>
+                      {formatThb(thbPrice)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] leading-[1] mt-0.5 opacity-0 select-none">—</span>
+                  )}
                 </button>
               );
             })
