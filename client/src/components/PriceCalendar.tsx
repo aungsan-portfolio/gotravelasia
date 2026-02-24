@@ -29,9 +29,10 @@ type PriceMap = Record<string, number>;
 
 type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
+// Using very subtle variants for estimated prices to blend in
 const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
-  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#a7f3d0", estText: "#064e3b" }, // Bright green for absolute cheapest
-  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#d1fae5", estText: "#065f46" },
+  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#bbf7d0", estText: "#166534" }, // Very soft green
+  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#dcfce7", estText: "#14532d" },
   mid: { bg: "#fbbf24", text: "#1f2937", estBg: "#fef3c7", estText: "#92400e" },
   expensive: { bg: "#f472b6", text: "#ffffff", estBg: "#fce7f3", estText: "#9d174d" },
   none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#6b7280" },
@@ -291,7 +292,7 @@ export default function PriceCalendar({
                   style={
                     isSelected
                       ? { backgroundColor: "#1f2937", color: "#ffffff", boxShadow: "0 0 0 2px #3b82f6, 0 0 0 4px #dbeafe" }
-                      : { backgroundColor: currentBg, color: currentText, border: isEstimated ? `1px dashed ${styles.bg}` : "none" }
+                      : { backgroundColor: currentBg, color: currentText, border: "none" }
                   }
                 >
                   <span className={`text-sm ${isSelected ? "font-bold" : "font-semibold"}`}>
@@ -299,13 +300,10 @@ export default function PriceCalendar({
                   </span>
                   {thbPrice ? (
                     <span className="text-[10px] leading-[1] mt-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.8)" : "inherit" }}>
-                      {isEstimated && <span className="mr-[1px] opacity-70">~</span>}{formatThb(thbPrice)}
+                      {formatThb(thbPrice)}
                     </span>
                   ) : (
                     <span className="text-[10px] leading-[1] mt-0.5 opacity-0 select-none">—</span>
-                  )}
-                  {isEstimated && (
-                    <div className="absolute top-1 right-1 w-1 h-1 rounded-full opacity-50" style={{ backgroundColor: styles.text }} />
                   )}
                 </button>
               );
@@ -385,15 +383,12 @@ export default function PriceCalendar({
           </span>
         </div>
         <p className="text-[11px] text-gray-400 mt-1.5 flex flex-col gap-0.5">
-          <span>
-            Live prices from Aviasales
-            {priceCount > 0 && priceCount < 6 && (
-              <span className="ml-1 text-amber-600 font-medium">· Limited real data. Some prices are estimated.</span>
-            )}
-          </span>
-          {priceCount > 0 && priceCount < Object.keys(enrichedData).length && (
+          <span>Live prices from Aviasales</span>
+          {(priceCount > 0 && priceCount < 6) ? (
+            <span className="text-amber-600 font-medium">Limited real data. Some prices shown are estimates.</span>
+          ) : (priceCount > 0 && priceCount < Object.keys(enrichedData).length) ? (
             <span>Some prices are estimated based on nearby real data.</span>
-          )}
+          ) : null}
         </p>
       </div>
     </div>
