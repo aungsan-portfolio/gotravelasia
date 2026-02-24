@@ -33,7 +33,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pnpm dev"
+args = "python run_bot_daily.py & pnpm dev"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -53,6 +53,6 @@ externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "dist/index.js"]
+run = ["bash", "-c", "python run_bot_daily.py & node dist/index.js"]
 build = ["npm", "run", "build"]
 publicDir = "dist/public"

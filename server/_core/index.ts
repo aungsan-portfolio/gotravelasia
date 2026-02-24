@@ -7,6 +7,8 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import fs from "fs";
+import path from "path";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -166,11 +168,50 @@ async function startServer() {
 
       const merged: Record<string, any> = {};
 
-      const addPrice = (dateStr: string, price: number, entry: any) => {
+      const addPrice = (dateStr: string, price: number, entry: any, fromBot: boolean = false) => {
         if (!dateStr || price <= 0) return;
-        if (!merged[dateStr] || price < merged[dateStr].price) {
-          merged[dateStr] = { ...entry, price };
+
+        const current = merged[dateStr];
+        // If we don't have this date yet, or if the new price is cheaper (and both are from same source tier),
+        // or if the new one is from the bot (primary) and the old one is not, we take it.
+        if (!current) {
+          merged[dateStr] = { ...entry, price, is_bot_data: fromBot };
+        } else {
+          if (fromBot && !current.is_bot_data) {
+            merged[dateStr] = { ...entry, price, is_bot_data: fromBot };
+          } else if (fromBot === !!current.is_bot_data && price < current.price) {
+            merged[dateStr] = { ...entry, price, is_bot_data: fromBot };
+          }
         }
+      }
+
+      // 1. Inject Bot Data (Primary Source)
+      try {
+        const botDataPath = path.join(process.cwd(), "client", "public", "data", "flight_data.json");
+        if (fs.existsSync(botDataPath)) {
+          const raw = fs.readFileSync(botDataPath, "utf-8");
+          const botData = JSON.parse(raw);
+          if (botData.routes && Array.isArray(botData.routes)) {
+            for (const r of botData.routes) {
+              if (r.origin === orig && r.destination === dest) {
+                const dateStr = r.date;
+                // Only load if it's the requested month or next month
+                if (dateStr && (dateStr.startsWith(mo) || dateStr.startsWith(nextMo))) {
+                  addPrice(dateStr, r.price || 0, {
+                    origin: r.origin,
+                    destination: r.destination,
+                    airline: r.airline_code || r.airline || "",
+                    departure_at: `${r.date}T00:00:00`,
+                    transfers: r.transfers || 0,
+                    flight_number: r.flight_num || "",
+                  }, true);
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading bot json data:", err);
       }
 
       for (const v3Result of [v3Mo1, v3Mo2]) {

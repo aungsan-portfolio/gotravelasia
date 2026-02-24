@@ -1,6 +1,15 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay, addDays } from "date-fns";
+import posthog from "posthog-js";
+
+// Initialize PostHog if not already inside the browser context
+if (typeof window !== "undefined" && !posthog.__loaded) {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY || "phc_placeholder_key", {
+    api_host: import.meta.env.VITE_POSTHOG_HOST || "https://us.i.posthog.com",
+    autocapture: false,
+  });
+}
 
 const USD_TO_THB = 34;
 
@@ -20,12 +29,12 @@ type PriceMap = Record<string, number>;
 
 type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
-const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
-  cheapest: { bg: "#22c55e", text: "#ffffff" }, // Bright green for absolute cheapest
-  cheap: { bg: "#86efac", text: "#1f2937" },
-  mid: { bg: "#fbbf24", text: "#1f2937" },
-  expensive: { bg: "#f472b6", text: "#ffffff" },
-  none: { bg: "#f3f4f6", text: "#6b7280" },
+const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
+  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#a7f3d0", estText: "#064e3b" }, // Bright green for absolute cheapest
+  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#d1fae5", estText: "#065f46" },
+  mid: { bg: "#fbbf24", text: "#1f2937", estBg: "#fef3c7", estText: "#92400e" },
+  expensive: { bg: "#f472b6", text: "#ffffff", estBg: "#fce7f3", estText: "#9d174d" },
+  none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#6b7280" },
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -75,6 +84,53 @@ function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
   if (thbPrice <= thresholds.p33) return "cheap";
   if (thbPrice <= thresholds.p66) return "mid";
   return "expensive";
+}
+
+function fillGaps(priceMap: PriceMap, start: Date, end: Date): Record<string, { price: number; isEstimated: boolean }> {
+  const result: Record<string, { price: number; isEstimated: boolean }> = {};
+
+  const realDatesStr = Object.keys(priceMap).sort();
+  if (realDatesStr.length === 0) return result;
+
+  const realPrices = Object.values(priceMap).sort((a, b) => a - b);
+  const minPrice = realPrices[0];
+  const medianPrice = realPrices[Math.floor(realPrices.length / 2)];
+
+  let curr = start;
+  while (curr <= end) {
+    const dateStr = format(curr, "yyyy-MM-dd");
+
+    if (priceMap[dateStr] !== undefined) {
+      result[dateStr] = { price: priceMap[dateStr], isEstimated: false };
+    } else {
+      let leftDate = null;
+      let rightDate = null;
+
+      for (let i = realDatesStr.length - 1; i >= 0; i--) {
+        if (realDatesStr[i] < dateStr) { leftDate = realDatesStr[i]; break; }
+      }
+      for (let i = 0; i < realDatesStr.length; i++) {
+        if (realDatesStr[i] > dateStr) { rightDate = realDatesStr[i]; break; }
+      }
+
+      if (leftDate && rightDate) {
+        const leftMs = new Date(leftDate).getTime();
+        const rightMs = new Date(rightDate).getTime();
+        const currMs = curr.getTime();
+        const fraction = (currMs - leftMs) / (rightMs - leftMs);
+        const estPrice = priceMap[leftDate] + (priceMap[rightDate] - priceMap[leftDate]) * fraction;
+        result[dateStr] = { price: estPrice, isEstimated: true };
+      } else if (medianPrice !== undefined) {
+        result[dateStr] = { price: medianPrice, isEstimated: true };
+      } else {
+        result[dateStr] = { price: minPrice, isEstimated: true };
+      }
+    }
+
+    curr = addDays(curr, 1);
+  }
+
+  return result;
 }
 
 type PriceCalendarProps = {
@@ -149,6 +205,10 @@ export default function PriceCalendar({
   const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
   const priceCount = Object.keys(priceMap).length;
 
+  const enrichedData = useMemo(() => {
+    return fillGaps(priceMap, leftMonth, endOfMonth(rightMonth));
+  }, [priceMap, leftMonth, rightMonth]);
+
   const today = startOfDay(todayDate);
   const disabledBefore = calendarMode === "return" && selectedDepart ? startOfDay(selectedDepart) : today;
 
@@ -184,7 +244,10 @@ export default function PriceCalendar({
               }
 
               const dateKey = format(cell, "yyyy-MM-dd");
-              const priceUsd = priceMap[dateKey];
+              const enriched = enrichedData[dateKey];
+              const priceUsd = enriched ? enriched.price : null;
+              const isEstimated = enriched ? enriched.isEstimated : false;
+
               const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
               const tier: PriceTier = thbPrice ? getTier(thbPrice, thresholds) : "none";
 
@@ -194,6 +257,8 @@ export default function PriceCalendar({
               const isSelected = isSelectedDepart || isSelectedReturn;
 
               const styles = TIER_STYLES[tier];
+              const currentBg = isEstimated && !isSelected ? styles.estBg : styles.bg;
+              const currentText = isEstimated && !isSelected ? styles.estText : styles.text;
 
               if (isDisabled) {
                 return (
@@ -210,12 +275,23 @@ export default function PriceCalendar({
                 <button
                   key={dateKey}
                   type="button"
-                  onClick={() => onSelectDate(cell)}
-                  className={`h-[46px] rounded-lg flex flex-col items-center justify-center transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95 ${tier === "none" && !isSelected ? "hover:bg-gray-50" : ""}`}
+                  onClick={() => {
+                    onSelectDate(cell);
+                    if (tier === "cheapest" || tier === "cheap") {
+                      posthog.capture("green_date_clicked", {
+                        origin,
+                        destination,
+                        date: format(cell, "yyyy-MM-dd"),
+                        price: priceUsd,
+                        is_estimated: isEstimated
+                      });
+                    }
+                  }}
+                  className={`relative h-[46px] rounded-lg flex flex-col items-center justify-center transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95 ${tier === "none" && !isSelected ? "hover:bg-gray-50" : ""}`}
                   style={
                     isSelected
                       ? { backgroundColor: "#1f2937", color: "#ffffff", boxShadow: "0 0 0 2px #3b82f6, 0 0 0 4px #dbeafe" }
-                      : { backgroundColor: styles.bg, color: styles.text }
+                      : { backgroundColor: currentBg, color: currentText, border: isEstimated ? `1px dashed ${styles.bg}` : "none" }
                   }
                 >
                   <span className={`text-sm ${isSelected ? "font-bold" : "font-semibold"}`}>
@@ -223,10 +299,13 @@ export default function PriceCalendar({
                   </span>
                   {thbPrice ? (
                     <span className="text-[10px] leading-[1] mt-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.8)" : "inherit" }}>
-                      {formatThb(thbPrice)}
+                      {isEstimated && <span className="mr-[1px] opacity-70">~</span>}{formatThb(thbPrice)}
                     </span>
                   ) : (
                     <span className="text-[10px] leading-[1] mt-0.5 opacity-0 select-none">—</span>
+                  )}
+                  {isEstimated && (
+                    <div className="absolute top-1 right-1 w-1 h-1 rounded-full opacity-50" style={{ backgroundColor: styles.text }} />
                   )}
                 </button>
               );
@@ -305,10 +384,15 @@ export default function PriceCalendar({
             {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
           </span>
         </div>
-        <p className="text-[11px] text-gray-400 mt-1.5">
-          Live prices from Aviasales
-          {priceCount > 0 && priceCount < 8 && (
-            <span className="ml-1">· Limited data. More prices update daily.</span>
+        <p className="text-[11px] text-gray-400 mt-1.5 flex flex-col gap-0.5">
+          <span>
+            Live prices from Aviasales
+            {priceCount > 0 && priceCount < 6 && (
+              <span className="ml-1 text-amber-600 font-medium">· Limited real data. Some prices are estimated.</span>
+            )}
+          </span>
+          {priceCount > 0 && priceCount < Object.keys(enrichedData).length && (
+            <span>Some prices are estimated based on nearby real data.</span>
           )}
         </p>
       </div>

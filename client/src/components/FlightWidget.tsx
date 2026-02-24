@@ -20,6 +20,7 @@ import { format, isValid } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
+import posthog from "posthog-js";
 
 // --- CONFIG DATA ---
 
@@ -451,6 +452,10 @@ export default function FlightWidget() {
             timestamp: Date.now(),
         });
 
+        if (typeof window !== "undefined" && posthog.__loaded) {
+            posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
+        }
+
         const flightSearch = buildFlightSearch(departDate, returnDate);
         window.location.href = `/flights/results?flightSearch=${flightSearch}`;
     };
@@ -654,6 +659,9 @@ export default function FlightWidget() {
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            if (typeof window !== "undefined" && posthog.__loaded) {
+                                                posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
+                                            }
                                             const flightSearch = buildFlightSearch(departDate, returnDate);
                                             window.location.href = `/flights/results?flightSearch=${flightSearch}`;
                                         }}
