@@ -55,8 +55,14 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
     .sort((a, b) => a - b);
 
   if (thbPrices.length === 0) return null;
-  if (thbPrices.length === 1) return { p33: thbPrices[0], p66: thbPrices[0] };
-  if (thbPrices.length === 2) return { p33: thbPrices[0], p66: thbPrices[1] };
+
+  // For very few prices, create spread thresholds so colors still appear
+  if (thbPrices.length <= 2) {
+    const min = thbPrices[0];
+    const max = thbPrices[thbPrices.length - 1];
+    // Give a 10% buffer around the price so single prices show as "cheap"
+    return { p33: Math.round(max * 1.05), p66: Math.round(max * 1.15) };
+  }
 
   const p33 = thbPrices[Math.floor(thbPrices.length / 3)];
   const p66 = thbPrices[Math.floor((thbPrices.length * 2) / 3)];
@@ -65,8 +71,6 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
 
 function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
   if (!thresholds) return "none";
-  // If all prices are the same (e.g. only 1 price), default to "mid" (yellow) as fallback or "cheap" 
-  // If p33 == p66, thbPrice is either cheap or mid
   if (thbPrice <= thresholds.p33) return "cheap";
   if (thbPrice <= thresholds.p66) return "mid";
   return "expensive";
@@ -278,19 +282,19 @@ export default function PriceCalendar({
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#86efac", color: "#1f2937" }}
           >
-            {thresholds ? `${formatThb(thresholds.p33)}\u2212` : "Cheapest"}
+            {thresholds && Object.keys(priceMap).length >= 3 ? `${formatThb(thresholds.p33)}\u2212` : "Cheapest"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
           >
-            {thresholds ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
+            {thresholds && Object.keys(priceMap).length >= 3 ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
           >
-            {thresholds ? `${formatThb(thresholds.p66)}+` : "Expensive"}
+            {thresholds && Object.keys(priceMap).length >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
           </span>
           <span className="text-xs text-gray-400 ml-1">
             Estimated prices for return flights
@@ -298,6 +302,9 @@ export default function PriceCalendar({
         </div>
         <p className="text-[11px] text-gray-400 mt-1.5">
           Live prices from Aviasales (real-time)
+          {Object.keys(priceMap).length > 0 && Object.keys(priceMap).length < 3 && (
+            <span className="ml-1">· Limited data for this route</span>
+          )}
         </p>
       </div>
     </div>
