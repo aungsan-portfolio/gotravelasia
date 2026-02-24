@@ -5,8 +5,15 @@ import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameD
 const USD_TO_THB = 34;
 
 type PriceEntry = {
-  value: number;
-  price?: number;
+  price: number;
+  origin: string;
+  destination: string;
+  airline?: string;
+  departure_at?: string;
+  return_at?: string;
+  transfers?: number;
+  flight_number?: number;
+  expires_at?: string;
 };
 
 type PriceMap = Record<string, number>;
@@ -17,7 +24,7 @@ const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
   cheap: { bg: "#86efac", text: "#1f2937" },
   mid: { bg: "#fbbf24", text: "#1f2937" },
   expensive: { bg: "#f472b6", text: "#ffffff" },
-  none: { bg: "transparent", text: "#374151" }, // Fixed: Should NOT be yellow
+  none: { bg: "#f3f4f6", text: "#6b7280" }, // Light gray for days without price data
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -110,7 +117,7 @@ export default function PriceCalendar({
         const map: PriceMap = {};
         Object.entries(data.data).forEach(([dateStr, entry]) => {
           const e = entry as PriceEntry;
-          const price = e.value || e.price || 0;
+          const price = e.price || 0;
           if (price > 0) map[dateStr] = price;
         });
         return map;
