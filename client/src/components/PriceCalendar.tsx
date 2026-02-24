@@ -18,13 +18,14 @@ type PriceEntry = {
 
 type PriceMap = Record<string, number>;
 
-type PriceTier = "cheap" | "mid" | "expensive" | "none";
+type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
 const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
+  cheapest: { bg: "#22c55e", text: "#ffffff" }, // Bright green for absolute cheapest
   cheap: { bg: "#86efac", text: "#1f2937" },
   mid: { bg: "#fbbf24", text: "#1f2937" },
   expensive: { bg: "#f472b6", text: "#ffffff" },
-  none: { bg: "#f3f4f6", text: "#6b7280" }, // Light gray for days without price data
+  none: { bg: "#f3f4f6", text: "#6b7280" },
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -47,7 +48,7 @@ function formatThb(val: number): string {
   return `B${val.toLocaleString()}`;
 }
 
-type Thresholds = { p33: number; p66: number };
+type Thresholds = { p33: number; p66: number; min: number };
 
 function computeThresholds(priceMap: PriceMap): Thresholds | null {
   const thbPrices = Object.values(priceMap)
@@ -56,21 +57,21 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
 
   if (thbPrices.length === 0) return null;
 
-  // For very few prices, create spread thresholds so colors still appear
+  const min = thbPrices[0];
+
   if (thbPrices.length <= 2) {
-    const min = thbPrices[0];
-    const max = thbPrices[thbPrices.length - 1];
-    // Give a 10% buffer around the price so single prices show as "cheap"
-    return { p33: Math.round(max * 1.05), p66: Math.round(max * 1.15) };
+    return { p33: Math.round(thbPrices[thbPrices.length - 1] * 1.05), p66: Math.round(thbPrices[thbPrices.length - 1] * 1.15), min };
   }
 
   const p33 = thbPrices[Math.floor(thbPrices.length / 3)];
   const p66 = thbPrices[Math.floor((thbPrices.length * 2) / 3)];
-  return { p33, p66 };
+  return { p33, p66, min };
 }
 
 function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
   if (!thresholds) return "none";
+  // Absolute cheapest date(s) get bright green
+  if (thbPrice <= thresholds.min) return "cheapest";
   if (thbPrice <= thresholds.p33) return "cheap";
   if (thbPrice <= thresholds.p66) return "mid";
   return "expensive";
@@ -146,6 +147,7 @@ export default function PriceCalendar({
   }, [origin, destination, leftStr, rightStr, fetchPrices]);
 
   const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
+  const priceCount = Object.keys(priceMap).length;
 
   const today = startOfDay(todayDate);
   const disabledBefore = calendarMode === "return" && selectedDepart ? startOfDay(selectedDepart) : today;
@@ -280,30 +282,33 @@ export default function PriceCalendar({
         <div className="flex flex-wrap items-center gap-3">
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            style={{ backgroundColor: "#22c55e", color: "#ffffff" }}
+          >
+            {thresholds ? `Best ${formatThb(thresholds.min)}` : "Best Price"}
+          </span>
+          <span
+            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#86efac", color: "#1f2937" }}
           >
-            {thresholds && Object.keys(priceMap).length >= 3 ? `${formatThb(thresholds.p33)}\u2212` : "Cheapest"}
+            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2212` : "Cheap"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
           >
-            {thresholds && Object.keys(priceMap).length >= 3 ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
+            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
           >
-            {thresholds && Object.keys(priceMap).length >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
-          </span>
-          <span className="text-xs text-gray-400 ml-1">
-            Estimated prices for return flights
+            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
           </span>
         </div>
         <p className="text-[11px] text-gray-400 mt-1.5">
-          Live prices from Aviasales (real-time)
-          {Object.keys(priceMap).length > 0 && Object.keys(priceMap).length < 3 && (
-            <span className="ml-1">· Limited data for this route</span>
+          Live prices from Aviasales
+          {priceCount > 0 && priceCount < 8 && (
+            <span className="ml-1">· Limited data. More prices update daily.</span>
           )}
         </p>
       </div>
