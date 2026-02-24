@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay, addDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, isAfter, startOfDay, addDays } from "date-fns";
 import posthog from "posthog-js";
 
 // Initialize PostHog if not already inside the browser context
@@ -31,10 +31,10 @@ type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
 // Using extremely subtle variants for estimated prices to blend invisibly
 const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
-  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#ecfdf5", estText: "#9ca3af" }, // extremely soft green
-  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#ecfdf5", estText: "#9ca3af" },    // extremely soft green
-  mid: { bg: "#eab308", text: "#ffffff", estBg: "#fefce8", estText: "#9ca3af" },     // extremely soft yellow
-  expensive: { bg: "#ec4899", text: "#ffffff", estBg: "#fdf4ff", estText: "#9ca3af" }, // extremely soft pink
+  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#ecfdf5", estText: "#9ca3af" },
+  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#ecfdf5", estText: "#9ca3af" },
+  mid: { bg: "#eab308", text: "#ffffff", estBg: "#fefce8", estText: "#9ca3af" },
+  expensive: { bg: "#ec4899", text: "#ffffff", estBg: "#fdf4ff", estText: "#9ca3af" },
   none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#9ca3af" },
 };
 
@@ -80,7 +80,6 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
 
 function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
   if (!thresholds) return "none";
-  // Absolute cheapest date(s) get bright green
   if (thbPrice <= thresholds.min) return "cheapest";
   if (thbPrice <= thresholds.p33) return "cheap";
   if (thbPrice <= thresholds.p66) return "mid";
@@ -134,6 +133,15 @@ function fillGaps(priceMap: PriceMap, start: Date, end: Date): Record<string, { 
   return result;
 }
 
+/* ─── Range helper for dark highlight between depart ↔ return ─── */
+function isInRange(day: Date, start?: Date, end?: Date): boolean {
+  if (!start || !end) return false;
+  const d = startOfDay(day);
+  const s = startOfDay(start);
+  const e = startOfDay(end);
+  return isAfter(d, s) && isBefore(d, e);
+}
+
 type PriceCalendarProps = {
   origin: string;
   destination: string;
@@ -160,6 +168,11 @@ export default function PriceCalendar({
     if (selectedDepart) return startOfMonth(selectedDepart);
     return startOfMonth(todayDate);
   });
+
+  /* ─── Skyscanner-style header states (visual MVP) ─── */
+  const [activeTab, setActiveTab] = useState<"dates" | "weekend" | "month">("dates");
+  const [departPrecision, setDepartPrecision] = useState<"exact" | "flexible">("exact");
+  const [returnPrecision, setReturnPrecision] = useState<"exact" | "flexible">("exact");
 
   const leftMonth = baseMonth;
   const rightMonth = addMonths(baseMonth, 1);
@@ -218,144 +231,231 @@ export default function PriceCalendar({
 
   const canGoPrev = !isBefore(subMonths(baseMonth, 1), startOfMonth(today));
 
+  /* ─── Render a single month grid ─── */
   const renderMonth = (monthDate: Date) => {
     const year = monthDate.getFullYear();
     const month = monthDate.getMonth();
     const cells = buildCalendarGrid(year, month);
-    const rows: (Date | null)[][] = [];
-    for (let i = 0; i < cells.length; i += 7) {
-      rows.push(cells.slice(i, i + 7));
-    }
 
     return (
       <div className="flex-1 min-w-0">
-        <div className="grid grid-cols-7 gap-[3px] mb-1">
+        {/* Weekday header */}
+        <div className="grid grid-cols-7 gap-2 mb-2">
           {WEEKDAYS.map((d, i) => (
-            <div key={i} className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wide py-1">
+            <div
+              key={i}
+              className="text-center text-[12px] font-extrabold text-gray-800 uppercase"
+            >
               {d}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-[3px]">
-          {rows.map((row, ri) =>
-            row.map((cell, ci) => {
-              if (!cell) {
-                return <div key={`${ri}-${ci}`} className="h-[46px]" />;
-              }
+        {/* Day cells grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {cells.map((cell, idx) => {
+            if (!cell) {
+              return <div key={`empty-${idx}`} className="h-12" />;
+            }
 
-              const dateKey = format(cell, "yyyy-MM-dd");
-              const enriched = enrichedData[dateKey];
-              const priceUsd = enriched ? enriched.price : null;
-              const isEstimated = enriched ? enriched.isEstimated : false;
+            const dateKey = format(cell, "yyyy-MM-dd");
+            const enriched = enrichedData[dateKey];
+            const priceUsd = enriched ? enriched.price : null;
+            const isEstimated = enriched ? enriched.isEstimated : false;
 
-              const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
-              const tier: PriceTier = thbPrice ? getTier(thbPrice, thresholds) : "none";
+            const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
+            const tier: PriceTier = thbPrice ? getTier(thbPrice, thresholds) : "none";
 
-              const isDisabled = isBefore(cell, disabledBefore);
-              const isSelectedDepart = selectedDepart && isSameDay(cell, selectedDepart);
-              const isSelectedReturn = selectedReturn && isSameDay(cell, selectedReturn);
-              const isSelected = isSelectedDepart || isSelectedReturn;
+            const isDisabled = isBefore(cell, disabledBefore);
+            const isSelectedDepart = selectedDepart && isSameDay(cell, selectedDepart);
+            const isSelectedReturn = selectedReturn && isSameDay(cell, selectedReturn);
+            const isSelected = isSelectedDepart || isSelectedReturn;
 
-              const styles = TIER_STYLES[tier];
-              const currentBg = isEstimated && !isSelected ? styles.estBg : styles.bg;
-              const currentText = isEstimated && !isSelected ? styles.estText : styles.text;
+            const inRange = isInRange(cell, selectedDepart, selectedReturn);
 
-              if (isDisabled) {
-                return (
-                  <div
-                    key={dateKey}
-                    className="h-[46px] rounded-lg flex flex-col items-center justify-center text-sm text-gray-300 pointer-events-none"
-                  >
-                    <span>{cell.getDate()}</span>
-                  </div>
-                );
-              }
+            const styles = TIER_STYLES[tier];
+            const currentBg = isEstimated && !isSelected ? styles.estBg : styles.bg;
+            const currentText = isEstimated && !isSelected ? styles.estText : styles.text;
 
+            // Range override: dark bg for dates between depart and return
+            const rangeBg = inRange && !isSelected ? "#1f2937" : null;
+            const rangeText = inRange && !isSelected ? "#ffffff" : null;
+
+            if (isDisabled) {
               return (
-                <button
+                <div
                   key={dateKey}
-                  type="button"
-                  onClick={() => {
-                    onSelectDate(cell);
-                    if (tier === "cheapest" || tier === "cheap") {
-                      posthog.capture("green_date_clicked", {
-                        origin,
-                        destination,
-                        date: format(cell, "yyyy-MM-dd"),
-                        price: priceUsd,
-                        is_estimated: isEstimated
-                      });
-                    }
-                  }}
-                  className={`relative h-[46px] rounded-lg flex flex-col items-center justify-center transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95 ${tier === "none" && !isSelected ? "hover:bg-gray-50" : ""}`}
-                  style={
-                    isSelected
-                      ? { backgroundColor: "#1f2937", color: "#ffffff", boxShadow: "0 0 0 2px #3b82f6, 0 0 0 4px #dbeafe" }
-                      : { backgroundColor: currentBg, color: currentText, border: "none" }
-                  }
+                  className="h-12 rounded-md flex flex-col items-center justify-center text-sm text-gray-300 pointer-events-none"
                 >
-                  <span className={`text-sm ${isSelected ? "font-bold" : "font-semibold"}`}>
-                    {cell.getDate()}
-                  </span>
-                  {thbPrice ? (
-                    <span className="text-[10px] leading-[1] mt-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.8)" : "inherit" }}>
-                      {formatThb(thbPrice)}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] leading-[1] mt-0.5 opacity-0 select-none">—</span>
-                  )}
-                </button>
+                  <span className="font-bold">{cell.getDate()}</span>
+                </div>
               );
-            })
-          )}
+            }
+
+            return (
+              <button
+                key={dateKey}
+                type="button"
+                onClick={() => {
+                  onSelectDate(cell);
+                  if (tier === "cheapest" || tier === "cheap") {
+                    posthog.capture("green_date_clicked", {
+                      origin,
+                      destination,
+                      date: format(cell, "yyyy-MM-dd"),
+                      price: priceUsd,
+                      is_estimated: isEstimated
+                    });
+                  }
+                }}
+                className={[
+                  "relative h-12 rounded-md",
+                  "flex flex-col items-center justify-center",
+                  "transition-transform duration-100 select-none",
+                  "hover:scale-[1.03] active:scale-[0.98] cursor-pointer",
+                  tier === "none" && !isSelected && !inRange ? "hover:bg-gray-100" : "",
+                ].join(" ")}
+                style={
+                  isSelected
+                    ? {
+                      backgroundColor: "#111827",
+                      color: "#ffffff",
+                      boxShadow: "0 0 0 2px #111827",
+                    }
+                    : {
+                      backgroundColor: rangeBg ?? currentBg,
+                      color: rangeText ?? currentText,
+                      border: inRange
+                        ? "1px solid rgba(255,255,255,0.08)"
+                        : "1px solid rgba(17,24,39,0.06)",
+                    }
+                }
+              >
+                <span className={`text-[14px] ${isSelected ? "font-extrabold" : "font-bold"}`}>
+                  {cell.getDate()}
+                </span>
+
+                {thbPrice ? (
+                  <span
+                    className="text-[11px] leading-[1] mt-1"
+                    style={{ color: isSelected ? "rgba(255,255,255,0.75)" : (inRange ? "rgba(255,255,255,0.7)" : "inherit") }}
+                  >
+                    {formatThb(thbPrice)}
+                  </span>
+                ) : (
+                  <span className="text-[11px] leading-[1] mt-1 opacity-0 select-none">—</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-3">
+    <div className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* ─── Top row: Skyscanner tabs + exact/flexible dropdowns ─── */}
+      <div className="flex items-center justify-between px-3 pt-3">
+        <div className="flex items-center gap-5">
+          {([
+            { key: "dates" as const, label: "DATES" },
+            { key: "weekend" as const, label: "WEEKEND" },
+            { key: "month" as const, label: "MONTH" },
+          ]).map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => {
+                setActiveTab(t.key);
+                posthog.capture("calendar_tab_clicked", { tab: t.key });
+              }}
+              className={`text-[12px] font-bold tracking-wide pb-2 border-b-2 transition-colors ${activeTab === t.key
+                  ? "text-gray-900 border-gray-900"
+                  : "text-gray-400 border-transparent hover:text-gray-700"
+                }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-[12px] text-gray-700">
+            <span className="font-semibold">Departure</span>
+            <select
+              className="text-[12px] font-semibold text-blue-600 bg-transparent outline-none cursor-pointer"
+              value={departPrecision}
+              onChange={(e) => {
+                setDepartPrecision(e.target.value as "exact" | "flexible");
+                posthog.capture("calendar_precision_changed", { type: "depart", value: e.target.value });
+              }}
+            >
+              <option value="exact">exact</option>
+              <option value="flexible">flexible</option>
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2 text-[12px] text-gray-700">
+            <span className="font-semibold">Return</span>
+            <select
+              className="text-[12px] font-semibold text-blue-600 bg-transparent outline-none cursor-pointer"
+              value={returnPrecision}
+              onChange={(e) => {
+                setReturnPrecision(e.target.value as "exact" | "flexible");
+                posthog.capture("calendar_precision_changed", { type: "return", value: e.target.value });
+              }}
+            >
+              <option value="exact">exact</option>
+              <option value="flexible">flexible</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* ─── Month navigation row ─── */}
+      <div className="flex items-center justify-between px-3 py-2">
         <button
           type="button"
           onClick={handlePrev}
           disabled={!canGoPrev}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-16">
-          <span className="text-base font-bold text-gray-800">
+        <div className="flex items-center gap-24">
+          <div className="text-[16px] font-extrabold text-gray-900">
             {format(leftMonth, "MMMM yyyy")}
-          </span>
-          <span className="text-base font-bold text-gray-800">
+          </div>
+          <div className="text-[16px] font-extrabold text-gray-900">
             {format(rightMonth, "MMMM yyyy")}
-          </span>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleNext}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 transition-colors"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
+      {/* ─── Calendar grid ─── */}
       {loading ? (
         <div className="flex items-center justify-center py-16 text-gray-500">
           <span className="text-base">ဈေးနှုန်းများ ရှာနေပါတယ်... ⏳</span>
         </div>
       ) : (
-        <div className="flex gap-8">
+        <div className="flex gap-10 px-3 pb-3">
           {renderMonth(leftMonth)}
           {renderMonth(rightMonth)}
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-gray-200">
+      {/* ─── Legend ─── */}
+      <div className="px-3 pb-3 pt-2 border-t border-gray-100">
         <div className="flex flex-wrap items-center gap-3">
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
