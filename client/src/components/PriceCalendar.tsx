@@ -29,13 +29,13 @@ type PriceMap = Record<string, number>;
 
 type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
-// Using very subtle variants for estimated prices to blend in
+// Using extremely subtle variants for estimated prices to blend invisibly
 const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
-  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#bbf7d0", estText: "#166534" }, // Very soft green
-  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#dcfce7", estText: "#14532d" },
-  mid: { bg: "#fbbf24", text: "#1f2937", estBg: "#fef3c7", estText: "#92400e" },
-  expensive: { bg: "#f472b6", text: "#ffffff", estBg: "#fce7f3", estText: "#9d174d" },
-  none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#6b7280" },
+  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#ecfdf5", estText: "#9ca3af" }, // extremely soft green
+  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#ecfdf5", estText: "#9ca3af" },    // extremely soft green
+  mid: { bg: "#eab308", text: "#ffffff", estBg: "#fefce8", estText: "#9ca3af" },     // extremely soft yellow
+  expensive: { bg: "#ec4899", text: "#ffffff", estBg: "#fdf4ff", estText: "#9ca3af" }, // extremely soft pink
+  none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#9ca3af" },
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -371,24 +371,22 @@ export default function PriceCalendar({
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
+            style={{ backgroundColor: "#eab308", color: "#ffffff" }}
           >
             {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
+            style={{ backgroundColor: "#ec4899", color: "#ffffff" }}
           >
             {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
           </span>
         </div>
         <p className="text-[11px] text-gray-400 mt-1.5 flex flex-col gap-0.5">
-          <span>Live prices from Aviasales</span>
-          {(priceCount > 0 && priceCount < 6) ? (
-            <span className="text-amber-600 font-medium">Limited real data. Some prices shown are estimates.</span>
-          ) : (priceCount > 0 && priceCount < Object.keys(enrichedData).length) ? (
-            <span>Some prices are estimated based on nearby real data.</span>
-          ) : null}
+          <span>Green = cheapest available. Some prices are estimated based on nearby real data.</span>
+          {(priceCount > 0 && priceCount < 5) && (
+            <span className="text-orange-500 font-medium">Limited real data for this route</span>
+          )}
         </p>
       </div>
     </div>
