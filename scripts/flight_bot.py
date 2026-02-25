@@ -19,23 +19,42 @@ logger = logging.getLogger(__name__)
 load_dotenv(".env.local")
 
 REQUEST_TIMEOUT = 10
-THROTTLE_DELAY = 0.5
+THROTTLE_DELAY = 1.0  # Increased slightly to be safe
 MAX_RETRIES = 3
 BACKOFF_FACTOR = 1.0
 RETRY_STATUS_CODES = (429, 500, 502, 503, 504)
 OUTPUT_PATH = os.path.join("client", "public", "data", "flight_data.json")
 
-ORIGINS = ["RGN", "MDL"]
-DESTINATIONS = [
-    "BKK", "DMK", "CNX", "HKT",
-    "KUL",
-    "SIN",
-    "SGN", "HAN",
-    "PNH", "REP",
-    "CGK", "DPS",
-    "MNL",
+# Southeast Asia main airports
+SEA_AIRPORTS = [
+    "RGN", "MDL", "BKK", "DMK", "CNX", "HKT",
+    "KUL", "SIN", "SGN", "HAN", "PNH", "REP",
+    "CGK", "DPS", "MNL"
 ]
-REVERSE_ORIGINS = ["BKK", "DMK", "CNX", "KUL", "SIN"]
+
+# Full Asia (Phase 1)
+JAPAN_AIRPORTS = ["HND", "NRT", "KIX", "FUK"]
+KOREA_AIRPORTS = ["ICN", "GMP"]
+INDIA_AIRPORTS = ["DEL", "BOM", "BLR", "MAA"]
+CHINA_AIRPORTS = ["PVG", "PEK", "CAN", "HKG"]
+
+MYANMAR_HUBS = ["RGN", "MDL"]
+
+# Popular routes get a priority boost
+POPULAR_ROUTES = [
+    ("RGN", "BKK"), ("BKK", "RGN"),
+    ("MDL", "BKK"), ("BKK", "MDL"),
+    ("RGN", "DMK"), ("DMK", "RGN"),
+    ("RGN", "SIN"), ("SIN", "RGN"),
+    ("BKK", "SIN"), ("SIN", "BKK"),
+    ("DMK", "SIN"), ("SIN", "DMK"),
+    ("HKT", "SIN"), ("SIN", "HKT"),
+    ("CNX", "BKK"), ("BKK", "CNX"),
+    ("CNX", "DMK"), ("DMK", "CNX")
+]
+
+MONTHS_TO_SCAN = ["2026-03", "2026-04", "2026-05", "2026-06"]
+MAX_REQUESTS_PER_RUN = 60
 
 
 def _build_session() -> requests.Session:
@@ -83,17 +102,98 @@ class FlightBot:
         if self.token:
             self.session.headers["x-access-token"] = self.token
 
-        self.results: list[dict] = []
+        self.existing_data = {"meta": {}, "routes": []}
+        self.load_existing_data()
+        
+        # Track when each route-month was last fetched
+        self.last_fetched_map = {}
+        for r in self.existing_data["routes"]:
+            orig = r["origin"]
+            dest = r["destination"]
+            date_str = r["date"]  # e.g., "2026-03-15"
+            month_str = date_str[:7]
+            key = f"{orig}_{dest}_{month_str}"
+            found_at = r.get("found_at", "2000-01-01 00:00")
+            # keep the most recent fetch time
+            if key not in self.last_fetched_map or found_at > self.last_fetched_map[key]:
+                self.last_fetched_map[key] = found_at
+
         self.errors: int = 0
         self.requests_made: int = 0
+        
+        # We will collect new routes here
+        self.new_routes = []
 
-    def fetch_cheap_prices(self, origin: str, destination: str) -> None:
+    def load_existing_data(self):
+        if os.path.exists(OUTPUT_PATH):
+            try:
+                with open(OUTPUT_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "routes" in data:
+                        self.existing_data = data
+                        logger.info("Loaded %d existing routes", len(data["routes"]))
+            except Exception as e:
+                logger.error("Failed to load existing data: %s", e)
+
+    def generate_tasks(self) -> list[dict]:
+        tasks = []
+        
+        def add_task(origin, dest, region_tag, priority_boost=False):
+            if origin == dest:
+                return
+            for month in MONTHS_TO_SCAN:
+                key = f"{origin}_{dest}_{month}"
+                last_fetched = self.last_fetched_map.get(key, "2000-01-01 00:00")
+                
+                score = last_fetched
+                if priority_boost:
+                    score = "1_" + score
+                else:
+                    score = "2_" + score
+                    
+                tasks.append({
+                    "origin": origin,
+                    "destination": dest,
+                    "month": month,
+                    "key": key,
+                    "score": score,
+                    "region": region_tag
+                })
+
+        # 1. SEA Routes (all combinations)
+        for origin in SEA_AIRPORTS:
+            for dest in SEA_AIRPORTS:
+                is_popular = (origin, dest) in POPULAR_ROUTES
+                add_task(origin, dest, "SEA", priority_boost=is_popular)
+
+        # 2. Full Asia Phase 1 (Only RGN/MDL <-> New Airports)
+        for hub in MYANMAR_HUBS:
+            for jp in JAPAN_AIRPORTS:
+                add_task(hub, jp, "Japan")
+                add_task(jp, hub, "Japan")
+            for kr in KOREA_AIRPORTS:
+                add_task(hub, kr, "Korea")
+                add_task(kr, hub, "Korea")
+            for ind in INDIA_AIRPORTS:
+                add_task(hub, ind, "India")
+                add_task(ind, hub, "India")
+            for cn in CHINA_AIRPORTS:
+                add_task(hub, cn, "China")
+                add_task(cn, hub, "China")
+                    
+        # Sort by score ascending (oldest first, priority first)
+        tasks.sort(key=lambda x: x["score"])
+        return tasks
+
+    def fetch_prices_for_month(self, origin: str, destination: str, month: str, region: str) -> bool:
+        """Returns True if successful, False if skipped/error"""
         params = {
             "origin": origin,
             "destination": destination,
+            "depart_date": month,
             "currency": "USD",
             "page": 1,
-            "limit": 5,
+            "limit": 100, # fetch as many as possible for that month
         }
 
         try:
@@ -106,27 +206,26 @@ class FlightBot:
                 retry_after = response.headers.get("Retry-After", "60")
                 wait = int(retry_after) if retry_after.isdigit() else 60
                 logger.warning(
-                    "Rate limited on %s -> %s. Waiting %ds...",
-                    origin, destination, wait,
+                    "Rate limited. Waiting %ds...", wait
                 )
                 time.sleep(wait)
                 self.errors += 1
-                return
+                return False
 
             if response.status_code >= 400:
                 logger.error(
-                    "HTTP %d for %s -> %s: %s",
-                    response.status_code, origin, destination,
+                    "HTTP %d for %s -> %s %s: %s",
+                    response.status_code, origin, destination, month,
                     response.text[:300],
                 )
                 self.errors += 1
-                return
+                return False
 
             data = response.json()
 
             if not data.get("success") or not data.get("data"):
-                logger.info("No deals found for %s -> %s", origin, destination)
-                return
+                logger.debug("No deals found for %s -> %s (%s)", origin, destination, month)
+                return True # Request succeeded, just no deals
 
             route_data = data["data"].get(destination, {})
             count = 0
@@ -139,28 +238,20 @@ class FlightBot:
                 transfers = flight_info.get("number_of_changes", 0)
 
                 if price is None or price < 0:
-                    logger.warning(
-                        "Skipping invalid price (%s) for %s -> %s",
-                        price, origin, destination,
-                    )
                     continue
 
                 date_only = _parse_date(departure_at)
                 if not date_only:
-                    logger.warning(
-                        "Skipping deal with bad date (%s) for %s -> %s",
-                        departure_at, origin, destination,
-                    )
+                    continue
+                    
+                # Ensure the returned flight is actually in the target month (API can sometimes return outside)
+                if not date_only.startswith(month):
                     continue
 
                 if not airline:
-                    logger.warning(
-                        "Missing airline for %s -> %s (price $%.0f), skipping",
-                        origin, destination, price,
-                    )
                     continue
 
-                self.results.append({
+                self.new_routes.append({
                     "origin": origin,
                     "destination": destination,
                     "price": float(price),
@@ -170,116 +261,110 @@ class FlightBot:
                     "date": date_only,
                     "transfers": int(transfers) if transfers else 0,
                     "flight_num": flight_num,
+                    "region": region,
                     "found_at": _now_utc().strftime("%Y-%m-%d %H:%M"),
                 })
                 count += 1
 
-            logger.info(
-                "Found %d deals for %s -> %s", count, origin, destination
-            )
+            if count > 0:
+                logger.info(
+                    "Found %d deals for %s -> %s (%s)", count, origin, destination, month
+                )
+            return True
 
         except requests.exceptions.Timeout:
-            logger.error(
-                "Timeout after %ds for %s -> %s",
-                REQUEST_TIMEOUT, origin, destination,
-            )
+            logger.error("Timeout after %ds", REQUEST_TIMEOUT)
             self.errors += 1
         except requests.exceptions.ConnectionError as exc:
-            logger.error(
-                "Connection error for %s -> %s: %s",
-                origin, destination, exc,
-            )
+            logger.error("Connection error: %s", exc)
             self.errors += 1
         except requests.exceptions.RequestException as exc:
-            logger.error(
-                "Request failed for %s -> %s: %s",
-                origin, destination, exc,
-            )
+            logger.error("Request failed: %s", exc)
             self.errors += 1
         except (json.JSONDecodeError, ValueError) as exc:
-            logger.error(
-                "Bad response body for %s -> %s: %s",
-                origin, destination, exc,
-            )
+            logger.error("Bad response body: %s", exc)
             self.errors += 1
+            
+        return False
 
     def run(self) -> None:
         start_time = time.monotonic()
         logger.info("=" * 60)
-        logger.info("Flight price check starting")
-        logger.info("Origins: %s | Destinations: %d | Reverse origins: %d",
-                     ORIGINS, len(DESTINATIONS), len(REVERSE_ORIGINS))
+        logger.info("Flight bot (SEA Expansion) starting")
+        
+        all_tasks = self.generate_tasks()
+        logger.info("Total SEA combinations: %d", len(all_tasks))
+        
+        tasks_to_run = all_tasks[:MAX_REQUESTS_PER_RUN]
+        logger.info("Running top %d tasks to respect rate limits", len(tasks_to_run))
         logger.info("=" * 60)
 
-        route_pairs: list[tuple[str, str]] = []
-        for origin in ORIGINS:
-            for dest in DESTINATIONS:
-                route_pairs.append((origin, dest))
-        for reverse_origin in REVERSE_ORIGINS:
-            for dest in ORIGINS:
-                route_pairs.append((reverse_origin, dest))
-
-        total_routes = len(route_pairs)
-        for i, (origin, dest) in enumerate(route_pairs, 1):
-            logger.info("[%d/%d] Checking %s -> %s", i, total_routes, origin, dest)
-            self.fetch_cheap_prices(origin, dest)
-            if i < total_routes:
+        for i, task in enumerate(tasks_to_run, 1):
+            logger.info("[%d/%d] Checking %s -> %s for %s (%s)", i, len(tasks_to_run), task["origin"], task["destination"], task["month"], task["region"])
+            success = self.fetch_prices_for_month(task["origin"], task["destination"], task["month"], task["region"])
+            
+            if i < len(tasks_to_run):
                 time.sleep(THROTTLE_DELAY)
 
-        self.results.sort(key=lambda x: x["price"])
-        self.save_results()
+        self.merge_and_save_results(tasks_to_run)
 
         elapsed = time.monotonic() - start_time
         logger.info("=" * 60)
         logger.info("RUN SUMMARY")
-        logger.info("  Routes scanned : %d", total_routes)
+        logger.info("  Tasks processed: %d", len(tasks_to_run))
         logger.info("  HTTP requests  : %d", self.requests_made)
-        logger.info("  Deals found    : %d", len(self.results))
+        logger.info("  New deals found: %d", len(self.new_routes))
         logger.info("  Errors         : %d", self.errors)
         logger.info("  Duration       : %.1fs", elapsed)
-        if self.results:
-            cheapest = self.results[0]
-            logger.info(
-                "  Cheapest deal  : %s -> %s $%.0f (%s)",
-                cheapest["origin"], cheapest["destination"],
-                cheapest["price"], cheapest["airline"],
-            )
         logger.info("=" * 60)
 
-    def save_results(self) -> None:
+    def merge_and_save_results(self, processed_tasks: list[dict]) -> None:
+        # Create a set of keys that were processed in this run
+        processed_keys = set(t["key"] for t in processed_tasks)
+        
+        # Keep old routes UNLESS they match a key we just processed
+        # Also clean up old dates from the past
+        today_str = _now_utc().strftime("%Y-%m-%d")
+        
+        final_routes = []
+        for r in self.existing_data.get("routes", []):
+            if r.get("date", "") < today_str:
+                continue # drop past flights
+                
+            month_str = r.get("date", "")[:7]
+            key = f"{r.get('origin')}_{r.get('destination')}_{month_str}"
+            
+            # If we didn't just re-fetch this month, keep the old data
+            if key not in processed_keys:
+                final_routes.append(r)
+                
+        # Add all the new routes we just fetched
+        final_routes.extend(self.new_routes)
+        
+        # Sort globally by price
+        final_routes.sort(key=lambda x: x["price"])
+        
         os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-
         now_str = _now_utc().strftime("%Y-%m-%d %H:%M")
-        total_routes_scanned = (
-            len(ORIGINS) * len(DESTINATIONS)
-            + len(REVERSE_ORIGINS) * len(ORIGINS)
-        )
-
-        overall_cheapest = self.results[0] if self.results else None
+        
+        overall_cheapest = final_routes[0] if final_routes else None
 
         output: dict = {
             "meta": {
                 "updated_at": now_str,
                 "currency": "USD",
                 "direct_only": True,
-                "total_routes_scanned": total_routes_scanned,
-                "total_deals_found": len(self.results),
-                "errors": self.errors,
+                "total_routes_tracked": len(final_routes),
+                "errors_this_run": self.errors,
                 "overall_cheapest": overall_cheapest,
             },
-            "routes": self.results,
+            "routes": final_routes,
         }
-
-        if not self.results:
-            logger.warning(
-                "No deals found this run. Saving empty results with timestamp "
-                "so frontend knows data is current."
-            )
 
         with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2)
 
-        logger.info("Saved %d flights to %s", len(self.results), OUTPUT_PATH)
+        logger.info("Saved %d total flights to %s", len(final_routes), OUTPUT_PATH)
 
 
 if __name__ == "__main__":

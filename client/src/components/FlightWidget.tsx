@@ -20,6 +20,7 @@ import { format, isValid } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
+import posthog from "posthog-js";
 
 // --- CONFIG DATA ---
 
@@ -451,6 +452,10 @@ export default function FlightWidget() {
             timestamp: Date.now(),
         });
 
+        if (typeof window !== "undefined" && posthog.__loaded) {
+            posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
+        }
+
         const flightSearch = buildFlightSearch(departDate, returnDate);
         window.location.href = `/flights/results?flightSearch=${flightSearch}`;
     };
@@ -489,7 +494,7 @@ export default function FlightWidget() {
             <div className="flex flex-col lg:flex-row gap-3">
 
                 {/* Inputs Wrapper (White bordered box) */}
-                <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-lg border border-white/20">
 
                     {/* Origin */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
@@ -654,6 +659,9 @@ export default function FlightWidget() {
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            if (typeof window !== "undefined" && posthog.__loaded) {
+                                                posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
+                                            }
                                             const flightSearch = buildFlightSearch(departDate, returnDate);
                                             window.location.href = `/flights/results?flightSearch=${flightSearch}`;
                                         }}
@@ -749,10 +757,11 @@ export default function FlightWidget() {
                 <div className="flex shrink-0">
                     <button
                         onClick={handleSearch}
-                        className="w-full lg:w-auto bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-8 rounded-xl lg:rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 text-lg h-full"
+                        className="w-full lg:w-auto bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-5 lg:py-6 px-10 rounded-xl lg:rounded-2xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-xl h-full"
                         aria-label="Search Flights"
                     >
-                        Search
+                        <Search className="w-5 h-5" />
+                        SEARCH FLIGHTS
                     </button>
                 </div>
             </div>
@@ -761,7 +770,7 @@ export default function FlightWidget() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
                     {lowestPrice && !returnDate && (
-                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-100">
+                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-300 bg-emerald-500/10 backdrop-blur-sm px-4 py-2 rounded-xl w-fit border border-emerald-500/20">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -775,7 +784,7 @@ export default function FlightWidget() {
                     <button
                         onClick={handleTripComSearch}
                         aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
-                        className="w-full md:w-auto bg-white hover:bg-blue-50 text-blue-600 font-bold py-2.5 px-6 rounded-xl border border-blue-200 hover:border-blue-400 transition-all flex items-center justify-center gap-2 text-sm"
+                        className="w-full md:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-xl border border-white/20 hover:border-white/40 transition-all flex items-center justify-center gap-2 text-sm"
                     >
                         <ExternalLink className="w-4 h-4" />
                         <span>Compare on Trip.com</span>
@@ -826,13 +835,13 @@ function RecentSearches({
     return (
         <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-black text-gray-900">
+                <h3 className="text-lg font-black text-white">
                     Your recent searches
                 </h3>
                 <button
                     type="button"
                     onClick={handleClear}
-                    className="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
+                    className="flex items-center gap-1 text-xs font-medium text-white/40 hover:text-red-400 transition-colors"
                 >
                     <Trash2 className="w-3 h-3" />
                     Clear
@@ -880,28 +889,28 @@ function RecentSearches({
                     return (
                         <div
                             key={`${routeKey}-${i}`}
-                            className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg hover:border-gray-300 transition-all group"
+                            className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/15 p-4 hover:bg-white/15 hover:border-white/25 transition-all group"
                         >
                             {/* Route header */}
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                                    <Plane className="w-4 h-4 text-gray-600" />
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                                    <Plane className="w-4 h-4 text-white/70" />
                                 </div>
-                                <div className="font-bold text-gray-900 text-sm">
-                                    {s.origin} <span className="text-gray-400">▸</span> {s.destination}
+                                <div className="font-bold text-white text-sm">
+                                    {s.origin} <span className="text-white/40">▸</span> {s.destination}
                                 </div>
                             </div>
 
                             {/* Airport names */}
-                            <div className="text-xs text-gray-500 mb-2">
+                            <div className="text-xs text-white/50 mb-2">
                                 {getAirportName(s.origin)} → {getAirportName(s.destination)}
                             </div>
 
                             {/* Dates and trip type */}
-                            <div className="text-xs text-gray-500 mb-3">
+                            <div className="text-xs text-white/50 mb-3">
                                 {displayDate}
                                 {displayReturnDate ? ` ▸ ${displayReturnDate}` : ""}
-                                <span className="text-gray-400 ml-1">
+                                <span className="text-white/30 ml-1">
                                     · {s.returnDate ? "Return" : "One way"}
                                 </span>
                             </div>
@@ -919,39 +928,39 @@ function RecentSearches({
                                 <div>
                                     {currentPrice !== null ? (
                                         <>
-                                            <div className="text-xl font-black text-gray-900">
+                                            <div className="text-xl font-black text-white">
                                                 ${currentPrice}
                                             </div>
-                                            <div className="text-xs text-gray-400">
+                                            <div className="text-xs text-white/40">
                                                 {formatTHB(currentPrice)}
                                             </div>
                                             {savedPrice !== null && savedPrice !== currentPrice && (
-                                                <div className="text-xs text-gray-400 line-through">
+                                                <div className="text-xs text-white/30 line-through">
                                                     Was ${savedPrice}
                                                 </div>
                                             )}
                                         </>
                                     ) : savedPrice !== null ? (
                                         <>
-                                            <div className="text-xl font-black text-gray-900">
+                                            <div className="text-xl font-black text-white">
                                                 ${savedPrice}
                                             </div>
-                                            <div className="text-xs text-gray-400">
+                                            <div className="text-xs text-white/40">
                                                 {formatTHB(savedPrice)}
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="text-sm text-gray-400">Price unavailable</div>
+                                        <div className="text-sm text-white/40">Price unavailable</div>
                                     )}
                                 </div>
 
                                 <button
                                     type="button"
                                     onClick={() => onReSearch(s)}
-                                    className="w-10 h-10 rounded-xl bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors shadow-sm group-hover:shadow-md"
+                                    className="w-10 h-10 rounded-xl bg-orange-500 hover:bg-orange-600 flex items-center justify-center transition-colors shadow-sm group-hover:shadow-md"
                                     aria-label="Search again"
                                 >
-                                    <Search className="w-4 h-4 text-gray-900" />
+                                    <Search className="w-4 h-4 text-white" />
                                 </button>
                             </div>
                         </div>

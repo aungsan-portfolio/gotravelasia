@@ -7,6 +7,9 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import fs from "fs";
+import path from "path";
+import { fetchAmadeusCalendarPrices } from "./amadeus";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -128,8 +131,8 @@ async function startServer() {
       const nextDate = new Date(yr, mn, 1);
       const nextMo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
 
-      // Fetch from 4 endpoints in parallel for maximum coverage
-      const [v3Mo1, v3Mo2, calendarData, matrixData] = await Promise.allSettled([
+      // Fetch from 4 Travelpayouts endpoints + Amadeus in parallel for maximum coverage
+      const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2] = await Promise.allSettled([
         fetch(
           `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
             token, origin: orig, destination: dest,
@@ -162,15 +165,78 @@ async function startServer() {
           })}`,
           { signal: AbortSignal.timeout(8000) }
         ).then(r => r.ok ? r.json() : null),
+
+        // Amadeus: current month
+        fetchAmadeusCalendarPrices(orig, dest, mo, cur),
+
+        // Amadeus: next month
+        fetchAmadeusCalendarPrices(orig, dest, nextMo, cur),
       ]);
 
       const merged: Record<string, any> = {};
 
-      const addPrice = (dateStr: string, price: number, entry: any) => {
+      const addPrice = (dateStr: string, price: number, entry: any, fromBot: boolean = false, fromAmadeus: boolean = false) => {
         if (!dateStr || price <= 0) return;
-        if (!merged[dateStr] || price < merged[dateStr].price) {
-          merged[dateStr] = { ...entry, price };
+
+        const current = merged[dateStr];
+        if (!current) {
+          merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: fromAmadeus };
+        } else {
+          // Priority: Amadeus > Bot > API (Travelpayouts)
+          if (fromAmadeus && !current.is_amadeus) {
+            // Amadeus always wins over non-Amadeus
+            merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: fromAmadeus };
+          } else if (fromAmadeus && current.is_amadeus && price < current.price) {
+            // Both Amadeus: take cheaper
+            merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: fromAmadeus };
+          } else if (!fromAmadeus && !current.is_amadeus) {
+            // Neither is Amadeus: use existing bot > API priority
+            if (fromBot && !current.is_bot_data) {
+              merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: false };
+            } else if (fromBot === !!current.is_bot_data && price < current.price) {
+              merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: false };
+            }
+          }
         }
+      }
+
+      // 0. Inject Amadeus Data (Highest Priority)
+      for (const amadeusResult of [amadeusMo1, amadeusMo2]) {
+        const data = amadeusResult.status === "fulfilled" ? amadeusResult.value : null;
+        if (data && typeof data === "object") {
+          for (const [dateStr, entry] of Object.entries(data as Record<string, any>)) {
+            addPrice(dateStr, entry.price || 0, entry, false, true);
+          }
+        }
+      }
+
+      // 1. Inject Bot Data (Secondary Source)
+      try {
+        const botDataPath = path.join(process.cwd(), "client", "public", "data", "flight_data.json");
+        if (fs.existsSync(botDataPath)) {
+          const raw = fs.readFileSync(botDataPath, "utf-8");
+          const botData = JSON.parse(raw);
+          if (botData.routes && Array.isArray(botData.routes)) {
+            for (const r of botData.routes) {
+              if (r.origin === orig && r.destination === dest) {
+                const dateStr = r.date;
+                // Only load if it's the requested month or next month
+                if (dateStr && (dateStr.startsWith(mo) || dateStr.startsWith(nextMo))) {
+                  addPrice(dateStr, r.price || 0, {
+                    origin: r.origin,
+                    destination: r.destination,
+                    airline: r.airline_code || r.airline || "",
+                    departure_at: `${r.date}T00:00:00`,
+                    transfers: r.transfers || 0,
+                    flight_number: r.flight_num || "",
+                  }, true);
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading bot json data:", err);
       }
 
       for (const v3Result of [v3Mo1, v3Mo2]) {
