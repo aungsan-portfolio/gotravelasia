@@ -64,6 +64,9 @@ importers:
       '@trpc/server':
         specifier: ^11.6.0
         version: 11.9.0(typescript@5.9.3)
+      amadeus:
+        specifier: ^11.0.0
+        version: 11.0.0
       axios:
         specifier: ^1.12.0
         version: 1.12.2
@@ -1868,6 +1871,9 @@ packages:
 
   add@2.0.6:
     resolution: {integrity: sha512-j5QzrmsokwWWp6kUcJQySpbG+xfOBqqKnup3OIk1pz+kB/80SLorZ9V8zHFLO92Lcd+hbvq8bT+zOGoPkmBV0Q==}
+
+  amadeus@11.0.0:
+    resolution: {integrity: sha512-+/NOuWgESAByc/oi/QB4GNjF3ZzD7a3UIpK6RmGGQE2Amr7BP7evTivEbFQIvxKZj3RwCOf9AeSNygVQv1owyA==}
 
   aria-hidden@1.2.6:
     resolution: {integrity: sha512-ik3ZgC9dY/lYVVM++OISsaYDeg1tb0VtP5uL3ouh1koGOaUMDPpbFIei4JkFimWUFPn90sbMNMXQAIVOlnYKJA==}
@@ -5305,6 +5311,10 @@ snapshots:
   acorn@8.15.0: {}
 
   add@2.0.6: {}
+
+  amadeus@11.0.0:
+    dependencies:
+      qs: 6.13.0
 
   aria-hidden@1.2.6:
     dependencies:

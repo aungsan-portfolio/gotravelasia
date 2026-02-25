@@ -63,7 +63,7 @@ function HotelsSearchForm() {
           <select
             name="city"
             defaultValue="bangkok-th"
-            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-sm min-h-[48px]"
+            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
           >
             {HOTEL_CITIES.map((city) => (
               <option key={city.slug} value={city.slug}>
@@ -83,7 +83,7 @@ function HotelsSearchForm() {
             min={today}
             onChange={(e) => setCheckIn(e.target.value)}
             required
-            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-sm min-h-[48px]"
+            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
           />
         </div>
         <div>
@@ -95,13 +95,13 @@ function HotelsSearchForm() {
             name="checkOut"
             min={minCheckOut}
             required
-            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none font-bold text-sm min-h-[48px]"
+            className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
           />
         </div>
       </div>
       <Button
         type="submit"
-        className="w-full md:w-auto md:self-end bg-primary hover:bg-primary/90 text-white font-bold transition-colors h-12 px-10 rounded-xl text-base"
+        className="w-full md:w-auto md:self-end bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors h-12 px-10 rounded-xl text-base"
       >
         Search Hotels on Agoda
       </Button>

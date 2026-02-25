@@ -334,17 +334,6 @@ export default function PriceCalendar({
                 <span className={`text-[14px] ${isSelected ? "font-extrabold" : "font-bold"}`}>
                   {cell.getDate()}
                 </span>
-
-                {thbPrice ? (
-                  <span
-                    className="text-[11px] leading-[1] mt-1"
-                    style={{ color: isSelected ? "rgba(255,255,255,0.75)" : (inRange ? "rgba(255,255,255,0.7)" : "inherit") }}
-                  >
-                    {formatThb(thbPrice)}
-                  </span>
-                ) : (
-                  <span className="text-[11px] leading-[1] mt-1 opacity-0 select-none">—</span>
-                )}
               </button>
             );
           })}
@@ -371,8 +360,8 @@ export default function PriceCalendar({
                 posthog.capture("calendar_tab_clicked", { tab: t.key });
               }}
               className={`text-[12px] font-bold tracking-wide pb-2 border-b-2 transition-colors ${activeTab === t.key
-                  ? "text-gray-900 border-gray-900"
-                  : "text-gray-400 border-transparent hover:text-gray-700"
+                ? "text-gray-900 border-gray-900"
+                : "text-gray-400 border-transparent hover:text-gray-700"
                 }`}
             >
               {t.label}
@@ -458,32 +447,26 @@ export default function PriceCalendar({
       <div className="px-3 pb-3 pt-2 border-t border-gray-100">
         <div className="flex flex-wrap items-center gap-3">
           <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            className="inline-flex items-center justify-center h-[28px] px-3 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#22c55e", color: "#ffffff" }}
           >
-            {thresholds ? `Best ${formatThb(thresholds.min)}` : "Best Price"}
+            Cheapest
           </span>
           <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#86efac", color: "#1f2937" }}
-          >
-            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2212` : "Cheap"}
-          </span>
-          <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            className="inline-flex items-center justify-center h-[28px] px-3 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#eab308", color: "#ffffff" }}
           >
-            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
+            Average
           </span>
           <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
+            className="inline-flex items-center justify-center h-[28px] px-3 rounded-md text-xs font-bold"
             style={{ backgroundColor: "#ec4899", color: "#ffffff" }}
           >
-            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
+            Expensive
           </span>
         </div>
         <p className="text-[11px] text-gray-400 mt-1.5 flex flex-col gap-0.5">
-          <span>Green = cheapest available. Some prices are estimated based on nearby real data.</span>
+          <span>Some prices are estimated based on nearby real data.</span>
           {(priceCount > 0 && priceCount < 5) && (
             <span className="text-orange-500 font-medium">Limited real data for this route</span>
           )}
