@@ -23,6 +23,7 @@ const CheapFlightsBangkok = lazy(() => import("./pages/blog/CheapFlightsBangkok"
 const BestTransfersBangkok = lazy(() => import("./pages/blog/BestTransfersBangkok"));
 const BestInsuranceThailand = lazy(() => import("./pages/blog/BestInsuranceThailand"));
 const BestEsimThailand = lazy(() => import("./pages/blog/BestEsimThailand"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function PageLoader() {
@@ -63,6 +64,7 @@ function Router() {
         <Route path="/terms-privacy" component={TermsAndPrivacy} />
         <Route path="/terms" component={TermsOfService} />
         <Route path="/contact" component={Contact} />
+        <Route path="/how-it-works" component={HowItWorks} />
 
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
