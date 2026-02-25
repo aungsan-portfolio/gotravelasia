@@ -21,6 +21,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 import posthog from "posthog-js";
+import { z } from "zod";
+
+// --- Zod search validation ---
+const flightSearchSchema = z
+    .object({
+        origin: z.string().min(1),
+        destination: z.string().min(1),
+        departDate: z.string().min(1, "Please select a departure date"),
+        returnDate: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.origin === data.destination) {
+            ctx.addIssue({ code: "custom", message: "Origin and destination cannot be the same", path: ["destination"] });
+        }
+        if (data.returnDate && data.returnDate < data.departDate) {
+            ctx.addIssue({ code: "custom", message: "Return date must be after departure date", path: ["returnDate"] });
+        }
+    });
 
 // --- CONFIG DATA ---
 
@@ -260,6 +278,7 @@ export default function FlightWidget() {
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
     const [detectingLocation, setDetectingLocation] = useState(true);
+    const [formError, setFormError] = useState("");
 
     useEffect(() => {
         const cached = sessionStorage.getItem("gt_detected_origin");
@@ -429,19 +448,18 @@ export default function FlightWidget() {
         return fs;
     };
 
+    const validateSearch = (): boolean => {
+        const parsed = flightSearchSchema.safeParse({ origin, destination, departDate, returnDate: returnDate || undefined });
+        if (!parsed.success) {
+            setFormError(parsed.error.issues[0]?.message || "Please review your inputs.");
+            return false;
+        }
+        setFormError("");
+        return true;
+    };
+
     const handleSearch = () => {
-        if (origin === destination) {
-            alert("Origin and destination cannot be the same");
-            return;
-        }
-        if (!departDate) {
-            alert("Please select a departure date");
-            return;
-        }
-        if (returnDate && returnDate < departDate) {
-            alert("Return date must be after departure date");
-            return;
-        }
+        if (!validateSearch()) return;
 
         saveRecentSearch({
             origin,
@@ -461,14 +479,7 @@ export default function FlightWidget() {
     };
 
     const handleTripComSearch = () => {
-        if (origin === destination) {
-            alert("Origin and destination cannot be the same");
-            return;
-        }
-        if (!departDate) {
-            alert("Please select a departure date");
-            return;
-        }
+        if (!validateSearch()) return;
         // Trip.com flight affiliate deep link
         const tripParams = new URLSearchParams({
             locale: "en_US",
@@ -791,6 +802,7 @@ export default function FlightWidget() {
                     </button>
                 </div>
             </div>
+            <p className="mt-2 min-h-5 text-sm text-red-400 font-medium" role="status" aria-live="polite">{formError}</p>
 
             {/* Recent Searches */}
             <RecentSearches

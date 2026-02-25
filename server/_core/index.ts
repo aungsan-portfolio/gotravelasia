@@ -11,6 +11,50 @@ import fs from "fs";
 import path from "path";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
 
+// ─── Rate Limiting ───
+type RateLimitWindow = { count: number; resetAt: number };
+const chatRateLimits = new Map<string, RateLimitWindow>();
+const calendarRateLimits = new Map<string, RateLimitWindow>();
+
+function getClientIp(req: express.Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0]?.trim() || "unknown";
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function rateLimit(
+  store: Map<string, RateLimitWindow>, max: number, windowMs: number, msg: string
+): express.RequestHandler {
+  return (req, res, next) => {
+    const ip = getClientIp(req);
+    const now = Date.now();
+    const existing = store.get(ip);
+    if (!existing || existing.resetAt <= now) {
+      store.set(ip, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (existing.count >= max) {
+      res.status(429).json({ error: msg });
+      return;
+    }
+    existing.count++;
+    next();
+  };
+}
+
+// ─── Sitemap ───
+const SITE_URL = process.env.VITE_SITE_URL || "https://gotravel-asia.vercel.app";
+const SITEMAP_ROUTES = [
+  "/", "/flights/results", "/privacy-policy", "/terms-of-service",
+  "/destination/bangkok", "/destination/chiang-mai", "/destination/phuket", "/destination/krabi",
+];
+
+function buildSitemapXml() {
+  const now = new Date().toISOString();
+  const urls = SITEMAP_ROUTES.map(r => `  <url><loc>${SITE_URL}${r}</loc><lastmod>${now}</lastmod></url>`).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+}
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -39,8 +83,13 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
-  // Gemini Chat Proxy
-  app.post("/api/chat", async (req, res) => {
+  // Sitemap for SEO
+  app.get("/sitemap.xml", (_req, res) => {
+    res.type("application/xml").send(buildSitemapXml());
+  });
+
+  // Gemini Chat Proxy (rate limited: 10 req/hr per IP)
+  app.post("/api/chat", rateLimit(chatRateLimits, 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."), async (req, res) => {
     try {
       const { contents } = req.body;
       const apiKey = process.env.GEMINI_API_KEY;
@@ -107,7 +156,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/calendar-prices", async (req, res) => {
+  app.get("/api/calendar-prices", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many requests"), async (req, res) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
       if (!token) {
