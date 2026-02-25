@@ -5,6 +5,7 @@ import {
     ArrowRight, ExternalLink, ChevronRight
 } from "lucide-react";
 import { motion } from "framer-motion";
+import ColorTokenCards from "@/components/ColorTokenCards";
 
 // ─── Section Navigation ───
 const SECTIONS = [
@@ -320,64 +321,10 @@ export default function HowItWorks() {
                         <SectionDesc>A three-tier color system that instantly communicates price levels.</SectionDesc>
 
                         {/* Swiss/Editorial Color Token Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
-                            {TOKEN_CARDS.map((token, i) => (
-                                <motion.div
-                                    key={token.tier}
-                                    initial={{ opacity: 0, y: 24 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.12, duration: 0.5 }}
-                                    className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
-                                >
-                                    {/* Color Preview */}
-                                    <div
-                                        className="p-6 flex flex-col items-center justify-center"
-                                        style={{ backgroundColor: token.bgColor, minHeight: "120px" }}
-                                    >
-                                        <span className="text-2xl font-bold" style={{ color: token.textColor }}>
-                                            {token.tier}
-                                        </span>
-                                        <span className="text-sm mt-1 opacity-80 font-mono" style={{ color: token.textColor }}>
-                                            {token.bgColor}
-                                        </span>
-                                    </div>
-
-                                    {/* Details */}
-                                    <div className="p-4 bg-stone-50">
-                                        <p className="text-sm text-gray-700 mb-3 leading-relaxed">
-                                            {token.description}
-                                        </p>
-
-                                        {/* Color Swatches */}
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: token.bgColor }} />
-                                                <span className="text-xs font-mono text-gray-500">bg: {token.bgColor}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: token.textColor }} />
-                                                <span className="text-xs font-mono text-gray-500">text: {token.textColor}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: token.hoverBg }} />
-                                                <span className="text-xs font-mono text-gray-500">hover: {token.hoverBg}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* CSS Variable */}
-                                        <div className="mt-3 pt-3 border-t border-gray-200">
-                                            <code className="text-[10px] leading-tight block break-all font-mono text-gray-400">
-                                                {token.cssVar}
-                                            </code>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
+                        <ColorTokenCards />
 
                         {/* 4-step process */}
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
                             {[
                                 { step: "1", title: "Fetch Prices", desc: "Amadeus + Travelpayouts + bot data in parallel" },
                                 { step: "2", title: "Merge & Rank", desc: "Highest-priority source wins per date" },
@@ -570,7 +517,7 @@ const merged = mergePrices(
                         </div>
                     </section>
                 </div>
-            </div>
-        </Layout>
+            </div >
+        </Layout >
     );
 }
