@@ -504,8 +504,8 @@ export default function FlightWidget() {
             {/* SEARCH ROW */}
             <div className="flex flex-col lg:flex-row gap-3">
 
-                {/* Inputs Wrapper (White bordered box) */}
-                <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-lg border border-white/20">
+                {/* Inputs Wrapper */}
+                <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200">
 
                     {/* Origin */}
                     <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
@@ -768,11 +768,11 @@ export default function FlightWidget() {
                 <div className="flex shrink-0">
                     <button
                         onClick={handleSearch}
-                        className="w-full lg:w-auto bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-5 lg:py-6 px-10 rounded-xl lg:rounded-2xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-xl h-full"
+                        className="w-full lg:w-auto bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-3.5 lg:py-4 px-8 rounded-xl lg:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full"
                         aria-label="Search Flights"
                     >
                         <Search className="w-5 h-5" />
-                        SEARCH FLIGHTS
+                        Search
                     </button>
                 </div>
             </div>
@@ -781,7 +781,7 @@ export default function FlightWidget() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                 <div className="flex-1">
                     {lowestPrice && !returnDate && (
-                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-300 bg-emerald-500/10 backdrop-blur-sm px-4 py-2 rounded-xl w-fit border border-emerald-500/20">
+                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-200">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -795,7 +795,7 @@ export default function FlightWidget() {
                     <button
                         onClick={handleTripComSearch}
                         aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
-                        className="w-full md:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-xl border border-white/20 hover:border-white/40 transition-all flex items-center justify-center gap-2 text-sm"
+                        className="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-6 rounded-xl border border-gray-200 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
                     >
                         <ExternalLink className="w-4 h-4" />
                         <span>Compare on Trip.com</span>
