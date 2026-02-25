@@ -1,4 +1,4 @@
-const BASE_URL = "https://gotravel-asia.vercel.app";
+const BASE_URL = import.meta.env.VITE_SITE_URL || "https://www.gotravelasia.com";
 
 const websiteSchema = {
   "@context": "https://schema.org",

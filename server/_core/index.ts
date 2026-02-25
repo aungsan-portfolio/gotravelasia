@@ -11,6 +11,84 @@ import fs from "fs";
 import path from "path";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
 
+type RateLimitWindow = {
+  count: number;
+  resetAt: number;
+};
+
+const geminiRateLimitStore = new Map<string, RateLimitWindow>();
+const defaultRateLimitStore = new Map<string, RateLimitWindow>();
+
+function getClientIp(req: express.Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function consumeRateLimit(store: Map<string, RateLimitWindow>, ip: string, maxRequests: number, windowMs: number): boolean {
+  const now = Date.now();
+  const existing = store.get(ip);
+
+  if (!existing || existing.resetAt <= now) {
+    store.set(ip, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+
+  if (existing.count >= maxRequests) {
+    return false;
+  }
+
+  existing.count += 1;
+  return true;
+}
+
+function createInMemoryRateLimiter(
+  store: Map<string, RateLimitWindow>,
+  maxRequests: number,
+  windowMs: number,
+  message: string
+): express.RequestHandler {
+  return (req, res, next) => {
+    const clientIp = getClientIp(req);
+    if (!consumeRateLimit(store, clientIp, maxRequests, windowMs)) {
+      res.status(429).json({ error: message });
+      return;
+    }
+
+    next();
+  };
+}
+
+
+const SITE_URL = process.env.VITE_SITE_URL || "https://www.gotravelasia.com";
+const SITEMAP_ROUTES = [
+  "/",
+  "/flights/results",
+  "/blog",
+  "/contact",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/destination/bangkok",
+  "/destination/chiang-mai",
+  "/destination/phuket",
+  "/destination/krabi",
+];
+
+function buildSitemapXml() {
+  const now = new Date().toISOString();
+  const urls = SITEMAP_ROUTES
+    .map(route => `  <url><loc>${SITE_URL}${route}</loc><lastmod>${now}</lastmod></url>`)
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`;
+}
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -39,8 +117,17 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
-  // Gemini Chat Proxy
-  app.post("/api/chat", async (req, res) => {
+  app.get("/sitemap.xml", (_req, res) => {
+    res.type("application/xml");
+    res.send(buildSitemapXml());
+  });
+
+  // Gemini chat proxy with best-effort in-memory rate limiting.
+  // Note: this limiter is per-instance and does not synchronize across multiple server instances.
+  app.post(
+    "/api/gemini",
+    createInMemoryRateLimiter(geminiRateLimitStore, 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."),
+    async (req, res) => {
     try {
       const { contents } = req.body;
       const apiKey = process.env.GEMINI_API_KEY;
@@ -107,7 +194,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/calendar-prices", async (req, res) => {
+  app.get("/api/calendar-prices", createInMemoryRateLimiter(defaultRateLimitStore, 100, 15 * 60 * 1000, "Too many requests"), async (req, res) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
       if (!token) {

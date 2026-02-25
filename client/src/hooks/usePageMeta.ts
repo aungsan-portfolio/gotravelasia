@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const SITE_NAME = "GoTravel Asia";
-const BASE_URL = "https://gotravel-asia.vercel.app";
+const BASE_URL = import.meta.env.VITE_SITE_URL || "https://www.gotravelasia.com";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/images/og-default.webp`;
 
 interface PageMeta {

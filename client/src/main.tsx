@@ -9,8 +9,10 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./i18n"; // Initialize i18next
 import "./index.css";
+import { initPostHog } from "@/lib/posthog";
 
 const queryClient = new QueryClient();
+initPostHog();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;

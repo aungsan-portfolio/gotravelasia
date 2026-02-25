@@ -20,7 +20,8 @@ import { format, isValid } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
-import posthog from "posthog-js";
+import { z } from "zod";
+import { usePostHogEvent } from "@/hooks/usePostHogEvent";
 
 // --- CONFIG DATA ---
 
@@ -142,11 +143,28 @@ const CABIN_OPTIONS = [
 
 // Aviasales trip_class mapping: 0=Economy, 1=Business, 2=First
 const CABIN_TO_TRIP_CLASS: Record<string, string> = {
-    Y: "0",
-    W: "0",
-    C: "1",
-    F: "2",
+    Y: "economy",
+    W: "premium_economy",
+    C: "business",
+    F: "first",
 };
+
+
+const flightSearchSchema = z
+    .object({
+        origin: z.string().min(1),
+        destination: z.string().min(1),
+        departDate: z.string().min(1, "Please select a departure date"),
+        returnDate: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.origin === data.destination) {
+            ctx.addIssue({ code: "custom", message: "Origin and destination cannot be the same", path: ["destination"] });
+        }
+        if (data.returnDate && data.returnDate < data.departDate) {
+            ctx.addIssue({ code: "custom", message: "Return date must be after departure date", path: ["returnDate"] });
+        }
+    });
 
 function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
@@ -260,6 +278,10 @@ export default function FlightWidget() {
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
     const [detectingLocation, setDetectingLocation] = useState(true);
+    const [formError, setFormError] = useState<string>("");
+    const [hasInteracted, setHasInteracted] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    const captureEvent = usePostHogEvent();
 
     useEffect(() => {
         const cached = sessionStorage.getItem("gt_detected_origin");
@@ -406,6 +428,18 @@ export default function FlightWidget() {
 
     const lowestPrice = usePriceHint(origin, destination, !!returnDate);
 
+    useEffect(() => {
+        if (origin !== DEFAULT_ORIGIN || destination !== "SIN" || departDate !== today || Boolean(returnDate)) {
+            setHasInteracted(true);
+        }
+    }, [origin, destination, departDate, returnDate, today]);
+
+    useEffect(() => () => {
+        if (hasInteracted && !hasSearched) {
+            captureEvent("flight_search_abandonment", { origin, destination, departDate, returnDate });
+        }
+    }, [hasInteracted, hasSearched, captureEvent, origin, destination, departDate, returnDate]);
+
     const getSelectedCountry = () => {
         const found = AIRPORTS.find((a) => a.code === destination);
         return found ? found.country : "Asia";
@@ -422,26 +456,31 @@ export default function FlightWidget() {
             business: "c",
             first: "f",
         };
-        const classPrefix = cabinCode[cabinClass] || "";
+        const classPrefix = cabinCode[CABIN_TO_TRIP_CLASS[cabinClass]] || "";
         let fs = `${origin}${formatDDMM(dep)}${destination}`;
         if (ret) fs += formatDDMM(ret);
         fs += `${classPrefix}${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
         return fs;
     };
 
+    const validateSearch = () => {
+        const parsed = flightSearchSchema.safeParse({ origin, destination, departDate, returnDate: returnDate || undefined });
+        if (!parsed.success) {
+            setFormError(parsed.error.issues[0]?.message || "Please review your inputs.");
+            return false;
+        }
+
+        setFormError("");
+        return true;
+    };
+
     const handleSearch = () => {
-        if (origin === destination) {
-            alert("Origin and destination cannot be the same");
+        if (!validateSearch()) {
             return;
         }
-        if (!departDate) {
-            alert("Please select a departure date");
-            return;
-        }
-        if (returnDate && returnDate < departDate) {
-            alert("Return date must be after departure date");
-            return;
-        }
+
+        setHasSearched(true);
+        captureEvent("flight_search_step", { step: "submit", origin, destination, departDate, returnDate });
 
         saveRecentSearch({
             origin,
@@ -452,21 +491,14 @@ export default function FlightWidget() {
             timestamp: Date.now(),
         });
 
-        if (typeof window !== "undefined" && posthog.__loaded) {
-            posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
-        }
+        captureEvent("search_flights_clicked", { origin, destination, departDate, returnDate });
 
         const flightSearch = buildFlightSearch(departDate, returnDate);
         window.location.href = `/flights/results?flightSearch=${flightSearch}`;
     };
 
     const handleTripComSearch = () => {
-        if (origin === destination) {
-            alert("Origin and destination cannot be the same");
-            return;
-        }
-        if (!departDate) {
-            alert("Please select a departure date");
+        if (!validateSearch()) {
             return;
         }
         // Trip.com flight affiliate deep link
@@ -485,6 +517,7 @@ export default function FlightWidget() {
             tripParams.set("rdate", returnDate);
         }
         const tripUrl = `https://www.trip.com/flights?${tripParams.toString()}`;
+        captureEvent("affiliate_cta_click", { action: "search", partner: "trip.com", url: tripUrl });
         window.open(tripUrl, "_blank", "noopener,noreferrer");
     };
 
@@ -659,9 +692,7 @@ export default function FlightWidget() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            if (typeof window !== "undefined" && posthog.__loaded) {
-                                                posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
-                                            }
+                                            captureEvent("search_flights_clicked", { origin, destination, departDate, returnDate });
                                             const flightSearch = buildFlightSearch(departDate, returnDate);
                                             window.location.href = `/flights/results?flightSearch=${flightSearch}`;
                                         }}
@@ -791,6 +822,7 @@ export default function FlightWidget() {
                     </button>
                 </div>
             </div>
+            <p className="mt-2 min-h-5 text-sm text-red-600" role="status" aria-live="polite">{formError}</p>
 
             {/* Recent Searches */}
             <RecentSearches

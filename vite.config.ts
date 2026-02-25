@@ -150,6 +150,15 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
+
+function ensureRequiredBuildEnv() {
+  if (process.env.NODE_ENV === "production" && !process.env.GEMINI_API_KEY) {
+    throw new Error("Missing required env var: GEMINI_API_KEY");
+  }
+}
+
+ensureRequiredBuildEnv();
+
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({

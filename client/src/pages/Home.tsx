@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
+import { z } from "zod";
+import { usePostHogEvent } from "@/hooks/usePostHogEvent";
 import type { FormEvent } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -29,9 +31,20 @@ const HOTEL_CITIES = [
   { name: "Ho Chi Minh City", slug: "ho-chi-minh-city-vn" },
 ];
 
+const hotelSearchSchema = z.object({
+  checkIn: z.string().min(1),
+  checkOut: z.string().min(1),
+}).refine((data) => new Date(data.checkOut) > new Date(data.checkIn), {
+  message: "Please select valid check-in and check-out dates",
+  path: ["checkOut"],
+});
+
 function HotelsSearchForm() {
   const today = new Date().toISOString().split("T")[0];
   const [checkIn, setCheckIn] = useState(today);
+  const [error, setError] = useState("");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const captureEvent = usePostHogEvent();
 
   const minCheckOut = checkIn
     ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
@@ -44,23 +57,36 @@ function HotelsSearchForm() {
     const checkInDate = fd.get("checkIn") as string;
     const checkOutDate = fd.get("checkOut") as string;
 
-    if (!checkInDate || !checkOutDate || new Date(checkOutDate) <= new Date(checkInDate)) {
-      alert("Please select valid check-in and check-out dates");
+    const parsed = hotelSearchSchema.safeParse({ checkIn: checkInDate, checkOut: checkOutDate });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || "Please select valid check-in and check-out dates");
       return;
     }
+    setError("");
 
     const url = `https://www.agoda.com/city/${citySlug}.html?cid=${AGODA_CID}&checkIn=${checkInDate}&checkout=${checkOutDate}&utm_source=gotravelasia&utm_medium=affiliate`;
+    setHasSubmitted(true);
+    captureEvent("affiliate_cta_click", { action: "search", partner: "agoda", url });
+    captureEvent("hotel_search_step", { step: "submit", citySlug, checkInDate, checkOutDate });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  useEffect(() => () => {
+    if (!hasSubmitted) {
+      captureEvent("hotel_search_abandonment", { checkIn });
+    }
+  }, [hasSubmitted, captureEvent, checkIn]);
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <p className="min-h-5 text-sm text-red-600" role="status" aria-live="polite">{error}</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+          <label htmlFor="hotel-city" className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Destination
           </label>
           <select
+            id="hotel-city"
             name="city"
             defaultValue="bangkok-th"
             className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
@@ -73,10 +99,11 @@ function HotelsSearchForm() {
           </select>
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+          <label htmlFor="hotel-checkin" className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Check-in
           </label>
           <input
+            id="hotel-checkin"
             type="date"
             name="checkIn"
             defaultValue={today}
@@ -87,10 +114,11 @@ function HotelsSearchForm() {
           />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+          <label htmlFor="hotel-checkout" className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Check-out
           </label>
           <input
+            id="hotel-checkout"
             type="date"
             name="checkOut"
             min={minCheckOut}
@@ -138,7 +166,6 @@ export default function Home() {
   const buildRouteUrl = useCallback((origin: string, dest: string, dealDate?: string) => {
     return buildAviasalesLink(origin, dest, dealDate);
   }, []);
-
 
   return (
     <Layout>

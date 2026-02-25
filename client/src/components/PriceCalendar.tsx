@@ -1,15 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, isAfter, startOfDay, addDays } from "date-fns";
-import posthog from "posthog-js";
-
-// Initialize PostHog if not already inside the browser context
-if (typeof window !== "undefined" && !posthog.__loaded) {
-  posthog.init(import.meta.env.VITE_POSTHOG_KEY || "phc_placeholder_key", {
-    api_host: import.meta.env.VITE_POSTHOG_HOST || "https://us.i.posthog.com",
-    autocapture: false,
-  });
-}
+import { usePostHogEvent } from "@/hooks/usePostHogEvent";
 
 const USD_TO_THB = 34;
 
@@ -161,6 +153,7 @@ export default function PriceCalendar({
   onSelectDate,
   todayDate,
 }: PriceCalendarProps) {
+  const captureEvent = usePostHogEvent();
   const [priceMap, setPriceMap] = useState<PriceMap>({});
   const [loading, setLoading] = useState(false);
   const [baseMonth, setBaseMonth] = useState<Date>(() => {
@@ -299,7 +292,7 @@ export default function PriceCalendar({
                 onClick={() => {
                   onSelectDate(cell);
                   if (tier === "cheapest" || tier === "cheap") {
-                    posthog.capture("green_date_clicked", {
+                    captureEvent("green_date_clicked", {
                       origin,
                       destination,
                       date: format(cell, "yyyy-MM-dd"),
@@ -357,7 +350,7 @@ export default function PriceCalendar({
               type="button"
               onClick={() => {
                 setActiveTab(t.key);
-                posthog.capture("calendar_tab_clicked", { tab: t.key });
+                captureEvent("calendar_tab_clicked", { tab: t.key });
               }}
               className={`text-[12px] font-bold tracking-wide pb-2 border-b-2 transition-colors ${activeTab === t.key
                 ? "text-gray-900 border-gray-900"
@@ -377,7 +370,7 @@ export default function PriceCalendar({
               value={departPrecision}
               onChange={(e) => {
                 setDepartPrecision(e.target.value as "exact" | "flexible");
-                posthog.capture("calendar_precision_changed", { type: "depart", value: e.target.value });
+                captureEvent("calendar_precision_changed", { type: "depart", value: e.target.value });
               }}
             >
               <option value="exact">exact</option>
@@ -392,7 +385,7 @@ export default function PriceCalendar({
               value={returnPrecision}
               onChange={(e) => {
                 setReturnPrecision(e.target.value as "exact" | "flexible");
-                posthog.capture("calendar_precision_changed", { type: "return", value: e.target.value });
+                captureEvent("calendar_precision_changed", { type: "return", value: e.target.value });
               }}
             >
               <option value="exact">exact</option>
