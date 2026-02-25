@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, getDay, addMonths, subMonths, isSameDay, isBefore, startOfDay, differenceInDays } from "date-fns";
 
 const USD_TO_THB = 34;
 
@@ -18,14 +18,25 @@ type PriceEntry = {
 
 type PriceMap = Record<string, number>;
 
-type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
+type PriceTier = "cheapest" | "average" | "expensive" | "none";
 
-const TIER_STYLES: Record<PriceTier, { bg: string; text: string }> = {
-  cheapest: { bg: "#22c55e", text: "#ffffff" }, // Bright green for absolute cheapest
-  cheap: { bg: "#86efac", text: "#1f2937" },
-  mid: { bg: "#fbbf24", text: "#1f2937" },
-  expensive: { bg: "#f472b6", text: "#ffffff" },
-  none: { bg: "#f3f4f6", text: "#6b7280" },
+type CellPriceInfo = {
+  thbPrice: number;
+  isEstimated: boolean;
+};
+
+const REAL_COLORS: Record<PriceTier, string> = {
+  cheapest: "#22c55e",
+  average: "#eab308",
+  expensive: "#ec4899",
+  none: "#f3f4f6",
+};
+
+const ESTIMATED_COLORS: Record<PriceTier, string> = {
+  cheapest: "#ecfdf5",
+  average: "#fefce8",
+  expensive: "#fdf4ff",
+  none: "#f3f4f6",
 };
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -43,12 +54,7 @@ function buildCalendarGrid(year: number, month: number) {
   return cells;
 }
 
-function formatThb(val: number): string {
-  if (val >= 10000) return `B${(val / 1000).toFixed(1)}k`;
-  return `B${val.toLocaleString()}`;
-}
-
-type Thresholds = { p33: number; p66: number; min: number };
+type Thresholds = { p33: number; p66: number };
 
 function computeThresholds(priceMap: PriceMap): Thresholds | null {
   const thbPrices = Object.values(priceMap)
@@ -57,24 +63,64 @@ function computeThresholds(priceMap: PriceMap): Thresholds | null {
 
   if (thbPrices.length === 0) return null;
 
-  const min = thbPrices[0];
-
   if (thbPrices.length <= 2) {
-    return { p33: Math.round(thbPrices[thbPrices.length - 1] * 1.05), p66: Math.round(thbPrices[thbPrices.length - 1] * 1.15), min };
+    return { p33: Math.round(thbPrices[thbPrices.length - 1] * 1.05), p66: Math.round(thbPrices[thbPrices.length - 1] * 1.15) };
   }
 
   const p33 = thbPrices[Math.floor(thbPrices.length / 3)];
   const p66 = thbPrices[Math.floor((thbPrices.length * 2) / 3)];
-  return { p33, p66, min };
+  return { p33, p66 };
 }
 
 function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
   if (!thresholds) return "none";
-  // Absolute cheapest date(s) get bright green
-  if (thbPrice <= thresholds.min) return "cheapest";
-  if (thbPrice <= thresholds.p33) return "cheap";
-  if (thbPrice <= thresholds.p66) return "mid";
+  if (thbPrice <= thresholds.p33) return "cheapest";
+  if (thbPrice <= thresholds.p66) return "average";
   return "expensive";
+}
+
+function estimatePrices(realPriceMap: PriceMap): Record<string, CellPriceInfo> {
+  const result: Record<string, CellPriceInfo> = {};
+
+  for (const [dateStr, price] of Object.entries(realPriceMap)) {
+    result[dateStr] = { thbPrice: Math.round(price * USD_TO_THB), isEstimated: false };
+  }
+
+  const sortedDates = Object.keys(realPriceMap).sort();
+  if (sortedDates.length === 0) return result;
+
+  const allDates = new Set<string>();
+  const firstDate = new Date(sortedDates[0]);
+  const lastDate = new Date(sortedDates[sortedDates.length - 1]);
+
+  const startD = startOfMonth(firstDate);
+  const endD = endOfMonth(addMonths(startOfMonth(lastDate), 0));
+
+  for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+    allDates.add(format(d, "yyyy-MM-dd"));
+  }
+
+  for (const dateStr of allDates) {
+    if (result[dateStr]) continue;
+
+    const targetDate = new Date(dateStr);
+    let closestPrice: number | null = null;
+    let closestDist = Infinity;
+
+    for (const [realDateStr, price] of Object.entries(realPriceMap)) {
+      const dist = Math.abs(differenceInDays(targetDate, new Date(realDateStr)));
+      if (dist < closestDist && dist <= 7) {
+        closestDist = dist;
+        closestPrice = price;
+      }
+    }
+
+    if (closestPrice !== null) {
+      result[dateStr] = { thbPrice: Math.round(closestPrice * USD_TO_THB), isEstimated: true };
+    }
+  }
+
+  return result;
 }
 
 type PriceCalendarProps = {
@@ -147,7 +193,8 @@ export default function PriceCalendar({
   }, [origin, destination, leftStr, rightStr, fetchPrices]);
 
   const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
-  const priceCount = Object.keys(priceMap).length;
+  const realPriceCount = Object.keys(priceMap).length;
+  const cellPriceData = useMemo(() => estimatePrices(priceMap), [priceMap]);
 
   const today = startOfDay(todayDate);
   const disabledBefore = calendarMode === "return" && selectedDepart ? startOfDay(selectedDepart) : today;
@@ -184,22 +231,33 @@ export default function PriceCalendar({
               }
 
               const dateKey = format(cell, "yyyy-MM-dd");
-              const priceUsd = priceMap[dateKey];
-              const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
-              const tier: PriceTier = thbPrice ? getTier(thbPrice, thresholds) : "none";
+              const cellInfo = cellPriceData[dateKey];
+              const tier: PriceTier = cellInfo ? getTier(cellInfo.thbPrice, thresholds) : "none";
+              const isEstimated = cellInfo?.isEstimated ?? false;
 
               const isDisabled = isBefore(cell, disabledBefore);
               const isSelectedDepart = selectedDepart && isSameDay(cell, selectedDepart);
               const isSelectedReturn = selectedReturn && isSameDay(cell, selectedReturn);
               const isSelected = isSelectedDepart || isSelectedReturn;
 
-              const styles = TIER_STYLES[tier];
+              const bgColor = tier === "none"
+                ? REAL_COLORS.none
+                : isEstimated
+                  ? ESTIMATED_COLORS[tier]
+                  : REAL_COLORS[tier];
+
+              const textColor = tier === "none" || isEstimated
+                ? "#6b7280"
+                : tier === "average"
+                  ? "#1f2937"
+                  : "#ffffff";
 
               if (isDisabled) {
                 return (
                   <div
                     key={dateKey}
-                    className="h-[46px] rounded-lg flex flex-col items-center justify-center text-sm text-gray-300 pointer-events-none"
+                    data-testid={`calendar-cell-disabled-${dateKey}`}
+                    className="h-[46px] rounded-lg flex items-center justify-center text-sm text-gray-300 pointer-events-none"
                   >
                     <span>{cell.getDate()}</span>
                   </div>
@@ -210,24 +268,18 @@ export default function PriceCalendar({
                 <button
                   key={dateKey}
                   type="button"
+                  data-testid={`calendar-cell-${dateKey}`}
                   onClick={() => onSelectDate(cell)}
-                  className={`h-[46px] rounded-lg flex flex-col items-center justify-center transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95 ${tier === "none" && !isSelected ? "hover:bg-gray-50" : ""}`}
+                  className={`h-[46px] rounded-lg flex items-center justify-center transition-transform duration-100 select-none hover:scale-105 cursor-pointer active:scale-95 ${tier === "none" && !isSelected ? "hover:bg-gray-50" : ""}`}
                   style={
                     isSelected
                       ? { backgroundColor: "#1f2937", color: "#ffffff", boxShadow: "0 0 0 2px #3b82f6, 0 0 0 4px #dbeafe" }
-                      : { backgroundColor: styles.bg, color: styles.text }
+                      : { backgroundColor: bgColor, color: textColor }
                   }
                 >
                   <span className={`text-sm ${isSelected ? "font-bold" : "font-semibold"}`}>
                     {cell.getDate()}
                   </span>
-                  {thbPrice ? (
-                    <span className="text-[10px] leading-[1] mt-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.8)" : "inherit" }}>
-                      {formatThb(thbPrice)}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] leading-[1] mt-0.5 opacity-0 select-none">—</span>
-                  )}
                 </button>
               );
             })
@@ -238,22 +290,23 @@ export default function PriceCalendar({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-testid="price-calendar">
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={handlePrev}
           disabled={!canGoPrev}
+          data-testid="calendar-prev-month"
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-16">
-          <span className="text-base font-bold text-gray-800">
+          <span className="text-base font-bold text-gray-800" data-testid="calendar-left-month">
             {format(leftMonth, "MMMM yyyy")}
           </span>
-          <span className="text-base font-bold text-gray-800">
+          <span className="text-base font-bold text-gray-800" data-testid="calendar-right-month">
             {format(rightMonth, "MMMM yyyy")}
           </span>
         </div>
@@ -261,6 +314,7 @@ export default function PriceCalendar({
         <button
           type="button"
           onClick={handleNext}
+          data-testid="calendar-next-month"
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
         >
           <ChevronRight className="w-5 h-5" />
@@ -278,38 +332,29 @@ export default function PriceCalendar({
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-gray-200">
-        <div className="flex flex-wrap items-center gap-3">
-          <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#22c55e", color: "#ffffff" }}
-          >
-            {thresholds ? `Best ${formatThb(thresholds.min)}` : "Best Price"}
-          </span>
-          <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#86efac", color: "#1f2937" }}
-          >
-            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2212` : "Cheap"}
-          </span>
-          <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#fbbf24", color: "#1f2937" }}
-          >
-            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p33)}\u2013${formatThb(thresholds.p66)}` : "Average"}
-          </span>
-          <span
-            className="inline-flex items-center justify-center h-[28px] px-2.5 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#f472b6", color: "#ffffff" }}
-          >
-            {thresholds && priceCount >= 3 ? `${formatThb(thresholds.p66)}+` : "Expensive"}
-          </span>
+      {realPriceCount > 0 && realPriceCount < 5 && !loading && (
+        <p className="text-sm font-medium mt-3" style={{ color: "#ea580c" }} data-testid="limited-data-warning">
+          Limited real data for this route
+        </p>
+      )}
+
+      <div className="mt-4 pt-3 border-t border-gray-200" data-testid="calendar-legend">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-5 h-5 rounded" style={{ backgroundColor: "#22c55e" }} />
+            <span className="text-xs font-medium text-gray-700">Cheapest</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-5 h-5 rounded" style={{ backgroundColor: "#eab308" }} />
+            <span className="text-xs font-medium text-gray-700">Average</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-5 h-5 rounded" style={{ backgroundColor: "#ec4899" }} />
+            <span className="text-xs font-medium text-gray-700">Expensive</span>
+          </div>
         </div>
         <p className="text-[11px] text-gray-400 mt-1.5">
-          Live prices from Aviasales
-          {priceCount > 0 && priceCount < 8 && (
-            <span className="ml-1">· Limited data. More prices update daily.</span>
-          )}
+          Some prices are estimated based on nearby real data
         </p>
       </div>
     </div>
