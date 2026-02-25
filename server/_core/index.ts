@@ -11,6 +11,79 @@ import fs from "fs";
 import path from "path";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const GEMINI_RATE_LIMIT_MAX_REQUESTS = 10;
+const GEMINI_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const geminiRateLimitStore = new Map<string, RateLimitEntry>();
+
+function getClientIp(req: express.Request): string {
+  const forwardedFor = req.headers["x-forwarded-for"];
+  if (typeof forwardedFor === "string" && forwardedFor.length > 0) {
+    return forwardedFor.split(",")[0].trim();
+  }
+
+  if (Array.isArray(forwardedFor) && forwardedFor.length > 0) {
+    return forwardedFor[0];
+  }
+
+  return req.ip || "unknown";
+}
+
+function enforceGeminiRateLimit(req: express.Request, res: express.Response): boolean {
+  const now = Date.now();
+  const ip = getClientIp(req);
+  const existingEntry = geminiRateLimitStore.get(ip);
+
+  if (!existingEntry || now >= existingEntry.resetAt) {
+    geminiRateLimitStore.set(ip, { count: 1, resetAt: now + GEMINI_RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (existingEntry.count >= GEMINI_RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((existingEntry.resetAt - now) / 1000));
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    res.status(429).json({
+      error: "Rate limit exceeded. Please try again later.",
+      limitation: "Per-process in-memory limiter; counts are not shared across multiple server instances.",
+    });
+    return false;
+  }
+
+  existingEntry.count += 1;
+  geminiRateLimitStore.set(ip, existingEntry);
+  return true;
+}
+
+const GENERAL_RATE_LIMIT_MAX_REQUESTS = 100;
+const GENERAL_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const generalRateLimitStore = new Map<string, RateLimitEntry>();
+
+function enforceGeneralRateLimit(req: express.Request, res: express.Response, endpointKey: string): boolean {
+  const now = Date.now();
+  const key = `${endpointKey}:${getClientIp(req)}`;
+  const existingEntry = generalRateLimitStore.get(key);
+
+  if (!existingEntry || now >= existingEntry.resetAt) {
+    generalRateLimitStore.set(key, { count: 1, resetAt: now + GENERAL_RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (existingEntry.count >= GENERAL_RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((existingEntry.resetAt - now) / 1000));
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    res.status(429).json({ error: "Too many requests. Please try again later." });
+    return false;
+  }
+
+  existingEntry.count += 1;
+  generalRateLimitStore.set(key, existingEntry);
+  return true;
+}
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -39,9 +112,12 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
-  // Gemini Chat Proxy
-  app.post("/api/chat", async (req, res) => {
+  const handleGeminiProxy = async (req: express.Request, res: express.Response) => {
     try {
+      if (!enforceGeminiRateLimit(req, res) || !enforceGeneralRateLimit(req, res, "gemini")) {
+        return;
+      }
+
       const { contents } = req.body;
       const apiKey = process.env.GEMINI_API_KEY;
 
@@ -55,60 +131,48 @@ async function startServer() {
         return;
       }
 
-      // Try flash first, then flash-lite (fallback logic can be here or simplified)
-      // For now, simple implementation with one model, or keep the retry logic here if preferred.
-      // Let's implement the loop here for robustness.
       const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
-
       let lastError = null;
 
       for (const model of MODELS) {
         try {
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
           const response = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents,
-              generationConfig: {
-                temperature: 0.7,
-                topP: 0.9,
-                topK: 40,
-                maxOutputTokens: 1024,
-              },
+              generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 },
             }),
           });
 
-          if (response.status === 429) {
-            console.log(`Rate limited on ${model}, trying next...`);
-            continue;
-          }
-
-          if (!response.ok) {
-            console.error(`Gemini ${model} error (${response.status}):`, await response.text());
-            continue;
-          }
+          if (response.status === 429) continue;
+          if (!response.ok) continue;
 
           const data = await response.json();
           res.json(data);
-          return; // Success
+          return;
         } catch (err) {
-          console.error(`Gemini ${model} exception:`, err);
           lastError = err;
         }
       }
 
       throw lastError || new Error("All models failed");
-
     } catch (error) {
       console.error("Chat proxy error:", error);
       res.status(500).json({ error: "Failed to process chat request" });
     }
-  });
+  };
+
+  // Gemini Chat Proxy (POST only)
+  app.post("/api/gemini", handleGeminiProxy);
+  app.post("/api/chat", handleGeminiProxy);
 
   app.get("/api/calendar-prices", async (req, res) => {
     try {
+      if (!enforceGeneralRateLimit(req, res, "calendar-prices")) {
+        return;
+      }
       const token = process.env.TRAVELPAYOUTS_TOKEN;
       if (!token) {
         res.status(500).json({ error: "API token not configured" });
@@ -281,6 +345,21 @@ async function startServer() {
       console.error("Calendar prices error:", error);
       res.status(500).json({ error: "Failed to fetch calendar prices" });
     }
+  });
+
+
+  app.get("/sitemap.xml", (_req, res) => {
+    const baseUrl = process.env.VITE_SITE_URL || "https://www.gotravelasia.com";
+    const routes = [
+      "/", "/blog", "/contact", "/privacy", "/terms", "/flights/results",
+      "/thailand/bangkok", "/thailand/chiang-mai", "/thailand/phuket", "/thailand/krabi", "/thailand/pai", "/thailand/chiang-rai",
+    ];
+
+    const urls = routes.map((route) => `<url><loc>${baseUrl}${route}</loc></url>`).join("");
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
+
+    res.setHeader("Content-Type", "application/xml");
+    res.status(200).send(xml);
   });
 
   // tRPC API

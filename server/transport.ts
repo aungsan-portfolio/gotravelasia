@@ -178,7 +178,7 @@ export async function searchTransport(
     to,
     date,
     schedules,
-    affiliateLink: `https://12go.asia/en/travel/${from.toLowerCase()}-${to.toLowerCase()}?z=14566451&sub_id=transport_api`,
+    affiliateLink: `https://www.12go.asia/en/travel/bus/${from.toLowerCase()}-${to.toLowerCase()}`,
   };
 }
 

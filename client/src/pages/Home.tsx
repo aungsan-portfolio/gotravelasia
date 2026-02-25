@@ -9,6 +9,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { useFlightData } from "@/hooks/useFlightData";
 import HeroSection from "@/components/HeroSection";
 import DealsCarousel from "@/components/DealsCarousel";
+import { OfferJsonLd } from "@/components/JsonLd";
+import { usePostHogEvent } from "@/hooks/usePostHogEvent";
 
 import {
   AFFILIATE,
@@ -32,10 +34,21 @@ const HOTEL_CITIES = [
 function HotelsSearchForm() {
   const today = new Date().toISOString().split("T")[0];
   const [checkIn, setCheckIn] = useState(today);
+  const [hotelError, setHotelError] = useState("");
+  const [hotelInteracted, setHotelInteracted] = useState(false);
+  const captureEvent = usePostHogEvent();
 
   const minCheckOut = checkIn
     ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
     : today;
+
+  useEffect(() => {
+    return () => {
+      if (hotelInteracted) {
+        captureEvent("hotel_search_abandoned", {});
+      }
+    };
+  }, [hotelInteracted, captureEvent]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,11 +58,14 @@ function HotelsSearchForm() {
     const checkOutDate = fd.get("checkOut") as string;
 
     if (!checkInDate || !checkOutDate || new Date(checkOutDate) <= new Date(checkInDate)) {
-      alert("Please select valid check-in and check-out dates");
+      setHotelError("Please select valid check-in and check-out dates");
       return;
     }
+    setHotelError("");
 
     const url = `https://www.agoda.com/city/${citySlug}.html?cid=${AGODA_CID}&checkIn=${checkInDate}&checkout=${checkOutDate}&utm_source=gotravelasia&utm_medium=affiliate`;
+    captureEvent("affiliate_cta_clicked", { action: "search_hotels", partner: "agoda", utm: "gotravelasia", url });
+    captureEvent("hotel_search_submitted", { citySlug, checkInDate, checkOutDate });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -57,12 +73,14 @@ function HotelsSearchForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+          <label htmlFor="hotel-city" className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Destination
           </label>
           <select
+            id="hotel-city"
             name="city"
             defaultValue="bangkok-th"
+            onChange={(e) => { setHotelInteracted(true); captureEvent("hotel_search_step", { step: "city", value: e.target.value }); }}
             className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
           >
             {HOTEL_CITIES.map((city) => (
@@ -73,32 +91,36 @@ function HotelsSearchForm() {
           </select>
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+          <label htmlFor="hotel-checkin" className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Check-in
           </label>
           <input
             type="date"
+            id="hotel-checkin"
             name="checkIn"
             defaultValue={today}
             min={today}
-            onChange={(e) => setCheckIn(e.target.value)}
+            onChange={(e) => { setCheckIn(e.target.value); setHotelInteracted(true); captureEvent("hotel_search_step", { step: "checkIn", value: e.target.value }); }}
             required
             className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
           />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+          <label htmlFor="hotel-checkout" className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
             Check-out
           </label>
           <input
             type="date"
+            id="hotel-checkout"
             name="checkOut"
+            onChange={(e) => { setHotelInteracted(true); captureEvent("hotel_search_step", { step: "checkOut", value: e.target.value }); }}
             min={minCheckOut}
             required
             className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
           />
         </div>
       </div>
+      <p className="text-sm text-red-600 min-h-5" role="status" aria-live="polite">{hotelError}</p>
       <Button
         type="submit"
         className="w-full md:w-auto md:self-end bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors h-12 px-10 rounded-xl text-base"
@@ -142,6 +164,7 @@ export default function Home() {
 
   return (
     <Layout>
+      <OfferJsonLd name="Hotel deals" url="https://www.gotravelasia.com/#hotels" category="hotel" />
       <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
         {activeTab === "flights" && <FlightWidget />}
         {activeTab === "hotels" && <HotelsSearchForm />}

@@ -1,0 +1,48 @@
+
+> gotravel@1.0.0 build /workspace/gotravelasia
+> vite build
+
+vite v7.1.9 building for production...
+transforming...
+✓ 2207 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                                  370.14 kB │ gzip: 106.22 kB
+../dist/public/assets/index-Q5APh7Pl.css                    91.49 kB │ gzip:  15.88 kB
+../dist/public/assets/clock-l4LDCOpQ.js                      0.35 kB │ gzip:   0.27 kB
+../dist/public/assets/trending-down-DF8aqF3G.js              0.38 kB │ gzip:   0.28 kB
+../dist/public/assets/card-CFOTVj0w.js                       0.49 kB │ gzip:   0.28 kB
+../dist/public/assets/shield-check-D0I_MV6d.js               0.49 kB │ gzip:   0.35 kB
+../dist/public/assets/star-B6h3Efgd.js                       1.03 kB │ gzip:   0.44 kB
+../dist/public/assets/usePageMeta-CMDlYu9A.js                1.09 kB │ gzip:   0.54 kB
+../dist/public/assets/Pai-C5fWRYYS.js                        1.97 kB │ gzip:   1.10 kB
+../dist/public/assets/ChiangRai-kj8ZkQBW.js                  2.07 kB │ gzip:   1.05 kB
+../dist/public/assets/Krabi-CEF5uadk.js                      2.18 kB │ gzip:   1.12 kB
+../dist/public/assets/button-pfkrm7MW.js                     2.25 kB │ gzip:   1.09 kB
+../dist/public/assets/Phuket-CgzI-oZ7.js                     2.48 kB │ gzip:   1.24 kB
+../dist/public/assets/BestEsimThailand-DQT59pbM.js           2.59 kB │ gzip:   1.42 kB
+../dist/public/assets/BestInsuranceThailand-D6eBlXw_.js      2.71 kB │ gzip:   1.41 kB
+../dist/public/assets/BestTransfersBangkok-BfqR3oyJ.js       2.79 kB │ gzip:   1.45 kB
+../dist/public/assets/CheapFlightsBangkok-C7zlAa6g.js        2.85 kB │ gzip:   1.50 kB
+../dist/public/assets/PrivacyPolicy-B0zZqUqm.js              3.00 kB │ gzip:   1.12 kB
+../dist/public/assets/NotFound-Dx9-sQ5e.js                   3.14 kB │ gzip:   1.24 kB
+../dist/public/assets/BestThingsToDoBangkok-BJ19MjAw.js      3.47 kB │ gzip:   1.76 kB
+../dist/public/assets/Bangkok-Dvb2VBay.js                    4.14 kB │ gzip:   1.73 kB
+../dist/public/assets/Blog-DcsOxEmN.js                       4.31 kB │ gzip:   1.68 kB
+../dist/public/assets/Contact-8Rx6j8hG.js                    4.56 kB │ gzip:   1.28 kB
+../dist/public/assets/router-BCkGxBTz.js                     5.65 kB │ gzip:   2.75 kB
+../dist/public/assets/ChiangMai-DAc12Jet.js                  6.78 kB │ gzip:   2.25 kB
+../dist/public/assets/FlightResults-CNadexfs.js              8.56 kB │ gzip:   2.43 kB
+../dist/public/assets/MoneyPage-T3e13SOE.js                  9.09 kB │ gzip:   2.08 kB
+../dist/public/assets/browser-ponyfill-Cv0A0wcP.js          10.30 kB │ gzip:   3.52 kB
+../dist/public/assets/TermsOfService-C0l0TJHi.js            10.30 kB │ gzip:   2.29 kB
+../dist/public/assets/vendor-BN0qJr-I.js                    11.92 kB │ gzip:   4.25 kB
+../dist/public/assets/DestinationPage-DLbYQCgQ.js           13.23 kB │ gzip:   2.83 kB
+../dist/public/assets/TransportScheduleWidget-D-Nyr2nR.js   27.79 kB │ gzip:   6.60 kB
+../dist/public/assets/i18n-BF182Gqr.js                      58.61 kB │ gzip:  19.05 kB
+../dist/public/assets/Layout-DAo3YQf-.js                    64.05 kB │ gzip:  16.37 kB
+../dist/public/assets/ui-B_8cQMC5.js                        70.24 kB │ gzip:  24.05 kB
+../dist/public/assets/query-HQrk5q1k.js                     83.93 kB │ gzip:  23.33 kB
+../dist/public/assets/Home-Cvl7_Oot.js                     127.44 kB │ gzip:  33.81 kB
+../dist/public/assets/index-Wx71GeE-.js                    450.24 kB │ gzip: 142.69 kB
+✓ built in 8.27s

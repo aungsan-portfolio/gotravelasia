@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import App from "./App";
 import { getLoginUrl } from "./const";
 import "./i18n"; // Initialize i18next
+import "./bootstrap/posthog";
 import "./index.css";
 
 const queryClient = new QueryClient();

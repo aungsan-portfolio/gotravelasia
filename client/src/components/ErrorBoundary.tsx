@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
+import { capturePostHogEvent } from "@/lib/posthog";
 
 interface Props {
   children: ReactNode;
@@ -21,23 +22,26 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
+  componentDidCatch(error: Error) {
+    console.error("Unhandled UI error", error);
+    capturePostHogEvent("ui_error_boundary_triggered", {
+      message: error.message,
+      name: error.name,
+    });
+  }
+
   render() {
     if (this.state.hasError) {
       return (
         <div className="flex items-center justify-center min-h-screen p-8 bg-background">
           <div className="flex flex-col items-center w-full max-w-2xl p-8">
-            <AlertTriangle
-              size={48}
-              className="text-destructive mb-6 flex-shrink-0"
-            />
+            <AlertTriangle size={48} className="text-destructive mb-6 flex-shrink-0" />
 
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
+            <h2 className="text-xl mb-4">Something went wrong. Please reload the page.</h2>
 
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
-            </div>
+            <p className="text-sm text-muted-foreground mb-6 text-center">
+              We have logged this issue and are working to improve stability.
+            </p>
 
             <button
               onClick={() => window.location.reload()}

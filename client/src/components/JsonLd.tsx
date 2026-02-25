@@ -1,4 +1,4 @@
-const BASE_URL = "https://gotravel-asia.vercel.app";
+const BASE_URL = import.meta.env.VITE_SITE_URL || "https://www.gotravelasia.com";
 
 const websiteSchema = {
   "@context": "https://schema.org",
@@ -101,6 +101,38 @@ export function FAQJsonLd({
       },
     })),
   };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+export function OfferJsonLd({ name, url, category }: { name: string; url: string; category: "flight" | "hotel" | "destination" }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name,
+    category,
+    offers: {
+      "@type": "Offer",
+      availability: "https://schema.org/InStock",
+      url,
+      priceCurrency: "USD",
+      price: "0",
+    },
+    potentialAction: {
+      "@type": "TravelAction",
+      target: url,
+    },
+  };
+
+  if (category === "flight") {
+    (schema as any)["@type"] = "Flight";
+    (schema as any).offers["@type"] = "FlightOffer";
+  }
 
   return (
     <script

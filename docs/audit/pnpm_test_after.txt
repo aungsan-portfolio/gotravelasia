@@ -1,0 +1,15 @@
+
+> gotravel@1.0.0 test /workspace/gotravelasia
+> vitest run
+
+
+ RUN  v2.1.9 /workspace/gotravelasia
+
+ ✓ server/transport.test.ts (16 tests) 20ms
+ ✓ server/auth.logout.test.ts (1 test) 7ms
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  12:19:57
+   Duration  1.35s (transform 255ms, setup 0ms, collect 385ms, tests 27ms, environment 1ms, prepare 236ms)
+

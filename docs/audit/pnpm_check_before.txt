@@ -1,0 +1,7 @@
+
+> gotravel@1.0.0 check /workspace/gotravelasia
+> tsc --noEmit
+
+server/_core/amadeus.ts(1,21): error TS7016: Could not find a declaration file for module 'amadeus'. '/workspace/gotravelasia/node_modules/.pnpm/amadeus@11.0.0/node_modules/amadeus/lib/amadeus.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/amadeus` if it exists or add a new declaration (.d.ts) file containing `declare module 'amadeus';`
+ ELIFECYCLE  Command failed with exit code 2.

@@ -1,0 +1,7 @@
+## Hardcoded key scan
+
+## Gemini endpoint usage
+server/_core/index.ts:139:          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+server/_core/index.ts:168:  app.post("/api/gemini", handleGeminiProxy);
+server/_core/index.ts:169:  app.post("/api/chat", handleGeminiProxy);
+client/src/lib/gemini.ts:44:        const response = await fetch("/api/gemini", {

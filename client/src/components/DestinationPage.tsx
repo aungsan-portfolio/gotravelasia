@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, MapPin } from "lucide-react";
 import TransportScheduleWidget from "./TransportScheduleWidget";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { BreadcrumbJsonLd } from "@/components/JsonLd";
+import { BreadcrumbJsonLd, OfferJsonLd } from "@/components/JsonLd";
 
 export interface DestinationPageProps {
   name: string;
@@ -43,6 +43,7 @@ export default function DestinationPage(props: DestinationPageProps) {
         { name: "Thailand", path: "/" },
         { name: props.name, path: `/thailand/${slug}` },
       ]} />
+      <OfferJsonLd name={`${props.name} travel offers`} url={`https://www.gotravelasia.com/thailand/${slug}`} category="destination" />
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 

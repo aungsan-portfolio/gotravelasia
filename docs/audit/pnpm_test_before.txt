@@ -1,0 +1,36 @@
+
+> gotravel@1.0.0 test /workspace/gotravelasia
+> vitest run
+
+
+ RUN  v2.1.9 /workspace/gotravelasia
+
+ ❯ server/transport.test.ts (16 tests | 1 failed) 34ms
+   × Transport Service > searchTransport > should generate correct affiliate link format 14ms
+     → expected 'https://12go.asia/en/travel/bkk-cnx?z…' to be 'https://www.12go.asia/en/travel/bus/b…' // Object.is equality
+ ✓ server/auth.logout.test.ts (1 test) 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  server/transport.test.ts > Transport Service > searchTransport > should generate correct affiliate link format
+AssertionError: expected 'https://12go.asia/en/travel/bkk-cnx?z…' to be 'https://www.12go.asia/en/travel/bus/b…' // Object.is equality
+
+Expected: "https://www.12go.asia/en/travel/bus/bkk-cnx"
+Received: "https://12go.asia/en/travel/bkk-cnx?z=14566451&sub_id=transport_api"
+
+ ❯ server/transport.test.ts:96:36
+     94|       });
+     95| 
+     96|       expect(result.affiliateLink).toBe(
+       |                                    ^
+     97|         'https://www.12go.asia/en/travel/bus/bkk-cnx'
+     98|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 16 passed (17)
+   Start at  12:10:40
+   Duration  1.38s (transform 258ms, setup 0ms, collect 393ms, tests 41ms, environment 1ms, prepare 221ms)
+
+ ELIFECYCLE  Test failed. See above for more details.

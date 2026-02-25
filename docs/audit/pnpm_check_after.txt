@@ -1,0 +1,4 @@
+
+> gotravel@1.0.0 check /workspace/gotravelasia
+> tsc --noEmit
+

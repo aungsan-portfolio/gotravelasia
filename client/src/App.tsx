@@ -1,10 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { WebsiteJsonLd } from "./components/JsonLd";
+import { usePostHogEvent } from "@/hooks/usePostHogEvent";
 
 const Home = lazy(() => import("./pages/Home"));
 const Blog = lazy(() => import("./pages/Blog"));
@@ -72,6 +73,38 @@ function Router() {
 }
 
 function App() {
+  const captureEvent = usePostHogEvent();
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+
+      const url = anchor.href;
+      const matchPartner = url.includes("trip.com") ? "trip.com" : url.includes("agoda") ? "agoda" : url.includes("12go") ? "12go" : url.includes("aviasales") ? "aviasales" : null;
+      if (!matchPartner) return;
+
+      const utm = (() => {
+        try {
+          const parsed = new URL(url);
+          return parsed.searchParams.get("utm_source") ?? parsed.searchParams.get("sub_id");
+        } catch {
+          return null;
+        }
+      })();
+
+      captureEvent("affiliate_cta_clicked", {
+        action: "click",
+        partner: matchPartner,
+        utm,
+        url,
+      });
+    };
+
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [captureEvent]);
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">

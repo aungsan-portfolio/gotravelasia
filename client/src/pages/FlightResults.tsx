@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { ArrowLeft, Plane, ShieldCheck, Clock, TrendingDown } from "lucide-react";
 import { AFFILIATE } from "@/lib/config";
+import { OfferJsonLd } from "@/components/JsonLd";
 
 const TPWL_SCRIPT_URL = `https://tpwidg.com/wl_web/main.js?wl_id=${AFFILIATE.TPWL_ID}`;
 
@@ -51,6 +52,7 @@ export default function FlightResults() {
 
     return (
         <Layout>
+            <OfferJsonLd name="Flight offers" url="https://www.gotravelasia.com/flights/results" category="flight" />
             <div className="tpwl-page">
                 <section className="relative pt-16 pb-10 overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
