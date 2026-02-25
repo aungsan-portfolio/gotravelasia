@@ -1,0 +1,39 @@
+Act as an expert Full-Stack Python Developer and UI/UX Designer. I am building a travel affiliate flight search website called "GoTravel Asia" on Replit. I want to build a frontend and UI layout that is highly competitive with meta-search engines like Cheapflights, but distinct enough to avoid any copyright issues.
+
+Tech Stack: Python (Flask/FastAPI), HTML5, Tailwind CSS, Vanilla JavaScript.
+
+Please generate the code for a complete, production-ready, mobile-responsive homepage and search results page with the following requirements:
+
+1. UI/UX & Layout (Distinct from Cheapflights):
+
+Color Palette: Use a modern, trustworthy color scheme (e.g., Deep Ocean Blue and vibrant Teal/Orange for Call-to-Action buttons). Do NOT use Cheapflights' exact color hex codes.
+
+Hero Section: A clean, high-quality background (use an Unsplash placeholder) with a centrally aligned, prominent Flight Search Box.
+
+Search Box Form: Needs fields for "Origin", "Destination", "Departure Date", "Return Date" (optional), and "Passengers". Include nice UI touches like swapping icons between origin and destination.
+
+2. Functionality & Mock Data:
+
+Write JavaScript to handle form submission asynchronously (prevent default page reload).
+
+Show a modern loading animation (e.g., a spinning airplane or minimal spinner) while fetching results.
+
+Create a mock Python backend route that returns fake flight data in JSON format (e.g., flights from Chiang Mai (CNX) to Mandalay (MDL)).
+
+3. Search Results Presentation:
+
+Display results as modern, clean "Cards".
+
+Each card must show: Airline Logo (placeholder), Departure/Arrival times, Duration, Number of Stops, and a prominent "View Deal" button.
+
+Include a sidebar area (collapsible on mobile) for Filters (Price, Stops, Airlines).
+
+4. Best Practices:
+
+Ensure 100% Mobile Responsiveness using Tailwind classes.
+
+Include proper Error Handling in JS (e.g., "No flights found for these dates").
+
+Ensure the layout is clean, action-oriented, and optimized for affiliate link conversions.
+
+Please output the Python server code (main.py), and the corresponding frontend code (index.html with embedded Tailwind CSS and JS logic).

@@ -99,15 +99,18 @@ scripts/          - Utility scripts
 - `client/src/components/DealsCarousel.tsx` - Trending flights carousel with price badges, star ratings, and route cards
 - `client/src/components/DestinationPage.tsx` - Shared component for all destination pages (auto-sets SEO + breadcrumbs)
 - `client/src/components/MoneyPage.tsx` - Shared component for all blog/review pages (auto-sets SEO + breadcrumbs)
-- `client/src/components/PriceCalendar.tsx` - Color-coded calendar with real Travelpayouts prices (green/amber/red tiers)
+- `client/src/components/PriceCalendar.tsx` - Cheapflights-style color-only calendar (no price text in cells)
 
 ## Price Calendar Feature (Feb 2026)
 - **Backend**: `GET /api/calendar-prices` route in `server/_core/index.ts` proxies Travelpayouts Calendar API
   - Params: `origin`, `destination`, `month` (YYYY-MM), `currency` (default: usd)
   - Uses `TRAVELPAYOUTS_TOKEN` env var, caches responses for 1 hour
-- **Frontend**: `client/src/components/PriceCalendar.tsx` — color-coded calendar with real prices
-  - Green/amber/red price tiers based on 33rd/66th percentile thresholds
-  - THB prices shown below each date (e.g., ฿4.8k, ฿5,576)
+- **Frontend**: `client/src/components/PriceCalendar.tsx` — Cheapflights-style color-only calendar
+  - NO price numbers in any date cell — color coding only
+  - Real prices: green (#22c55e) / amber (#eab308) / pink (#ec4899)
+  - Estimated prices (within 7 days of real data): pale mint (#ecfdf5) / pale ivory (#fefce8) / pale purple (#fdf4ff)
+  - 3-tier system: Cheapest / Average / Expensive (33rd/66th percentile)
+  - Legend: colored boxes with labels + gray note about estimated prices
+  - Orange warning "Limited real data for this route" when real prices < 5 in 2 months
   - Fetches 2 months of data (current + next) on mount and month change
-  - Legend bar: Cheap / Average / Expensive with colored dots
 - **Integration**: Replaces the plain Calendar in FlightWidget's date popover
