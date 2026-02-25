@@ -4,6 +4,7 @@ import {
     Layers, Palette, Code2, Search, Calendar, Globe, Zap, Shield,
     ArrowRight, ExternalLink, ChevronRight
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 // ─── Section Navigation ───
 const SECTIONS = [
@@ -23,6 +24,34 @@ const PRICE_TIERS = {
     average: { bg: "#fcc98a", text: "#5b2601", label: "Average" },
     expensive: { bg: "#fbb0ad", text: "#680d08", label: "Expensive" },
 };
+
+// ─── Detailed token data for Swiss/Editorial cards ───
+const TOKEN_CARDS = [
+    {
+        tier: "Cheapest",
+        bgColor: "#b3f9c2",
+        textColor: "#054d14",
+        hoverBg: "#8df4a4",
+        cssVar: "--calendar-bg-cheapest",
+        description: "Indicates the most affordable dates. Applied when the price falls below the lower threshold.",
+    },
+    {
+        tier: "Average",
+        bgColor: "#fcb773",
+        textColor: "#5b2601",
+        hoverBg: "#fca64f",
+        cssVar: "--calendar-bg-average",
+        description: "Represents mid-range pricing. Applied when the price falls between the lower and upper thresholds.",
+    },
+    {
+        tier: "Expensive",
+        bgColor: "#fba09d",
+        textColor: "#680d08",
+        hoverBg: "#f97f7b",
+        cssVar: "--calendar-bg-expensive",
+        description: "Highlights the most expensive dates. Applied when the price exceeds the upper threshold.",
+    },
+];
 
 const TECH_TAGS = [
     "React 19", "TypeScript", "Tailwind CSS 4", "Vite 7",
@@ -123,8 +152,8 @@ export default function HowItWorks() {
                                 key={s.id}
                                 href={`#${s.id}`}
                                 className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${activeSection === s.id
-                                        ? "bg-orange-500 text-white shadow-sm"
-                                        : "text-gray-400 hover:text-gray-700 hover:bg-gray-50"
+                                    ? "bg-orange-500 text-white shadow-sm"
+                                    : "text-gray-400 hover:text-gray-700 hover:bg-gray-50"
                                     }`}
                             >
                                 {s.label}
@@ -290,16 +319,60 @@ export default function HowItWorks() {
                         <SectionTitle>Token-Based Color System</SectionTitle>
                         <SectionDesc>A three-tier color system that instantly communicates price levels.</SectionDesc>
 
-                        {/* Color token cards */}
-                        <div className="grid sm:grid-cols-3 gap-4 mb-10">
-                            {Object.values(PRICE_TIERS).map((tier) => (
-                                <div key={tier.label} className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                                    <div className="h-20" style={{ backgroundColor: tier.bg }} />
-                                    <div className="p-4 bg-white">
-                                        <div className="font-bold text-gray-900">{tier.label}</div>
-                                        <div className="text-xs text-gray-500 mt-1 font-mono">bg: {tier.bg} · text: {tier.text}</div>
+                        {/* Swiss/Editorial Color Token Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+                            {TOKEN_CARDS.map((token, i) => (
+                                <motion.div
+                                    key={token.tier}
+                                    initial={{ opacity: 0, y: 24 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.12, duration: 0.5 }}
+                                    className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+                                >
+                                    {/* Color Preview */}
+                                    <div
+                                        className="p-6 flex flex-col items-center justify-center"
+                                        style={{ backgroundColor: token.bgColor, minHeight: "120px" }}
+                                    >
+                                        <span className="text-2xl font-bold" style={{ color: token.textColor }}>
+                                            {token.tier}
+                                        </span>
+                                        <span className="text-sm mt-1 opacity-80 font-mono" style={{ color: token.textColor }}>
+                                            {token.bgColor}
+                                        </span>
                                     </div>
-                                </div>
+
+                                    {/* Details */}
+                                    <div className="p-4 bg-stone-50">
+                                        <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                                            {token.description}
+                                        </p>
+
+                                        {/* Color Swatches */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: token.bgColor }} />
+                                                <span className="text-xs font-mono text-gray-500">bg: {token.bgColor}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: token.textColor }} />
+                                                <span className="text-xs font-mono text-gray-500">text: {token.textColor}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: token.hoverBg }} />
+                                                <span className="text-xs font-mono text-gray-500">hover: {token.hoverBg}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* CSS Variable */}
+                                        <div className="mt-3 pt-3 border-t border-gray-200">
+                                            <code className="text-[10px] leading-tight block break-all font-mono text-gray-400">
+                                                {token.cssVar}
+                                            </code>
+                                        </div>
+                                    </div>
+                                </motion.div>
                             ))}
                         </div>
 
@@ -311,13 +384,20 @@ export default function HowItWorks() {
                                 { step: "3", title: "Classify Tiers", desc: "Cheapest / Average / Expensive based on distribution" },
                                 { step: "4", title: "Render Colors", desc: "CSS tokens applied to each calendar cell" },
                             ].map((s) => (
-                                <div key={s.step} className="flex items-start gap-3">
+                                <motion.div
+                                    key={s.step}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: Number(s.step) * 0.1, duration: 0.4 }}
+                                    className="flex items-start gap-3"
+                                >
                                     <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold shrink-0">{s.step}</div>
                                     <div>
                                         <div className="font-bold text-gray-900 text-sm">{s.title}</div>
                                         <div className="text-sm text-gray-500">{s.desc}</div>
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
                     </Section>
