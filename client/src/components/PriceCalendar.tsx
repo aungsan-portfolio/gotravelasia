@@ -175,6 +175,8 @@ export default function PriceCalendar({
 
   const leftStr = format(leftMonth, "yyyy-MM");
   const rightStr = format(rightMonth, "yyyy-MM");
+  const prevStr = format(subMonths(leftMonth, 1), "yyyy-MM"); // Fetch 1 prev month to anchor gap fill
+  const nextStr = format(addMonths(rightMonth, 1), "yyyy-MM"); // Fetch 1 next month to anchor gap fill
 
   const fetchPrices = useCallback(
     async (mo: string) => {
@@ -203,20 +205,21 @@ export default function PriceCalendar({
     if (origin === destination) { setPriceMap({}); return; }
     let cancelled = false;
     setLoading(true);
-    fetchPrices(leftStr).then((m1) => {
-      fetchPrices(rightStr).then((m2) => {
-        if (!cancelled) {
-          setPriceMap({ ...m1, ...m2 });
-          setLoading(false);
-        }
-      }).catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    }).catch(() => {
-      if (!cancelled) setLoading(false);
-    });
+    fetchPrices(prevStr).then(m0 => {
+      fetchPrices(leftStr).then((m1) => {
+        fetchPrices(rightStr).then((m2) => {
+          fetchPrices(nextStr).then(m3 => {
+            if (!cancelled) {
+              setPriceMap({ ...m0, ...m1, ...m2, ...m3 });
+              setLoading(false);
+            }
+          }).catch(() => { if (!cancelled) setLoading(false); });
+        }).catch(() => { if (!cancelled) setLoading(false); });
+      }).catch(() => { if (!cancelled) setLoading(false); });
+    }).catch(() => { if (!cancelled) setLoading(false); });
+
     return () => { cancelled = true; };
-  }, [origin, destination, leftStr, rightStr, fetchPrices]);
+  }, [origin, destination, leftStr, rightStr, prevStr, nextStr, fetchPrices]);
 
   const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
   const priceCount = Object.keys(priceMap).length;
@@ -254,7 +257,7 @@ export default function PriceCalendar({
     }
 
     return (
-      <div className={isNext ? "hidden md:block flex-1 min-w-0" : "flex-1 min-w-0"}>
+      <div className="w-full">
         <h3 className="text-center text-[15px] font-bold text-gray-900 mb-4 capitalize">
           {MONTHS[month]} {year}
         </h3>
@@ -431,9 +434,13 @@ export default function PriceCalendar({
       </div>
 
       {/* ─── Dual Calendar Grid ─── */}
-      <div className="flex gap-8 relative mt-[-60px] pt-[60px]">
-        {renderMonthGrid(leftMonth, false)}
-        {renderMonthGrid(rightMonth, true)}
+      <div className="flex gap-4 relative mt-[-60px] pt-[60px] overflow-x-auto snap-x hide-scrollbar">
+        <div className="min-w-full md:min-w-[calc(50%-8px)] snap-start">
+          {renderMonthGrid(leftMonth, false)}
+        </div>
+        <div className="min-w-full md:min-w-[calc(50%-8px)] snap-start hidden md:block">
+          {renderMonthGrid(rightMonth, true)}
+        </div>
       </div>
 
       {/* ─── Bottom Legend ─── */}

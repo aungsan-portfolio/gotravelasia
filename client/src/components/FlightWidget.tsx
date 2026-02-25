@@ -508,17 +508,17 @@ export default function FlightWidget() {
                 <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200">
 
                     {/* Origin */}
-                    <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
-                            <MapPin className={`w-5 h-5 mr-1.5 shrink-0 ${detectingLocation ? "text-primary animate-pulse" : "text-gray-400"}`} />
+                    <div className="relative flex-[1.2] min-w-[200px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-4 py-3.5 md:py-3 h-full min-h-[56px]">
+                            <MapPin className={`w-5 h-5 mr-3 shrink-0 ${detectingLocation ? "text-primary animate-pulse" : "text-gray-400"}`} />
                             <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
                                     {detectingLocation ? "Detecting..." : "From"}
                                 </span>
                                 <select
                                     value={origin}
                                     onChange={(e) => setOrigin(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base"
+                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base leading-tight mt-0.5"
                                 >
                                     {AIRPORTS.map((city) => (
                                         <option key={city.code} value={city.code}>
@@ -531,15 +531,15 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Destination */}
-                    <div className="relative flex-[1.2] min-w-[140px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
-                            <Plane className="w-5 h-5 text-gray-400 mr-1.5 shrink-0" />
+                    <div className="relative flex-[1.2] min-w-[200px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-4 py-3.5 md:py-3 h-full min-h-[56px]">
+                            <Plane className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                             <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">To</span>
+                                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">To</span>
                                 <select
                                     value={destination}
                                     onChange={(e) => setDestination(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base"
+                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base leading-tight mt-0.5"
                                 >
                                     {DESTINATION_GROUPS.map((group) => (
                                         <optgroup key={group.key} label={group.label}>
@@ -588,10 +588,10 @@ export default function FlightWidget() {
                                 <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
                                     <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
                                     <div className="flex flex-col w-full overflow-hidden">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
-                                            Return <span className="text-[9px] text-gray-400 font-normal normal-case hidden xl:inline">(Optional)</span>
+                                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
+                                            Return
                                         </span>
-                                        <span className={`font-bold text-sm truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
+                                        <span className={`font-bold text-sm md:text-base leading-tight mt-0.5 truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
                                             {returnDate ? formatDisplay(returnDate) : "Add return"}
                                         </span>
                                     </div>
@@ -599,10 +599,10 @@ export default function FlightWidget() {
                                         <button
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
-                                            className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
-                                            aria-label="Clear return date"
+                                            className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 z-20 relative pointer-events-auto"
+                                            title="Clear return date"
                                         >
-                                            <X className="w-3 h-3" />
+                                            <X className="w-3.5 h-3.5" />
                                         </button>
                                     )}
                                 </div>
@@ -685,35 +685,33 @@ export default function FlightWidget() {
                         </PopoverContent>
                     </Popover>
 
-                    {/* Travelers & Class (Popover Trigger) */}
-                    <div className="relative flex-[1.5] min-w-[180px] group hover:bg-gray-50 transition-colors rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl" ref={popoverRef}>
-                        <button
-                            ref={paxTriggerRef}
-                            type="button"
-                            aria-expanded={openPax}
-                            aria-controls="pax-panel"
-                            onClick={() => setOpenPax((v) => !v)}
-                            className="w-full h-full text-left"
-                        >
-                            <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
-                                <Users className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
-                                <div className="flex flex-col w-full overflow-hidden">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Travelers & Class</span>
-                                    <span className="font-bold text-gray-900 truncate text-sm">
-                                        {travelerLabel}, {cabinLabel}
-                                    </span>
-                                </div>
-                                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 ml-1 transition-transform shrink-0 ${openPax ? "rotate-180" : ""}`} />
-                            </div>
-                        </button>
+                    {/* Travelers & Class */}
+                    <div className="relative flex-[1.4] min-w-[200px]">
+                        <Popover open={openPax} onOpenChange={setOpenPax}>
+                            <PopoverTrigger asChild>
+                                <button
+                                    type="button"
+                                    ref={paxTriggerRef}
+                                    className={`w-full h-full min-h-[56px] px-4 py-3.5 md:py-3 flex items-center group hover:bg-gray-50 transition-colors text-left rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl outline-none ${openPax ? "bg-blue-50/50 ring-2 ring-blue-500 ring-inset" : "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+                                        }`}
+                                >
+                                    <Users className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
+                                    <div className="flex flex-col w-full overflow-hidden">
+                                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                                            Travelers & Class
+                                        </span>
+                                        <span className="font-bold text-gray-900 text-sm md:text-base leading-tight mt-0.5 truncate">
+                                            {travelerLabel}, {cabinLabel}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className={`w-4 h-4 text-gray-400 ml-2 shrink-0 transition-transform ${openPax ? "rotate-180" : ""}`} />
+                                </button>
+                            </PopoverTrigger>
 
-                        {/* Popover content */}
-                        {openPax && (
-                            <div
-                                id="pax-panel"
-                                role="dialog"
-                                aria-modal="false"
-                                className="absolute right-0 top-full z-50 mt-2 w-full min-w-[300px] max-w-sm rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 p-4 max-h-[70vh] overflow-auto animate-in fade-in zoom-in-95"
+                            <PopoverContent
+                                align="end"
+                                sideOffset={8}
+                                className="w-[300px] p-4 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="text-sm font-black text-gray-900">Passengers</div>
@@ -759,60 +757,60 @@ export default function FlightWidget() {
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
+                    {/* Primary Search Button Container */}
+                    <div className="flex shrink-0">
+                        <button
+                            onClick={handleSearch}
+                            className="w-full lg:w-auto bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-3.5 lg:py-4 px-8 rounded-xl lg:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full"
+                            aria-label="Search Flights"
+                        >
+                            <Search className="w-5 h-5" />
+                            Search
+                        </button>
                     </div>
                 </div>
 
-                {/* Primary Search Button Container */}
-                <div className="flex shrink-0">
-                    <button
-                        onClick={handleSearch}
-                        className="w-full lg:w-auto bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-3.5 lg:py-4 px-8 rounded-xl lg:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full"
-                        aria-label="Search Flights"
-                    >
-                        <Search className="w-5 h-5" />
-                        Search
-                    </button>
+                {/* ACTION AREA & Secondary Buttons */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
+                    <div className="flex-1">
+                        {lowestPrice && !returnDate && (
+                            <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-200">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-sm font-bold">Cheapest from ${lowestPrice} ({formatTHB(lowestPrice)})</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                        <button
+                            onClick={handleTripComSearch}
+                            aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
+                            className="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-6 rounded-xl border border-gray-200 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
+                        >
+                            <ExternalLink className="w-4 h-4" />
+                            <span>Compare on Trip.com</span>
+                        </button>
+                    </div>
                 </div>
+                <p className="mt-2 min-h-5 text-sm text-red-400 font-medium" role="status" aria-live="polite">{formError}</p>
+
+                {/* Recent Searches */}
+                <RecentSearches
+                    onReSearch={(s) => {
+                        setOrigin(s.origin);
+                        setDestination(s.destination);
+                        setDepartDate(s.departDate);
+                        setReturnDate(s.returnDate);
+                    }}
+                />
             </div>
-
-            {/* ACTION AREA & Secondary Buttons */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
-                <div className="flex-1">
-                    {lowestPrice && !returnDate && (
-                        <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-200">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-sm font-bold">Cheapest from ${lowestPrice} ({formatTHB(lowestPrice)})</span>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
-                    <button
-                        onClick={handleTripComSearch}
-                        aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
-                        className="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-6 rounded-xl border border-gray-200 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
-                    >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>Compare on Trip.com</span>
-                    </button>
-                </div>
-            </div>
-            <p className="mt-2 min-h-5 text-sm text-red-400 font-medium" role="status" aria-live="polite">{formError}</p>
-
-            {/* Recent Searches */}
-            <RecentSearches
-                onReSearch={(s) => {
-                    setOrigin(s.origin);
-                    setDestination(s.destination);
-                    setDepartDate(s.departDate);
-                    setReturnDate(s.returnDate);
-                }}
-            />
         </div>
     );
 }
