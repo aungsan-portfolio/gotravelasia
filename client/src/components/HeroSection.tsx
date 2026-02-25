@@ -27,25 +27,18 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
 
   return (
     <section className="relative overflow-hidden">
-      {/* ─── Dark Photo Background ─── */}
-      <div className="absolute inset-0">
-        <img
-          src="/images/hero-travel.webp"
-          alt=""
-          className="w-full h-full object-cover"
-          loading="eager"
-          decoding="async"
-        />
-        <div className="absolute inset-0 bg-black/55" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70" />
-      </div>
+      {/* ─── Light Gradient Background ─── */}
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-50 via-white to-gray-50" />
+      {/* Subtle decorative circles */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-sky-100/50 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-orange-50/40 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
 
       {/* ─── Content ─── */}
-      <div className="relative z-10 pt-16 md:pt-24 pb-10 md:pb-20">
+      <div className="relative z-10 pt-16 md:pt-24 pb-10 md:pb-16">
         <div className="container">
           {/* Social proof badge */}
           <div className="text-center mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full text-sm border border-white/20 text-white/90">
+            <div className="inline-flex items-center gap-2 bg-sky-50 px-5 py-2 rounded-full text-sm border border-sky-200/60 text-sky-700 font-medium shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -56,20 +49,20 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
 
           {/* Heading */}
           <div className="text-center mb-8 md:mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-3 text-white leading-[1.05]">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-3 text-gray-900 leading-[1.05]">
               {t("hero.title")}{" "}
-              <span className="text-orange-400">{t("hero.country")}</span>
+              <span className="text-orange-500">{t("hero.country")}</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/70 font-normal max-w-lg mx-auto">
+            <p className="text-lg md:text-xl text-gray-500 font-normal max-w-lg mx-auto">
               Compare AirAsia, VietJet, Scoot, Lion Air & 80+ more • Save up to 70%
             </p>
           </div>
 
-          {/* Search card with glassmorphism */}
+          {/* Search card — clean white */}
           <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-            <div className="bg-white/[0.08] backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/15 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg shadow-gray-200/60 border border-gray-100 overflow-hidden">
               {/* Tabs */}
-              <div className="flex bg-white/5 border-b border-white/10">
+              <div className="flex border-b border-gray-100">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -77,11 +70,10 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center justify-center gap-2 flex-1 px-6 py-4 text-sm font-semibold transition-all ${
-                        isActive
-                          ? "text-white border-b-[3px] border-orange-500 bg-white/5"
-                          : "text-white/50 hover:text-white/80 hover:bg-white/5"
-                      }`}
+                      className={`flex items-center justify-center gap-2 flex-1 px-6 py-3.5 text-sm font-semibold transition-all ${isActive
+                          ? "text-gray-900 border-b-[3px] border-orange-500 bg-orange-50/30"
+                          : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       {tab.label}
@@ -98,15 +90,15 @@ export default function HeroSection({ activeTab, setActiveTab, children }: HeroS
           </div>
 
           {/* Trust bar */}
-          <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-xs md:text-sm text-white/50 mt-8 animate-in fade-in duration-1000 delay-500">
+          <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-xs md:text-sm text-gray-400 mt-8 animate-in fade-in duration-1000 delay-500">
             <div className="flex items-center gap-1.5">
-              <span className="text-emerald-400">✓</span> No booking fees
+              <span className="text-emerald-500">✓</span> No booking fees
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-emerald-400">✓</span> Real-time prices
+              <span className="text-emerald-500">✓</span> Real-time prices
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-emerald-400">✓</span> 200+ SEA routes
+              <span className="text-emerald-500">✓</span> 200+ SEA routes
             </div>
           </div>
         </div>

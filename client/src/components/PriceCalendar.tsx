@@ -29,12 +29,12 @@ type PriceMap = Record<string, number>;
 
 type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
-// Using extremely subtle variants for estimated prices to blend invisibly
+// Soft pastel colors — Cheapflights-inspired, own values
 const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
-  cheapest: { bg: "#22c55e", text: "#ffffff", estBg: "#ecfdf5", estText: "#9ca3af" },
-  cheap: { bg: "#86efac", text: "#1f2937", estBg: "#ecfdf5", estText: "#9ca3af" },
-  mid: { bg: "#eab308", text: "#ffffff", estBg: "#fefce8", estText: "#9ca3af" },
-  expensive: { bg: "#ec4899", text: "#ffffff", estBg: "#fdf4ff", estText: "#9ca3af" },
+  cheapest: { bg: "#a8f0be", text: "#054d14", estBg: "#e8fbef", estText: "#9ca3af" },
+  cheap: { bg: "#c6f6d5", text: "#065f16", estBg: "#e8fbef", estText: "#9ca3af" },
+  mid: { bg: "#fcc98a", text: "#5b2601", estBg: "#fef3e2", estText: "#9ca3af" },
+  expensive: { bg: "#fbb0ad", text: "#680d08", estBg: "#feeaea", estText: "#9ca3af" },
   none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#9ca3af" },
 };
 
@@ -448,19 +448,19 @@ export default function PriceCalendar({
         <div className="flex flex-wrap items-center gap-3">
           <span
             className="inline-flex items-center justify-center h-[28px] px-3 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#22c55e", color: "#ffffff" }}
+            style={{ backgroundColor: "#a8f0be", color: "#054d14" }}
           >
             Cheapest
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-3 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#eab308", color: "#ffffff" }}
+            style={{ backgroundColor: "#fcc98a", color: "#5b2601" }}
           >
             Average
           </span>
           <span
             className="inline-flex items-center justify-center h-[28px] px-3 rounded-md text-xs font-bold"
-            style={{ backgroundColor: "#ec4899", color: "#ffffff" }}
+            style={{ backgroundColor: "#fbb0ad", color: "#680d08" }}
           >
             Expensive
           </span>
