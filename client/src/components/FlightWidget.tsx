@@ -438,10 +438,10 @@ export default function FlightWidget() {
             return dd + mm;
         };
         const cabinCode: Record<string, string> = {
-            economy: "",
-            premium_economy: "w",
-            business: "c",
-            first: "f",
+            Y: "",
+            W: "w",
+            C: "c",
+            F: "f",
         };
         const classPrefix = cabinCode[cabinClass] || "";
         let fs = `${origin}${formatDDMM(dep)}${destination}`;
@@ -488,12 +488,7 @@ export default function FlightWidget() {
             dcity: origin,
             acity: destination,
             ddate: departDate,
-            class: (() => {
-                const cabinCode: Record<string, string> = {
-                    Y: "Y", W: "W", C: "C", F: "F",
-                };
-                return cabinCode[cabinClass] || "Y";
-            })(),
+            class: ({ Y: "0", W: "0", C: "1", F: "2" }[cabinClass] ?? "0"),
             quantity: String(adults + children),
             searchBoxArg: "t",
             Allianceid: "7796167",
@@ -508,11 +503,11 @@ export default function FlightWidget() {
 
     return (
         <div className="w-full max-w-6xl mx-auto rounded-3xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            {/* SEARCH ROW */}
-            <div className="flex flex-col lg:flex-row gap-3">
+            {/* SEARCH ROW — FIXED GRID */}
+            <div className="flex flex-col w-full">
 
-                {/* Inputs Wrapper — 5-column grid on desktop */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                {/* Inputs Wrapper — 6 columns on desktop */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
 
                     {/* Origin */}
                     <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
@@ -652,7 +647,7 @@ export default function FlightWidget() {
                     </Popover>
 
                     {/* Travelers & Class */}
-                    <div className="relative">
+                    <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
                         <Popover open={openPax} onOpenChange={setOpenPax}>
                             <PopoverTrigger asChild>
                                 <button
@@ -722,21 +717,21 @@ export default function FlightWidget() {
                         </Popover>
                     </div>
 
-                    {/* Primary Search Button Container */}
-                    <div className="flex shrink-0">
+                    {/* NEW: Search Button — 6th column */}
+                    <div className="lg:col-span-1 flex items-stretch">
                         <button
                             onClick={handleSearch}
-                            className="w-full lg:w-auto bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-3.5 lg:py-4 px-8 rounded-xl lg:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full"
+                            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-3.5 lg:py-5 px-8 rounded-xl lg:rounded-l-none lg:rounded-r-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full lg:text-lg"
                             aria-label="Search Flights"
                         >
                             <Search className="w-5 h-5" />
-                            Search
+                            Search Flights
                         </button>
                     </div>
                 </div>
 
-                {/* ACTION AREA & Secondary Buttons */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
+                {/* ACTION AREA (Price hint + Compare) */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 w-full">
                     <div className="flex-1">
                         {lowestPrice ? (
                             <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-200">
@@ -901,29 +896,25 @@ function RecentSearches({
                                 <div>
                                     {currentPrice !== null ? (
                                         <>
-                                            <div className="text-xl font-black text-white">
+                                            <div className="text-2xl font-black text-gray-900">
                                                 ${currentPrice}
                                             </div>
-                                            <div className="text-xs text-white/40">
+                                            <div className="text-sm text-gray-500">
                                                 {formatTHB(currentPrice)}
                                             </div>
                                             {savedPrice !== null && savedPrice !== currentPrice && (
-                                                <div className="text-xs text-white/30 line-through">
+                                                <div className="text-xs text-gray-400 line-through">
                                                     Was ${savedPrice}
                                                 </div>
                                             )}
                                         </>
                                     ) : savedPrice !== null ? (
                                         <>
-                                            <div className="text-xl font-black text-white">
-                                                ${savedPrice}
-                                            </div>
-                                            <div className="text-xs text-white/40">
-                                                {formatTHB(savedPrice)}
-                                            </div>
+                                            <div className="text-xl font-black text-gray-900">${savedPrice}</div>
+                                            <div className="text-xs text-gray-500">{formatTHB(savedPrice)}</div>
                                         </>
                                     ) : (
-                                        <div className="text-sm text-white/40">Price unavailable</div>
+                                        <div className="text-sm text-gray-400">Price unavailable</div>
                                     )}
                                 </div>
 
