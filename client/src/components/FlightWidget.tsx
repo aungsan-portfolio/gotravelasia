@@ -508,22 +508,20 @@ export default function FlightWidget() {
                 <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200">
 
                     {/* Origin */}
-                    <div className="relative flex-[1.2] min-w-[200px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-4 py-3.5 md:py-3 h-full min-h-[56px]">
+                    <div className="relative flex-1 min-w-[150px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-4 py-3 h-full min-h-[60px]">
                             <MapPin className={`w-5 h-5 mr-3 shrink-0 ${detectingLocation ? "text-primary animate-pulse" : "text-gray-400"}`} />
-                            <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                                    {detectingLocation ? "Detecting..." : "From"}
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                                    {detectingLocation ? "Detecting…" : "From"}
                                 </span>
                                 <select
                                     value={origin}
                                     onChange={(e) => setOrigin(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base leading-tight mt-0.5"
+                                    className="w-full bg-transparent font-bold text-gray-900 text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
                                 >
                                     {AIRPORTS.map((city) => (
-                                        <option key={city.code} value={city.code}>
-                                            {city.name}
-                                        </option>
+                                        <option key={city.code} value={city.code}>{city.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -531,22 +529,20 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Destination */}
-                    <div className="relative flex-[1.2] min-w-[200px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center px-4 py-3.5 md:py-3 h-full min-h-[56px]">
+                    <div className="relative flex-1 min-w-[150px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center px-4 py-3 h-full min-h-[60px]">
                             <Plane className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
-                            <div className="flex flex-col w-full overflow-hidden">
-                                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">To</span>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">To</span>
                                 <select
                                     value={destination}
                                     onChange={(e) => setDestination(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 outline-none appearance-none cursor-pointer truncate text-sm md:text-base leading-tight mt-0.5"
+                                    className="w-full bg-transparent font-bold text-gray-900 text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
                                 >
                                     {DESTINATION_GROUPS.map((group) => (
                                         <optgroup key={group.key} label={group.label}>
                                             {group.options.map((dest) => (
-                                                <option key={dest.code} value={dest.code}>
-                                                    {dest.name}
-                                                </option>
+                                                <option key={dest.code} value={dest.code}>{dest.name}</option>
                                             ))}
                                         </optgroup>
                                     ))}
@@ -555,138 +551,101 @@ export default function FlightWidget() {
                         </div>
                     </div>
 
-                    {/* Dates */}
-                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                        <div className="flex flex-col sm:flex-row flex-[1.6] border-b lg:border-b-0 lg:border-r border-gray-200">
-                            {/* Depart trigger */}
-                            <PopoverTrigger asChild>
-                                <button
-                                    type="button"
-                                    onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
-                                    className={`relative flex-1 min-w-[130px] border-b sm:border-b-0 sm:border-r border-gray-200 group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
-                                        }`}
-                                >
-                                    <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
-                                        <CalendarIcon className="w-4 h-4 text-gray-400 mr-1.5 shrink-0" />
-                                        <div className="flex flex-col w-full overflow-hidden">
-                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Depart</span>
-                                            <span className="font-bold text-gray-900 text-sm truncate">
-                                                {departDate ? formatDisplay(departDate) : "Select date"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </button>
-                            </PopoverTrigger>
-
-                            {/* Return trigger */}
+                    {/* Depart */}
+                    <Popover open={calendarOpen && calendarMode === "depart"} onOpenChange={(open) => { if (!open) setCalendarOpen(false); }}>
+                        <PopoverTrigger asChild>
                             <button
                                 type="button"
-                                onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
-                                className={`relative flex-1 min-w-[130px] group hover:bg-gray-50 transition-colors text-left ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""
-                                    }`}
+                                onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
+                                className={`relative flex-1 min-w-[130px] border-b lg:border-b-0 lg:border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
                             >
-                                <div className="flex items-center px-3 py-3.5 md:py-2.5 h-full min-h-[52px]">
-                                    <ArrowRightLeft className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
-                                    <div className="flex flex-col w-full overflow-hidden">
-                                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide flex justify-between">
-                                            Return
-                                        </span>
-                                        <span className={`font-bold text-sm md:text-base leading-tight mt-0.5 truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
-                                            {returnDate ? formatDisplay(returnDate) : "Add return"}
+                                <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
+                                    <CalendarIcon className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Depart</span>
+                                        <span className="font-bold text-gray-900 text-sm leading-snug truncate">
+                                            {departDate ? formatDisplay(departDate) : "Select date"}
                                         </span>
                                     </div>
-                                    {returnDate && (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
-                                            className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 z-20 relative pointer-events-auto"
-                                            title="Clear return date"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    )}
                                 </div>
                             </button>
-                        </div>
-
-                        {/* Calendar Popover */}
-                        <PopoverContent
-                            className="w-[760px] max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl"
-                            align="center"
-                            sideOffset={8}
-                        >
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[760px] max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
                             <div className="p-4">
-                                {/* Mode tabs */}
                                 <div className="flex gap-2 mb-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setCalendarMode("depart")}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${calendarMode === "depart"
-                                            ? "bg-gray-900 text-white shadow-md"
-                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                            }`}
-                                    >
-                                        Departure{departDate ? ` · ${formatDisplay(departDate)}` : ""}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setCalendarMode("return")}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${calendarMode === "return"
-                                            ? "bg-gray-900 text-white shadow-md"
-                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                            }`}
-                                    >
-                                        Return{returnDate ? ` · ${formatDisplay(returnDate)}` : ""}
-                                    </button>
+                                    <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Departure</span>
                                 </div>
-
                                 <PriceCalendar
                                     origin={origin}
                                     destination={destination}
-                                    calendarMode={calendarMode}
+                                    calendarMode="depart"
                                     selectedDepart={departDateObj}
                                     selectedReturn={returnDateObj}
                                     onSelectDate={handleCalendarSelect}
                                     todayDate={todayDate}
                                 />
+                                <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
+                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm">Done</button>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
 
-                                {/* Quick actions */}
-                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                                    <span className="text-xs text-gray-400">
-                                        {calendarMode === "depart" ? "Select departure date" : "Select return date (optional)"}
-                                    </span>
-                                    {calendarMode === "return" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => { setReturnDate(""); setCalendarOpen(false); }}
-                                            className="text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors"
+                    {/* Return */}
+                    <Popover open={calendarOpen && calendarMode === "return"} onOpenChange={(open) => { if (!open) setCalendarOpen(false); }}>
+                        <PopoverTrigger asChild>
+                            <button
+                                type="button"
+                                onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
+                                className={`relative flex-1 min-w-[130px] border-b lg:border-b-0 lg:border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                            >
+                                <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
+                                    <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Return</span>
+                                        <span className={`font-bold text-sm leading-snug truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
+                                            {returnDate ? formatDisplay(returnDate) : "Add return"}
+                                        </span>
+                                    </div>
+                                    {returnDate && (
+                                        <span
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
+                                            onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), setReturnDate(""))}
+                                            className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0 cursor-pointer"
+                                            title="Clear return"
                                         >
-                                            Skip return
-                                        </button>
+                                            <X className="w-3.5 h-3.5" />
+                                        </span>
                                     )}
                                 </div>
-
-                                {departDate && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (typeof window !== "undefined" && posthog.__loaded) {
-                                                posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
-                                            }
-                                            const flightSearch = buildFlightSearch(departDate, returnDate);
-                                            window.location.href = `/flights/results?flightSearch=${flightSearch}`;
-                                        }}
-                                        className="w-full mt-3 h-12 rounded-xl bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
-                                    >
-                                        🔍 Search Flights
-                                    </button>
-                                )}
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[760px] max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
+                            <div className="p-4">
+                                <div className="flex gap-2 mb-4">
+                                    <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Return</span>
+                                    <button type="button" onClick={() => { setReturnDate(""); setCalendarOpen(false); }} className="px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors">Skip return</button>
+                                </div>
+                                <PriceCalendar
+                                    origin={origin}
+                                    destination={destination}
+                                    calendarMode="return"
+                                    selectedDepart={departDateObj}
+                                    selectedReturn={returnDateObj}
+                                    onSelectDate={handleCalendarSelect}
+                                    todayDate={todayDate}
+                                />
+                                <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
+                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm">Done</button>
+                                </div>
                             </div>
                         </PopoverContent>
                     </Popover>
 
                     {/* Travelers & Class */}
-                    <div className="relative flex-[1.4] min-w-[200px]">
+                    <div className="relative flex-1 min-w-[170px]">
                         <Popover open={openPax} onOpenChange={setOpenPax}>
                             <PopoverTrigger asChild>
                                 <button
