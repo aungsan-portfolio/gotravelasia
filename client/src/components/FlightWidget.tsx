@@ -495,20 +495,20 @@ export default function FlightWidget() {
             <div className="flex flex-col w-full">
 
                 {/* Inputs Wrapper — 6 columns on desktop */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 flex-1 rounded-xl lg:rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.12)', border: '1.5px solid rgba(255,255,255,0.2)' }}>
 
                     {/* Origin */}
-                    <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
+                    <div className="relative transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
                         <div className="flex items-center px-4 py-3 h-full min-h-[60px]">
-                            <MapPin className={`w-5 h-5 mr-3 shrink-0 ${detectingLocation ? "text-primary animate-pulse" : "text-gray-400"}`} />
+                            <MapPin className={`w-5 h-5 mr-3 shrink-0 ${detectingLocation ? "animate-pulse" : ""}`} style={{ color: detectingLocation ? '#F5C518' : 'rgba(255,255,255,0.5)' }} />
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                                <span className="text-[10px] font-semibold uppercase tracking-widest leading-none mb-1" style={{ color: '#F5C518' }}>
                                     {detectingLocation && !locationError ? "Detecting…" : "From"}
                                 </span>
                                 <select
                                     value={origin}
                                     onChange={(e) => setOrigin(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
+                                    className="w-full bg-transparent font-bold text-white text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
                                 >
                                     {AIRPORTS.map((city) => (
                                         <option key={city.code} value={city.code}>{city.name}</option>
@@ -520,24 +520,24 @@ export default function FlightWidget() {
                         <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); const tmp = origin; setOrigin(destination); setDestination(tmp); }}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:shadow-md active:scale-90 transition-all"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-all" style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)' }}
                             aria-label="Swap origin and destination"
                             title="Swap airports"
                         >
-                            <ArrowRightLeft className="w-3.5 h-3.5 text-gray-500" />
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-white" />
                         </button>
                     </div>
 
                     {/* Destination */}
-                    <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
+                    <div className="relative transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
                         <div className="flex items-center px-4 py-3 h-full min-h-[60px]">
-                            <Plane className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
+                            <Plane className="w-5 h-5 mr-3 shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }} />
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">To</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-widest leading-none mb-1" style={{ color: '#F5C518' }}>To</span>
                                 <select
                                     value={destination}
                                     onChange={(e) => setDestination(e.target.value)}
-                                    className="w-full bg-transparent font-bold text-gray-900 text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
+                                    className="w-full bg-transparent font-bold text-white text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
                                 >
                                     {DESTINATION_GROUPS.map((group) => (
                                         <optgroup key={group.key} label={group.label}>
@@ -555,13 +555,13 @@ export default function FlightWidget() {
                     <button
                         type="button"
                         onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
-                        className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                        className="w-full h-full transition-colors text-left outline-none" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', borderRight: '1px solid rgba(255,255,255,0.15)', ...(calendarOpen && calendarMode === 'depart' ? { background: 'rgba(245,197,24,0.12)', boxShadow: 'inset 0 0 0 2px #F5C518' } : {}) }}
                     >
                         <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
-                            <CalendarIcon className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
+                            <CalendarIcon className="w-4 h-4 mr-2 shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }} />
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Depart</span>
-                                <span className="font-bold text-gray-900 text-sm leading-snug truncate">
+                                <span className="text-[10px] font-semibold uppercase tracking-widest leading-none mb-1" style={{ color: '#F5C518' }}>Depart</span>
+                                <span className="font-bold text-white text-sm leading-snug truncate">
                                     {departDate ? formatDisplay(departDate) : "Select date"}
                                 </span>
                             </div>
@@ -572,13 +572,13 @@ export default function FlightWidget() {
                     <button
                         type="button"
                         onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
-                        className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                        className="w-full h-full transition-colors text-left outline-none" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', borderRight: '1px solid rgba(255,255,255,0.15)', ...(calendarOpen && calendarMode === 'return' ? { background: 'rgba(245,197,24,0.12)', boxShadow: 'inset 0 0 0 2px #F5C518' } : {}) }}
                     >
                         <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
-                            <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
+                            <ArrowRightLeft className="w-4 h-4 mr-2 shrink-0" style={{ color: returnDate ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)' }} />
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Return</span>
-                                <span className={`font-bold text-sm leading-snug truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
+                                <span className="text-[10px] font-semibold uppercase tracking-widest leading-none mb-1" style={{ color: '#F5C518' }}>Return</span>
+                                <span className="font-bold text-sm leading-snug truncate" style={{ color: returnDate ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
                                     {returnDate ? formatDisplay(returnDate) : "Add return"}
                                 </span>
                             </div>
@@ -588,7 +588,7 @@ export default function FlightWidget() {
                                     tabIndex={0}
                                     onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
                                     onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), setReturnDate(""))}
-                                    className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0 cursor-pointer"
+                                    className="ml-1 p-0.5 rounded-full transition-colors shrink-0 cursor-pointer" style={{ color: 'rgba(255,255,255,0.5)' }}
                                     title="Clear return"
                                 >
                                     <X className="w-3.5 h-3.5" />
@@ -598,20 +598,20 @@ export default function FlightWidget() {
                     </button>
 
                     {/* Travelers & Class */}
-                    <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
+                    <div className="relative transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
                         <Popover open={openPax} onOpenChange={setOpenPax}>
                             <PopoverTrigger asChild>
                                 <button
                                     type="button"
                                     ref={paxTriggerRef}
-                                    className={`w-full h-full min-h-[60px] px-4 py-3 flex items-center hover:bg-gray-50 transition-colors text-left rounded-br-xl outline-none ${openPax ? "bg-blue-50/50 ring-2 ring-blue-500 ring-inset" : "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"}`}
+                                    className="w-full h-full min-h-[60px] px-4 py-3 flex items-center transition-colors text-left rounded-br-xl outline-none" style={openPax ? { background: 'rgba(245,197,24,0.12)', boxShadow: 'inset 0 0 0 2px #F5C518' } : {}}
                                 >
-                                    <Users className="w-4 h-4 text-gray-400 mr-2.5 shrink-0" />
+                                    <Users className="w-4 h-4 mr-2.5 shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }} />
                                     <div className="flex flex-col min-w-0 flex-1">
-                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Travelers &amp; Class</span>
-                                        <span className="font-bold text-gray-900 text-sm leading-snug truncate">{travelerLabel}, {cabinLabel}</span>
+                                        <span className="text-[10px] font-semibold uppercase tracking-widest leading-none mb-1" style={{ color: '#F5C518' }}>Travelers &amp; Class</span>
+                                        <span className="font-bold text-white text-sm leading-snug truncate">{travelerLabel}, {cabinLabel}</span>
                                     </div>
-                                    <ChevronDown className={`w-4 h-4 text-gray-400 ml-2 shrink-0 transition-transform ${openPax ? "rotate-180" : ""}`} />
+                                    <ChevronDown className={`w-4 h-4 ml-2 shrink-0 transition-transform ${openPax ? "rotate-180" : ""}`} style={{ color: 'rgba(255,255,255,0.5)' }} />
                                 </button>
                             </PopoverTrigger>
 
@@ -649,7 +649,8 @@ export default function FlightWidget() {
                                                         key={opt.value}
                                                         type="button"
                                                         onClick={() => setCabinClass(opt.value)}
-                                                        className={["px-3 py-2 rounded-xl text-sm font-bold border transition", active ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"].join(" ")}
+                                                        className={["px-3 py-2 rounded-xl text-sm font-bold border transition", active ? "border-transparent text-white" : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"].join(" ")}
+                                                        style={active ? { background: '#5B0EA6', boxShadow: '0 3px 10px rgba(91,14,166,0.3)' } : {}}
                                                     >
                                                         {opt.label}
                                                     </button>
@@ -672,7 +673,7 @@ export default function FlightWidget() {
                     <div className="lg:col-span-1 flex items-stretch">
                         <button
                             onClick={handleSearch}
-                            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold py-3.5 lg:py-5 px-8 rounded-xl lg:rounded-l-none lg:rounded-r-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full lg:text-lg"
+                            className="w-full active:scale-[0.97] font-bold py-3.5 lg:py-5 px-8 rounded-xl lg:rounded-l-none lg:rounded-r-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-base h-full lg:text-lg" style={{ background: '#F5C518', color: '#2D0558', boxShadow: '0 4px 18px rgba(245,197,24,0.4)' }}
                             aria-label="Search Flights"
                         >
                             <Search className="w-5 h-5" />
@@ -693,14 +694,14 @@ export default function FlightWidget() {
                                     <button
                                         type="button"
                                         onClick={() => setCalendarMode("depart")}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${calendarMode === "depart" ? "bg-gray-900 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                                        className="px-4 py-1.5 rounded-full text-sm font-bold transition-colors" style={calendarMode === 'depart' ? { background: '#5B0EA6', color: '#ffffff', boxShadow: '0 2px 8px rgba(91,14,166,0.3)' } : { background: '#f3f4f6', color: '#4b5563' }}
                                     >
                                         Departure
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setCalendarMode("return")}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${calendarMode === "return" ? "bg-gray-900 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                                        className="px-4 py-1.5 rounded-full text-sm font-bold transition-colors" style={calendarMode === 'return' ? { background: '#5B0EA6', color: '#ffffff', boxShadow: '0 2px 8px rgba(91,14,166,0.3)' } : { background: '#f3f4f6', color: '#4b5563' }}
                                     >
                                         Return
                                     </button>
@@ -720,7 +721,7 @@ export default function FlightWidget() {
                                     todayDate={todayDate}
                                 />
                                 <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
-                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm">Done</button>
+                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl text-white font-bold text-sm" style={{ background: '#5B0EA6' }}>Done</button>
                                 </div>
                             </div>
                         </div>
@@ -731,7 +732,7 @@ export default function FlightWidget() {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 w-full">
                     <div className="flex-1">
                         {lowestPrice ? (
-                            <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-200">
+                            <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 px-4 py-2 rounded-xl w-fit" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#a0f0b0' }}>
                                 <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -739,7 +740,7 @@ export default function FlightWidget() {
                                 <span className="text-sm font-bold">Cheapest from ${lowestPrice} ({formatTHB(lowestPrice)})</span>
                             </div>
                         ) : (
-                            <div className="h-8 w-56 bg-gray-100 animate-pulse rounded-xl" aria-hidden="true" />
+                            <div className="h-8 w-56 animate-pulse rounded-xl" style={{ background: 'rgba(255,255,255,0.08)' }} aria-hidden="true" />
                         )}
                     </div>
 
@@ -747,14 +748,14 @@ export default function FlightWidget() {
                         <button
                             onClick={handleTripComSearch}
                             aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
-                            className="w-full md:w-auto bg-[#fcb773] hover:bg-[#f9a35f] active:scale-[0.97] text-[#1a1a2e] font-bold py-3.5 px-7 rounded-2xl text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
+                            className="w-full md:w-auto active:scale-[0.97] font-bold py-3.5 px-7 rounded-2xl text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3" style={{ background: 'rgba(245,197,24,0.2)', color: '#F5C518', border: '1.5px solid rgba(245,197,24,0.4)' }}
                         >
                             <ExternalLink className="w-5 h-5" />
                             <span>Compare on Trip.com</span>
                         </button>
                     </div>
                 </div>
-                <p className="mt-2 min-h-5 text-sm text-red-400 font-medium" role="status" aria-live="polite">{formError}</p>
+                <p className="mt-2 min-h-5 text-sm font-medium" style={{ color: '#fba09d' }} role="status" aria-live="polite">{formError}</p>
 
                 {/* Recent Searches */}
                 <RecentSearches

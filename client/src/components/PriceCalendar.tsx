@@ -335,7 +335,7 @@ export default function PriceCalendar({
                         className={`w-full aspect-square flex flex-col items-center justify-center gap-0 rounded-lg text-xs transition-colors border border-transparent ${isSelected ? "shadow-md z-10 relative" : ""
                           }`}
                         style={{
-                          backgroundColor: isSelected ? "#1a1a2e" : (inRange && tier === "none" ? "transparent" : currentBg),
+                          backgroundColor: isSelected ? "#5B0EA6" : (inRange && tier === "none" ? "transparent" : currentBg),
                           color: isSelected ? "#ffffff" : currentText,
                         }}
                       >
@@ -377,7 +377,7 @@ export default function PriceCalendar({
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex items-center gap-2 bg-white/80 px-4 py-1.5 rounded-full font-medium text-sm text-gray-500 backdrop-blur-sm z-20">
-              <span className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent" />
+              <span className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: '#5B0EA6', borderTopColor: 'transparent' }} />
               Loading prices...
             </div>
           </div>
@@ -426,7 +426,7 @@ export default function PriceCalendar({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[12px] font-bold whitespace-nowrap shadow-md"
+              className="px-3 py-1.5 rounded-lg text-white text-[12px] font-bold whitespace-nowrap shadow-md" style={{ background: '#5B0EA6' }}
             >
               {selectedReturn ? (
                 `${format(selectedDepart, "MMM d")} – ${format(selectedReturn, "MMM d")}`
