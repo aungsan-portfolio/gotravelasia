@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import type { Deal } from "@/hooks/useFlightData";
+import { USD_TO_THB_RATE } from "@/const";
 
 const AIRLINE_NAMES: Record<string, string> = {
   FD: "Thai AirAsia",
@@ -41,7 +42,6 @@ const getRouteImage = (dest: string) => {
   return images[dest] || "/images/hero-travel.webp";
 };
 
-const USD_TO_THB_RATE = 34;
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr + "T00:00:00");

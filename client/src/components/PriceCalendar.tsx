@@ -12,7 +12,7 @@ if (typeof window !== "undefined" && !posthog.__loaded) {
   });
 }
 
-const USD_TO_THB = 34;
+import { USD_TO_THB_RATE as USD_TO_THB } from "@/const";
 
 type PriceEntry = {
   price: number;

@@ -22,6 +22,7 @@ import PriceCalendar from "@/components/PriceCalendar";
 import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 import posthog from "posthog-js";
 import { z } from "zod";
+import { USD_TO_THB_RATE, formatTHB } from "@/const";
 
 // --- Zod search validation ---
 const flightSearchSchema = z
@@ -172,12 +173,6 @@ function formatTravelerLabel(
     return total === 1 ? "1 Traveler" : `${total} Travelers`;
 }
 
-/* ─── THB Converter Helper ─── */
-const USD_TO_THB_RATE = 34; // Static conversion rate
-const formatTHB = (usdPrice: number) => {
-    const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
-    return `฿${thbPrice.toLocaleString()}`;
-};
 
 /* ─── Recent Searches (localStorage) ─── */
 const LS_KEY = "gt_recent_searches";

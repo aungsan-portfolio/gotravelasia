@@ -1,5 +1,12 @@
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
+/* ─── Currency Conversion ─── */
+export const USD_TO_THB_RATE = 34;
+export const formatTHB = (usdPrice: number) => {
+  const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
+  return `฿${thbPrice.toLocaleString()}`;
+};
+
 // Generate login URL at runtime so redirect URI reflects the current origin.
 export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
