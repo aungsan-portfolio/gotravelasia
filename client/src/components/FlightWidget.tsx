@@ -552,97 +552,50 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Depart */}
-                    <Popover open={calendarOpen && calendarMode === "depart"} onOpenChange={(open) => { if (!open) setCalendarOpen(false); }}>
-                        <PopoverTrigger asChild>
-                            <button
-                                type="button"
-                                onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
-                                className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
-                            >
-                                <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
-                                    <CalendarIcon className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Depart</span>
-                                        <span className="font-bold text-gray-900 text-sm leading-snug truncate">
-                                            {departDate ? formatDisplay(departDate) : "Select date"}
-                                        </span>
-                                    </div>
-                                </div>
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
-                            <div className="p-4">
-                                <div className="flex gap-2 mb-4">
-                                    <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Departure</span>
-                                </div>
-                                <PriceCalendar
-                                    origin={origin}
-                                    destination={destination}
-                                    calendarMode="depart"
-                                    selectedDepart={departDateObj}
-                                    selectedReturn={returnDateObj}
-                                    onSelectDate={handleCalendarSelect}
-                                    todayDate={todayDate}
-                                />
-                                <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
-                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm">Done</button>
-                                </div>
+                    <button
+                        type="button"
+                        onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
+                        className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                    >
+                        <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
+                            <CalendarIcon className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Depart</span>
+                                <span className="font-bold text-gray-900 text-sm leading-snug truncate">
+                                    {departDate ? formatDisplay(departDate) : "Select date"}
+                                </span>
                             </div>
-                        </PopoverContent>
-                    </Popover>
+                        </div>
+                    </button>
 
                     {/* Return */}
-                    <Popover open={calendarOpen && calendarMode === "return"} onOpenChange={(open) => { if (!open) setCalendarOpen(false); }}>
-                        <PopoverTrigger asChild>
-                            <button
-                                type="button"
-                                onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
-                                className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
-                            >
-                                <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
-                                    <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Return</span>
-                                        <span className={`font-bold text-sm leading-snug truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
-                                            {returnDate ? formatDisplay(returnDate) : "Add return"}
-                                        </span>
-                                    </div>
-                                    {returnDate && (
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
-                                            onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), setReturnDate(""))}
-                                            className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0 cursor-pointer"
-                                            title="Clear return"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </span>
-                                    )}
-                                </div>
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
-                            <div className="p-4">
-                                <div className="flex gap-2 mb-4">
-                                    <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Return</span>
-                                    <button type="button" onClick={() => { setReturnDate(""); setCalendarOpen(false); }} className="px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors">Skip return</button>
-                                </div>
-                                <PriceCalendar
-                                    origin={origin}
-                                    destination={destination}
-                                    calendarMode="return"
-                                    selectedDepart={departDateObj}
-                                    selectedReturn={returnDateObj}
-                                    onSelectDate={handleCalendarSelect}
-                                    todayDate={todayDate}
-                                />
-                                <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
-                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm">Done</button>
-                                </div>
+                    <button
+                        type="button"
+                        onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
+                        className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                    >
+                        <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
+                            <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Return</span>
+                                <span className={`font-bold text-sm leading-snug truncate ${returnDate ? "text-gray-900" : "text-gray-400"}`}>
+                                    {returnDate ? formatDisplay(returnDate) : "Add return"}
+                                </span>
                             </div>
-                        </PopoverContent>
-                    </Popover>
+                            {returnDate && (
+                                <span
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => { e.stopPropagation(); setReturnDate(""); }}
+                                    onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), setReturnDate(""))}
+                                    className="ml-1 p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors shrink-0 cursor-pointer"
+                                    title="Clear return"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </span>
+                            )}
+                        </div>
+                    </button>
 
                     {/* Travelers & Class */}
                     <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
@@ -727,6 +680,52 @@ export default function FlightWidget() {
                         </button>
                     </div>
                 </div>
+
+                {/* ─── Centered Calendar Overlay ─── */}
+                {calendarOpen && (
+                    <>
+                        {/* Backdrop — click to close */}
+                        <div className="fixed inset-0 z-40" onClick={() => setCalendarOpen(false)} />
+                        {/* Centered calendar panel */}
+                        <div className="relative z-50 flex justify-center mt-2">
+                            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="flex gap-2 mb-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCalendarMode("depart")}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${calendarMode === "depart" ? "bg-gray-900 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                                    >
+                                        Departure
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCalendarMode("return")}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${calendarMode === "return" ? "bg-gray-900 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                                    >
+                                        Return
+                                    </button>
+                                    {calendarMode === "return" && (
+                                        <button type="button" onClick={() => { setReturnDate(""); setCalendarOpen(false); }} className="px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors ml-auto">
+                                            Skip return
+                                        </button>
+                                    )}
+                                </div>
+                                <PriceCalendar
+                                    origin={origin}
+                                    destination={destination}
+                                    calendarMode={calendarMode}
+                                    selectedDepart={departDateObj}
+                                    selectedReturn={returnDateObj}
+                                    onSelectDate={handleCalendarSelect}
+                                    todayDate={todayDate}
+                                />
+                                <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
+                                    <button type="button" onClick={() => setCalendarOpen(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-sm">Done</button>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* ACTION AREA (Price hint + Compare) */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 w-full">
