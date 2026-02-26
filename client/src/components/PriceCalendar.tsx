@@ -362,7 +362,7 @@ export default function PriceCalendar({
   };
 
   return (
-    <div className="w-[850px] max-w-[95vw] bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden flex flex-col p-6 font-sans">
+    <div className="w-[850px] max-w-[90vw] bg-white rounded-3xl overflow-hidden flex flex-col p-6 font-sans">
 
       {/* ─── Top Tabs & Filters ─── */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">

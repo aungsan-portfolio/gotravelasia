@@ -570,7 +570,7 @@ export default function FlightWidget() {
                                 </div>
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full max-w-[760px] min-w-[320px] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
+                        <PopoverContent className="w-auto max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
                             <div className="p-4">
                                 <div className="flex gap-2 mb-4">
                                     <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Departure</span>
@@ -622,7 +622,7 @@ export default function FlightWidget() {
                                 </div>
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full max-w-[760px] min-w-[320px] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
+                        <PopoverContent className="w-auto max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
                             <div className="p-4">
                                 <div className="flex gap-2 mb-4">
                                     <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Return</span>
