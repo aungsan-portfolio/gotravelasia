@@ -278,6 +278,7 @@ export default function FlightWidget() {
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState("Y");
     const [detectingLocation, setDetectingLocation] = useState(true);
+    const [locationError, setLocationError] = useState(false);
     const [formError, setFormError] = useState("");
 
     useEffect(() => {
@@ -310,6 +311,7 @@ export default function FlightWidget() {
             })
             .catch(() => {
                 setOrigin(DEFAULT_ORIGIN);
+                setLocationError(true);
             })
             .finally(() => {
                 clearTimeout(timeout);
@@ -486,7 +488,12 @@ export default function FlightWidget() {
             dcity: origin,
             acity: destination,
             ddate: departDate,
-            class: cabinClass === "C" || cabinClass === "F" ? "C" : "Y",
+            class: (() => {
+                const cabinCode: Record<string, string> = {
+                    Y: "Y", W: "W", C: "C", F: "F",
+                };
+                return cabinCode[cabinClass] || "Y";
+            })(),
             quantity: String(adults + children),
             searchBoxArg: "t",
             Allianceid: "7796167",
@@ -504,16 +511,16 @@ export default function FlightWidget() {
             {/* SEARCH ROW */}
             <div className="flex flex-col lg:flex-row gap-3">
 
-                {/* Inputs Wrapper */}
-                <div className="flex flex-col lg:flex-row flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200">
+                {/* Inputs Wrapper — 5-column grid on desktop */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 flex-1 bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 overflow-hidden">
 
                     {/* Origin */}
-                    <div className="relative flex-1 min-w-[150px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                    <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center px-4 py-3 h-full min-h-[60px]">
                             <MapPin className={`w-5 h-5 mr-3 shrink-0 ${detectingLocation ? "text-primary animate-pulse" : "text-gray-400"}`} />
                             <div className="flex flex-col min-w-0 flex-1">
                                 <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
-                                    {detectingLocation ? "Detecting…" : "From"}
+                                    {detectingLocation && !locationError ? "Detecting…" : "From"}
                                 </span>
                                 <select
                                     value={origin}
@@ -529,7 +536,7 @@ export default function FlightWidget() {
                     </div>
 
                     {/* Destination */}
-                    <div className="relative flex-1 min-w-[150px] border-b lg:border-b-0 lg:border-r border-gray-200 group hover:bg-gray-50 transition-colors">
+                    <div className="relative border-b border-r border-gray-200 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center px-4 py-3 h-full min-h-[60px]">
                             <Plane className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                             <div className="flex flex-col min-w-0 flex-1">
@@ -557,7 +564,7 @@ export default function FlightWidget() {
                             <button
                                 type="button"
                                 onClick={() => { setCalendarMode("depart"); setCalendarOpen(true); }}
-                                className={`relative flex-1 min-w-[130px] border-b lg:border-b-0 lg:border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                                className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "depart" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
                             >
                                 <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
                                     <CalendarIcon className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
@@ -570,7 +577,7 @@ export default function FlightWidget() {
                                 </div>
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[760px] max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
+                        <PopoverContent className="w-full max-w-[760px] min-w-[320px] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
                             <div className="p-4">
                                 <div className="flex gap-2 mb-4">
                                     <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Departure</span>
@@ -597,7 +604,7 @@ export default function FlightWidget() {
                             <button
                                 type="button"
                                 onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
-                                className={`relative flex-1 min-w-[130px] border-b lg:border-b-0 lg:border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
+                                className={`w-full h-full border-b border-r border-gray-200 hover:bg-gray-50 transition-colors text-left outline-none ${calendarOpen && calendarMode === "return" ? "bg-blue-50 ring-2 ring-blue-400 ring-inset" : ""}`}
                             >
                                 <div className="flex items-center px-3 py-3 h-full min-h-[60px]">
                                     <ArrowRightLeft className={`w-4 h-4 mr-2 shrink-0 ${returnDate ? "text-gray-500" : "text-gray-300"}`} />
@@ -622,7 +629,7 @@ export default function FlightWidget() {
                                 </div>
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[760px] max-w-[95vw] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
+                        <PopoverContent className="w-full max-w-[760px] min-w-[320px] p-0 shadow-2xl border border-gray-200 rounded-2xl" align="start" sideOffset={8}>
                             <div className="p-4">
                                 <div className="flex gap-2 mb-4">
                                     <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-900 text-white shadow-sm">Return</span>
@@ -645,23 +652,18 @@ export default function FlightWidget() {
                     </Popover>
 
                     {/* Travelers & Class */}
-                    <div className="relative flex-1 min-w-[170px]">
+                    <div className="relative">
                         <Popover open={openPax} onOpenChange={setOpenPax}>
                             <PopoverTrigger asChild>
                                 <button
                                     type="button"
                                     ref={paxTriggerRef}
-                                    className={`w-full h-full min-h-[56px] px-4 py-3.5 md:py-3 flex items-center group hover:bg-gray-50 transition-colors text-left rounded-b-xl lg:rounded-b-none lg:rounded-r-2xl outline-none ${openPax ? "bg-blue-50/50 ring-2 ring-blue-500 ring-inset" : "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
-                                        }`}
+                                    className={`w-full h-full min-h-[60px] px-4 py-3 flex items-center hover:bg-gray-50 transition-colors text-left rounded-br-xl outline-none ${openPax ? "bg-blue-50/50 ring-2 ring-blue-500 ring-inset" : "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"}`}
                                 >
-                                    <Users className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
-                                    <div className="flex flex-col w-full overflow-hidden">
-                                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                                            Travelers & Class
-                                        </span>
-                                        <span className="font-bold text-gray-900 text-sm md:text-base leading-tight mt-0.5 truncate">
-                                            {travelerLabel}, {cabinLabel}
-                                        </span>
+                                    <Users className="w-4 h-4 text-gray-400 mr-2.5 shrink-0" />
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">Travelers &amp; Class</span>
+                                        <span className="font-bold text-gray-900 text-sm leading-snug truncate">{travelerLabel}, {cabinLabel}</span>
                                     </div>
                                     <ChevronDown className={`w-4 h-4 text-gray-400 ml-2 shrink-0 transition-transform ${openPax ? "rotate-180" : ""}`} />
                                 </button>
@@ -736,7 +738,7 @@ export default function FlightWidget() {
                 {/* ACTION AREA & Secondary Buttons */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                     <div className="flex-1">
-                        {lowestPrice && !returnDate && (
+                        {lowestPrice ? (
                             <div className="animate-in fade-in slide-in-from-left-4 flex items-center gap-2 text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl w-fit border border-emerald-200">
                                 <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -744,6 +746,8 @@ export default function FlightWidget() {
                                 </span>
                                 <span className="text-sm font-bold">Cheapest from ${lowestPrice} ({formatTHB(lowestPrice)})</span>
                             </div>
+                        ) : (
+                            <div className="h-8 w-56 bg-gray-100 animate-pulse rounded-xl" aria-hidden="true" />
                         )}
                     </div>
 
@@ -751,9 +755,9 @@ export default function FlightWidget() {
                         <button
                             onClick={handleTripComSearch}
                             aria-label={`Compare prices on Trip.com for ${getSelectedCountry()}`}
-                            className="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-6 rounded-xl border border-gray-200 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
+                            className="w-full md:w-auto bg-[#fcb773] hover:bg-[#f9a35f] active:scale-[0.97] text-[#1a1a2e] font-bold py-3.5 px-7 rounded-2xl text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
                         >
-                            <ExternalLink className="w-4 h-4" />
+                            <ExternalLink className="w-5 h-5" />
                             <span>Compare on Trip.com</span>
                         </button>
                     </div>
@@ -804,13 +808,13 @@ function RecentSearches({
     return (
         <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-black text-gray-800">
                     Your recent searches
                 </h3>
                 <button
                     type="button"
                     onClick={handleClear}
-                    className="flex items-center gap-1 text-xs font-medium text-white/40 hover:text-red-400 transition-colors"
+                    className="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
                 >
                     <Trash2 className="w-3 h-3" />
                     Clear
@@ -858,28 +862,28 @@ function RecentSearches({
                     return (
                         <div
                             key={`${routeKey}-${i}`}
-                            className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/15 p-4 hover:bg-white/15 hover:border-white/25 transition-all group"
+                            className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 hover:shadow-md hover:border-gray-300 transition-all group cursor-pointer"
                         >
                             {/* Route header */}
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                    <Plane className="w-4 h-4 text-white/70" />
+                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                    <Plane className="w-4 h-4 text-orange-500" />
                                 </div>
-                                <div className="font-bold text-white text-sm">
-                                    {s.origin} <span className="text-white/40">▸</span> {s.destination}
+                                <div className="font-bold text-gray-900 text-sm">
+                                    {s.origin} <span className="text-gray-400">▸</span> {s.destination}
                                 </div>
                             </div>
 
                             {/* Airport names */}
-                            <div className="text-xs text-white/50 mb-2">
+                            <div className="text-xs text-gray-500 mb-2">
                                 {getAirportName(s.origin)} → {getAirportName(s.destination)}
                             </div>
 
                             {/* Dates and trip type */}
-                            <div className="text-xs text-white/50 mb-3">
+                            <div className="text-xs text-gray-500 mb-3">
                                 {displayDate}
                                 {displayReturnDate ? ` ▸ ${displayReturnDate}` : ""}
-                                <span className="text-white/30 ml-1">
+                                <span className="text-gray-400 ml-1">
                                     · {s.returnDate ? "Return" : "One way"}
                                 </span>
                             </div>
