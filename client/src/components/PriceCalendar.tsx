@@ -165,9 +165,7 @@ export default function PriceCalendar({
     return startOfMonth(todayDate);
   });
 
-  const [activeTab, setActiveTab] = useState<"dates" | "weekend" | "month">("dates");
-  const [departPrecision, setDepartPrecision] = useState<"exact" | "flexible">("exact");
-  const [returnPrecision, setReturnPrecision] = useState<"exact" | "flexible">("exact");
+
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
 
   const leftMonth = baseMonth;
@@ -364,46 +362,6 @@ export default function PriceCalendar({
   return (
     <div className="w-[700px] max-w-[90vw] bg-white rounded-2xl overflow-hidden flex flex-col p-4 font-sans">
 
-      {/* ─── Top Tabs & Filters ─── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
-        <div className="flex gap-1 p-1 bg-gray-100/80 rounded-2xl w-full sm:w-auto">
-          {(["dates", "weekend", "month"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); posthog.capture("calendar_tab_clicked", { tab }); }}
-              className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-[11px] font-bold tracking-wide transition-all ${activeTab === tab ? "bg-white shadow-sm text-gray-900 uppercase" : "text-gray-500 uppercase hover:text-gray-800"
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-2 text-[12px] font-medium text-gray-500 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <label className="flex items-center gap-2 whitespace-nowrap bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-            <span>Departure</span>
-            <select
-              value={departPrecision}
-              onChange={(e) => { setDepartPrecision(e.target.value as "exact" | "flexible"); posthog.capture("calendar_precision_changed", { type: "depart", value: e.target.value }); }}
-              className="font-bold text-gray-900 bg-transparent outline-none cursor-pointer"
-            >
-              <option value="exact">exact</option>
-              <option value="flexible">flexible</option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2 whitespace-nowrap bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-            <span>Return</span>
-            <select
-              value={returnPrecision}
-              onChange={(e) => { setReturnPrecision(e.target.value as "exact" | "flexible"); posthog.capture("calendar_precision_changed", { type: "return", value: e.target.value }); }}
-              className="font-bold text-gray-900 bg-transparent outline-none cursor-pointer"
-            >
-              <option value="exact">exact</option>
-              <option value="flexible">flexible</option>
-            </select>
-          </label>
-        </div>
-      </div>
 
       {/* ─── Month navigation row ─── */}
       <div className="flex justify-between items-center mb-4 relative">
