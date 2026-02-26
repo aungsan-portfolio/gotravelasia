@@ -158,13 +158,6 @@ const CABIN_OPTIONS = [
     { value: "F", label: "First Class" },
 ] as const;
 
-// Aviasales trip_class mapping: 0=Economy, 1=Business, 2=First
-const CABIN_TO_TRIP_CLASS: Record<string, string> = {
-    Y: "0",
-    W: "0",
-    C: "1",
-    F: "2",
-};
 
 function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
@@ -528,6 +521,16 @@ export default function FlightWidget() {
                                 </select>
                             </div>
                         </div>
+                        {/* Swap Button — sits on the right edge of Origin cell, overlapping into Destination */}
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); const tmp = origin; setOrigin(destination); setDestination(tmp); }}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:shadow-md active:scale-90 transition-all"
+                            aria-label="Swap origin and destination"
+                            title="Swap airports"
+                        >
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-gray-500" />
+                        </button>
                     </div>
 
                     {/* Destination */}
@@ -828,13 +831,13 @@ function RecentSearches({
                         const pct = Math.round((Math.abs(diff) / savedPrice) * 100);
                         if (diff > 0) {
                             priceBadge = {
-                                label: `Price increase`,
+                                label: `+${pct}% increase`,
                                 color: "bg-red-100 text-red-700",
                                 icon: <TrendingUp className="w-3 h-3" />,
                             };
                         } else if (diff < 0) {
                             priceBadge = {
-                                label: `Price drop`,
+                                label: `−${pct}% drop`,
                                 color: "bg-emerald-100 text-emerald-700",
                                 icon: <TrendingDown className="w-3 h-3" />,
                             };
