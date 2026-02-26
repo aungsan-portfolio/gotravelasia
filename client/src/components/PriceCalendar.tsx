@@ -258,14 +258,14 @@ export default function PriceCalendar({
 
     return (
       <div className="w-full">
-        <h3 className="text-center text-[15px] font-bold text-gray-900 mb-4 capitalize">
+        <h3 className="text-center text-[13px] font-bold text-gray-900 mb-3 capitalize">
           {MONTHS[month]} {year}
         </h3>
         <table className="w-full border-collapse table-fixed">
           <thead>
             <tr>
               {WEEKDAYS.map((wd, i) => (
-                <th key={i} className="text-[11px] text-gray-400 pb-3 font-semibold uppercase tracking-wider">
+                <th key={i} className="text-[10px] text-gray-400 pb-2 font-semibold uppercase tracking-wider">
                   {wd}
                 </th>
               ))}
@@ -303,8 +303,8 @@ export default function PriceCalendar({
                   if (isDisabled) {
                     return (
                       <td key={dateKey} className="p-0.5">
-                        <div className="w-full aspect-square flex flex-col items-center justify-center rounded-xl text-gray-300 pointer-events-none">
-                          <span className="font-bold text-[14px]">{cell.getDate()}</span>
+                        <div className="w-full aspect-square flex flex-col items-center justify-center rounded-lg text-gray-300 pointer-events-none">
+                          <span className="font-bold text-[12px]">{cell.getDate()}</span>
                         </div>
                       </td>
                     );
@@ -334,18 +334,18 @@ export default function PriceCalendar({
                         }}
                         onMouseEnter={() => setHoveredDay(cell)}
                         onMouseLeave={() => setHoveredDay(null)}
-                        className={`w-full aspect-square flex flex-col items-center justify-center gap-0.5 rounded-xl text-sm transition-colors border border-transparent ${isSelected ? "shadow-md z-10 relative" : ""
+                        className={`w-full aspect-square flex flex-col items-center justify-center gap-0 rounded-lg text-xs transition-colors border border-transparent ${isSelected ? "shadow-md z-10 relative" : ""
                           }`}
                         style={{
                           backgroundColor: isSelected ? "#1a1a2e" : (inRange && tier === "none" ? "transparent" : currentBg),
                           color: isSelected ? "#ffffff" : currentText,
                         }}
                       >
-                        <span className={`text-[14px] ${isSelected ? "font-extrabold" : "font-bold"}`}>
+                        <span className={`text-[12px] ${isSelected ? "font-extrabold" : "font-bold"}`}>
                           {cell.getDate()}
                         </span>
                         {thbPrice ? (
-                          <span className="text-[10px] font-mono opacity-80 leading-none">
+                          <span className="text-[9px] font-mono opacity-80 leading-none">
                             {(thbPrice / 1000).toFixed(1)}k
                           </span>
                         ) : null}
@@ -362,16 +362,16 @@ export default function PriceCalendar({
   };
 
   return (
-    <div className="w-[850px] max-w-[90vw] bg-white rounded-3xl overflow-hidden flex flex-col p-6 font-sans">
+    <div className="w-[700px] max-w-[90vw] bg-white rounded-2xl overflow-hidden flex flex-col p-4 font-sans">
 
       {/* ─── Top Tabs & Filters ─── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
         <div className="flex gap-1 p-1 bg-gray-100/80 rounded-2xl w-full sm:w-auto">
           {(["dates", "weekend", "month"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => { setActiveTab(tab); posthog.capture("calendar_tab_clicked", { tab }); }}
-              className={`flex-1 sm:flex-none py-2 px-5 rounded-xl text-[12px] font-bold tracking-wide transition-all ${activeTab === tab ? "bg-white shadow-sm text-gray-900 uppercase" : "text-gray-500 uppercase hover:text-gray-800"
+              className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-[11px] font-bold tracking-wide transition-all ${activeTab === tab ? "bg-white shadow-sm text-gray-900 uppercase" : "text-gray-500 uppercase hover:text-gray-800"
                 }`}
             >
               {tab}
@@ -379,7 +379,7 @@ export default function PriceCalendar({
           ))}
         </div>
 
-        <div className="flex gap-3 text-[13px] font-medium text-gray-500 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex gap-2 text-[12px] font-medium text-gray-500 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
           <label className="flex items-center gap-2 whitespace-nowrap bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
             <span>Departure</span>
             <select
@@ -406,14 +406,14 @@ export default function PriceCalendar({
       </div>
 
       {/* ─── Month navigation row ─── */}
-      <div className="flex justify-between items-center mb-6 relative">
+      <div className="flex justify-between items-center mb-4 relative">
         {/* Navigation buttons */}
         <button
           onClick={handlePrev}
           disabled={!canGoPrev}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 disabled:opacity-30 disabled:hover:bg-gray-50 transition-colors z-10 shrink-0"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 disabled:opacity-30 disabled:hover:bg-gray-50 transition-colors z-10 shrink-0"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
         {loading ? (
@@ -427,14 +427,14 @@ export default function PriceCalendar({
 
         <button
           onClick={handleNext}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 transition-colors z-10 shrink-0"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 transition-colors z-10 shrink-0"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* ─── Dual Calendar Grid ─── */}
-      <div className="flex gap-4 relative mt-[-60px] pt-[60px] overflow-x-auto snap-x hide-scrollbar">
+      <div className="flex gap-3 relative mt-[-48px] pt-[48px] overflow-x-auto snap-x hide-scrollbar">
         <div className="min-w-full md:min-w-[calc(50%-8px)] snap-start">
           {renderMonthGrid(leftMonth, false)}
         </div>
@@ -444,19 +444,19 @@ export default function PriceCalendar({
       </div>
 
       {/* ─── Bottom Legend ─── */}
-      <div className="mt-6 pt-5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-x-5 gap-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: "#b3f9c2" }} />
-            <span className="text-[13px] font-bold text-gray-700">Cheapest</span>
+      <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#b3f9c2" }} />
+            <span className="text-[11px] font-bold text-gray-700">Cheapest</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: "#fcb773" }} />
-            <span className="text-[13px] font-bold text-gray-700">Average</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#fcb773" }} />
+            <span className="text-[11px] font-bold text-gray-700">Average</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: "#fba09d" }} />
-            <span className="text-[13px] font-bold text-gray-700">Expensive</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#fba09d" }} />
+            <span className="text-[11px] font-bold text-gray-700">Expensive</span>
           </div>
         </div>
 
@@ -468,7 +468,7 @@ export default function PriceCalendar({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="px-4 py-2 rounded-xl bg-gray-900 text-white text-[13px] font-bold whitespace-nowrap shadow-md"
+              className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[12px] font-bold whitespace-nowrap shadow-md"
             >
               {selectedReturn ? (
                 `${format(selectedDepart, "MMM d")} – ${format(selectedReturn, "MMM d")}`
