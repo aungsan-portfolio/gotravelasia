@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 load_dotenv(".env.local")
 
 REQUEST_TIMEOUT = 10
-THROTTLE_DELAY = 1.0  # Increased slightly to be safe
+THROTTLE_DELAY = 0.5  # 0.5s between requests (safe for 200/min API limit)
 MAX_RETRIES = 3
 BACKOFF_FACTOR = 1.0
 RETRY_STATUS_CODES = (429, 500, 502, 503, 504)
@@ -50,11 +50,14 @@ POPULAR_ROUTES = [
     ("DMK", "SIN"), ("SIN", "DMK"),
     ("HKT", "SIN"), ("SIN", "HKT"),
     ("CNX", "BKK"), ("BKK", "CNX"),
-    ("CNX", "DMK"), ("DMK", "CNX")
+    ("CNX", "DMK"), ("DMK", "CNX"),
+    ("CNX", "SIN"), ("SIN", "CNX"),
+    ("RGN", "KUL"), ("KUL", "RGN"),
+    ("CNX", "HKT"), ("HKT", "CNX"),
 ]
 
-MONTHS_TO_SCAN = ["2026-03", "2026-04", "2026-05", "2026-06"]
-MAX_REQUESTS_PER_RUN = 60
+MONTHS_TO_SCAN = ["2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"]
+MAX_REQUESTS_PER_RUN = 200
 
 
 def _build_session() -> requests.Session:
@@ -91,7 +94,8 @@ def _parse_date(departure_at: str) -> Optional[str]:
 
 
 class FlightBot:
-    API_URL = "https://api.travelpayouts.com/v1/prices/cheap"
+    API_V1_URL = "https://api.travelpayouts.com/v1/prices/cheap"
+    API_V3_URL = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
 
     def __init__(self) -> None:
         self.token: Optional[str] = os.getenv("TRAVELPAYOUTS_TOKEN")
@@ -198,7 +202,7 @@ class FlightBot:
 
         try:
             response = self.session.get(
-                self.API_URL, params=params, timeout=REQUEST_TIMEOUT
+                self.API_V1_URL, params=params, timeout=REQUEST_TIMEOUT
             )
             self.requests_made += 1
 
@@ -287,6 +291,80 @@ class FlightBot:
             
         return False
 
+    def fetch_v3_prices(self, origin: str, destination: str, month: str, region: str) -> bool:
+        """Fetch from v3 prices_for_dates API for additional data density"""
+        params = {
+            "token": self.token or "",
+            "origin": origin,
+            "destination": destination,
+            "departure_at": month,
+            "sorting": "price",
+            "limit": "30",
+            "one_way": "true",
+            "currency": "USD",
+        }
+
+        try:
+            response = self.session.get(
+                self.API_V3_URL, params=params, timeout=REQUEST_TIMEOUT
+            )
+            self.requests_made += 1
+
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After", "60")
+                wait = int(retry_after) if retry_after.isdigit() else 60
+                logger.warning("v3 Rate limited. Waiting %ds...", wait)
+                time.sleep(wait)
+                self.errors += 1
+                return False
+
+            if response.status_code >= 400:
+                logger.debug("v3 HTTP %d for %s -> %s %s", response.status_code, origin, destination, month)
+                return False
+
+            data = response.json()
+            arr = data.get("data", [])
+            if not isinstance(arr, list):
+                return True
+
+            count = 0
+            for e in arr:
+                price = e.get("price")
+                departure_at = e.get("departure_at", "")
+                airline = e.get("airline", "")
+                flight_num = str(e.get("flight_number", ""))
+                transfers = e.get("transfers", 0)
+
+                if not price or price <= 0 or not airline:
+                    continue
+
+                date_only = _parse_date(departure_at)
+                if not date_only or not date_only.startswith(month):
+                    continue
+
+                self.new_routes.append({
+                    "origin": origin,
+                    "destination": destination,
+                    "price": float(price),
+                    "currency": "USD",
+                    "airline_code": airline,
+                    "airline": airline,
+                    "date": date_only,
+                    "transfers": int(transfers) if transfers else 0,
+                    "flight_num": flight_num,
+                    "region": region,
+                    "found_at": _now_utc().strftime("%Y-%m-%d %H:%M"),
+                })
+                count += 1
+
+            if count > 0:
+                logger.info("v3: Found %d deals for %s -> %s (%s)", count, origin, destination, month)
+            return True
+
+        except Exception as exc:
+            logger.debug("v3 error for %s -> %s: %s", origin, destination, exc)
+            return False
+
     def run(self) -> None:
         start_time = time.monotonic()
         logger.info("=" * 60)
@@ -302,6 +380,9 @@ class FlightBot:
         for i, task in enumerate(tasks_to_run, 1):
             logger.info("[%d/%d] Checking %s -> %s for %s (%s)", i, len(tasks_to_run), task["origin"], task["destination"], task["month"], task["region"])
             success = self.fetch_prices_for_month(task["origin"], task["destination"], task["month"], task["region"])
+            time.sleep(THROTTLE_DELAY)
+            # Also fetch from v3 API for additional data density
+            self.fetch_v3_prices(task["origin"], task["destination"], task["month"], task["region"])
             
             if i < len(tasks_to_run):
                 time.sleep(THROTTLE_DELAY)
