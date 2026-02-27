@@ -94,9 +94,42 @@ export function useFlightPriceMap() {
 
 export function usePriceHint(origin: string, destination: string, _hasReturn?: boolean) {
   const { deals } = useFlightData();
+  const [livePrice, setLivePrice] = useState<number | null>(null);
+  const [fetched, setFetched] = useState("");
 
-  const route = deals.find((r) => r.origin === origin && r.destination === destination);
-  return route?.price ?? null;
+  // Static lookup
+  const staticPrice = useMemo(() => {
+    const route = deals.find((r) => r.origin === origin && r.destination === destination);
+    return route?.price ?? null;
+  }, [deals, origin, destination]);
+
+  // Live API fallback when static data has no price
+  useEffect(() => {
+    if (staticPrice !== null || !origin || !destination) return;
+
+    const key = `${origin}-${destination}`;
+    if (fetched === key) return; // already tried this pair
+    setFetched(key);
+
+    let cancelled = false;
+    fetch(`/api/cheap-prices?origin=${origin}&currency=usd`)
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (cancelled || !json?.data) return;
+        const destData = json.data[destination];
+        if (!destData) return;
+        // Find cheapest across all flight options
+        let cheapest = Infinity;
+        for (const flight of Object.values(destData as Record<string, any>)) {
+          if (flight.price && flight.price < cheapest) cheapest = flight.price;
+        }
+        if (cheapest < Infinity) setLivePrice(cheapest);
+      })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, [origin, destination, staticPrice, fetched]);
+
+  return staticPrice ?? livePrice;
 }
 
 export type { Deal, Meta };
