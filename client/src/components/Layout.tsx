@@ -58,15 +58,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
       {/* Header — Clean white, slides up when sticky bar is active */}
       <header
-        className={`sticky top-0 z-50 bg-white border-b border-gray-200 transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${headerHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+        className={`sticky top-0 z-50 bg-[#F5C518] border-b border-gray-200 transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${headerHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
           }`}
       >
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Menu */}
             <MobileNav onPlanTrip={() => setChatOpen(true)} />
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-2">
               <img src="/logo.webp" alt="GoTravel Logo" className="h-[36px] w-auto object-contain" />
+              <span className="font-extrabold text-[#5B0EA6] text-xl tracking-tight hidden sm:inline-block">
+                GO TRAVEL
+              </span>
             </Link>
           </div>
 
