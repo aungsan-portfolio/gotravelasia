@@ -368,6 +368,147 @@ const PaxStepper = memo(function PaxStepper({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 10B. AIRPORT COMBOBOX — autocomplete search (replaces <select>)
+// ─────────────────────────────────────────────────────────────────────────────
+const AirportCombobox = memo(function AirportCombobox({
+    value,
+    onChange,
+    label,
+    airports,
+}: {
+    value: string;
+    onChange: (code: string) => void;
+    label: string;
+    airports: readonly Airport[] | Airport[];
+}) {
+    const selected = AIRPORT_MAP.get(value);
+    const [query, setQuery] = useState("");
+    const [open, setOpen] = useState(false);
+    const [focusIdx, setFocusIdx] = useState(-1);
+    const ref = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Filter airports
+    const results = useMemo(() => {
+        if (!query || query.length < 1) return [];
+        const q = query.toLowerCase();
+        return (airports as Airport[]).filter(a =>
+            a.name.toLowerCase().includes(q) ||
+            a.code.toLowerCase().includes(q) ||
+            a.country.toLowerCase().includes(q)
+        ).slice(0, 8);
+    }, [query, airports]);
+
+    // Click outside
+    useEffect(() => {
+        const fn = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+                setQuery("");
+            }
+        };
+        document.addEventListener("mousedown", fn);
+        return () => document.removeEventListener("mousedown", fn);
+    }, []);
+
+    const select = useCallback((code: string) => {
+        onChange(code);
+        setOpen(false);
+        setQuery("");
+        setFocusIdx(-1);
+    }, [onChange]);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setFocusIdx(i => Math.min(i + 1, results.length - 1));
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setFocusIdx(i => Math.max(i - 1, 0));
+        } else if (e.key === "Enter" && results.length > 0) {
+            e.preventDefault();
+            select(results[focusIdx >= 0 ? focusIdx : 0].code);
+        } else if (e.key === "Escape") {
+            setOpen(false);
+            setQuery("");
+        }
+    }, [results, focusIdx, select]);
+
+    const displayText = selected ? selected.name.split("(")[0].trim() : value;
+    const flag = selected ? COUNTRY_FLAGS[selected.country] ?? "" : "";
+
+    return (
+        <div ref={ref} className="relative flex-1 min-w-0">
+            {!open ? (
+                // Display mode — clickable to open
+                <button
+                    type="button"
+                    onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
+                    className="w-full text-left bg-transparent font-bold text-white text-sm outline-none cursor-pointer truncate leading-snug"
+                    aria-label={`${label}: ${displayText}`}
+                >
+                    {flag && <span className="mr-1">{flag}</span>}
+                    {displayText}
+                </button>
+            ) : (
+                // Search mode
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={e => { setQuery(e.target.value); setFocusIdx(-1); }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type city or code…"
+                    autoComplete="off"
+                    className="w-full bg-transparent font-bold text-white text-sm outline-none placeholder:text-white/40 leading-snug"
+                    aria-label={`Search ${label} airport`}
+                    aria-expanded={results.length > 0}
+                    role="combobox"
+                    aria-autocomplete="list"
+                />
+            )}
+
+            {/* Dropdown results */}
+            {open && results.length > 0 && (
+                <div
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[9999] min-w-[240px]"
+                    role="listbox"
+                >
+                    {results.map((a, i) => {
+                        const isActive = i === focusIdx;
+                        return (
+                            <button
+                                key={`${a.code}-${a.name}`}
+                                type="button"
+                                role="option"
+                                aria-selected={isActive}
+                                onClick={() => select(a.code)}
+                                onMouseEnter={() => setFocusIdx(i)}
+                                className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-2 border-b border-gray-50 transition-colors ${isActive ? "bg-purple-50" : "hover:bg-gray-50"
+                                    }`}
+                            >
+                                <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-gray-900 truncate">
+                                        {COUNTRY_FLAGS[a.country] ?? ""} {a.name.split("(")[0].trim()}
+                                    </div>
+                                    <div className="text-xs text-gray-400 truncate">{a.country}</div>
+                                </div>
+                                <span
+                                    className="shrink-0 px-2 py-0.5 rounded text-xs font-bold font-mono"
+                                    style={{ background: "rgba(91,14,166,0.1)", color: B.purple }}
+                                >
+                                    {a.code}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 11. MEMOIZED PRICE CALENDAR (from V3)
 // ─────────────────────────────────────────────────────────────────────────────
 const MemoizedPriceCalendar = memo(PriceCalendar, (prev, next) =>
@@ -692,16 +833,12 @@ function FlightWidgetInner() {
                                 <span style={labelStyle}>
                                     {detectingLocation ? "Detecting…" : "From"}
                                 </span>
-                                <select
+                                <AirportCombobox
                                     value={origin}
-                                    onChange={e => setOrigin(e.target.value)}
-                                    aria-label="Origin airport"
-                                    className="w-full bg-transparent font-bold text-white text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
-                                >
-                                    {(AIRPORTS as unknown as Airport[]).map(city => (
-                                        <option key={city.code} value={city.code} style={{ color: "#000" }}>{city.name}</option>
-                                    ))}
-                                </select>
+                                    onChange={setOrigin}
+                                    label="From"
+                                    airports={AIRPORTS}
+                                />
                             </div>
                         </div>
                         {/* Swap Button */}
@@ -723,20 +860,12 @@ function FlightWidgetInner() {
                             <Plane className="w-4 h-4 mr-3 shrink-0" style={{ color: "rgba(255,255,255,0.45)" }} aria-hidden="true" />
                             <div className="flex flex-col min-w-0 flex-1">
                                 <span style={labelStyle}>To</span>
-                                <select
+                                <AirportCombobox
                                     value={destination}
-                                    onChange={e => setDestination(e.target.value)}
-                                    aria-label="Destination airport"
-                                    className="w-full bg-transparent font-bold text-white text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
-                                >
-                                    {DESTINATION_GROUPS.map(group => (
-                                        <optgroup key={group.key} label={group.label} style={{ color: "#000" }}>
-                                            {group.options.map(dest => (
-                                                <option key={dest.code} value={dest.code} style={{ color: "#000" }}>{dest.name}</option>
-                                            ))}
-                                        </optgroup>
-                                    ))}
-                                </select>
+                                    onChange={setDestination}
+                                    label="To"
+                                    airports={AIRPORTS}
+                                />
                             </div>
                         </div>
                     </div>
