@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { FlightSearchProvider } from "./contexts/FlightSearchContext";
 import { WebsiteJsonLd } from "./components/JsonLd";
 
 const Home = lazy(() => import("./pages/Home"));
@@ -74,13 +75,15 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <WebsiteJsonLd />
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+      <FlightSearchProvider>
+        <ThemeProvider defaultTheme="light">
+          <TooltipProvider>
+            <WebsiteJsonLd />
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
+      </FlightSearchProvider>
     </ErrorBoundary>
   );
 }

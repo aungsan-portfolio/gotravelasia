@@ -50,6 +50,7 @@ import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
 import posthog from "posthog-js";
 import { z } from "zod";
 import { formatTHB } from "@/const";
+import { useFlightSearch } from "@/contexts/FlightSearchContext";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. BRAND TOKENS — single source of truth for GoTravel colours
@@ -661,6 +662,9 @@ function FlightWidgetInner() {
     const today = useMemo(() => new Date().toISOString().split("T")[0], []);
     const todayDate = useMemo(() => new Date(today + "T00:00:00"), [today]);
 
+    // ── Shared context (write) ───────────────────────────────────────────
+    const ctx = useFlightSearch();
+
     // ── State ───────────────────────────────────────────────────────────────
     const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
     const [destination, setDestination] = useState("SIN");
@@ -681,12 +685,32 @@ function FlightWidgetInner() {
     const doneButtonRef = useRef<HTMLButtonElement>(null);
     const hasOpenedPax = useRef(false);
 
+    // ── Sync local state → context ──────────────────────────────────────
+    useEffect(() => {
+        const originAirport = AIRPORT_MAP.get(origin) ?? null;
+        const destAirport = AIRPORT_MAP.get(destination) ?? null;
+        if (originAirport) ctx.setOrigin({ code: originAirport.code, name: originAirport.name, country: originAirport.country });
+        else ctx.setOrigin(null);
+        if (destAirport) ctx.setDestination({ code: destAirport.code, name: destAirport.name, country: destAirport.country });
+        else ctx.setDestination(null);
+        ctx.setDepartDate(departDate);
+        ctx.setReturnDate(returnDate);
+        ctx.setTripType(tripType);
+        ctx.setAdults(adults);
+        ctx.setChildCount(children);
+        ctx.setInfants(infants);
+        ctx.setCabinClass(cabinClass);
+    }, [origin, destination, departDate, returnDate, tripType, adults, children, infants, cabinClass]);
+
     // (Scroll lock removed — calendar is now inline dropdown, not modal)
 
-    // ── Geo-detect on mount (async version from V2) ─────────────────────────
+    // ── Geo-detect on mount (async version from V2) ─────────────────────
     useEffect(() => {
         detectOriginAirport().then(code => {
             setOrigin(code);
+            // Also push to context with guard (won't overwrite if user already picked)
+            const airport = AIRPORT_MAP.get(code);
+            if (airport) ctx.setOriginIfEmpty({ code: airport.code, name: airport.name, country: airport.country });
             setDetectingLocation(false);
         });
     }, []);
