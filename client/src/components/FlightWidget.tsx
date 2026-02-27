@@ -666,6 +666,7 @@ function FlightWidgetInner() {
     const [destination, setDestination] = useState("SIN");
     const [departDate, setDepartDate] = useState(today);
     const [returnDate, setReturnDate] = useState("");
+    const [tripType, setTripType] = useState<"return" | "one-way">("return");
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
@@ -814,10 +815,37 @@ function FlightWidgetInner() {
         <div className="w-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <div className="flex flex-col w-full">
 
+                {/* ═══ TRIP TYPE TOGGLE ═════════════════════════════════════ */}
+                <div className="flex gap-2 mb-3" role="radiogroup" aria-label="Trip type">
+                    {(["return", "one-way"] as const).map(t => (
+                        <button
+                            key={t} type="button" role="radio"
+                            aria-checked={tripType === t}
+                            onClick={() => {
+                                setTripType(t);
+                                if (t === "one-way") setReturnDate("");
+                            }}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${tripType === t
+                                    ? "text-white shadow-lg"
+                                    : "text-white/60 hover:text-white/80"
+                                }`}
+                            style={tripType === t
+                                ? { background: "rgba(255,255,255,0.18)", border: `1.5px solid rgba(255,255,255,0.35)` }
+                                : { background: "transparent", border: `1.5px solid rgba(255,255,255,0.12)` }
+                            }
+                        >
+                            {t === "return" ? "↔ Return" : "→ One-way"}
+                        </button>
+                    ))}
+                </div>
+
                 {/* ═══ INPUT GRID ════════════════════════════════════════════ */}
                 <div
                     role="group" aria-label="Flight search fields"
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 flex-1 rounded-xl lg:rounded-2xl overflow-hidden"
+                    className={`grid grid-cols-1 sm:grid-cols-2 ${tripType === "one-way"
+                            ? "lg:grid-cols-5"
+                            : "lg:grid-cols-6"
+                        } flex-1 rounded-xl lg:rounded-2xl overflow-hidden`}
                     style={{ background: B.glassBase, border: `1.5px solid ${B.glassBorder}` }}
                 >
 
@@ -891,42 +919,44 @@ function FlightWidgetInner() {
                         </div>
                     </button>
 
-                    {/* ── RETURN ── */}
-                    <button
-                        type="button"
-                        onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
-                        aria-label={`Return date${returnDate ? `: ${fmtDisplayDate(returnDate)}` : ", not selected. Optional"}`}
-                        aria-haspopup="dialog"
-                        aria-pressed={calendarOpen && calendarMode === "return"}
-                        className="w-full h-full transition-colors text-left outline-none"
-                        style={{ ...cellBorder, ...(calendarOpen && calendarMode === "return" ? cellFocus : {}) }}
-                    >
-                        <div className="flex items-center px-3 py-3 h-full min-h-[64px]">
-                            <ArrowRightLeft
-                                className="w-4 h-4 mr-2 shrink-0"
-                                style={{ color: returnDate ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)" }}
-                                aria-hidden="true"
-                            />
-                            <div className="flex flex-col min-w-0 flex-1">
-                                <span style={labelStyle}>Return</span>
-                                <span className="font-bold text-sm leading-snug truncate" style={{ color: returnDate ? B.white : "rgba(255,255,255,0.4)" }}>
-                                    {returnDate ? fmtDisplayDate(returnDate) : "Add return"}
-                                </span>
+                    {/* ── RETURN (hidden in one-way) ── */}
+                    {tripType === "return" && (
+                        <button
+                            type="button"
+                            onClick={() => { setCalendarMode("return"); setCalendarOpen(true); }}
+                            aria-label={`Return date${returnDate ? `: ${fmtDisplayDate(returnDate)}` : ", not selected. Optional"}`}
+                            aria-haspopup="dialog"
+                            aria-pressed={calendarOpen && calendarMode === "return"}
+                            className="w-full h-full transition-colors text-left outline-none"
+                            style={{ ...cellBorder, ...(calendarOpen && calendarMode === "return" ? cellFocus : {}) }}
+                        >
+                            <div className="flex items-center px-3 py-3 h-full min-h-[64px]">
+                                <ArrowRightLeft
+                                    className="w-4 h-4 mr-2 shrink-0"
+                                    style={{ color: returnDate ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)" }}
+                                    aria-hidden="true"
+                                />
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <span style={labelStyle}>Return</span>
+                                    <span className="font-bold text-sm leading-snug truncate" style={{ color: returnDate ? B.white : "rgba(255,255,255,0.4)" }}>
+                                        {returnDate ? fmtDisplayDate(returnDate) : "Add return"}
+                                    </span>
+                                </div>
+                                {returnDate && (
+                                    <span
+                                        role="button" tabIndex={0}
+                                        onClick={e => { e.stopPropagation(); setReturnDate(""); }}
+                                        onKeyDown={e => e.key === "Enter" && (e.stopPropagation(), setReturnDate(""))}
+                                        aria-label="Remove return date"
+                                        className="ml-1 p-0.5 rounded-full transition-colors shrink-0 cursor-pointer"
+                                        style={{ color: "rgba(255,255,255,0.5)" }}
+                                    >
+                                        <X className="w-3.5 h-3.5" aria-hidden="true" />
+                                    </span>
+                                )}
                             </div>
-                            {returnDate && (
-                                <span
-                                    role="button" tabIndex={0}
-                                    onClick={e => { e.stopPropagation(); setReturnDate(""); }}
-                                    onKeyDown={e => e.key === "Enter" && (e.stopPropagation(), setReturnDate(""))}
-                                    aria-label="Remove return date"
-                                    className="ml-1 p-0.5 rounded-full transition-colors shrink-0 cursor-pointer"
-                                    style={{ color: "rgba(255,255,255,0.5)" }}
-                                >
-                                    <X className="w-3.5 h-3.5" aria-hidden="true" />
-                                </span>
-                            )}
-                        </div>
-                    </button>
+                        </button>
+                    )}
 
                     {/* ── TRAVELERS & CLASS ── */}
                     <div className="relative transition-colors" style={cellBorder}>
