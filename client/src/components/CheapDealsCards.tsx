@@ -7,12 +7,13 @@ import { USD_TO_THB_RATE } from "@/const";
 // Features:
 //   • Two tabs: "From Myanmar 🇲🇲" and "Around Asia 🌏"
 //   • Master pool of 10–15 destinations per tab
-//   • Auto-sorts by price ascending → picks cheapest 4
+//   • Auto-sorts by price ascending → picks cheapest 4 with country diversity
 
 // ── Data Model ───────────────────────────────────────────────────────────────
 interface DealEntry {
     id: string;
     destination: string;
+    country: string;      // Used for diversity filter (1 card per country)
     image: string;
     durationDesc: string;
     startDateStr: string;
@@ -25,125 +26,131 @@ interface DealEntry {
 // ── MASTER POOL: Myanmar Tab (10+ destinations from RGN / MDL) ───────────────
 const MYANMAR_POOL: DealEntry[] = [
     {
-        id: "rgn-bkk", destination: "Bangkok",
+        id: "rgn-bkk", destination: "Bangkok", country: "Thailand",
         image: "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80",
         durationDesc: "1h 20m, direct", startDateStr: "Thu 13/3", endDateStr: "Mon 17/3",
         price: 89, fromCode: "RGN", toCode: "BKK",
     },
     {
-        id: "rgn-cnx", destination: "Chiang Mai",
+        id: "rgn-cnx", destination: "Chiang Mai", country: "Thailand",
         image: "https://images.unsplash.com/photo-1598971032873-1f19f2bdc836?w=400&q=80",
         durationDesc: "1h 55m, direct", startDateStr: "Wed 18/3", endDateStr: "Sun 22/3",
         price: 115, fromCode: "RGN", toCode: "CNX",
     },
     {
-        id: "rgn-sin", destination: "Singapore",
+        id: "rgn-sin", destination: "Singapore", country: "Singapore",
         image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80",
         durationDesc: "2h 45m, direct", startDateStr: "Fri 20/3", endDateStr: "Tue 24/3",
         price: 142, fromCode: "RGN", toCode: "SIN",
     },
     {
-        id: "rgn-hkt", destination: "Phuket",
+        id: "rgn-hkt", destination: "Phuket", country: "Thailand",
         image: "https://images.unsplash.com/photo-1584169973156-f8319ad0db0e?w=400&q=80",
         durationDesc: "2h 15m, 1 stop", startDateStr: "Sat 14/3", endDateStr: "Wed 18/3",
         price: 155, fromCode: "RGN", toCode: "HKT",
     },
     {
-        id: "rgn-kul", destination: "Kuala Lumpur",
+        id: "rgn-kul", destination: "Kuala Lumpur", country: "Malaysia",
         image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80",
         durationDesc: "2h 30m, direct", startDateStr: "Mon 16/3", endDateStr: "Fri 20/3",
         price: 128, fromCode: "RGN", toCode: "KUL",
     },
     {
-        id: "rgn-han", destination: "Hanoi",
+        id: "rgn-han", destination: "Hanoi", country: "Vietnam",
         image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
         durationDesc: "2h 10m, direct", startDateStr: "Thu 19/3", endDateStr: "Mon 23/3",
         price: 135, fromCode: "RGN", toCode: "HAN",
     },
     {
-        id: "mdl-bkk", destination: "Bangkok (from MDL)",
+        id: "mdl-bkk", destination: "Bangkok (from MDL)", country: "Thailand",
         image: "https://images.unsplash.com/photo-1583500057207-68b55589c4a7?w=400&q=80",
         durationDesc: "1h 45m, direct", startDateStr: "Sat 14/3", endDateStr: "Wed 18/3",
         price: 95, fromCode: "MDL", toCode: "BKK",
     },
     {
-        id: "mdl-cnx", destination: "Chiang Mai (from MDL)",
+        id: "mdl-cnx", destination: "Chiang Mai (from MDL)", country: "Thailand",
         image: "https://images.unsplash.com/photo-1598971032873-1f19f2bdc836?w=400&q=80",
         durationDesc: "1h 40m, direct", startDateStr: "Tue 24/3", endDateStr: "Sat 28/3",
         price: 105, fromCode: "MDL", toCode: "CNX",
     },
     {
-        id: "rgn-icn", destination: "Seoul",
+        id: "rgn-icn", destination: "Seoul", country: "South Korea",
         image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80",
         durationDesc: "5h 30m, 1 stop", startDateStr: "Wed 25/3", endDateStr: "Sun 29/3",
         price: 245, fromCode: "RGN", toCode: "ICN",
     },
     {
-        id: "rgn-nrt", destination: "Tokyo",
+        id: "rgn-nrt", destination: "Tokyo", country: "Japan",
         image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80",
         durationDesc: "6h 30m, 1 stop", startDateStr: "Fri 27/3", endDateStr: "Tue 31/3",
         price: 320, fromCode: "RGN", toCode: "NRT",
+    },
+    {
+        id: "rgn-dps", destination: "Bali", country: "Indonesia",
+        image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80",
+        durationDesc: "4h 10m, 1 stop", startDateStr: "Sat 21/3", endDateStr: "Wed 25/3",
+        price: 178, fromCode: "RGN", toCode: "DPS",
     },
 ];
 
 // ── MASTER POOL: Asia Tab (10+ popular SEA routes) ───────────────────────────
 const INTERNATIONAL_POOL: DealEntry[] = [
     {
-        id: "bkk-cnx", destination: "Chiang Mai",
+        id: "bkk-cnx", destination: "Chiang Mai", country: "Thailand",
         image: "https://images.unsplash.com/photo-1598971032873-1f19f2bdc836?w=400&q=80",
         durationDesc: "1h 15m, direct", startDateStr: "Tue 24/3", endDateStr: "Sat 28/3",
         price: 45, fromCode: "BKK", toCode: "CNX",
     },
     {
-        id: "bkk-hkt", destination: "Phuket",
+        id: "bkk-hkt", destination: "Phuket", country: "Thailand",
         image: "https://images.unsplash.com/photo-1584169973156-f8319ad0db0e?w=400&q=80",
         durationDesc: "1h 25m, direct", startDateStr: "Fri 13/3", endDateStr: "Mon 16/3",
         price: 55, fromCode: "BKK", toCode: "HKT",
     },
     {
-        id: "kul-utp", destination: "Pattaya",
+        id: "kul-utp", destination: "Pattaya", country: "Thailand",
         image: "https://images.unsplash.com/photo-1588661704283-7d727dbfcdc2?w=400&q=80",
         durationDesc: "2h 10m, direct", startDateStr: "Wed 25/3", endDateStr: "Sun 29/3",
         price: 68, fromCode: "KUL", toCode: "UTP",
     },
     {
-        id: "sin-dps", destination: "Bali",
+        id: "sin-dps", destination: "Bali", country: "Indonesia",
         image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80",
         durationDesc: "2h 40m, direct", startDateStr: "Thu 12/3", endDateStr: "Sun 15/3",
         price: 110, fromCode: "SIN", toCode: "DPS",
     },
     {
-        id: "bkk-sgn", destination: "Ho Chi Minh City",
+        id: "bkk-sgn", destination: "Ho Chi Minh City", country: "Vietnam",
         image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
         durationDesc: "1h 45m, direct", startDateStr: "Mon 16/3", endDateStr: "Fri 20/3",
         price: 72, fromCode: "BKK", toCode: "SGN",
     },
     {
-        id: "sin-kul", destination: "Kuala Lumpur",
+        id: "sin-kul", destination: "Kuala Lumpur", country: "Malaysia",
         image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80",
         durationDesc: "1h 0m, direct", startDateStr: "Sat 14/3", endDateStr: "Wed 18/3",
         price: 38, fromCode: "SIN", toCode: "KUL",
     },
     {
-        id: "kul-han", destination: "Hanoi",
+        id: "kul-han", destination: "Hanoi", country: "Vietnam",
         image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
         durationDesc: "3h 30m, direct", startDateStr: "Thu 19/3", endDateStr: "Mon 23/3",
         price: 85, fromCode: "KUL", toCode: "HAN",
     },
     {
-        id: "sin-mnl", destination: "Manila",
+        id: "sin-mnl", destination: "Manila", country: "Philippines",
         image: "https://images.unsplash.com/photo-1573455494060-c5595004fb6c?w=400&q=80",
         durationDesc: "3h 40m, direct", startDateStr: "Wed 18/3", endDateStr: "Sun 22/3",
         price: 95, fromCode: "SIN", toCode: "MNL",
     },
     {
-        id: "bkk-kix", destination: "Osaka",
+        id: "bkk-kix", destination: "Osaka", country: "Japan",
         image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80",
         durationDesc: "5h 50m, direct", startDateStr: "Fri 27/3", endDateStr: "Tue 31/3",
         price: 195, fromCode: "BKK", toCode: "KIX",
     },
     {
-        id: "sin-icn", destination: "Seoul",
+        id: "sin-icn", destination: "Seoul", country: "South Korea",
         image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80",
         durationDesc: "6h 20m, direct", startDateStr: "Thu 26/3", endDateStr: "Mon 30/3",
         price: 210, fromCode: "SIN", toCode: "ICN",
@@ -175,10 +182,19 @@ function toTHB(usd: number): string {
 export default memo(function CheapDealsCards() {
     const [activeNiche, setActiveNiche] = useState<TargetNiche>("myanmar");
 
-    // SMART AUTO-SORT: sort by price ascending → take top 4
+    // SMART AUTO-SORT: sort by price ascending → pick cheapest per country (diversity)
     const topDeals = useMemo(() => {
         const pool = activeNiche === "myanmar" ? MYANMAR_POOL : INTERNATIONAL_POOL;
-        return [...pool].sort((a, b) => a.price - b.price).slice(0, CARDS_TO_SHOW);
+        const sorted = [...pool].sort((a, b) => a.price - b.price);
+        const seen = new Set<string>();
+        const result: DealEntry[] = [];
+        for (const deal of sorted) {
+            if (seen.has(deal.country)) continue; // skip duplicate country
+            seen.add(deal.country);
+            result.push(deal);
+            if (result.length >= CARDS_TO_SHOW) break;
+        }
+        return result;
     }, [activeNiche]);
 
     // DYNAMIC HOOK TITLE: ceiling = round up the max of the top 4
@@ -201,8 +217,8 @@ export default memo(function CheapDealsCards() {
                 <button
                     onClick={() => setActiveNiche("myanmar")}
                     className={`pb-3 px-2 font-bold text-[15px] sm:text-[16px] transition-all border-b-[3px] ${activeNiche === "myanmar"
-                            ? "border-[#5B0EA6] text-[#5B0EA6]"
-                            : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+                        ? "border-[#5B0EA6] text-[#5B0EA6]"
+                        : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
                         }`}
                 >
                     From Myanmar 🇲🇲
@@ -210,8 +226,8 @@ export default memo(function CheapDealsCards() {
                 <button
                     onClick={() => setActiveNiche("international")}
                     className={`pb-3 px-2 font-bold text-[15px] sm:text-[16px] transition-all border-b-[3px] ${activeNiche === "international"
-                            ? "border-[#5B0EA6] text-[#5B0EA6]"
-                            : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+                        ? "border-[#5B0EA6] text-[#5B0EA6]"
+                        : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
                         }`}
                 >
                     Around Asia 🌏
