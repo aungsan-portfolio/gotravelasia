@@ -812,7 +812,7 @@ function FlightWidgetInner() {
     // RENDER
     // ─────────────────────────────────────────────────────────────────────────
     return (
-        <div className="w-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+        <div id="mainWidget" className="w-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <div className="flex flex-col w-full">
 
                 {/* ═══ TRIP TYPE TOGGLE ═════════════════════════════════════ */}

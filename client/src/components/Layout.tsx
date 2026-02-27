@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import StickyCTA from "./StickyCTA";
@@ -17,6 +17,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [footerEmail, setFooterEmail] = useState("");
   const [footerStatus, setFooterStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [chatOpen, setChatOpen] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
+
+  // Listen for sticky bar toggle events from FloatingSearchBar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ visible: boolean }>;
+      setHeaderHidden(custom.detail.visible);
+    };
+    window.addEventListener("stickyBarToggled", handler);
+    return () => window.removeEventListener("stickyBarToggled", handler);
+  }, []);
 
   const handleFooterSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +56,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
-      {/* Header — Clean white */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+      {/* Header — Clean white, slides up when sticky bar is active */}
+      <header
+        className={`sticky top-0 z-50 bg-white border-b border-gray-200 transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${headerHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+          }`}
+      >
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Menu */}

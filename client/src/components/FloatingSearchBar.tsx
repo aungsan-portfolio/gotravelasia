@@ -1,85 +1,123 @@
-import { useState, useEffect } from "react";
-import { Plane, Search, ChevronDown } from "lucide-react";
-import { AFFILIATE, buildAviasalesUrl, build12GoUrl } from "@/lib/config";
-
-const POPULAR_ROUTES = [
-  { label: "Bangkok → Singapore", origin: "BKK", dest: "SIN" },
-  { label: "Bangkok → Bali", origin: "BKK", dest: "DPS" },
-  { label: "Singapore → Bangkok", origin: "SIN", dest: "BKK" },
-  { label: "KL → Bangkok", origin: "KUL", dest: "BKK" },
-  { label: "Yangon → Bangkok", origin: "RGN", dest: "BKK" },
-  { label: "Hanoi → Bangkok", origin: "HAN", dest: "BKK" },
-];
+/**
+ * FloatingSearchBar.tsx — Go Travel Asia
+ * ─────────────────────────────────────────────────────────────
+ * Sticky compact search bar that slides down when the main
+ * FlightWidget scrolls out of the viewport.
+ *
+ * Uses IntersectionObserver (not scroll events) for performance.
+ * The header slide-up is dispatched via a custom event
+ * "stickyBarToggled" that Layout.tsx listens for.
+ */
+import { useState, useEffect, useRef } from "react";
 
 export default function FloatingSearchBar() {
   const [visible, setVisible] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState(0);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    const onScroll = () => {
-      setVisible(window.scrollY > 500);
+    const mainWidget = document.getElementById("mainWidget");
+    if (!mainWidget) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        const show = !entry.isIntersecting;
+        setVisible(show);
+
+        // Dispatch event so Layout.tsx can hide/show the main header
+        window.dispatchEvent(
+          new CustomEvent("stickyBarToggled", { detail: { visible: show } })
+        );
+      },
+      {
+        root: null,
+        rootMargin: "-56px 0px 0px 0px", // subtract header height (h-14 = 56px)
+        threshold: 0,
+      }
+    );
+
+    observerRef.current.observe(mainWidget);
+
+    return () => {
+      observerRef.current?.disconnect();
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // When Search is clicked → scroll back up to the main widget
   const handleSearch = () => {
-    const route = POPULAR_ROUTES[selectedRoute];
-    const url = buildAviasalesUrl(route.origin, route.dest);
-    window.open(url, "_blank", "noopener,noreferrer");
+    const mainWidget = document.getElementById("mainWidget");
+    if (mainWidget) {
+      mainWidget.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   };
 
-  if (!visible) return null;
-
   return (
-    <div className="fixed top-16 left-0 right-0 z-40 animate-in slide-in-from-top-2 duration-300">
-      <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="container py-2.5 flex items-center gap-3">
-          <div className="flex items-center gap-2 text-primary flex-shrink-0">
-            <Plane className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wide hidden sm:inline">Quick Search</span>
-          </div>
+    <div
+      className={`
+        fixed top-0 left-0 right-0 z-[999]
+        h-[60px] flex items-center px-4 sm:px-6 gap-2 sm:gap-3
+        bg-[#FFD700] shadow-[0_2px_12px_rgba(0,0,0,0.12)]
+        transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+        ${visible
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-full opacity-0 pointer-events-none"
+        }
+      `}
+      style={{ fontFamily: "'Source Sans 3', -apple-system, sans-serif" }}
+    >
+      {/* ── Logo (compact) ── */}
+      <a
+        href="/"
+        className="text-[17px] font-[800] text-black tracking-[-0.5px] whitespace-nowrap no-underline mr-1 shrink-0 hidden sm:block"
+      >
+        GoTravel ✈
+      </a>
 
-          <div className="flex-1 flex items-center gap-2">
-            <div className="relative flex-1 max-w-xs">
-              <select
-                value={selectedRoute}
-                onChange={(e) => setSelectedRoute(Number(e.target.value))}
-                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 pr-8 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-primary outline-none min-h-[40px]"
-              >
-                {POPULAR_ROUTES.map((r, i) => (
-                  <option key={i} value={i}>{r.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            </div>
+      {/* ── Compact Search Pills Row ── */}
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-1 overflow-x-auto scrollbar-none">
 
-            <button
-              onClick={handleSearch}
-              className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors min-h-[40px] flex-shrink-0"
-            >
-              <Search className="w-4 h-4" />
-              <span className="hidden sm:inline">Search</span>
-            </button>
-          </div>
-
-          <a
-            href={`https://www.agoda.com/city/bangkok-th.html?cid=${AFFILIATE.AGODA_CID}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden md:flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0"
-          >
-            🏨 Hotels
-          </a>
-          <a
-            href={build12GoUrl("bangkok/chiang-mai", "floating_bar")}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0"
-          >
-            🚌 Transport
-          </a>
+        {/* Trip type pill */}
+        <div className="h-9 rounded-[20px] border-[1.5px] border-[#d0d5dd] bg-white flex items-center gap-1.5 px-3 text-[13px] font-semibold text-[#101828] cursor-pointer whitespace-nowrap shrink-0 hover:border-[#667085] transition-colors">
+          One-way
         </div>
+
+        {/* Origin airport pill */}
+        <div className="h-9 rounded-[20px] border-[1.5px] border-[#d0d5dd] bg-white flex items-center gap-1.5 px-3 text-[13px] font-semibold text-[#101828] cursor-pointer whitespace-nowrap shrink-0 max-w-[140px] hover:border-[#667085] transition-colors">
+          <span className="truncate">Yangon</span>
+          <span className="w-4 h-4 rounded-full bg-[#e4e7ec] flex items-center justify-center text-[10px] text-[#344054] shrink-0 hover:bg-[#d0d5dd] transition-colors">×</span>
+        </div>
+
+        {/* Swap button */}
+        <div className="w-[30px] h-[30px] rounded-full bg-white border-[1.5px] border-[#d0d5dd] flex items-center justify-center cursor-pointer shrink-0 hover:bg-[#f0f2f5] transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#344054">
+            <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z" />
+          </svg>
+        </div>
+
+        {/* Destination airport pill */}
+        <div className="h-9 rounded-[20px] border-[1.5px] border-[#d0d5dd] bg-white flex items-center gap-1.5 px-3 text-[13px] font-semibold text-[#101828] cursor-pointer whitespace-nowrap shrink-0 max-w-[140px] hover:border-[#667085] transition-colors">
+          <span className="truncate">Bangkok</span>
+          <span className="w-4 h-4 rounded-full bg-[#e4e7ec] flex items-center justify-center text-[10px] text-[#344054] shrink-0 hover:bg-[#d0d5dd] transition-colors">×</span>
+        </div>
+
+        {/* Date pill */}
+        <div className="h-10 rounded-[20px] border-[1.5px] border-[#d0d5dd] bg-white flex flex-col items-start justify-center px-3 cursor-pointer whitespace-nowrap shrink-0 hover:border-[#667085] transition-colors">
+          <span className="text-[13px] font-bold leading-[1.1] text-[#101828]">Select date</span>
+          <span className="text-[11px] font-normal leading-[1.1] text-[#667085]">± flexible</span>
+        </div>
+
+        {/* Passengers + cabin pill */}
+        <div className="h-9 rounded-[20px] border-[1.5px] border-[#d0d5dd] bg-white flex items-center gap-1.5 px-3 text-[13px] font-medium text-[#344054] cursor-pointer whitespace-nowrap shrink-0 hover:border-[#667085] transition-colors">
+          1 adult&nbsp;·&nbsp;Economy
+        </div>
+
+        {/* Search button — BLACK with yellow text */}
+        <button
+          onClick={handleSearch}
+          className="h-9 px-5 rounded-lg bg-black text-[#FFD700] border-none text-sm font-bold cursor-pointer shrink-0 hover:bg-[#1a1a1a] active:scale-[0.97] transition-all tracking-[0.2px]"
+        >
+          Search
+        </button>
       </div>
     </div>
   );
