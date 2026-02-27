@@ -46,7 +46,7 @@ import {
 import { format, isValid } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PriceCalendar from "@/components/PriceCalendar";
-import { usePriceHint, useFlightPriceMap } from "@/hooks/useFlightData";
+import { usePriceHint, useFlightPriceMap, useLivePriceMap } from "@/hooks/useFlightData";
 import posthog from "posthog-js";
 import { z } from "zod";
 import { formatTHB } from "@/const";
@@ -529,9 +529,13 @@ const RecentSearchesPanel = memo(function RecentSearchesPanel({
     onReSearch: (s: RecentSearchRecord) => void;
 }) {
     const [searches, setSearches] = useState<RecentSearchRecord[]>([]);
-    const currentPrices = useFlightPriceMap();
 
     useEffect(() => setSearches(recentSearches.load()), []);
+
+    // Live price lookup: fetch from API for each unique origin
+    const currentPrices = useLivePriceMap(
+        searches.map(s => ({ origin: s.origin, destination: s.destination }))
+    );
 
     const handleClear = useCallback(() => {
         recentSearches.clear();

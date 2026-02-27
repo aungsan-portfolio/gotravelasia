@@ -92,16 +92,65 @@ export function useFlightPriceMap() {
   }, [deals]);
 }
 
-export function usePriceHint(origin: string, destination: string, hasReturn: boolean) {
+export function usePriceHint(origin: string, destination: string, _hasReturn?: boolean) {
   const { deals } = useFlightData();
-
-  if (hasReturn) return null;
 
   const route = deals.find((r) => r.origin === origin && r.destination === destination);
   return route?.price ?? null;
 }
 
 export type { Deal, Meta };
+
+/**
+ * useLivePriceMap — fetches live prices from /api/cheap-prices for given routes.
+ * Falls back to static flight_data.json prices via useFlightPriceMap.
+ * @param routes — array of { origin, destination } to look up
+ */
+export function useLivePriceMap(routes: { origin: string; destination: string }[]) {
+  const staticPrices = useFlightPriceMap();
+  const [livePrices, setLivePrices] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (routes.length === 0) return;
+
+    // Deduplicate origins
+    const origins = Array.from(new Set(routes.map(r => r.origin)));
+    let cancelled = false;
+
+    Promise.allSettled(
+      origins.map(origin =>
+        fetch(`/api/cheap-prices?origin=${origin}&currency=usd`)
+          .then(r => r.ok ? r.json() : null)
+          .then(json => ({ origin, data: json?.data || {} }))
+      )
+    ).then(results => {
+      if (cancelled) return;
+      const map: Record<string, number> = {};
+      for (const result of results) {
+        if (result.status !== "fulfilled" || !result.value.data) continue;
+        const { origin, data } = result.value;
+        // data is { "BKK": { "0": { price: 142, ... }, "1": { ... } }, "SIN": { ... } }
+        for (const [dest, flights] of Object.entries(data as Record<string, Record<string, any>>)) {
+          const key = `${origin}-${dest}`;
+          // Find the cheapest flight for this route
+          let cheapest = Infinity;
+          for (const flight of Object.values(flights)) {
+            if (flight.price && flight.price < cheapest) cheapest = flight.price;
+          }
+          if (cheapest < Infinity) map[key] = cheapest;
+        }
+      }
+      setLivePrices(map);
+    });
+
+    return () => { cancelled = true; };
+  }, [JSON.stringify(routes)]);
+
+  // Merge: live prices take priority over static
+  return useMemo(() => {
+    return { ...staticPrices, ...livePrices };
+  }, [staticPrices, livePrices]);
+}
 
 // ─── Cheap Deals hook (Upgrade 1: real TP API data) ───
 export function useCheapDeals(origin = "RGN") {
