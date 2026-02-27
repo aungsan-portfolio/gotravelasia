@@ -521,8 +521,7 @@ function FlightWidgetInner() {
     const doneButtonRef = useRef<HTMLButtonElement>(null);
     const hasOpenedPax = useRef(false);
 
-    // ── Scroll lock when calendar is open (from V3) ─────────────────────────
-    useScrollLock(calendarOpen);
+    // (Scroll lock removed — calendar is now inline dropdown, not modal)
 
     // ── Geo-detect on mount (async version from V2) ─────────────────────────
     useEffect(() => {
@@ -869,27 +868,25 @@ function FlightWidgetInner() {
                     </div>
                 </div>
 
-                {/* ═══ CALENDAR OVERLAY ═════════════════════════════════════ */}
+                {/* ═══ CALENDAR DROPDOWN (Cheapflights style) ════════════ */}
                 {calendarOpen && (
                     <>
                         <div
-                            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+                            className="fixed inset-0 z-30"
                             onClick={() => setCalendarOpen(false)}
                             aria-hidden="true"
                         />
-                        {/* Fixed centered modal — scrollable if viewport is short */}
                         <div
-                            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 md:py-8"
-                            onClick={() => setCalendarOpen(false)}
+                            role="dialog" aria-modal="true"
+                            aria-label={`Select ${calendarMode === "depart" ? "departure" : "return"} date`}
+                            className="relative z-40 flex justify-center mt-2"
                         >
                             <div
-                                role="dialog" aria-modal="true"
-                                aria-label={`Select ${calendarMode === "depart" ? "departure" : "return"} date`}
-                                className="bg-white rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-200 my-auto max-w-[95vw]"
-                                style={{ border: `1.5px solid rgba(91,14,166,0.12)`, boxShadow: `0 28px 70px rgba(91,14,166,0.18)` }}
-                                onClick={e => e.stopPropagation()}
+                                className="bg-white rounded-2xl p-5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200 w-full max-w-[740px]"
+                                style={{ border: `1.5px solid rgba(91,14,166,0.10)` }}
                             >
-                                <div role="tablist" aria-label="Select departure or return date" className="flex gap-2 mb-3">
+                                {/* Tab bar */}
+                                <div role="tablist" aria-label="Select departure or return date" className="flex gap-2 mb-4">
                                     {(["depart", "return"] as const).map(m => (
                                         <button
                                             key={m} type="button" role="tab" aria-selected={calendarMode === m}
@@ -921,15 +918,6 @@ function FlightWidgetInner() {
                                     onSelectDate={handleCalendarSelect}
                                     todayDate={todayDate}
                                 />
-                                <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
-                                    <button
-                                        type="button" onClick={() => setCalendarOpen(false)}
-                                        className="px-5 py-2 rounded-xl text-white font-bold text-sm"
-                                        style={{ background: B.purple }}
-                                    >
-                                        Done
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </>

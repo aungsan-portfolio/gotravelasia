@@ -257,14 +257,14 @@ export default function PriceCalendar({
 
     return (
       <div className="w-full">
-        <h3 className="text-center text-[13px] font-bold text-gray-900 mb-3 capitalize">
+        <h3 className="text-center text-[15px] font-bold text-gray-900 mb-2 h-[44px] flex items-center justify-center">
           {MONTHS[month]} {year}
         </h3>
         <table className="w-full border-collapse table-fixed">
           <thead>
             <tr>
               {WEEKDAYS.map((wd, i) => (
-                <th key={i} className="text-[10px] text-gray-400 pb-2 font-semibold uppercase tracking-wider">
+                <th key={i} className="text-[12px] text-gray-400 pb-2 font-semibold uppercase tracking-wider h-[32px]">
                   {wd}
                 </th>
               ))}
@@ -301,16 +301,16 @@ export default function PriceCalendar({
 
                   if (isDisabled) {
                     return (
-                      <td key={dateKey} className="p-0.5">
-                        <div className="w-full aspect-square flex flex-col items-center justify-center rounded-lg text-gray-300 pointer-events-none">
-                          <span className="font-bold text-[12px]">{cell.getDate()}</span>
+                      <td key={dateKey} className="p-[2px]">
+                        <div className="w-[40px] h-[40px] md:w-[40px] md:h-[40px] mx-auto flex flex-col items-center justify-center rounded-lg text-gray-300 pointer-events-none">
+                          <span className="font-bold text-[14px]">{cell.getDate()}</span>
                         </div>
                       </td>
                     );
                   }
 
                   return (
-                    <td key={dateKey} className="p-0.5 relative">
+                    <td key={dateKey} className="p-[2px] relative">
                       {/* Range connecting background spanning full cell width */}
                       {inRange && <div className="absolute inset-y-0.5 -inset-x-0.5 bg-gray-100/80 -z-10" />}
                       {(isRangeStart || (isSelectedDepart && hoveredDay && isAfter(hoveredDay, selectedDepart))) && isSameDay(cell, selectedDepart) && (
@@ -333,18 +333,18 @@ export default function PriceCalendar({
                         }}
                         onMouseEnter={() => setHoveredDay(cell)}
                         onMouseLeave={() => setHoveredDay(null)}
-                        className={`w-full aspect-square flex flex-col items-center justify-center gap-0 rounded-lg text-xs transition-colors border border-transparent ${isSelected ? "shadow-md z-10 relative" : ""
+                        className={`w-[40px] h-[40px] md:w-[40px] md:h-[40px] mx-auto flex flex-col items-center justify-center gap-0 rounded-lg transition-colors border border-transparent ${isSelected ? "shadow-md z-10 relative" : ""
                           }`}
                         style={{
                           backgroundColor: isSelected ? "#5B0EA6" : (inRange && tier === "none" ? "transparent" : currentBg),
                           color: isSelected ? "#ffffff" : currentText,
                         }}
                       >
-                        <span className={`text-[12px] ${isSelected ? "font-extrabold" : "font-bold"}`}>
+                        <span className={`text-[14px] leading-tight ${isSelected ? "font-extrabold" : "font-bold"}`}>
                           {cell.getDate()}
                         </span>
                         {thbPrice ? (
-                          <span className="text-[9px] font-mono opacity-80 leading-none">
+                          <span className="text-[10px] font-mono opacity-80 leading-none">
                             {(thbPrice / 1000).toFixed(1)}k
                           </span>
                         ) : null}
@@ -361,7 +361,7 @@ export default function PriceCalendar({
   };
 
   return (
-    <div className="w-[700px] max-w-[90vw] bg-white rounded-2xl overflow-hidden flex flex-col p-4 font-sans">
+    <div className="w-full bg-white overflow-hidden flex flex-col font-sans">
 
 
       {/* ─── Month navigation row ─── */}
@@ -370,7 +370,7 @@ export default function PriceCalendar({
         <button
           onClick={handlePrev}
           disabled={!canGoPrev}
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 disabled:opacity-30 disabled:hover:bg-gray-50 transition-colors z-10 shrink-0"
+          className="w-[32px] h-[32px] rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 disabled:opacity-30 disabled:hover:bg-gray-50 transition-colors z-10 shrink-0"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -386,18 +386,19 @@ export default function PriceCalendar({
 
         <button
           onClick={handleNext}
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 transition-colors z-10 shrink-0"
+          className="w-[32px] h-[32px] rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 transition-colors z-10 shrink-0"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* ─── Dual Calendar Grid ─── */}
-      <div className="flex gap-3 relative mt-[-48px] pt-[48px] overflow-x-auto snap-x hide-scrollbar">
-        <div className="min-w-full md:min-w-[calc(50%-8px)] snap-start">
+      {/* Dual month grid (desktop) / single month (mobile) */}
+      <div className="flex gap-6 relative mt-[-48px] pt-[48px]">
+        <div className="flex-1 min-w-0">
           {renderMonthGrid(leftMonth, false)}
         </div>
-        <div className="min-w-full md:min-w-[calc(50%-8px)] snap-start hidden md:block">
+        <div className="flex-1 min-w-0 hidden md:block">
           {renderMonthGrid(rightMonth, true)}
         </div>
       </div>
