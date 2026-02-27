@@ -478,14 +478,32 @@ const RecentSearchesPanel = memo(function RecentSearchesPanel({
                                         <div className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Price unavailable</div>
                                     )}
                                 </div>
-                                <button
-                                    type="button" onClick={() => onReSearch(s)}
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
-                                    style={{ background: B.gold }}
-                                    aria-label={`Search ${s.origin} to ${s.destination} again`}
-                                >
-                                    <Search className="w-4 h-4" style={{ color: B.purpleDeep }} aria-hidden="true" />
-                                </button>
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const fmtDDMM = (d: string) => { const [, mm, dd] = d.split("-"); return dd + mm; };
+                                            let fs = `${s.origin}${fmtDDMM(s.departDate)}${s.destination}`;
+                                            if (s.returnDate) fs += fmtDDMM(s.returnDate);
+                                            fs += "1"; // 1 adult, economy
+                                            if (posthog.__loaded) posthog.capture("recent_search_book", { origin: s.origin, destination: s.destination });
+                                            window.location.href = `/flights/results?flightSearch=${fs}`;
+                                        }}
+                                        className="px-4 py-2 rounded-xl font-bold text-sm transition-all active:scale-[0.97]"
+                                        style={{ background: B.gold, color: B.purpleDeep }}
+                                        aria-label={`Book ${s.origin} to ${s.destination} tickets`}
+                                    >
+                                        Book Now
+                                    </button>
+                                    <button
+                                        type="button" onClick={() => onReSearch(s)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                        style={{ color: "rgba(255,255,255,0.5)" }}
+                                        aria-label={`Edit search ${s.origin} to ${s.destination}`}
+                                    >
+                                        Edit search
+                                    </button>
+                                </div>
                             </div>
                         </article>
                     );
