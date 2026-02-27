@@ -202,24 +202,36 @@ export default memo(function CheapDealsCards() {
         // Sort by price ascending
         allDeals.sort((a, b) => a.price - b.price);
 
-        // Pass 1: Pick one deal per unique country (diversity)
-        const seenCountry = new Set<string>();
         const result: DealCard[] = [];
+        const seenCity = new Set<string>();
+
+        // Pass 1: Prioritize Bangkok and Chiang Mai (direct flights preferred)
+        const priorityCities = ["Bangkok", "Bangkok (DMK)", "Chiang Mai"];
         for (const deal of allDeals) {
-            if (seenCountry.has(deal.country)) continue;
-            seenCountry.add(deal.country);
-            result.push(deal);
-            if (result.length >= CARDS_TO_SHOW) break;
+            if (priorityCities.includes(deal.destination) && !seenCity.has(deal.destination)) {
+                // For Myanmar tab, let's just make sure BKK and CNX get in.
+                result.push(deal);
+                seenCity.add(deal.destination);
+            }
         }
 
-        // Pass 2: If we still need more cards, fill with cheapest remaining (different cities)
-        if (result.length < CARDS_TO_SHOW) {
-            const usedIds = new Set(result.map(d => d.id));
-            for (const deal of allDeals) {
-                if (usedIds.has(deal.id)) continue;
+        // Pass 2: Fill the rest with cheapest *DIRECT* flights (transfers === 0)
+        for (const deal of allDeals) {
+            if (result.length >= CARDS_TO_SHOW) break;
+            if (!seenCity.has(deal.destination) && deal.transfers === 0) {
                 result.push(deal);
-                usedIds.add(deal.id);
+                seenCity.add(deal.destination);
+            }
+        }
+
+        // Pass 3: If still need more cards, fill with cheapest remaining (any transfers)
+        if (result.length < CARDS_TO_SHOW) {
+            for (const deal of allDeals) {
                 if (result.length >= CARDS_TO_SHOW) break;
+                if (!seenCity.has(deal.destination)) {
+                    result.push(deal);
+                    seenCity.add(deal.destination);
+                }
             }
         }
 
