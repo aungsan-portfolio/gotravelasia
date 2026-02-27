@@ -877,14 +877,17 @@ function FlightWidgetInner() {
                             onClick={() => setCalendarOpen(false)}
                             aria-hidden="true"
                         />
+                        {/* Fixed centered modal — scrollable if viewport is short */}
                         <div
-                            role="dialog" aria-modal="true"
-                            aria-label={`Select ${calendarMode === "depart" ? "departure" : "return"} date`}
-                            className="relative z-50 flex justify-center mt-2"
+                            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 md:py-8"
+                            onClick={() => setCalendarOpen(false)}
                         >
                             <div
-                                className="bg-white rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+                                role="dialog" aria-modal="true"
+                                aria-label={`Select ${calendarMode === "depart" ? "departure" : "return"} date`}
+                                className="bg-white rounded-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-200 my-auto max-w-[95vw]"
                                 style={{ border: `1.5px solid rgba(91,14,166,0.12)`, boxShadow: `0 28px 70px rgba(91,14,166,0.18)` }}
+                                onClick={e => e.stopPropagation()}
                             >
                                 <div role="tablist" aria-label="Select departure or return date" className="flex gap-2 mb-3">
                                     {(["depart", "return"] as const).map(m => (
