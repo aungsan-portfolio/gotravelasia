@@ -682,7 +682,7 @@ function FlightWidgetInner() {
                                     className="w-full bg-transparent font-bold text-white text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
                                 >
                                     {(AIRPORTS as unknown as Airport[]).map(city => (
-                                        <option key={city.code} value={city.code}>{city.name}</option>
+                                        <option key={city.code} value={city.code} style={{ color: "#000" }}>{city.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -713,9 +713,9 @@ function FlightWidgetInner() {
                                     className="w-full bg-transparent font-bold text-white text-sm outline-none appearance-none cursor-pointer truncate leading-snug"
                                 >
                                     {DESTINATION_GROUPS.map(group => (
-                                        <optgroup key={group.key} label={group.label}>
+                                        <optgroup key={group.key} label={group.label} style={{ color: "#000" }}>
                                             {group.options.map(dest => (
-                                                <option key={dest.code} value={dest.code}>{dest.name}</option>
+                                                <option key={dest.code} value={dest.code} style={{ color: "#000" }}>{dest.name}</option>
                                             ))}
                                         </optgroup>
                                     ))}
