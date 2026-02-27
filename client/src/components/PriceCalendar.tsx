@@ -203,18 +203,19 @@ export default function PriceCalendar({
     if (origin === destination) { setPriceMap({}); return; }
     let cancelled = false;
     setLoading(true);
-    fetchPrices(prevStr).then(m0 => {
-      fetchPrices(leftStr).then((m1) => {
-        fetchPrices(rightStr).then((m2) => {
-          fetchPrices(nextStr).then(m3 => {
-            if (!cancelled) {
-              setPriceMap({ ...m0, ...m1, ...m2, ...m3 });
-              setLoading(false);
-            }
-          }).catch(() => { if (!cancelled) setLoading(false); });
-        }).catch(() => { if (!cancelled) setLoading(false); });
-      }).catch(() => { if (!cancelled) setLoading(false); });
-    }).catch(() => { if (!cancelled) setLoading(false); });
+
+    // Parallel fetch — much faster than sequential .then() chain
+    Promise.all([
+      fetchPrices(prevStr),
+      fetchPrices(leftStr),
+      fetchPrices(rightStr),
+      fetchPrices(nextStr),
+    ])
+      .then(([m0, m1, m2, m3]) => {
+        if (!cancelled) setPriceMap({ ...m0, ...m1, ...m2, ...m3 });
+      })
+      .catch(() => { /* individual fetchPrices already return {} on error */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
   }, [origin, destination, leftStr, rightStr, prevStr, nextStr, fetchPrices]);
