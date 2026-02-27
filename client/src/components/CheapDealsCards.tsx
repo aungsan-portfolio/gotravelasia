@@ -33,7 +33,7 @@ const MYANMAR_POOL: DealEntry[] = [
     },
     {
         id: "rgn-cnx", destination: "Chiang Mai", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1598971032873-1f19f2bdc836?w=400&q=80",
+        image: "/images/chiang-mai.webp",
         durationDesc: "1h 55m, direct", startDateStr: "Wed 18/3", endDateStr: "Sun 22/3",
         price: 115, fromCode: "RGN", toCode: "CNX",
     },
@@ -69,7 +69,7 @@ const MYANMAR_POOL: DealEntry[] = [
     },
     {
         id: "mdl-cnx", destination: "Chiang Mai (from MDL)", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1598971032873-1f19f2bdc836?w=400&q=80",
+        image: "/images/chiang-mai.webp",
         durationDesc: "1h 40m, direct", startDateStr: "Tue 24/3", endDateStr: "Sat 28/3",
         price: 105, fromCode: "MDL", toCode: "CNX",
     },
@@ -97,7 +97,7 @@ const MYANMAR_POOL: DealEntry[] = [
 const INTERNATIONAL_POOL: DealEntry[] = [
     {
         id: "bkk-cnx", destination: "Chiang Mai", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1598971032873-1f19f2bdc836?w=400&q=80",
+        image: "/images/chiang-mai.webp",
         durationDesc: "1h 15m, direct", startDateStr: "Tue 24/3", endDateStr: "Sat 28/3",
         price: 45, fromCode: "BKK", toCode: "CNX",
     },
