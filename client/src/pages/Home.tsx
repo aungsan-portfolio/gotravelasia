@@ -5,6 +5,7 @@ import HeroSection from "@/components/HeroSection";
 import FlightWidget from "@/components/FlightWidget";
 import CheapDealsCards from "@/components/CheapDealsCards";
 import PopularDestinations from "@/components/PopularDestinations";
+import FAQSection from "@/components/FAQSection";
 
 import {
   buildAviasalesUrl as buildAviasalesLink,
@@ -75,6 +76,8 @@ export default function Home() {
       <CheapDealsCards />
 
       <PopularDestinations />
+
+      <FAQSection />
     </Layout>
   );
 }
