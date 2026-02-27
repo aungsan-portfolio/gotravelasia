@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useEffect, Suspense } from "react";
 import Layout from "@/components/Layout";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { useCheapDeals } from "@/hooks/useFlightData";
 import HeroSection from "@/components/HeroSection";
 import FlightWidget from "@/components/FlightWidget";
-import DealsCarousel from "@/components/DealsCarousel";
+import CheapDealsCards from "@/components/CheapDealsCards";
 import PopularDestinations from "@/components/PopularDestinations";
 
 import {
@@ -40,8 +39,6 @@ export default function Home() {
   });
 
   const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
-  // Upgrade 1: Use real TP cheap deals with bot data fallback
-  const { deals } = useCheapDeals("RGN");
 
   // Read URL hash to switch tabs (connected to nav links)
   useEffect(() => {
@@ -56,12 +53,6 @@ export default function Home() {
     window.addEventListener("hashchange", handleHash);
     return () => window.removeEventListener("hashchange", handleHash);
   }, []);
-
-  const buildRouteUrl = useCallback((origin: string, dest: string, dealDate?: string) => {
-    return buildAviasalesLink(origin, dest, dealDate);
-  }, []);
-
-
   return (
     <Layout>
       <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -81,7 +72,7 @@ export default function Home() {
         </Suspense>
       </HeroSection>
 
-      <DealsCarousel deals={deals} buildRouteUrl={buildRouteUrl} />
+      <CheapDealsCards />
 
       <PopularDestinations />
     </Layout>
