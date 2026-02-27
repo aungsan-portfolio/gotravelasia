@@ -17,16 +17,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [footerEmail, setFooterEmail] = useState("");
   const [footerStatus, setFooterStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [chatOpen, setChatOpen] = useState(false);
-  const [headerHidden, setHeaderHidden] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
 
-  // Listen for sticky bar toggle events from FloatingSearchBar
+  // Custom observer to show inline search bar when scrolling past widget
   useEffect(() => {
-    const handler = (e: Event) => {
-      const custom = e as CustomEvent<{ visible: boolean }>;
-      setHeaderHidden(custom.detail.visible);
-    };
-    window.addEventListener("stickyBarToggled", handler);
-    return () => window.removeEventListener("stickyBarToggled", handler);
+    const mainWidget = document.getElementById("mainWidget");
+    if (!mainWidget) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setSearchVisible(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "-56px 0px 0px 0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(mainWidget);
+    return () => observer.disconnect();
   }, []);
 
   const handleFooterSubscribe = async (e: React.FormEvent) => {
@@ -56,13 +67,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
-      {/* Header — Clean white, slides up when sticky bar is active */}
+      {/* Header — Gold */}
       <header
-        className={`sticky top-0 z-50 bg-[#F5C518] border-b border-gray-200 transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${headerHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
-          }`}
+        className="sticky top-0 z-50 bg-[#F5C518] border-b border-gray-200 transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
       >
-        <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="container flex h-14 items-center justify-between relative">
+          <div className="flex items-center gap-3 relative z-10 w-[200px]">
             {/* Hamburger Menu */}
             <MobileNav onPlanTrip={() => setChatOpen(true)} />
             <Link href="/" className="flex items-center gap-2">
@@ -73,7 +83,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Embedded Floating Search Bar */}
+          <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out pointer-events-none ${searchVisible ? "opacity-100 translate-y-0 scale-100 pointer-events-auto hidden md:block" : "opacity-0 -translate-y-2 scale-95 hidden md:block"}`}>
+            <FloatingSearchBar />
+          </div>
+
+          <div className="flex items-center gap-3 relative z-10 w-[200px] justify-end">
             <SignInModal variant="header" />
           </div>
         </div>
@@ -87,7 +102,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <FloatingSearchBar />
       <StickyCTA />
 
       {/* Cookie Consent Banner */}
