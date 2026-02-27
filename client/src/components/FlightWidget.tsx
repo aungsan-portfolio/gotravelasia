@@ -826,8 +826,8 @@ function FlightWidgetInner() {
                                 if (t === "one-way") setReturnDate("");
                             }}
                             className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${tripType === t
-                                    ? "text-white shadow-lg"
-                                    : "text-white/60 hover:text-white/80"
+                                ? "text-white shadow-lg"
+                                : "text-white/60 hover:text-white/80"
                                 }`}
                             style={tripType === t
                                 ? { background: "rgba(255,255,255,0.18)", border: `1.5px solid rgba(255,255,255,0.35)` }
@@ -843,8 +843,8 @@ function FlightWidgetInner() {
                 <div
                     role="group" aria-label="Flight search fields"
                     className={`grid grid-cols-1 sm:grid-cols-2 ${tripType === "one-way"
-                            ? "lg:grid-cols-5"
-                            : "lg:grid-cols-6"
+                        ? "lg:grid-cols-5"
+                        : "lg:grid-cols-6"
                         } flex-1 rounded-xl lg:rounded-2xl overflow-hidden`}
                     style={{ background: B.glassBase, border: `1.5px solid ${B.glassBorder}` }}
                 >
@@ -869,16 +869,18 @@ function FlightWidgetInner() {
                                 />
                             </div>
                         </div>
-                        {/* Swap Button */}
+                        {/* Swap Button — centered between FROM & TO on both layouts */}
                         <button
                             type="button"
                             onClick={e => { e.stopPropagation(); const tmp = origin; setOrigin(destination); setDestination(tmp); }}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-all"
+                            className="absolute z-10 w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-all
+                                       left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2
+                                       sm:left-auto sm:translate-x-1/2 sm:right-0 sm:top-1/2 sm:-translate-y-1/2 sm:bottom-auto"
                             style={{ background: "rgba(255,255,255,0.12)", border: `1.5px solid rgba(255,255,255,0.25)` }}
                             aria-label="Swap origin and destination"
                             title="Swap airports"
                         >
-                            <ArrowRightLeft className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-white sm:rotate-0 rotate-90" aria-hidden="true" />
                         </button>
                     </div>
 
