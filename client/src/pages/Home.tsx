@@ -5,6 +5,7 @@ import { useCheapDeals } from "@/hooks/useFlightData";
 import HeroSection from "@/components/HeroSection";
 import FlightWidget from "@/components/FlightWidget";
 import DealsCarousel from "@/components/DealsCarousel";
+import PopularDestinations from "@/components/PopularDestinations";
 
 import {
   buildAviasalesUrl as buildAviasalesLink,
@@ -81,6 +82,8 @@ export default function Home() {
       </HeroSection>
 
       <DealsCarousel deals={deals} buildRouteUrl={buildRouteUrl} />
+
+      <PopularDestinations />
     </Layout>
   );
 }
