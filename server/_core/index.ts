@@ -156,6 +156,50 @@ async function startServer() {
     }
   });
 
+  // ─── In-memory cache (Upgrade 2) ───
+  const priceCache = new Map<string, { data: any; expiresAt: number }>();
+  const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+  function getCached(key: string) {
+    const entry = priceCache.get(key);
+    if (entry && entry.expiresAt > Date.now()) return entry.data;
+    priceCache.delete(key);
+    return null;
+  }
+  function setCache(key: string, data: any) {
+    priceCache.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
+  }
+
+  // ─── Cheap Prices API (Upgrade 1) ───
+  app.get("/api/cheap-prices", rateLimit(calendarRateLimits, 60, 15 * 60 * 1000, "Too many requests"), async (req, res) => {
+    try {
+      const token = process.env.TRAVELPAYOUTS_TOKEN;
+      if (!token) { res.status(500).json({ error: "API token not configured" }); return; }
+
+      const origin = String(req.query.origin || "RGN");
+      const currency = String(req.query.currency || "usd");
+      const cacheKey = `cheap-${origin}-${currency}`;
+      const cached = getCached(cacheKey);
+      if (cached) { res.set("Cache-Control", "public, max-age=1800"); res.json(cached); return; }
+
+      const response = await fetch(
+        `https://api.travelpayouts.com/v1/prices/cheap?${new URLSearchParams({
+          token, origin, currency, page: "1",
+        })}`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (!response.ok) { res.status(502).json({ error: "Upstream API error" }); return; }
+      const data = await response.json();
+      const result = { success: true, data: data.data || {}, currency };
+      setCache(cacheKey, result);
+      res.set("Cache-Control", "public, max-age=1800");
+      res.json(result);
+    } catch (error) {
+      console.error("Cheap prices error:", error);
+      res.status(500).json({ error: "Failed to fetch cheap prices" });
+    }
+  });
+
   app.get("/api/calendar-prices", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many requests"), async (req, res) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
@@ -174,6 +218,11 @@ async function startServer() {
       const orig = String(origin);
       const dest = String(destination);
       const mo = String(month);
+
+      // Check cache first (Upgrade 2)
+      const calCacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
+      const calCached = getCached(calCacheKey);
+      if (calCached) { res.set("Cache-Control", "public, max-age=3600"); res.json(calCached); return; }
 
       // Calculate next month for second panel
       const [yr, mn] = mo.split("-").map(Number);
@@ -324,8 +373,10 @@ async function startServer() {
         }
       }
 
+      const calResult = { success: true, data: merged, currency: cur };
+      setCache(calCacheKey, calResult);
       res.set("Cache-Control", "public, max-age=3600");
-      res.json({ success: true, data: merged, currency: cur });
+      res.json(calResult);
     } catch (error) {
       console.error("Calendar prices error:", error);
       res.status(500).json({ error: "Failed to fetch calendar prices" });

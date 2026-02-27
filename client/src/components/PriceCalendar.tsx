@@ -229,19 +229,19 @@ export default function PriceCalendar({
   const today = startOfDay(todayDate);
   const disabledBefore = calendarMode === "return" && selectedDepart ? startOfDay(selectedDepart) : today;
 
-  const handlePrev = () => setBaseMonth(prev => subMonths(prev, 1));
-  const handleNext = () => setBaseMonth(prev => addMonths(prev, 1));
+  const handlePrev = useCallback(() => setBaseMonth(prev => subMonths(prev, 1)), []);
+  const handleNext = useCallback(() => setBaseMonth(prev => addMonths(prev, 1)), []);
 
   const canGoPrev = !isBefore(subMonths(baseMonth, 1), startOfMonth(today));
 
   /* Custom range helper for hover logic */
-  const inHoverRange = (day: Date) => {
+  const inHoverRange = useCallback((day: Date) => {
     if (selectedDepart && selectedReturn) return isInRange(day, selectedDepart, selectedReturn);
     if (selectedDepart && hoveredDay && !selectedReturn && isAfter(hoveredDay, selectedDepart)) {
       return isAfter(day, selectedDepart) && isBefore(day, hoveredDay);
     }
     return false;
-  };
+  }, [selectedDepart, selectedReturn, hoveredDay]);
 
   const renderMonthGrid = (monthDate: Date, isNext = false) => {
     const year = monthDate.getFullYear();

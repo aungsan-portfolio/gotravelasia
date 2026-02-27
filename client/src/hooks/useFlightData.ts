@@ -102,3 +102,41 @@ export function usePriceHint(origin: string, destination: string, hasReturn: boo
 }
 
 export type { Deal, Meta };
+
+// ─── Cheap Deals hook (Upgrade 1: real TP API data) ───
+export function useCheapDeals(origin = "RGN") {
+  const { deals: botDeals } = useFlightData();
+  const [cheapDeals, setCheapDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/cheap-prices?origin=${origin}&currency=usd`)
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (cancelled || !json?.data) return;
+        // Transform TP response → Deal[] format
+        const deals: Deal[] = [];
+        for (const [dest, routes] of Object.entries(json.data as Record<string, Record<string, any>>)) {
+          for (const info of Object.values(routes)) {
+            deals.push({
+              origin,
+              destination: dest,
+              date: info.departure_at?.split("T")[0] || "",
+              price: info.price || 0,
+              airline: info.airline || "",
+              transfers: info.number_of_changes ?? 0,
+            });
+          }
+        }
+        setCheapDeals(deals.sort((a, b) => a.price - b.price));
+      })
+      .catch(() => { /* fallback below */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [origin]);
+
+  // Fallback: use bot data if API returned nothing
+  const finalDeals = cheapDeals.length > 0 ? cheapDeals : botDeals;
+  return { deals: finalDeals, loading };
+}
