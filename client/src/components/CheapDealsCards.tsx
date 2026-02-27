@@ -204,27 +204,42 @@ export default memo(function CheapDealsCards() {
 
         const result: DealCard[] = [];
         const seenCity = new Set<string>();
+        const PRICE_CAP = 150; // Only show deals under $150 to keep the title attractive
 
-        // Pass 1: Prioritize Bangkok and Chiang Mai (direct flights preferred)
+        // Pass 1: Prioritize Bangkok and Chiang Mai — but ONLY if price is affordable
         const priorityCities = ["Bangkok", "Bangkok (DMK)", "Chiang Mai"];
         for (const deal of allDeals) {
-            if (priorityCities.includes(deal.destination) && !seenCity.has(deal.destination)) {
-                // For Myanmar tab, let's just make sure BKK and CNX get in.
+            if (
+                priorityCities.includes(deal.destination) &&
+                !seenCity.has(deal.destination) &&
+                deal.price <= PRICE_CAP
+            ) {
                 result.push(deal);
                 seenCity.add(deal.destination);
             }
         }
 
-        // Pass 2: Fill the rest with cheapest *DIRECT* flights (transfers === 0)
+        // Pass 2: Fill the rest with cheapest *DIRECT* flights under price cap
         for (const deal of allDeals) {
             if (result.length >= CARDS_TO_SHOW) break;
-            if (!seenCity.has(deal.destination) && deal.transfers === 0) {
+            if (!seenCity.has(deal.destination) && deal.transfers === 0 && deal.price <= PRICE_CAP) {
                 result.push(deal);
                 seenCity.add(deal.destination);
             }
         }
 
-        // Pass 3: If still need more cards, fill with cheapest remaining (any transfers)
+        // Pass 3: If still need more, allow any transfers but still under price cap
+        if (result.length < CARDS_TO_SHOW) {
+            for (const deal of allDeals) {
+                if (result.length >= CARDS_TO_SHOW) break;
+                if (!seenCity.has(deal.destination) && deal.price <= PRICE_CAP) {
+                    result.push(deal);
+                    seenCity.add(deal.destination);
+                }
+            }
+        }
+
+        // Pass 4: Last resort — if we truly have no cheap deals, take whatever is cheapest
         if (result.length < CARDS_TO_SHOW) {
             for (const deal of allDeals) {
                 if (result.length >= CARDS_TO_SHOW) break;
@@ -238,11 +253,12 @@ export default memo(function CheapDealsCards() {
         return result;
     }, [activeNiche, botRoutes]);
 
-    // Dynamic hook title
+    // Dynamic hook title — capped at $150 to keep the title attractive
     const dynamicCeiling = useMemo(() => {
         if (topDeals.length === 0) return 100;
         const maxPrice = Math.max(...topDeals.map(d => d.price));
-        return Math.ceil((maxPrice + 5) / 10) * 10;
+        const raw = Math.ceil((maxPrice + 5) / 10) * 10;
+        return Math.min(raw, 150); // Never show more than $150 in the title
     }, [topDeals]);
 
     const hookTitle = activeNiche === "myanmar"
