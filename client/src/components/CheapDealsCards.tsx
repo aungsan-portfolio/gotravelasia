@@ -1,167 +1,99 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { USD_TO_THB_RATE } from "@/const";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CheapDealsCards — Cheapflights-style deal cards with Smart Auto-Sort
+// CheapDealsCards — Live pricing from flight_data.json bot
 // ─────────────────────────────────────────────────────────────────────────────
 // Features:
 //   • Two tabs: "From Myanmar 🇲🇲" and "Around Asia 🌏"
-//   • Master pool of 10–15 destinations per tab
+//   • Reads live bot data from /data/flight_data.json (updated daily)
 //   • Auto-sorts by price ascending → picks cheapest 4 with country diversity
+//   • Dynamic "under $XX" title hook based on live prices
 
-// ── Data Model ───────────────────────────────────────────────────────────────
-interface DealEntry {
-    id: string;
+// ── Types ────────────────────────────────────────────────────────────────────
+interface BotRoute {
+    origin: string;
     destination: string;
-    country: string;      // Used for diversity filter (1 card per country)
-    image: string;
-    durationDesc: string;
-    startDateStr: string;
-    endDateStr: string;
-    price: number;        // USD
-    fromCode: string;
-    toCode: string;
+    price: number;
+    currency: string;
+    airline_code: string;
+    date: string;
+    transfers: number;
+    flight_num: string;
+    region: string;
+    found_at: string;
 }
 
-// ── MASTER POOL: Myanmar Tab (10+ destinations from RGN / MDL) ───────────────
-const MYANMAR_POOL: DealEntry[] = [
-    {
-        id: "rgn-bkk", destination: "Bangkok", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80",
-        durationDesc: "1h 20m, direct", startDateStr: "Thu 13/3", endDateStr: "Mon 17/3",
-        price: 89, fromCode: "RGN", toCode: "BKK",
-    },
-    {
-        id: "rgn-cnx", destination: "Chiang Mai", country: "Thailand",
-        image: "/images/chiang-mai.webp",
-        durationDesc: "1h 55m, direct", startDateStr: "Wed 18/3", endDateStr: "Sun 22/3",
-        price: 115, fromCode: "RGN", toCode: "CNX",
-    },
-    {
-        id: "rgn-sin", destination: "Singapore", country: "Singapore",
-        image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80",
-        durationDesc: "2h 45m, direct", startDateStr: "Fri 20/3", endDateStr: "Tue 24/3",
-        price: 142, fromCode: "RGN", toCode: "SIN",
-    },
-    {
-        id: "rgn-hkt", destination: "Phuket", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1584169973156-f8319ad0db0e?w=400&q=80",
-        durationDesc: "2h 15m, 1 stop", startDateStr: "Sat 14/3", endDateStr: "Wed 18/3",
-        price: 155, fromCode: "RGN", toCode: "HKT",
-    },
-    {
-        id: "rgn-kul", destination: "Kuala Lumpur", country: "Malaysia",
-        image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80",
-        durationDesc: "2h 30m, direct", startDateStr: "Mon 16/3", endDateStr: "Fri 20/3",
-        price: 128, fromCode: "RGN", toCode: "KUL",
-    },
-    {
-        id: "rgn-han", destination: "Hanoi", country: "Vietnam",
-        image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
-        durationDesc: "2h 10m, direct", startDateStr: "Thu 19/3", endDateStr: "Mon 23/3",
-        price: 135, fromCode: "RGN", toCode: "HAN",
-    },
-    {
-        id: "mdl-bkk", destination: "Bangkok (from MDL)", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1583500057207-68b55589c4a7?w=400&q=80",
-        durationDesc: "1h 45m, direct", startDateStr: "Sat 14/3", endDateStr: "Wed 18/3",
-        price: 95, fromCode: "MDL", toCode: "BKK",
-    },
-    {
-        id: "mdl-cnx", destination: "Chiang Mai (from MDL)", country: "Thailand",
-        image: "/images/chiang-mai.webp",
-        durationDesc: "1h 40m, direct", startDateStr: "Tue 24/3", endDateStr: "Sat 28/3",
-        price: 105, fromCode: "MDL", toCode: "CNX",
-    },
-    {
-        id: "rgn-icn", destination: "Seoul", country: "South Korea",
-        image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80",
-        durationDesc: "5h 30m, 1 stop", startDateStr: "Wed 25/3", endDateStr: "Sun 29/3",
-        price: 245, fromCode: "RGN", toCode: "ICN",
-    },
-    {
-        id: "rgn-nrt", destination: "Tokyo", country: "Japan",
-        image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80",
-        durationDesc: "6h 30m, 1 stop", startDateStr: "Fri 27/3", endDateStr: "Tue 31/3",
-        price: 320, fromCode: "RGN", toCode: "NRT",
-    },
-    {
-        id: "rgn-dps", destination: "Bali", country: "Indonesia",
-        image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80",
-        durationDesc: "4h 10m, 1 stop", startDateStr: "Sat 21/3", endDateStr: "Wed 25/3",
-        price: 178, fromCode: "RGN", toCode: "DPS",
-    },
+interface DealCard {
+    id: string;
+    destination: string;
+    country: string;
+    image: string;
+    toCode: string;
+    fromCode: string;
+    price: number;
+    airline: string;
+    date: string;
+    transfers: number;
+}
+
+// ── Destination metadata (what we display, images, country for diversity) ────
+interface DestinationMeta {
+    toCode: string;
+    city: string;
+    country: string;
+    image: string;
+}
+
+// Myanmar Tab: destinations reachable from RGN or MDL
+const MYANMAR_ORIGINS = ["RGN", "MDL"];
+const MYANMAR_DESTINATIONS: DestinationMeta[] = [
+    { toCode: "BKK", city: "Bangkok", country: "Thailand", image: "/images/bangkok.webp" },
+    { toCode: "DMK", city: "Bangkok (DMK)", country: "Thailand", image: "/images/bangkok.webp" },
+    { toCode: "CNX", city: "Chiang Mai", country: "Thailand", image: "/images/chiang-mai.webp" },
+    { toCode: "SIN", city: "Singapore", country: "Singapore", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80" },
+    { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80" },
+    { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
+    { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
+    { toCode: "ICN", city: "Seoul", country: "South Korea", image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80" },
+    { toCode: "NRT", city: "Tokyo", country: "Japan", image: "/images/tokyo.webp" },
+    { toCode: "HKT", city: "Phuket", country: "Thailand", image: "/images/phuket.webp" },
+    { toCode: "DPS", city: "Bali", country: "Indonesia", image: "/images/bali.webp" },
 ];
 
-// ── MASTER POOL: Asia Tab (10+ popular SEA routes) ───────────────────────────
-const INTERNATIONAL_POOL: DealEntry[] = [
-    {
-        id: "bkk-cnx", destination: "Chiang Mai", country: "Thailand",
-        image: "/images/chiang-mai.webp",
-        durationDesc: "1h 15m, direct", startDateStr: "Tue 24/3", endDateStr: "Sat 28/3",
-        price: 45, fromCode: "BKK", toCode: "CNX",
-    },
-    {
-        id: "bkk-hkt", destination: "Phuket", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1584169973156-f8319ad0db0e?w=400&q=80",
-        durationDesc: "1h 25m, direct", startDateStr: "Fri 13/3", endDateStr: "Mon 16/3",
-        price: 55, fromCode: "BKK", toCode: "HKT",
-    },
-    {
-        id: "kul-utp", destination: "Pattaya", country: "Thailand",
-        image: "https://images.unsplash.com/photo-1588661704283-7d727dbfcdc2?w=400&q=80",
-        durationDesc: "2h 10m, direct", startDateStr: "Wed 25/3", endDateStr: "Sun 29/3",
-        price: 68, fromCode: "KUL", toCode: "UTP",
-    },
-    {
-        id: "sin-dps", destination: "Bali", country: "Indonesia",
-        image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80",
-        durationDesc: "2h 40m, direct", startDateStr: "Thu 12/3", endDateStr: "Sun 15/3",
-        price: 110, fromCode: "SIN", toCode: "DPS",
-    },
-    {
-        id: "bkk-sgn", destination: "Ho Chi Minh City", country: "Vietnam",
-        image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
-        durationDesc: "1h 45m, direct", startDateStr: "Mon 16/3", endDateStr: "Fri 20/3",
-        price: 72, fromCode: "BKK", toCode: "SGN",
-    },
-    {
-        id: "sin-kul", destination: "Kuala Lumpur", country: "Malaysia",
-        image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80",
-        durationDesc: "1h 0m, direct", startDateStr: "Sat 14/3", endDateStr: "Wed 18/3",
-        price: 38, fromCode: "SIN", toCode: "KUL",
-    },
-    {
-        id: "kul-han", destination: "Hanoi", country: "Vietnam",
-        image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
-        durationDesc: "3h 30m, direct", startDateStr: "Thu 19/3", endDateStr: "Mon 23/3",
-        price: 85, fromCode: "KUL", toCode: "HAN",
-    },
-    {
-        id: "sin-mnl", destination: "Manila", country: "Philippines",
-        image: "https://images.unsplash.com/photo-1573455494060-c5595004fb6c?w=400&q=80",
-        durationDesc: "3h 40m, direct", startDateStr: "Wed 18/3", endDateStr: "Sun 22/3",
-        price: 95, fromCode: "SIN", toCode: "MNL",
-    },
-    {
-        id: "bkk-kix", destination: "Osaka", country: "Japan",
-        image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80",
-        durationDesc: "5h 50m, direct", startDateStr: "Fri 27/3", endDateStr: "Tue 31/3",
-        price: 195, fromCode: "BKK", toCode: "KIX",
-    },
-    {
-        id: "sin-icn", destination: "Seoul", country: "South Korea",
-        image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80",
-        durationDesc: "6h 20m, direct", startDateStr: "Thu 26/3", endDateStr: "Mon 30/3",
-        price: 210, fromCode: "SIN", toCode: "ICN",
-    },
+// Asia Tab: popular inter-Asia routes (use ALL bot-tracked origins)
+const ASIA_ORIGINS = ["BKK", "DMK", "CNX", "HKT", "SIN"];
+const ASIA_DESTINATIONS: DestinationMeta[] = [
+    { toCode: "CNX", city: "Chiang Mai", country: "Thailand", image: "/images/chiang-mai.webp" },
+    { toCode: "HKT", city: "Phuket", country: "Thailand", image: "/images/phuket.webp" },
+    { toCode: "BKK", city: "Bangkok", country: "Thailand", image: "/images/bangkok.webp" },
+    { toCode: "DMK", city: "Bangkok (DMK)", country: "Thailand", image: "/images/bangkok.webp" },
+    { toCode: "SIN", city: "Singapore", country: "Singapore", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80" },
+    { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80" },
+    { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
+    { toCode: "RGN", city: "Yangon", country: "Myanmar", image: "https://images.unsplash.com/photo-1540611025311-71631b5b4b06?w=400&q=80" },
+    { toCode: "MDL", city: "Mandalay", country: "Myanmar", image: "https://images.unsplash.com/photo-1540611025311-71631b5b4b06?w=400&q=80" },
+    { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
+    { toCode: "MNL", city: "Manila", country: "Philippines", image: "https://images.unsplash.com/photo-1573455494060-c5595004fb6c?w=400&q=80" },
+    { toCode: "DPS", city: "Bali", country: "Indonesia", image: "/images/bali.webp" },
+    { toCode: "ICN", city: "Seoul", country: "South Korea", image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80" },
+    { toCode: "KIX", city: "Osaka", country: "Japan", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80" },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 type TargetNiche = "myanmar" | "international";
 const CARDS_TO_SHOW = 4;
 
-/** Build a flight results URL with a date 14 days from now */
+const AIRLINE_NAMES: Record<string, string> = {
+    FD: "AirAsia", AK: "AirAsia", D7: "AirAsia X",
+    VZ: "VietJet", VJ: "VietJet",
+    DD: "Nok Air", SL: "Thai Lion Air",
+    TR: "Scoot", TG: "Thai Airways",
+    SQ: "Singapore Airlines", MH: "Malaysia Airlines",
+    UB: "MNA", "8M": "MAI",
+    QR: "Qatar", EK: "Emirates",
+};
+
 function buildSearchUrl(fromCode: string, toCode: string): string {
     const d = new Date();
     d.setDate(d.getDate() + 14);
@@ -170,10 +102,67 @@ function buildSearchUrl(fromCode: string, toCode: string): string {
     return `/flights/results?flightSearch=${fromCode}${dd}${mm}${toCode}1`;
 }
 
-/** Format USD to THB string: e.g. "฿3,060" */
 function toTHB(usd: number): string {
     const thb = Math.round(usd * USD_TO_THB_RATE);
     return `฿${thb.toLocaleString()}`;
+}
+
+function formatBotDate(dateStr: string): string {
+    try {
+        const d = new Date(dateStr);
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
+    } catch {
+        return dateStr;
+    }
+}
+
+function durationLabel(transfers: number): string {
+    return transfers === 0 ? "direct" : `${transfers} stop${transfers > 1 ? "s" : ""}`;
+}
+
+// ── Find cheapest deal for each destination from bot data ────────────────────
+function findCheapestDeals(
+    routes: BotRoute[],
+    origins: string[],
+    destinations: DestinationMeta[],
+): DealCard[] {
+    const deals: DealCard[] = [];
+
+    for (const dest of destinations) {
+        // Find cheapest route matching any origin → this destination
+        let cheapest: BotRoute | null = null;
+        for (const route of routes) {
+            if (
+                origins.includes(route.origin) &&
+                route.destination === dest.toCode &&
+                route.price > 0
+            ) {
+                // Exclude routes where origin === destination
+                if (route.origin === route.destination) continue;
+                if (!cheapest || route.price < cheapest.price) {
+                    cheapest = route;
+                }
+            }
+        }
+
+        if (cheapest) {
+            deals.push({
+                id: `${cheapest.origin}-${dest.toCode}`,
+                destination: dest.city,
+                country: dest.country,
+                image: dest.image,
+                toCode: dest.toCode,
+                fromCode: cheapest.origin,
+                price: cheapest.price,
+                airline: cheapest.airline_code,
+                date: cheapest.date,
+                transfers: cheapest.transfers,
+            });
+        }
+    }
+
+    return deals;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -181,24 +170,65 @@ function toTHB(usd: number): string {
 // ═════════════════════════════════════════════════════════════════════════════
 export default memo(function CheapDealsCards() {
     const [activeNiche, setActiveNiche] = useState<TargetNiche>("myanmar");
+    const [botRoutes, setBotRoutes] = useState<BotRoute[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState("");
 
-    // SMART AUTO-SORT: sort by price ascending → pick cheapest per country (diversity)
+    // Fetch bot data on mount
+    useEffect(() => {
+        fetch("/data/flight_data.json")
+            .then(res => res.json())
+            .then(data => {
+                if (data.routes && Array.isArray(data.routes)) {
+                    setBotRoutes(data.routes);
+                }
+                if (data.meta?.updated_at) {
+                    setLastUpdated(data.meta.updated_at);
+                }
+            })
+            .catch(err => console.error("Failed to load flight deals:", err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    // Compute deals for active tab with country diversity + fallback
     const topDeals = useMemo(() => {
-        const pool = activeNiche === "myanmar" ? MYANMAR_POOL : INTERNATIONAL_POOL;
-        const sorted = [...pool].sort((a, b) => a.price - b.price);
-        const seen = new Set<string>();
-        const result: DealEntry[] = [];
-        for (const deal of sorted) {
-            if (seen.has(deal.country)) continue; // skip duplicate country
-            seen.add(deal.country);
+        if (botRoutes.length === 0) return [];
+
+        const origins = activeNiche === "myanmar" ? MYANMAR_ORIGINS : ASIA_ORIGINS;
+        const destinations = activeNiche === "myanmar" ? MYANMAR_DESTINATIONS : ASIA_DESTINATIONS;
+
+        const allDeals = findCheapestDeals(botRoutes, origins, destinations);
+
+        // Sort by price ascending
+        allDeals.sort((a, b) => a.price - b.price);
+
+        // Pass 1: Pick one deal per unique country (diversity)
+        const seenCountry = new Set<string>();
+        const result: DealCard[] = [];
+        for (const deal of allDeals) {
+            if (seenCountry.has(deal.country)) continue;
+            seenCountry.add(deal.country);
             result.push(deal);
             if (result.length >= CARDS_TO_SHOW) break;
         }
-        return result;
-    }, [activeNiche]);
 
-    // DYNAMIC HOOK TITLE: ceiling = round up the max of the top 4
+        // Pass 2: If we still need more cards, fill with cheapest remaining (different cities)
+        if (result.length < CARDS_TO_SHOW) {
+            const usedIds = new Set(result.map(d => d.id));
+            for (const deal of allDeals) {
+                if (usedIds.has(deal.id)) continue;
+                result.push(deal);
+                usedIds.add(deal.id);
+                if (result.length >= CARDS_TO_SHOW) break;
+            }
+        }
+
+        return result;
+    }, [activeNiche, botRoutes]);
+
+    // Dynamic hook title
     const dynamicCeiling = useMemo(() => {
+        if (topDeals.length === 0) return 100;
         const maxPrice = Math.max(...topDeals.map(d => d.price));
         return Math.ceil((maxPrice + 5) / 10) * 10;
     }, [topDeals]);
@@ -206,6 +236,20 @@ export default memo(function CheapDealsCards() {
     const hookTitle = activeNiche === "myanmar"
         ? `Flights from Myanmar under $${dynamicCeiling} (${toTHB(dynamicCeiling)})`
         : `Explore Southeast Asia under $${dynamicCeiling} (${toTHB(dynamicCeiling)})`;
+
+    if (loading) {
+        return (
+            <section className="w-full max-w-[1200px] mx-auto px-5 sm:px-6 py-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-[320px] bg-gray-100 rounded-xl animate-pulse" />
+                    ))}
+                </div>
+            </section>
+        );
+    }
+
+    if (topDeals.length === 0) return null;
 
     return (
         <section
@@ -250,7 +294,7 @@ export default memo(function CheapDealsCards() {
                 </a>
             </div>
 
-            {/* ── Cards Grid (Cheapflights exact spec: 4 → 2 → 1) ── */}
+            {/* ── Cards Grid ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {topDeals.map(deal => (
                     <a
@@ -279,22 +323,21 @@ export default memo(function CheapDealsCards() {
                                 {deal.destination}
                             </div>
 
-                            {/* Duration */}
+                            {/* Airline + Type */}
                             <div className="text-[14px] text-[#667085] leading-[1.5] mb-0.5">
-                                {deal.durationDesc}
+                                {AIRLINE_NAMES[deal.airline] || deal.airline} · {durationLabel(deal.transfers)}
                             </div>
 
-                            {/* Dates */}
+                            {/* Date */}
                             <div className="flex items-center gap-1 text-[14px] text-[#667085]">
-                                {deal.startDateStr}
-                                <span className="text-[16px] text-[#98a2b3] leading-none">›</span>
-                                {deal.endDateStr}
+                                {formatBotDate(deal.date)}
+                                <span className="text-[12px] text-[#98a2b3] ml-1">cheapest</span>
                             </div>
 
                             {/* Spacer */}
                             <div className="flex-1 min-h-[16px]" />
 
-                            {/* Dual Price: THB highlighted + USD secondary */}
+                            {/* Dual Price */}
                             <div className="mt-auto pt-3">
                                 <span className="block text-[14px] text-[#667085] leading-[1.2] mb-[2px]">
                                     from
@@ -312,6 +355,13 @@ export default memo(function CheapDealsCards() {
                     </a>
                 ))}
             </div>
+
+            {/* Last updated indicator */}
+            {lastUpdated && (
+                <div className="mt-4 text-center text-[12px] text-[#98a2b3]">
+                    Prices updated: {lastUpdated} · Live data from 1,000+ routes
+                </div>
+            )}
         </section>
     );
 });
