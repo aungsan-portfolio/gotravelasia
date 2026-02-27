@@ -51,10 +51,10 @@ const MYANMAR_DESTINATIONS: DestinationMeta[] = [
     { toCode: "BKK", city: "Bangkok", country: "Thailand", image: "/images/bangkok.webp" },
     { toCode: "DMK", city: "Bangkok (DMK)", country: "Thailand", image: "/images/bangkok.webp" },
     { toCode: "CNX", city: "Chiang Mai", country: "Thailand", image: "/images/chiang-mai.webp" },
-    { toCode: "SIN", city: "Singapore", country: "Singapore", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80" },
-    { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80" },
-    { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
-    { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
+    { toCode: "SIN", city: "Singapore", country: "Singapore", image: "/images/destinations/singapore.webp" },
+    { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "/images/destinations/kuala-lumpur.webp" },
+    { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "/images/destinations/hanoi.webp" },
+    { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "/images/destinations/ho-chi-minh.webp" },
     { toCode: "ICN", city: "Seoul", country: "South Korea", image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80" },
     { toCode: "NRT", city: "Tokyo", country: "Japan", image: "/images/tokyo.webp" },
     { toCode: "HKT", city: "Phuket", country: "Thailand", image: "/images/phuket.webp" },
@@ -68,12 +68,12 @@ const ASIA_DESTINATIONS: DestinationMeta[] = [
     { toCode: "HKT", city: "Phuket", country: "Thailand", image: "/images/phuket.webp" },
     { toCode: "BKK", city: "Bangkok", country: "Thailand", image: "/images/bangkok.webp" },
     { toCode: "DMK", city: "Bangkok (DMK)", country: "Thailand", image: "/images/bangkok.webp" },
-    { toCode: "SIN", city: "Singapore", country: "Singapore", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80" },
-    { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80" },
-    { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
-    { toCode: "RGN", city: "Yangon", country: "Myanmar", image: "https://images.unsplash.com/photo-1540611025311-71631b5b4b06?w=400&q=80" },
-    { toCode: "MDL", city: "Mandalay", country: "Myanmar", image: "https://images.unsplash.com/photo-1540611025311-71631b5b4b06?w=400&q=80" },
-    { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80" },
+    { toCode: "SIN", city: "Singapore", country: "Singapore", image: "/images/destinations/singapore.webp" },
+    { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "/images/destinations/kuala-lumpur.webp" },
+    { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "/images/destinations/ho-chi-minh.webp" },
+    { toCode: "RGN", city: "Yangon", country: "Myanmar", image: "/images/destinations/yangon.png" },
+    { toCode: "MDL", city: "Mandalay", country: "Myanmar", image: "/images/destinations/mandalay.png" },
+    { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "/images/destinations/hanoi.webp" },
     { toCode: "MNL", city: "Manila", country: "Philippines", image: "https://images.unsplash.com/photo-1573455494060-c5595004fb6c?w=400&q=80" },
     { toCode: "DPS", city: "Bali", country: "Indonesia", image: "/images/bali.webp" },
     { toCode: "ICN", city: "Seoul", country: "South Korea", image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80" },
@@ -313,6 +313,17 @@ export default memo(function CheapDealsCards() {
                                 alt={`Flights to ${deal.destination}`}
                                 loading="lazy"
                                 className="w-full h-full object-cover object-center block transition-transform duration-[400ms] ease-out group-hover:scale-[1.04]"
+                                onError={(e) => {
+                                    // Auto-fallback to local image if external breaks
+                                    const img = e.currentTarget;
+                                    if (!img.src.includes('/images/')) {
+                                        const slug = deal.destination.toLowerCase().replace(/ \([^)]*\)/g, '').replace(/\s+/g, '-');
+                                        img.src = `/images/destinations/${slug}.webp`;
+                                    } else {
+                                        // Ultimate fallback if local webp also missing
+                                        img.src = "/images/og-default.webp";
+                                    }
+                                }}
                             />
                         </div>
 
