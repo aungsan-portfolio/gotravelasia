@@ -53,7 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Embedded Floating Search Bar */}
-          <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out hidden md:block ${searchVisible ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"}`}>
+          <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out ${searchVisible ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"}`}>
             <FloatingSearchBar />
           </div>
 
