@@ -145,6 +145,7 @@ type PriceCalendarProps = {
   selectedDepart?: Date;
   selectedReturn?: Date;
   onSelectDate: (date: Date | undefined) => void;
+  onCheapestPrice?: (price: number | null) => void;
   todayDate: Date;
 };
 
@@ -155,6 +156,7 @@ export default function PriceCalendar({
   selectedDepart,
   selectedReturn,
   onSelectDate,
+  onCheapestPrice,
   todayDate,
 }: PriceCalendarProps) {
   const [priceMap, setPriceMap] = useState<PriceMap>({});
@@ -221,6 +223,13 @@ export default function PriceCalendar({
   }, [origin, destination, leftStr, rightStr, prevStr, nextStr, fetchPrices]);
 
   const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
+
+  useEffect(() => {
+    if (onCheapestPrice) {
+      onCheapestPrice(thresholds?.min ? Math.round(thresholds.min / USD_TO_THB) : null);
+    }
+  }, [thresholds, onCheapestPrice]);
+
   const priceCount = Object.keys(priceMap).length;
 
   const enrichedData = useMemo(() => {

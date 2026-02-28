@@ -135,42 +135,53 @@ export function usePriceHint(origin: string, destination: string, _hasReturn?: b
 export type { Deal, Meta };
 
 /**
- * useLivePriceMap — fetches live prices from /api/cheap-prices for given routes.
+ * useLivePriceMap — fetches live prices for specific routes.
+ * Now uses /api/calendar-prices for maximum route coverage (4+ aggregated sources).
  * Falls back to static flight_data.json prices via useFlightPriceMap.
- * @param routes — array of { origin, destination } to look up
+ * @param routes — array of { origin, destination, month? } to look up
  */
-export function useLivePriceMap(routes: { origin: string; destination: string }[]) {
+export function useLivePriceMap(routes: { origin: string; destination: string; month?: string }[]) {
   const staticPrices = useFlightPriceMap();
   const [livePrices, setLivePrices] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (routes.length === 0) return;
 
-    // Deduplicate origins
-    const origins = Array.from(new Set(routes.map(r => r.origin)));
+    // Deduplicate routes to avoid redundant fetches
+    const uniqueRoutes = Array.from(
+      new Map(routes.map(r => [`${r.origin}-${r.destination}-${r.month || ''}`, r])).values()
+    );
     let cancelled = false;
 
     Promise.allSettled(
-      origins.map(origin =>
-        fetch(`/api/cheap-prices?origin=${origin}&currency=usd`)
-          .then(r => r.ok ? r.json() : null)
-          .then(json => ({ origin, data: json?.data || {} }))
-      )
+      uniqueRoutes.map(async route => {
+        // Default to current month if none provided
+        const month = route.month || new Date().toISOString().substring(0, 7);
+        const url = `/api/calendar-prices?origin=${route.origin}&destination=${route.destination}&month=${month}&currency=usd`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("API failed");
+        const json = await res.json();
+        return { origin: route.origin, destination: route.destination, data: json?.data || {} };
+      })
     ).then(results => {
       if (cancelled) return;
       const map: Record<string, number> = {};
       for (const result of results) {
         if (result.status !== "fulfilled" || !result.value.data) continue;
-        const { origin, data } = result.value;
-        // data is { "BKK": { "0": { price: 142, ... }, "1": { ... } }, "SIN": { ... } }
-        for (const [dest, flights] of Object.entries(data as Record<string, Record<string, any>>)) {
-          const key = `${origin}-${dest}`;
-          // Find the cheapest flight for this route
-          let cheapest = Infinity;
-          for (const flight of Object.values(flights)) {
-            if (flight.price && flight.price < cheapest) cheapest = flight.price;
+        const { origin, destination, data } = result.value;
+        const key = `${origin}-${destination}`;
+
+        // Find the absolute cheapest date in this month's calendar data
+        let cheapest = Infinity;
+        for (const flight of Object.values(data as Record<string, any>)) {
+          if (flight.price && flight.price < cheapest) cheapest = flight.price;
+        }
+
+        if (cheapest < Infinity) {
+          // Keep the absolute cheapest if multiple months were fetched for the same route
+          if (!map[key] || cheapest < map[key]) {
+            map[key] = cheapest;
           }
-          if (cheapest < Infinity) map[key] = cheapest;
         }
       }
       setLivePrices(map);

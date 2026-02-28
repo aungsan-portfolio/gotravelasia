@@ -534,7 +534,7 @@ const RecentSearchesPanel = memo(function RecentSearchesPanel({
 
     // Live price lookup: fetch from API for each unique origin
     const currentPrices = useLivePriceMap(
-        searches.map(s => ({ origin: s.origin, destination: s.destination }))
+        searches.map(s => ({ origin: s.origin, destination: s.destination, month: s.departDate.substring(0, 7) }))
     );
 
     const handleClear = useCallback(() => {
@@ -686,10 +686,15 @@ function FlightWidgetInner() {
     const [calendarMode, setCalendarMode] = useState<"depart" | "return">("depart");
 
     const paxTriggerRef = useRef<HTMLButtonElement>(null);
+    const originRef = useRef<HTMLButtonElement>(null);
+    const destRef = useRef<HTMLButtonElement>(null);
     const doneButtonRef = useRef<HTMLButtonElement>(null);
     const hasOpenedPax = useRef(false);
 
-    // ── Sync local state → context ──────────────────────────────────────
+    // ── Price fallback state ──────
+    const [calendarCheapestPrice, setCalendarCheapestPrice] = useState<number | null>(null);
+
+    // ── State ─────────────local state → context ──────────────────────────────────────
     useEffect(() => {
         const originAirport = AIRPORT_MAP.get(origin) ?? null;
         const destAirport = AIRPORT_MAP.get(destination) ?? null;
@@ -760,6 +765,7 @@ function FlightWidgetInner() {
     const cabinLabel = CABIN_OPTIONS.find(opt => opt.value === cabinClass)?.label ?? "Economy";
     const travelerLabel = formatTravelerLabel(adults, children, infants);
     const lowestPrice = usePriceHint(origin, destination, !!returnDate);
+    const displayPrice = lowestPrice || calendarCheapestPrice;
 
     // ── Stable callbacks (from V3 — prevents unnecessary child re-renders) ──
     const handleCalendarSelect = useCallback((date: Date | undefined) => {
@@ -800,7 +806,7 @@ function FlightWidgetInner() {
 
         recentSearches.save({
             origin, destination, departDate, returnDate,
-            priceAtSearch: lowestPrice, timestamp: Date.now(),
+            priceAtSearch: lowestPrice || calendarCheapestPrice, timestamp: Date.now(),
         });
 
         if (posthog.__loaded) {
@@ -1123,6 +1129,7 @@ function FlightWidgetInner() {
                                     selectedDepart={departDateObj}
                                     selectedReturn={returnDateObj}
                                     onSelectDate={handleCalendarSelect}
+                                    onCheapestPrice={setCalendarCheapestPrice}
                                     todayDate={todayDate}
                                 />
                             </div>
@@ -1133,18 +1140,18 @@ function FlightWidgetInner() {
                 {/* ═══ ACTION ROW ═══════════════════════════════════════════ */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4 w-full">
                     <div className="flex-1">
-                        {lowestPrice ? (
+                        {displayPrice ? (
                             <div
                                 className="animate-in fade-in slide-in-from-left-4 inline-flex items-center gap-2.5 px-4 py-2 rounded-xl"
                                 style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#a0f0b0" }}
-                                aria-label={`Cheapest flight from $${lowestPrice}`}
+                                aria-label={`Cheapest flight from $${displayPrice}`}
                                 aria-live="polite"
                             >
                                 <span className="relative flex h-2 w-2" aria-hidden="true">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                                 </span>
-                                <span className="text-sm font-bold">Cheapest from ${lowestPrice} ({formatTHB(lowestPrice)})</span>
+                                <span className="text-sm font-bold">Cheapest from ${displayPrice} ({formatTHB(displayPrice)})</span>
                             </div>
                         ) : (
                             <div className="h-8 w-56 animate-pulse rounded-xl" style={{ background: "rgba(255,255,255,0.08)" }} aria-hidden="true" />
