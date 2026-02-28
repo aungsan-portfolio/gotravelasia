@@ -25,6 +25,7 @@ import React, {
     type ReactNode,
     type ErrorInfo,
 } from "react";
+import { createPortal } from "react-dom";
 import {
     Plane,
     Calendar as CalendarIcon,
@@ -460,11 +461,16 @@ const AirportCombobox = memo(function AirportCombobox({
                 />
             )}
 
-            {/* Dropdown results */}
-            {open && results.length > 0 && (
+            {/* Dropdown results via Portal to escape overflow-hidden */}
+            {open && results.length > 0 && ref.current && createPortal(
                 <div
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[9999] min-w-[240px]"
+                    className="absolute bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[9999]"
                     role="listbox"
+                    style={{
+                        top: ref.current.getBoundingClientRect().bottom + window.scrollY + 8,
+                        left: ref.current.getBoundingClientRect().left + window.scrollX,
+                        width: Math.max(280, ref.current.getBoundingClientRect().width),
+                    }}
                 >
                     {results.map((a, i) => {
                         const isActive = i === focusIdx;
@@ -494,7 +500,8 @@ const AirportCombobox = memo(function AirportCombobox({
                             </button>
                         );
                     })}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
