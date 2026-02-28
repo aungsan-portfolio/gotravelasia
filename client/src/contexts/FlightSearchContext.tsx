@@ -52,6 +52,11 @@ export interface FlightSearchState {
     setInfants: (n: number) => void;
     setCabinClass: (c: CabinCode) => void;
 
+    // Reverse-sync: widget registers a callback so floating bar actions reflect back
+    registerSwapCallback: (cb: () => void) => void;
+    registerClearOriginCallback: (cb: () => void) => void;
+    registerClearDestCallback: (cb: () => void) => void;
+
     // Pure helper — returns URL string only
     buildSearchURL: () => string;
 }
@@ -78,22 +83,41 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
     const [cabinClass, setCabinClass] = useState<CabinCode>("Y");
 
     // ── Wrapped setters ────────────────────────────────────────────────────
-    const setOrigin = useCallback((a: Airport | null) => setOriginRaw(a), []);
+    const setOrigin = useCallback((a: Airport | null) => {
+        setOriginRaw(a);
+        if (a === null) clearOriginCallbackRef.current?.();
+    }, []);
 
     const setOriginIfEmpty = useCallback((a: Airport) => {
         setOriginRaw(prev => (prev === null ? a : prev));
     }, []);
 
-    const setDestination = useCallback((a: Airport | null) => setDestinationRaw(a), []);
+    const setDestination = useCallback((a: Airport | null) => {
+        setDestinationRaw(a);
+        if (a === null) clearDestCallbackRef.current?.();
+    }, []);
 
-    // Swap using a ref to avoid stale closures
-    const swapRef = useRef<{ o: Airport | null; d: Airport | null }>({ o: null, d: null });
+    // Reverse-sync callback refs
+    const swapCallbackRef = useRef<(() => void) | null>(null);
+    const clearOriginCallbackRef = useRef<(() => void) | null>(null);
+    const clearDestCallbackRef = useRef<(() => void) | null>(null);
+
+    const registerSwapCallback = useCallback((cb: () => void) => { swapCallbackRef.current = cb; }, []);
+    const registerClearOriginCallback = useCallback((cb: () => void) => { clearOriginCallbackRef.current = cb; }, []);
+    const registerClearDestCallback = useCallback((cb: () => void) => { clearDestCallbackRef.current = cb; }, []);
+
+    // Swap — correct approach using functional setState
     const swapAirports = useCallback(() => {
-        setOriginRaw(prev => { swapRef.current.o = prev; return prev; });
-        setDestinationRaw(prev => { swapRef.current.d = prev; return prev; });
-        // React batches these — refs are synchronously populated above
-        setOriginRaw(swapRef.current.d);
-        setDestinationRaw(swapRef.current.o);
+        setOriginRaw(prevOrigin => {
+            setDestinationRaw(prevDest => {
+                // Set origin to what dest was
+                setOriginRaw(prevDest);
+                return prevOrigin; // Set dest to what origin was
+            });
+            return prevOrigin; // placeholder, will be overwritten
+        });
+        // Also notify widget to swap its local state
+        swapCallbackRef.current?.();
     }, []);
 
     const setReturnDate = useCallback((d: string) => setReturnDateRaw(d), []);
@@ -141,6 +165,10 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
         setChildCount,
         setInfants,
         setCabinClass,
+
+        registerSwapCallback,
+        registerClearOriginCallback,
+        registerClearDestCallback,
 
         buildSearchURL,
     };

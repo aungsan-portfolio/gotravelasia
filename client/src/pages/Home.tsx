@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, Suspense } from "react";
 import Layout from "@/components/Layout";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import HeroSection from "@/components/HeroSection";
-import FlightWidget from "@/components/FlightWidget";
+import FlightWidget from "@/components/flights/FlightWidget";
 import CheapDealsCards from "@/components/CheapDealsCards";
 import PopularDestinations from "@/components/PopularDestinations";
 import HomeFAQSection from "@/components/HomeFAQSection";
