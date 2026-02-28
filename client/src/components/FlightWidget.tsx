@@ -150,19 +150,12 @@ const AIRPORT_MAP = new Map<string, Airport>(
     (AIRPORTS as unknown as Airport[]).map(a => [a.code, a])
 );
 
-const COUNTRY_FLAGS: Record<string, string> = {
-    Myanmar: "🇲🇲", Thailand: "🇹🇭", Singapore: "🇸🇬", Malaysia: "🇲🇾",
-    Vietnam: "🇻🇳", Cambodia: "🇰🇭", Indonesia: "🇮🇩", Philippines: "🇵🇭",
-    Laos: "🇱🇦", Taiwan: "🇹🇼", "South Korea": "🇰🇷", Japan: "🇯🇵",
-    "Hong Kong": "🇭🇰", Macau: "🇲🇴", India: "🇮🇳", Brunei: "🇧🇳",
-};
-
 const DESTINATION_GROUPS = (AIRPORTS as unknown as Airport[]).reduce<
     { key: string; label: string; options: Airport[] }[]
 >((acc, airport) => {
     const existing = acc.find(g => g.key === airport.country);
     if (existing) existing.options.push(airport);
-    else acc.push({ key: airport.country, label: `${COUNTRY_FLAGS[airport.country] ?? ""} ${airport.country}`, options: [airport] });
+    else acc.push({ key: airport.country, label: airport.country, options: [airport] });
     return acc;
 }, []);
 
@@ -436,7 +429,6 @@ const AirportCombobox = memo(function AirportCombobox({
     }, [results, focusIdx, select]);
 
     const displayText = selected ? selected.name.split("(")[0].trim() : value;
-    const flag = selected ? COUNTRY_FLAGS[selected.country] ?? "" : "";
 
     return (
         <div ref={ref} className="relative flex-1 min-w-0">
@@ -448,7 +440,6 @@ const AirportCombobox = memo(function AirportCombobox({
                     className="w-full text-left bg-transparent font-bold text-white text-sm outline-none cursor-pointer truncate leading-snug"
                     aria-label={`${label}: ${displayText}`}
                 >
-                    {flag && <span className="mr-1">{flag}</span>}
                     {displayText}
                 </button>
             ) : (
@@ -490,7 +481,7 @@ const AirportCombobox = memo(function AirportCombobox({
                             >
                                 <div className="min-w-0">
                                     <div className="text-sm font-semibold text-gray-900 truncate">
-                                        {COUNTRY_FLAGS[a.country] ?? ""} {a.name.split("(")[0].trim()}
+                                        {a.name.split("(")[0].trim()}
                                     </div>
                                     <div className="text-xs text-gray-400 truncate">{a.country}</div>
                                 </div>
