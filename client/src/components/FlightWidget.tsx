@@ -381,6 +381,7 @@ const AirportCombobox = memo(function AirportCombobox({
     const [open, setOpen] = useState(false);
     const [focusIdx, setFocusIdx] = useState(-1);
     const ref = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Filter airports
@@ -394,10 +395,12 @@ const AirportCombobox = memo(function AirportCombobox({
         ).slice(0, 8);
     }, [query, airports]);
 
-    // Click outside
+    // Click outside — must check BOTH the combobox wrapper AND the portalled dropdown
     useEffect(() => {
         const fn = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+            const target = e.target as Node;
+            if (ref.current && !ref.current.contains(target) &&
+                (!dropdownRef.current || !dropdownRef.current.contains(target))) {
                 setOpen(false);
                 setQuery("");
             }
@@ -430,6 +433,7 @@ const AirportCombobox = memo(function AirportCombobox({
     }, [results, focusIdx, select]);
 
     const displayText = selected ? selected.name.split("(")[0].trim() : value;
+    const showDropdown = open && query.length >= 1;
 
     return (
         <div ref={ref} className="relative flex-1 min-w-0">
@@ -462,8 +466,9 @@ const AirportCombobox = memo(function AirportCombobox({
             )}
 
             {/* Dropdown results via Portal to escape overflow-hidden */}
-            {open && results.length > 0 && ref.current && createPortal(
+            {showDropdown && ref.current && createPortal(
                 <div
+                    ref={dropdownRef}
                     className="absolute bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[9999]"
                     role="listbox"
                     style={{
@@ -472,7 +477,7 @@ const AirportCombobox = memo(function AirportCombobox({
                         width: Math.max(280, ref.current.getBoundingClientRect().width),
                     }}
                 >
-                    {results.map((a, i) => {
+                    {results.length > 0 ? results.map((a, i) => {
                         const isActive = i === focusIdx;
                         return (
                             <button
@@ -499,7 +504,11 @@ const AirportCombobox = memo(function AirportCombobox({
                                 </span>
                             </button>
                         );
-                    })}
+                    }) : (
+                        <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                            No airports found for "<span className="font-semibold text-gray-600">{query}</span>"
+                        </div>
+                    )}
                 </div>,
                 document.body
             )}
@@ -1167,7 +1176,16 @@ function FlightWidgetInner() {
                 </div>
 
                 {/* ═══ FORM ERROR ═══════════════════════════════════════════ */}
-                <p className="mt-2 min-h-5 text-sm font-medium" style={{ color: B.error }} role="alert" aria-live="polite">{formError}</p>
+                {formError && (
+                    <div
+                        className="mt-3 flex items-center gap-2.5 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300"
+                        style={{ background: "rgba(251,160,157,0.15)", border: "1.5px solid rgba(251,160,157,0.4)" }}
+                        role="alert" aria-live="polite"
+                    >
+                        <AlertTriangle className="w-5 h-5 shrink-0" style={{ color: B.error }} aria-hidden="true" />
+                        <span className="text-sm font-bold" style={{ color: B.error }}>{formError}</span>
+                    </div>
+                )}
 
                 {/* ═══ RECENT SEARCHES ══════════════════════════════════════ */}
                 <RecentSearchesPanel onReSearch={handleReSearch} />
