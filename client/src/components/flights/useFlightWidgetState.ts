@@ -70,16 +70,36 @@ export function useFlightWidgetState() {
         ctx.setChildCount(children);
         ctx.setInfants(infants);
         ctx.setCabinClass(cabinClass);
-    }, [origin, destination, departDate, returnDate, tripType, adults, children, infants, cabinClass, ctx]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [origin, destination, departDate, returnDate, tripType, adults, children, infants, cabinClass]); // Omit ctx to prevent infinite loops
 
-    // geo-detect
+    const geoDetected = useRef(false);
+
+    // geo-detect (run strictly ONCE)
     useEffect(() => {
+        if (geoDetected.current) return;
+        geoDetected.current = true;
+
         detectOriginAirport().then(code => {
             setOrigin(code);
             const airport = AIRPORT_MAP.get(code);
             if (airport) ctx.setOriginIfEmpty({ code: airport.code, name: airport.name, country: airport.country });
             setDetectingLocation(false);
         }).catch(() => setDetectingLocation(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Register swap callback so FloatingSearchBar can tell this widget to swap
+    useEffect(() => {
+        ctx.registerSwapCallback(() => {
+            setOrigin(prevO => {
+                setDestination(prevD => {
+                    setOrigin(prevD);
+                    return prevO;
+                });
+                return prevO;
+            });
+        });
     }, [ctx]);
 
     // clamp infants <= adults
