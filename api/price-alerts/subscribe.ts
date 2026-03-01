@@ -4,7 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
 import mysql from "mysql2/promise";
 
-// Inline schema to avoid import resolution issues on Vercel
+// Inline schema
 const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     id: int("id").autoincrement().primaryKey(),
     email: varchar("email", { length: 320 }).notNull(),
@@ -19,6 +19,19 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+function createMySQLConnection(dbUrl: string) {
+    // Parse the URL and add SSL for Aiven cloud databases
+    const url = new URL(dbUrl);
+    return mysql.createConnection({
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.slice(1), // remove leading /
+        ssl: { rejectUnauthorized: false }, // required for Aiven
+    });
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS
@@ -36,8 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "DATABASE_URL not configured" });
         }
 
-        // Use mysql2/promise connection explicitly instead of drizzle(url) shorthand
-        connection = await mysql.createConnection(dbUrl);
+        connection = await createMySQLConnection(dbUrl);
         const db = drizzle(connection);
 
         const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body || {};
@@ -75,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ success: true, alreadyExists: false });
     } catch (error: any) {
-        console.error("Price alert subscription error:", error?.message || error);
+        console.error("Price alert error:", error);
         return res.status(500).json({ error: "Failed to create price alert", detail: error?.message });
     } finally {
         if (connection) await connection.end().catch(() => { });

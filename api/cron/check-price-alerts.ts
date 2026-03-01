@@ -21,6 +21,18 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+function createMySQLConnection(dbUrl: string) {
+    const url = new URL(dbUrl);
+    return mysql.createConnection({
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.slice(1),
+        ssl: { rejectUnauthorized: false },
+    });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     let connection: mysql.Connection | null = null;
 
@@ -35,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "DATABASE_URL not configured" });
         }
 
-        connection = await mysql.createConnection(dbUrl);
+        connection = await createMySQLConnection(dbUrl);
         const db = drizzle(connection);
 
         const activeAlerts = await db.select().from(flightPriceAlerts).where(eq(flightPriceAlerts.isActive, true));
@@ -95,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ message: "Cron finished processing", processedCount: results.length, results });
     } catch (err: any) {
-        console.error("Cron error:", err?.message || err);
+        console.error("Cron error:", err);
         return res.status(500).json({ error: "Failed to process cron job", detail: err?.message });
     } finally {
         if (connection) await connection.end().catch(() => { });
