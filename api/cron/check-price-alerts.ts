@@ -1,8 +1,24 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq } from "drizzle-orm";
-import { flightPriceAlerts } from "../../../drizzle/schema";
+import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
 import { Resend } from "resend";
+
+// Inline schema to avoid import resolution issues on Vercel
+const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
+    id: int("id").autoincrement().primaryKey(),
+    email: varchar("email", { length: 320 }).notNull(),
+    origin: varchar("origin", { length: 3 }).notNull(),
+    destination: varchar("destination", { length: 3 }).notNull(),
+    departDate: varchar("departDate", { length: 10 }).notNull(),
+    returnDate: varchar("returnDate", { length: 10 }),
+    targetPrice: int("targetPrice").notNull(),
+    lastNotifiedPrice: int("lastNotifiedPrice"),
+    currency: varchar("currency", { length: 3 }).default("THB").notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
@@ -13,6 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) {
+            console.error("DATABASE_URL not set");
             return res.status(500).json({ error: "Database not configured" });
         }
 
@@ -79,8 +96,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         return res.status(200).json({ message: "Cron finished processing", processedCount: results.length, results });
-    } catch (err) {
-        console.error("Cron check-price-alerts error:", err);
-        return res.status(500).json({ error: "Failed to process cron job" });
+    } catch (err: any) {
+        console.error("Cron check-price-alerts error:", err?.message || err);
+        return res.status(500).json({ error: "Failed to process cron job", detail: err?.message });
     }
 }

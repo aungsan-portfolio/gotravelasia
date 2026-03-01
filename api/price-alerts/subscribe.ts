@@ -1,9 +1,34 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq, and } from "drizzle-orm";
-import { flightPriceAlerts } from "../../drizzle/schema";
+import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
+
+// Inline schema to avoid import resolution issues on Vercel
+const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
+    id: int("id").autoincrement().primaryKey(),
+    email: varchar("email", { length: 320 }).notNull(),
+    origin: varchar("origin", { length: 3 }).notNull(),
+    destination: varchar("destination", { length: 3 }).notNull(),
+    departDate: varchar("departDate", { length: 10 }).notNull(),
+    returnDate: varchar("returnDate", { length: 10 }),
+    targetPrice: int("targetPrice").notNull(),
+    lastNotifiedPrice: int("lastNotifiedPrice"),
+    currency: varchar("currency", { length: 3 }).default("THB").notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Allow CORS for browser requests
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+        return res.status(200).end();
+    }
+
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method not allowed" });
     }
@@ -11,14 +36,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) {
+            console.error("DATABASE_URL environment variable is not set");
             return res.status(500).json({ error: "Database not configured" });
         }
 
         const db = drizzle(dbUrl);
 
-        const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body;
+        const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body || {};
         if (!email || !origin || !destination || !departDate) {
-            return res.status(400).json({ error: "Missing required fields" });
+            return res.status(400).json({ error: "Missing required fields: email, origin, destination, departDate" });
         }
 
         // Check if exactly same active alert exists
@@ -50,8 +76,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         return res.status(200).json({ success: true, alreadyExists: false });
-    } catch (error) {
-        console.error("Price alert subscription error:", error);
-        return res.status(500).json({ error: "Failed to create price alert" });
+    } catch (error: any) {
+        console.error("Price alert subscription error:", error?.message || error);
+        return res.status(500).json({ error: "Failed to create price alert", detail: error?.message });
     }
 }
