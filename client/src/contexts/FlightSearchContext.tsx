@@ -169,34 +169,45 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
 
         // --- Travelpayouts URL builder ---
         const buildTravelpayouts = () => {
-            const base = "https://tp.media/r";
-            const params = new URLSearchParams({
-                marker: "522197",
-                campaign_id: "100",
-                p: "4114",
-                origin: origin.code,
-                destination: destination.code,
-                depart_date: departDate,
+            // Import the helper from config.ts (dynamically if needed or just assume it is exported)
+            // We can just use the exact logic since we have all properties.
+            const searchDate = departDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+            const tpParams = new URLSearchParams({
+                origin_iata: origin.code,
+                destination_iata: destination.code,
+                depart_date: searchDate,
+                one_way: returnDate ? "false" : "true",
                 adults: String(adults),
-                currency: "thb",
+                locale: "en",
+                currency: "THB", // matching the user's thb preference shown in their console
             });
 
-            if (returnDate) params.set("return_date", returnDate);
+            if (returnDate) tpParams.set("return_date", returnDate);
+            if (childCount) tpParams.set("children", String(childCount));
+            if (infants) tpParams.set("infants", String(infants));
 
-            // Travelpayouts flexible params
+            // Map our CabinCode to Aviasales trip_class format (C = business, F = first, Y = economy, W = premium economy - typically aviasales only needs C or M for economy, or Y/W/C/F)
+            const cabinMap: Record<CabinCode, string> = { Y: "Y", W: "W", C: "C", F: "F" };
+            if (cabinClass !== "Y") tpParams.set("trip_class", cabinMap[cabinClass]);
+
+            // Travelpayouts flexible parameters
             if (flexibility === "3days") {
-                params.set("flexible", "true");
-                params.set("flexibility", "3");
+                tpParams.set("flexible", "true");
+                tpParams.set("flexibility", "3");
             } else if (flexibility === "week") {
-                params.set("flexible", "true");
-                params.set("flexibility", "7");
+                tpParams.set("flexible", "true");
+                tpParams.set("flexibility", "7");
             } else if (flexibility === "month") {
-                params.set("flexible", "true");
-                params.set("one_way", "false");
-                params.set("depart_date", departDate.slice(0, 7)); // year-month only
+                tpParams.set("flexible", "true");
+                tpParams.set("one_way", "false");
+                tpParams.set("depart_date", departDate.slice(0, 7)); // year-month only
             }
 
-            return `${base}?${params.toString()}`;
+            const targetUrl = `https://www.aviasales.com/search?${tpParams.toString()}`;
+
+            // Wrap in tp.media redirect tracking
+            const tpWL = "12942"; // We'll use marker + campaign mapping
+            return `https://tp.media/r?marker=522197&campaign_id=100&p=4114&u=${encodeURIComponent(targetUrl)}`;
         };
 
         return {
