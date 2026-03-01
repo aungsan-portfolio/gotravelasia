@@ -87,8 +87,25 @@ export const AirportCombobox = memo(function AirportCombobox({
     const showDropdown = open && query.length >= 1;
     const activeId = focusIdx >= 0 ? `${listboxId}-opt-${focusIdx}` : undefined;
 
-    // Position (fixed => scroll-safe)
-    const rect = wrapperRef.current?.getBoundingClientRect();
+    const [rect, setRect] = useState<DOMRect | null>(null);
+
+    const updateRect = useCallback(() => {
+        if (open && wrapperRef.current) {
+            setRect(wrapperRef.current.getBoundingClientRect());
+        }
+    }, [open]);
+
+    useEffect(() => {
+        if (open) {
+            updateRect();
+            window.addEventListener('scroll', updateRect, true);
+            window.addEventListener('resize', updateRect);
+            return () => {
+                window.removeEventListener('scroll', updateRect, true);
+                window.removeEventListener('resize', updateRect);
+            };
+        }
+    }, [open, updateRect]);
 
     return (
         <div ref={wrapperRef} className="relative flex-1 min-w-0">
@@ -145,7 +162,10 @@ export const AirportCombobox = memo(function AirportCombobox({
                                 type="button"
                                 role="option"
                                 aria-selected={isActive}
-                                onClick={() => select(a.code)}
+                                onMouseDown={(e) => {
+                                    e.preventDefault(); // Prevent input from losing focus before select fires
+                                    select(a.code);
+                                }}
                                 onMouseEnter={() => setFocusIdx(i)}
                                 className={`w-full text-left px-3 py-2.5 flex items-center justify-between gap-2 border-b border-gray-50 transition-colors ${isActive ? "bg-purple-50" : "hover:bg-gray-50"
                                     }`}

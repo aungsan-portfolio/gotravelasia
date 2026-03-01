@@ -142,15 +142,18 @@ export function useFlightWidgetState() {
     const handleCalendarSelect = useCallback((date: Date | undefined) => {
         if (!date) return;
         const isoStr = format(date, "yyyy-MM-dd");
+
         if (calendarMode === "depart") {
             setDepartDate(isoStr);
-            if (returnDate && returnDate < isoStr) setReturnDate("");
+            if (returnDate && returnDate < isoStr) {
+                setReturnDate("");
+            }
 
             if (tripType === "one-way") {
                 setCalendarOpen(false);     // ✅ close for one-way
-                return;
+            } else {
+                setCalendarMode("return");  // return flow
             }
-            setCalendarMode("return");    // return flow
         } else {
             setReturnDate(isoStr);
             setCalendarOpen(false);
