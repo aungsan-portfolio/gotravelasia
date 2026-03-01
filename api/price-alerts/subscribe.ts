@@ -21,16 +21,19 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
 });
 
 function createMySQLConnection(dbUrl: string) {
-    // Parse the URL and add SSL for Aiven cloud databases
-    const url = new URL(dbUrl);
-    return mysql.createConnection({
-        host: url.hostname,
-        port: parseInt(url.port) || 3306,
-        user: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: url.pathname.slice(1), // remove leading /
-        ssl: { rejectUnauthorized: false }, // required for Aiven
-    });
+    try {
+        const url = new URL(dbUrl);
+        return mysql.createConnection({
+            host: url.hostname,
+            port: parseInt(url.port) || 3306,
+            user: decodeURIComponent(url.username),
+            password: decodeURIComponent(url.password),
+            database: url.pathname.slice(1),
+            ssl: { rejectUnauthorized: false },
+        });
+    } catch (err: any) {
+        throw new Error(`Failed to parse DATABASE_URL: ${err.message}`);
+    }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -42,14 +45,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
     let connection: mysql.Connection | null = null;
+    let debugInfo: any = {};
 
     try {
         const dbUrl = process.env.DATABASE_URL;
+        debugInfo.hasDbUrl = !!dbUrl;
+        
         if (!dbUrl) {
-            return res.status(500).json({ error: "DATABASE_URL not configured" });
+            return res.status(500).json({ error: "DATABASE_URL not configured", debugInfo });
         }
 
+        // Try to connect
+        debugInfo.step = "creating_connection";
         connection = await createMySQLConnection(dbUrl);
+        
+        debugInfo.step = "initializing_drizzle";
         const db = drizzle(connection);
 
         const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body || {};
@@ -57,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: "Missing required fields: email, origin, destination, departDate" });
         }
 
-        // Check if same active alert exists
+        debugInfo.step = "checking_existing";
         const existing = await db.select().from(flightPriceAlerts).where(
             and(
                 eq(flightPriceAlerts.email, email),
@@ -72,6 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true, alreadyExists: true });
         }
 
+        debugInfo.step = "inserting_alert";
         await db.insert(flightPriceAlerts).values({
             email,
             origin,
@@ -87,9 +98,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ success: true, alreadyExists: false });
     } catch (error: any) {
-        console.error("Price alert error:", error);
-        return res.status(500).json({ error: "Failed to create price alert", detail: error?.message });
+        return res.status(500).json({ 
+            error: "Failed to create price alert", 
+            detail: error?.message,
+            stack: error?.stack,
+            debugInfo
+        });
     } finally {
-        if (connection) await connection.end().catch(() => { });
+        if (connection) await connection.end().catch(() => {});
     }
 }

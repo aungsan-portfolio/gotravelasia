@@ -44,28 +44,43 @@ export function TrackPricesButton({
         setEmailError("");
         setModalState("loading");
 
+        // ← ဒါ ထည့်ပါ
+        console.log("Sending:", {
+            email,
+            origin: origin?.code,
+            destination: destination?.code,
+            departureDate: departDate, // using departDate from context
+            currentPrice,
+            currency,
+        });
+
         try {
             const res = await fetch("/api/price-alerts/subscribe", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     email,
-                    origin: origin.code,
-                    destination: destination.code,
-                    departDate: departDate,
+                    origin: origin!.code,
+                    destination: destination!.code,
+                    departDate: departDate!, // Note: API expects departDate
                     returnDate: returnDate || null,
-                    currentPrice: currentPrice || 0,
+                    currentPrice: currentPrice && currentPrice > 0 ? currentPrice : 1, // Quick Fix
                     currency,
                 }),
             });
 
+            // ← ဒါထည့်ပါ
+            console.log("Response status:", res.status);
             const data = await res.json().catch(() => ({}));
+            console.log("Response data:", data);
 
             if (!res.ok) setModalState("error");
             else if (data.alreadyExists) setModalState("duplicate");
             else setModalState("success");
 
-        } catch {
+        } catch (e) {
+            // ← ဒါထည့်ပါ
+            console.error("Fetch error:", e);
             setModalState("error");
         }
     };
