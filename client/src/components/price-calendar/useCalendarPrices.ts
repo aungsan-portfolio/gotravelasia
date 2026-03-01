@@ -1,37 +1,26 @@
-/**
- * useCalendarPrices.ts
- * Custom hook to fetch and manage price calendar data
- */
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { startOfMonth, addMonths, subMonths, endOfMonth } from "date-fns";
-import { fillGaps } from "./priceCalendar.utils";
+import { addMonths, subMonths, endOfMonth } from "date-fns";
+import { fillGaps, computeThresholds } from "./priceCalendar.utils";
 import type { PriceMap, PriceEntry } from "./priceCalendar.utils";
+import { USD_TO_THB_RATE as USD_TO_THB } from "@/const";
 
 type UseCalendarPricesProps = {
     origin: string;
     destination: string;
-    calendarMode: "depart" | "return";
-    selectedDepart?: Date;
-    todayDate: Date;
+    leftMonth: Date;
+    rightMonth: Date;
+    onCheapestPrice?: (price: number | null) => void;
 };
 
 export function useCalendarPrices({
     origin,
     destination,
-    calendarMode,
-    selectedDepart,
-    todayDate,
+    leftMonth,
+    rightMonth,
+    onCheapestPrice,
 }: UseCalendarPricesProps) {
     const [priceMap, setPriceMap] = useState<PriceMap>({});
     const [loading, setLoading] = useState(false);
-    const [baseMonth, setBaseMonth] = useState<Date>(() => {
-        if (calendarMode === "return" && selectedDepart) return startOfMonth(selectedDepart);
-        if (selectedDepart) return startOfMonth(selectedDepart);
-        return startOfMonth(todayDate);
-    });
-
-    const leftMonth = baseMonth;
-    const rightMonth = addMonths(baseMonth, 1);
 
     // Temporary internal format helper
     const formatYMD = (date: Date) => {
@@ -89,24 +78,25 @@ export function useCalendarPrices({
         return () => { cancelled = true; };
     }, [origin, destination, leftStr, rightStr, prevStr, nextStr, fetchPrices]);
 
+    const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
+
+    useEffect(() => {
+        if (onCheapestPrice) {
+            onCheapestPrice(thresholds?.min ? Math.round(thresholds.min / USD_TO_THB) : null);
+        }
+    }, [thresholds, onCheapestPrice]);
+
     const enrichedData = useMemo(() => {
         return fillGaps(priceMap, leftMonth, endOfMonth(rightMonth));
     }, [priceMap, leftMonth, rightMonth]);
 
     const priceCount = Object.keys(priceMap).length;
 
-    const handlePrev = useCallback(() => setBaseMonth(prev => subMonths(prev, 1)), []);
-    const handleNext = useCallback(() => setBaseMonth(prev => addMonths(prev, 1)), []);
-
     return {
         priceMap,
         enrichedData,
         loading,
-        baseMonth,
-        leftMonth,
-        rightMonth,
+        thresholds,
         priceCount,
-        handlePrev,
-        handleNext,
     };
 }
