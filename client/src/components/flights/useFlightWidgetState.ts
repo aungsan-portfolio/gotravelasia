@@ -192,17 +192,13 @@ export function useFlightWidgetState() {
             timestamp: Date.now(),
         });
 
-        if (posthog.__loaded) posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate });
+        if (posthog.__loaded) posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate, flexibility: ctx.flexibility });
 
-        const formatDDMM = (dateStr: string) => { const [, mm, dd] = dateStr.split("-"); return dd + mm; };
-        const cabinCode: Record<CabinCode, string> = { Y: "", W: "w", C: "c", F: "f" };
-
-        let fs = `${origin}${formatDDMM(departDate)}${destination}`;
-        if (returnDate) fs += formatDDMM(returnDate);
-        fs += `${cabinCode[cabinClass] ?? ""}${adults}${children > 0 ? children : ""}${infants > 0 ? infants : ""}`;
-
-        window.location.href = `/flights/results?flightSearch=${encodeURIComponent(fs)}`;
-    }, [validateSearch, origin, destination, departDate, returnDate, cabinClass, adults, children, infants, lowestPrice, calendarCheapestPrice]);
+        const urls = ctx.buildSearchURL();
+        if (urls) {
+            window.open(urls.travelpayouts, "_blank", "noopener,noreferrer");
+        }
+    }, [validateSearch, origin, destination, departDate, returnDate, lowestPrice, calendarCheapestPrice, ctx]);
 
     const handleTripComSearch = useCallback(() => {
         if (!validateSearch()) return;
@@ -236,6 +232,8 @@ export function useFlightWidgetState() {
         children, setChildren,
         infants, setInfants,
         cabinClass, setCabinClass,
+        flexibility: ctx.flexibility,
+        setFlexibility: ctx.setFlexibility,
         detectingLocation,
         formError,
         openPax, setOpenPax,
@@ -244,6 +242,8 @@ export function useFlightWidgetState() {
         departDateObj,
         returnDateObj,
         displayPrice,
+        lowestPrice,
+        calendarCheapestPrice,
         setCalendarCheapestPrice,
 
         paxTriggerRef,

@@ -72,8 +72,8 @@ export default function FloatingSearchBar() {
       return;
     }
 
-    const url = ctx.buildSearchURL();
-    if (!url) { scrollToWidget(); return; }
+    const urlObj = ctx.buildSearchURL();
+    if (!urlObj) { scrollToWidget(); return; }
 
     // PostHog tracking (separate from pure buildSearchURL)
     if (typeof posthog !== "undefined" && posthog.__loaded) {
@@ -83,11 +83,12 @@ export default function FloatingSearchBar() {
         destination: ctx.destination.code,
         departDate: ctx.departDate,
         returnDate: ctx.returnDate,
+        flexibility: ctx.flexibility,
       });
     }
 
-    // SPA navigate (wouter)
-    setLocation(url);
+    // Affiliate link out
+    window.open(urlObj.travelpayouts, "_blank", "noopener,noreferrer");
   };
 
   // ── × clear handlers ──────────────────────────────────────────────────

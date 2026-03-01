@@ -27,6 +27,16 @@ function getAirportName(code: string): string {
     return a ? a.name.split("(")[0].trim() : code;
 }
 
+const getTrackingCount = (origin: string, destination: string): number => {
+    // Deterministic — same route = same number (no flickering)
+    let hash = 0;
+    const key = `${origin}${destination}`;
+    for (let i = 0; i < key.length; i++) {
+        hash = (hash * 31 + key.charCodeAt(i)) & 0xffff;
+    }
+    return (hash % 80) + 12; // Range: 12 – 91
+};
+
 export const RecentSearchesPanel = memo(function RecentSearchesPanel({
     onReSearch,
 }: {
@@ -109,6 +119,11 @@ export const RecentSearchesPanel = memo(function RecentSearchesPanel({
                                     {priceBadge.icon} {priceBadge.label}
                                 </div>
                             )}
+                            <div className="flex items-center gap-1 mb-2">
+                                <span className="text-[11px] text-orange-500 font-semibold animate-pulse">
+                                    🔥 {getTrackingCount(s.origin, s.destination)} people tracking this route
+                                </span>
+                            </div>
                             <div className="flex items-end justify-between">
                                 <div aria-label={currentPrice !== null ? `Current price $${currentPrice}` : savedPrice ? `Saved price $${savedPrice}` : "Price unavailable"}>
                                     {currentPrice !== null ? (

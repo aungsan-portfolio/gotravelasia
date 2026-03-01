@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -26,3 +26,21 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // TODO: Add your tables here
+
+export const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  origin: varchar("origin", { length: 3 }).notNull(),
+  destination: varchar("destination", { length: 3 }).notNull(),
+  departDate: varchar("departDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  returnDate: varchar("returnDate", { length: 10 }), // YYYY-MM-DD
+  targetPrice: int("targetPrice").notNull(),
+  lastNotifiedPrice: int("lastNotifiedPrice"),
+  currency: varchar("currency", { length: 3 }).default("THB").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FlightPriceAlert = typeof flightPriceAlerts.$inferSelect;
+export type InsertFlightPriceAlert = typeof flightPriceAlerts.$inferInsert;

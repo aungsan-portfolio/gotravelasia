@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -90,3 +90,62 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // TODO: add feature queries here as your schema grows.
+
+export async function createPriceAlert(alert: InsertFlightPriceAlert): Promise<{ success: boolean; alreadyExists: boolean }> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create alert: database not available");
+    return { success: false, alreadyExists: false };
+  }
+
+  try {
+    // Check if exactly same active alert exists
+    const existing = await db.select().from(flightPriceAlerts).where(
+      and(
+        eq(flightPriceAlerts.email, alert.email),
+        eq(flightPriceAlerts.origin, alert.origin),
+        eq(flightPriceAlerts.destination, alert.destination),
+        eq(flightPriceAlerts.departDate, alert.departDate),
+        eq(flightPriceAlerts.isActive, true)
+      )
+    ).limit(1);
+
+    if (existing.length > 0) {
+      return { success: true, alreadyExists: true };
+    }
+
+    await db.insert(flightPriceAlerts).values({
+      ...alert,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return { success: true, alreadyExists: false };
+  } catch (error) {
+    console.error("[Database] Failed to create price alert:", error);
+    throw error;
+  }
+}
+
+export async function getActivePriceAlerts() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(flightPriceAlerts).where(eq(flightPriceAlerts.isActive, true));
+  } catch (err) {
+    console.error("[Database] Failed to get active alerts:", err);
+    return [];
+  }
+}
+
+export async function updateAlertPrice(id: number, latestPrice: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(flightPriceAlerts)
+      .set({ lastNotifiedPrice: latestPrice, updatedAt: new Date() })
+      .where(eq(flightPriceAlerts.id, id));
+  } catch (err) {
+    console.error("[Database] Failed to update alert price:", err);
+  }
+}

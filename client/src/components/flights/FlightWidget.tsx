@@ -40,8 +40,10 @@ import { useFlightWidgetState } from "./useFlightWidgetState";
 import { AirportCombobox } from "./AirportCombobox";
 import { CalendarDropdown } from "./CalendarDropdown";
 import { RecentSearchesPanel } from "./RecentSearchesPanel";
+import { TrackPricesButton } from "./TrackPricesButton";
 import { CABIN_OPTIONS, AIRPORT_MAP } from "./flightWidget.data";
 import type { RecentSearchRecord } from "./flightWidget.recent";
+import type { FlexibilityType } from "@/contexts/FlightSearchContext";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1) BRAND TOKENS — single source of truth for GoTravel colours
@@ -437,6 +439,47 @@ function FlightWidgetInner() {
                             <Search className="w-5 h-5" aria-hidden="true" />
                             Search Flights
                         </button>
+                    </div>
+                </div>
+
+                {/* ═══ AUX SECTIONS: FLEXIBILITY & PRICE TRACKING ═══════════════ */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mt-3 ml-1 mr-2">
+                    {/* ═══ FLEXIBILITY TOGGLE ═════════════════════════════════════ */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                        <span className="text-xs font-semibold mr-2" style={{ color: B.textMuted }}>Dates:</span>
+                        {(
+                            [
+                                { value: "exact", label: "Exact", icon: "📅" },
+                                { value: "3days", label: "±3 days", icon: "↔️" },
+                                { value: "week", label: "This week", icon: "📆" },
+                                { value: "month", label: "Whole month", icon: "🗓️" },
+                            ] as const
+                        ).map((opt) => (
+                            <button
+                                key={opt.value}
+                                onClick={() => s.setFlexibility(opt.value)}
+                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-150 ${s.flexibility === opt.value
+                                    ? "shadow-sm"
+                                    : "hover:bg-white/5"
+                                    }`}
+                                style={s.flexibility === opt.value
+                                    ? { background: B.gold, color: B.purpleDeep }
+                                    : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", border: `1px solid ${B.glassBorder}` }
+                                }
+                            >
+                                {opt.icon} {opt.label}
+                            </button>
+                        ))}
+                        {s.flexibility !== "exact" && (
+                            <span className="ml-2 text-xs font-medium animate-pulse" style={{ color: B.gold }}>
+                                ✨ We'll find the cheapest fare
+                            </span>
+                        )}
+                    </div>
+
+                    {/* ═══ PRICE TRACKING BUTTON ══════════════════════════════════ */}
+                    <div className="w-full md:w-auto">
+                        <TrackPricesButton currentPrice={s.lowestPrice ?? s.calendarCheapestPrice} />
                     </div>
                 </div>
 

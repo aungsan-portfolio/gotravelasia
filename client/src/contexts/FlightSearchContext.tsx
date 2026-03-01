@@ -24,6 +24,7 @@ export interface Airport {
 
 export type CabinCode = "Y" | "W" | "C" | "F";
 export type TripType = "return" | "one-way";
+export type FlexibilityType = "exact" | "3days" | "week" | "month";
 
 export interface FlightSearchState {
     // Core
@@ -39,6 +40,9 @@ export interface FlightSearchState {
     infants: number;
     cabinClass: CabinCode;
 
+    // Flexibility
+    flexibility: FlexibilityType;
+
     // Actions
     setTripType: (t: TripType) => void;
     setOrigin: (a: Airport | null) => void;
@@ -51,14 +55,15 @@ export interface FlightSearchState {
     setChildCount: (n: number) => void;
     setInfants: (n: number) => void;
     setCabinClass: (c: CabinCode) => void;
+    setFlexibility: (f: FlexibilityType) => void;
 
     // Reverse-sync: widget registers a callback so floating bar actions reflect back
     registerSwapCallback: (cb: () => void) => void;
     registerClearOriginCallback: (cb: () => void) => void;
     registerClearDestCallback: (cb: () => void) => void;
 
-    // Pure helper — returns URL string only
-    buildSearchURL: () => string;
+    // Return Affiliate URLs
+    buildSearchURL: () => { skyscanner: string; travelpayouts: string } | null;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -81,6 +86,7 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
     const [childCount, setChildCount] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabinClass, setCabinClass] = useState<CabinCode>("Y");
+    const [flexibility, setFlexibility] = useState<FlexibilityType>("exact");
 
     // ── Wrapped setters ────────────────────────────────────────────────────
     const setOrigin = useCallback((a: Airport | null) => {
@@ -122,25 +128,80 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
 
     const setReturnDate = useCallback((d: string) => setReturnDateRaw(d), []);
 
-    // ── buildSearchURL — pure, no side effects ─────────────────────────────
-    const buildSearchURL = useCallback((): string => {
-        if (!origin || !destination || !departDate) return "";
+    // ── buildSearchURL ─────────────────────────────
+    const buildSearchURL = useCallback((): { skyscanner: string; travelpayouts: string } | null => {
+        if (!origin || !destination || !departDate) return null;
 
-        const fmtDDMM = (dateStr: string): string => {
-            const [, mm, dd] = dateStr.split("-");
-            return dd + mm;
+        // --- Date formatting helper ---
+        const formatDate = (date: string) => date.replace(/-/g, ""); // "2024-03-15" → "20240315"
+        const monthOnly = (date: string) => date.slice(0, 7).replace(/-/g, ""); // "202403"
+
+        // --- Skyscanner URL builder ---
+        const buildSkyscanner = () => {
+            const base = "https://www.skyscanner.com/transport/flights";
+
+            let depSegment: string;
+            switch (flexibility) {
+                case "3days":
+                    depSegment = `${formatDate(departDate)}`;
+                    break;
+                case "week":
+                    depSegment = `${formatDate(departDate)}`; // Skyscanner uses "anytime" for full flex
+                    break;
+                case "month":
+                    depSegment = monthOnly(departDate); // e.g. "202403"
+                    break;
+                default: // "exact"
+                    depSegment = formatDate(departDate);
+            }
+
+            const retSegment = returnDate ? formatDate(returnDate) : undefined;
+
+            let url = `${base}/${origin.code.toLowerCase()}/${destination.code.toLowerCase()}/${depSegment}`;
+            if (retSegment) url += `/${retSegment}`;
+            url += `/?adults=${adults}&currency=THB`;
+
+            if (flexibility === "3days") url += "&dateFlexibility=3";
+            if (flexibility === "week") url += "&dateFlexibility=7";
+
+            return url;
         };
 
-        const cabinMap: Record<CabinCode, string> = { Y: "", W: "w", C: "c", F: "f" };
+        // --- Travelpayouts URL builder ---
+        const buildTravelpayouts = () => {
+            const base = "https://tp.media/r";
+            const params = new URLSearchParams({
+                marker: "522197",
+                origin: origin.code,
+                destination: destination.code,
+                depart_date: departDate,
+                adults: String(adults),
+                currency: "thb",
+            });
 
-        let fs = `${origin.code}${fmtDDMM(departDate)}${destination.code}`;
-        if (returnDate) fs += fmtDDMM(returnDate);
-        fs += `${cabinMap[cabinClass] ?? ""}${adults}`;
-        if (childCount > 0) fs += childCount;
-        if (infants > 0) fs += infants;
+            if (returnDate) params.set("return_date", returnDate);
 
-        return `/flights/results?flightSearch=${fs}`;
-    }, [origin, destination, departDate, returnDate, cabinClass, adults, childCount, infants]);
+            // Travelpayouts flexible params
+            if (flexibility === "3days") {
+                params.set("flexible", "true");
+                params.set("flexibility", "3");
+            } else if (flexibility === "week") {
+                params.set("flexible", "true");
+                params.set("flexibility", "7");
+            } else if (flexibility === "month") {
+                params.set("flexible", "true");
+                params.set("one_way", "false");
+                params.set("depart_date", departDate.slice(0, 7)); // year-month only
+            }
+
+            return `${base}?${params.toString()}`;
+        };
+
+        return {
+            skyscanner: buildSkyscanner(),
+            travelpayouts: buildTravelpayouts(),
+        };
+    }, [origin, destination, departDate, returnDate, adults, flexibility]);
 
     // ── Value ──────────────────────────────────────────────────────────────
     const value: FlightSearchState = {
@@ -165,6 +226,8 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
         setChildCount,
         setInfants,
         setCabinClass,
+        flexibility,
+        setFlexibility,
 
         registerSwapCallback,
         registerClearOriginCallback,

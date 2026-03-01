@@ -1,4 +1,9 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env then override with .env.local
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -8,8 +13,9 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import fs from "fs";
-import path from "path";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
+import { createPriceAlert, getActivePriceAlerts, updateAlertPrice } from "../db";
+import { Resend } from "resend";
 
 // ─── Rate Limiting ───
 type RateLimitWindow = { count: number; resetAt: number };
@@ -380,6 +386,112 @@ async function startServer() {
     } catch (error) {
       console.error("Calendar prices error:", error);
       res.status(500).json({ error: "Failed to fetch calendar prices" });
+    }
+  });
+
+  // ─── Price Alerts API ───
+  app.post("/api/price-alerts/subscribe", async (req, res) => {
+    try {
+      const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body;
+      if (!email || !origin || !destination || !departDate) {
+        res.status(400).json({ error: "Missing required fields" });
+        return;
+      }
+
+      const alert = {
+        email,
+        origin,
+        destination,
+        departDate,
+        returnDate: returnDate || null,
+        targetPrice: Number(currentPrice) || 0,
+        currency: currency || "THB",
+        isActive: true,
+      };
+
+      const result = await createPriceAlert(alert);
+      res.json(result);
+    } catch (error) {
+      console.error("Price alert subscription error:", error);
+      res.status(500).json({ error: "Failed to create price alert" });
+    }
+  });
+
+  // ─── Cron Job API (Price Drops) ───
+  app.get("/api/cron/check-price-alerts", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const activeAlerts = await getActivePriceAlerts();
+      if (activeAlerts.length === 0) {
+        res.json({ message: "No active alerts to check." });
+        return;
+      }
+
+      // Initialize Resend with env key
+      const resendApiKey = process.env.RESEND_API_KEY;
+      const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
+      const tpToken = process.env.TRAVELPAYOUTS_TOKEN;
+
+      const results = [];
+
+      for (const alert of activeAlerts) {
+        if (!tpToken) break;
+
+        // Fetch exact matched current minimum price off Travelpayouts v3
+        const url = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?token=${tpToken}&origin=${alert.origin}&destination=${alert.destination}&departure_at=${alert.departDate}&currency=${alert.currency}&one_way=${!alert.returnDate}`;
+        const tpRes = await fetch(url).catch(() => null);
+        if (!tpRes?.ok) continue;
+
+        const tpData = await tpRes.json();
+        if (!tpData?.data || tpData.data.length === 0) continue;
+
+        // Calculate minimum price among results
+        const minPrice = Math.min(...tpData.data.map((d: any) => d.price));
+
+        // Threshold = 5% price reduction from target or last notified
+        const referencePrice = alert.lastNotifiedPrice || alert.targetPrice;
+        const threshold = referencePrice * 0.95;
+
+        if (minPrice <= threshold) {
+          if (resendClient) {
+            const dropAmount = referencePrice - minPrice;
+            const percent = Math.round((dropAmount / referencePrice) * 100);
+
+            await resendClient.emails.send({
+              from: "GoTravel Asia <onboarding@resend.dev>",
+              to: alert.email,
+              subject: `🔥 Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
+              html: `
+                 <div style="font-family: sans-serif; color: #1e293b; padding: 20px;">
+                    <h2 style="color: #5B0EA6;">Good news! Your flight price dropped.</h2>
+                    <p>The route from <strong>${alert.origin}</strong> to <strong>${alert.destination}</strong> on <strong>${alert.departDate}</strong> has dropped from ${alert.currency} ${referencePrice} down to <strong>${alert.currency} ${minPrice}</strong>.</p>
+                    <p style="margin-top: 20px;">
+                      <a href="https://gotravel-asia.vercel.app/flights/results" style="background: #F5C518; color: #2D0558; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px;">View Deals</a>
+                    </p>
+                    <hr style="margin-top: 40px; border: none; border-top: 1px solid #e2e8f0;"/>
+                    <p style="font-size: 11px; color: #94a3b8;">
+                       You are receiving this because you subscribed to price alerts.
+                    </p>
+                 </div>
+               `
+            }).catch(console.error);
+          }
+
+          // Only update the database if we actually ping them
+          await updateAlertPrice(alert.id, minPrice);
+          results.push({ id: alert.id, old: referencePrice, new: minPrice });
+        }
+      }
+
+      res.json({ message: "Cron finished processing", processedCount: results.length, results });
+    } catch (err) {
+      console.error("Cron check-price-alerts error:", err);
+      res.status(500).json({ error: "Failed to process cron job" });
     }
   });
 
