@@ -30,10 +30,10 @@ export type Thresholds = { p33: number; p66: number; min: number };
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 export const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
-    cheapest: { bg: "#b3f9c2", text: "#054d14", estBg: "#e8fbef", estText: "#9ca3af" },
-    cheap: { bg: "#c6f6d5", text: "#065f16", estBg: "#e8fbef", estText: "#9ca3af" },
-    mid: { bg: "#fcb773", text: "#5b2601", estBg: "#fef3e2", estText: "#9ca3af" },
-    expensive: { bg: "#fba09d", text: "#680d08", estBg: "#feeaea", estText: "#9ca3af" },
+    cheapest: { bg: "#b3f9c2", text: "#054d14", estBg: "#d1fae5", estText: "#166534" },
+    cheap: { bg: "#c6f6d5", text: "#065f16", estBg: "#dcfce7", estText: "#15803d" },
+    mid: { bg: "#fcb773", text: "#5b2601", estBg: "#fed7aa", estText: "#9a3412" },
+    expensive: { bg: "#fba09d", text: "#680d08", estBg: "#fecaca", estText: "#b91c1c" },
     none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#9ca3af" },
 };
 
