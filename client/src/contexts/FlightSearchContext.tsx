@@ -172,6 +172,8 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
             const base = "https://tp.media/r";
             const params = new URLSearchParams({
                 marker: "522197",
+                campaign_id: "100",
+                p: "4114",
                 origin: origin.code,
                 destination: destination.code,
                 depart_date: departDate,
