@@ -11,19 +11,18 @@ import { USD_TO_THB_RATE } from "@/const";
 //   • Dynamic "under $XX" title hook based on live prices
 
 // ── Types ────────────────────────────────────────────────────────────────────
-interface BotRoute {
-    origin: string;
-    destination: string;
-    price: number;
-    currency: string;
-    airline_code: string;
-    date: string;
-    transfers: number;
-    flight_num: string;
-    region: string;
-    found_at: string;
-}
+import { useMultiCheapDeals, type Deal } from "@/hooks/useFlightData";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CheapDealsCards — Live pricing from flight_data.json bot
+// ─────────────────────────────────────────────────────────────────────────────
+// Features:
+//   • Two tabs: "From Myanmar 🇲🇲" and "Around Asia 🌏"
+//   • Reads live API data via useMultiCheapDeals
+//   • Auto-sorts by price ascending → picks cheapest 4 with country diversity
+//   • Dynamic "under $XX" title hook based on live prices
+
+// ── Types ────────────────────────────────────────────────────────────────────
 interface DealCard {
     id: string;
     destination: string;
@@ -121,9 +120,9 @@ function durationLabel(transfers: number): string {
     return transfers === 0 ? "direct" : `${transfers} stop${transfers > 1 ? "s" : ""}`;
 }
 
-// ── Find cheapest deal for each destination from bot data ────────────────────
+// ── Find cheapest deal for each destination from live data ────────────────────
 function findCheapestDeals(
-    routes: BotRoute[],
+    routes: Deal[],
     origins: string[],
     destinations: DestinationMeta[],
 ): DealCard[] {
@@ -131,7 +130,7 @@ function findCheapestDeals(
 
     for (const dest of destinations) {
         // Find cheapest route matching any origin → this destination
-        let cheapest: BotRoute | null = null;
+        let cheapest: Deal | null = null;
         for (const route of routes) {
             if (
                 origins.includes(route.origin) &&
@@ -155,9 +154,9 @@ function findCheapestDeals(
                 toCode: dest.toCode,
                 fromCode: cheapest.origin,
                 price: cheapest.price,
-                airline: cheapest.airline_code,
+                airline: cheapest.airline,
                 date: cheapest.date,
-                transfers: cheapest.transfers,
+                transfers: cheapest.transfers || 0,
             });
         }
     }
@@ -170,34 +169,18 @@ function findCheapestDeals(
 // ═════════════════════════════════════════════════════════════════════════════
 export default memo(function CheapDealsCards() {
     const [activeNiche, setActiveNiche] = useState<TargetNiche>("myanmar");
-    const [botRoutes, setBotRoutes] = useState<BotRoute[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [lastUpdated, setLastUpdated] = useState("");
 
-    // Fetch bot data on mount
-    useEffect(() => {
-        fetch("/data/flight_data.json")
-            .then(res => res.json())
-            .then(data => {
-                if (data.routes && Array.isArray(data.routes)) {
-                    setBotRoutes(data.routes);
-                }
-                if (data.meta?.updated_at) {
-                    setLastUpdated(data.meta.updated_at);
-                }
-            })
-            .catch(err => console.error("Failed to load flight deals:", err))
-            .finally(() => setLoading(false));
-    }, []);
+    // Live fetching with useMultiCheapDeals hook
+    const activeOrigins = activeNiche === "myanmar" ? MYANMAR_ORIGINS : ASIA_ORIGINS;
+    const { deals: activeDeals, loading } = useMultiCheapDeals(activeOrigins);
 
     // Compute deals for active tab with country diversity + fallback
     const topDeals = useMemo(() => {
-        if (botRoutes.length === 0) return [];
+        if (activeDeals.length === 0) return [];
 
-        const origins = activeNiche === "myanmar" ? MYANMAR_ORIGINS : ASIA_ORIGINS;
         const destinations = activeNiche === "myanmar" ? MYANMAR_DESTINATIONS : ASIA_DESTINATIONS;
 
-        const allDeals = findCheapestDeals(botRoutes, origins, destinations);
+        const allDeals = findCheapestDeals(activeDeals, activeOrigins, destinations);
 
         // Sort by price ascending
         allDeals.sort((a, b) => a.price - b.price);
@@ -250,15 +233,18 @@ export default memo(function CheapDealsCards() {
             }
         }
 
-        return result;
-    }, [activeNiche, botRoutes]);
+        // Final sorting to ensure cards display from cheapest to most expensive
+        result.sort((a, b) => a.price - b.price);
 
-    // Dynamic hook title — capped at $150 to keep the title attractive
+        return result;
+    }, [activeNiche, activeDeals, activeOrigins]);
+
+    // Dynamic hook title — bound to the minimum live price found
     const dynamicCeiling = useMemo(() => {
         if (topDeals.length === 0) return 100;
-        const maxPrice = Math.max(...topDeals.map(d => d.price));
-        const raw = Math.ceil((maxPrice + 5) / 10) * 10;
-        return Math.min(raw, 150); // Never show more than $150 in the title
+        const minPrice = Math.min(...topDeals.map(d => d.price));
+        const raw = Math.ceil(minPrice / 10) * 10;
+        return raw;
     }, [topDeals]);
 
     const hookTitle = activeNiche === "myanmar"
@@ -395,12 +381,6 @@ export default memo(function CheapDealsCards() {
                 ))}
             </div>
 
-            {/* Last updated indicator */}
-            {lastUpdated && (
-                <div className="mt-4 text-center text-[12px] text-[#98a2b3]">
-                    Prices updated: {lastUpdated} · Live data from 1,000+ routes
-                </div>
-            )}
-        </section>
+        </section >
     );
 });

@@ -197,22 +197,45 @@ export function useLivePriceMap(routes: { origin: string; destination: string; m
 }
 
 // ─── Cheap Deals hook (Upgrade 1: real TP API data) ───
-export function useCheapDeals(origin = "RGN") {
+export function useMultiCheapDeals(origins: string[]) {
   const { deals: botDeals } = useFlightData();
   const [cheapDeals, setCheapDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
+    if (origins.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     let cancelled = false;
-    fetch(`/api/cheap-prices?origin=${origin}&currency=usd`)
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        if (cancelled || !json?.data) return;
+    let localErrorCount = 0;
+
+    Promise.allSettled(
+      origins.map(async (origin) => {
+        const res = await fetch(`/api/cheap-prices?origin=${origin}&currency=usd`);
+        if (!res.ok) throw new Error(`API failed for ${origin}`);
+        const json = await res.json();
+        return { origin, data: json?.data || {} };
+      })
+    ).then((results) => {
+      if (cancelled) return;
+
+      const combinedDeals: Deal[] = [];
+
+      for (const result of results) {
+        if (result.status === "rejected") {
+          localErrorCount++;
+          continue;
+        }
+
+        const { origin, data } = result.value;
         // Transform TP response → Deal[] format
-        const deals: Deal[] = [];
-        for (const [dest, routes] of Object.entries(json.data as Record<string, Record<string, any>>)) {
+        for (const [dest, routes] of Object.entries(data as Record<string, Record<string, any>>)) {
           for (const info of Object.values(routes)) {
-            deals.push({
+            combinedDeals.push({
               origin,
               destination: dest,
               date: info.departure_at?.split("T")[0] || "",
@@ -222,14 +245,66 @@ export function useCheapDeals(origin = "RGN") {
             });
           }
         }
-        setCheapDeals(deals.sort((a, b) => a.price - b.price));
-      })
-      .catch(() => { /* fallback below */ })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [origin]);
+      }
 
-  // Fallback: use bot data if API returned nothing
-  const finalDeals = cheapDeals.length > 0 ? cheapDeals : botDeals;
-  return { deals: finalDeals, loading };
+      setErrorCount(localErrorCount);
+
+      // Deduplicate by origin + destination, keeping only the cheapest
+      const bestDealsMap = new Map<string, Deal>();
+      for (const deal of combinedDeals) {
+        if (deal.price <= 0) continue;
+        const key = `${deal.origin}-${deal.destination}`;
+        const existing = bestDealsMap.get(key);
+        if (!existing || deal.price < existing.price) {
+          bestDealsMap.set(key, deal);
+        }
+      }
+
+      const deduplicatedDeals = Array.from(bestDealsMap.values());
+
+      // Sort globally by price
+      deduplicatedDeals.sort((a, b) => a.price - b.price);
+      setCheapDeals(deduplicatedDeals);
+    })
+      .catch(() => {
+        // In case of complete catastrophic failure not caught by allSettled (rare)
+        if (!cancelled) setErrorCount(origins.length);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [origins.join(",")]); // Rate-limit friendly: only refetches when origins array changes (tab switch)
+
+  // Graceful fallback: Merge bot data if API fails completely or returns nothing
+  // For partial success, we merge the API data with bot data for the missing origins
+  const finalDeals = useMemo(() => {
+    if (loading) return []; // Prefer skeleton while loading
+
+    // Complete success and we have data
+    if (errorCount === 0 && cheapDeals.length > 0) return cheapDeals;
+
+    // Combine cheapDeals (live) and botDeals (fallback)
+    // Live data takes strict priority
+    const mergedMap = new Map<string, Deal>();
+
+    // 1. Add bot data as baseline
+    for (const bot of botDeals) {
+      if (bot.price <= 0 || !origins.includes(bot.origin)) continue;
+      mergedMap.set(`${bot.origin}-${bot.destination}`, bot);
+    }
+
+    // 2. Overwrite with live data
+    for (const live of cheapDeals) {
+      if (live.price <= 0) continue;
+      mergedMap.set(`${live.origin}-${live.destination}`, live);
+    }
+
+    const mergedList = Array.from(mergedMap.values());
+    mergedList.sort((a, b) => a.price - b.price);
+    return mergedList;
+  }, [cheapDeals, botDeals, loading, errorCount, origins]);
+
+  return { deals: finalDeals, loading, errorCount };
 }
