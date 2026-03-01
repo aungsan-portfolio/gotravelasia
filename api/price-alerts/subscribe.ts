@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq, and } from "drizzle-orm";
 import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
+import mysql from "mysql2/promise";
 
 // Inline schema to avoid import resolution issues on Vercel
 const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
@@ -20,34 +21,31 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Allow CORS for browser requests
+    // CORS
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") return res.status(200).end();
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    if (req.method === "OPTIONS") {
-        return res.status(200).end();
-    }
-
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method not allowed" });
-    }
+    let connection: mysql.Connection | null = null;
 
     try {
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) {
-            console.error("DATABASE_URL environment variable is not set");
-            return res.status(500).json({ error: "Database not configured" });
+            return res.status(500).json({ error: "DATABASE_URL not configured" });
         }
 
-        const db = drizzle(dbUrl);
+        // Use mysql2/promise connection explicitly instead of drizzle(url) shorthand
+        connection = await mysql.createConnection(dbUrl);
+        const db = drizzle(connection);
 
         const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body || {};
         if (!email || !origin || !destination || !departDate) {
             return res.status(400).json({ error: "Missing required fields: email, origin, destination, departDate" });
         }
 
-        // Check if exactly same active alert exists
+        // Check if same active alert exists
         const existing = await db.select().from(flightPriceAlerts).where(
             and(
                 eq(flightPriceAlerts.email, email),
@@ -79,5 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (error: any) {
         console.error("Price alert subscription error:", error?.message || error);
         return res.status(500).json({ error: "Failed to create price alert", detail: error?.message });
+    } finally {
+        if (connection) await connection.end().catch(() => { });
     }
 }

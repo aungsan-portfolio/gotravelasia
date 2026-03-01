@@ -2,9 +2,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq } from "drizzle-orm";
 import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
+import mysql from "mysql2/promise";
 import { Resend } from "resend";
 
-// Inline schema to avoid import resolution issues on Vercel
+// Inline schema
 const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     id: int("id").autoincrement().primaryKey(),
     email: varchar("email", { length: 320 }).notNull(),
@@ -21,6 +22,8 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    let connection: mysql.Connection | null = null;
+
     try {
         const authHeader = req.headers.authorization;
         if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -29,13 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) {
-            console.error("DATABASE_URL not set");
-            return res.status(500).json({ error: "Database not configured" });
+            return res.status(500).json({ error: "DATABASE_URL not configured" });
         }
 
-        const db = drizzle(dbUrl);
+        connection = await mysql.createConnection(dbUrl);
+        const db = drizzle(connection);
 
-        // Get active alerts
         const activeAlerts = await db.select().from(flightPriceAlerts).where(eq(flightPriceAlerts.isActive, true));
         if (activeAlerts.length === 0) {
             return res.status(200).json({ message: "No active alerts to check." });
@@ -58,7 +60,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (!tpData?.data || tpData.data.length === 0) continue;
 
             const minPrice = Math.min(...tpData.data.map((d: any) => d.price));
-
             const referencePrice = alert.lastNotifiedPrice || alert.targetPrice;
             const threshold = referencePrice * 0.95;
 
@@ -74,13 +75,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         html: `
                             <div style="font-family: sans-serif; color: #1e293b; padding: 20px;">
                                 <h2 style="color: #5B0EA6;">Good news! Your flight price dropped.</h2>
-                                <p>The route from <strong>${alert.origin}</strong> to <strong>${alert.destination}</strong> on <strong>${alert.departDate}</strong> has dropped from ${alert.currency} ${referencePrice} down to <strong>${alert.currency} ${minPrice}</strong>.</p>
+                                <p>Route: <strong>${alert.origin}</strong> → <strong>${alert.destination}</strong> on <strong>${alert.departDate}</strong></p>
+                                <p>Price dropped from ${alert.currency} ${referencePrice} to <strong>${alert.currency} ${minPrice}</strong>.</p>
                                 <p style="margin-top: 20px;">
                                     <a href="https://gotravel-asia.vercel.app/flights/results" style="background: #F5C518; color: #2D0558; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px;">View Deals</a>
-                                </p>
-                                <hr style="margin-top: 40px; border: none; border-top: 1px solid #e2e8f0;"/>
-                                <p style="font-size: 11px; color: #94a3b8;">
-                                    You are receiving this because you subscribed to price alerts.
                                 </p>
                             </div>
                         `
@@ -97,7 +95,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ message: "Cron finished processing", processedCount: results.length, results });
     } catch (err: any) {
-        console.error("Cron check-price-alerts error:", err?.message || err);
+        console.error("Cron error:", err?.message || err);
         return res.status(500).json({ error: "Failed to process cron job", detail: err?.message });
+    } finally {
+        if (connection) await connection.end().catch(() => { });
     }
 }
