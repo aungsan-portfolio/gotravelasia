@@ -45,6 +45,7 @@ jobs:
         git commit -m "🤖 Auto-update flight prices [$(date -u +'%Y-%m-%d %H:%M UTC')]"
         
         # Pull latest changes before pushing to avoid conflicts
-        git pull --rebase origin main
+        # Use -X theirs to always favor the newly generated bot data on conflict
+        git pull --rebase -X theirs origin main
         
         git push origin main
