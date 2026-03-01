@@ -196,7 +196,7 @@ export function useFlightWidgetState() {
 
         const urls = ctx.buildSearchURL();
         if (urls) {
-            window.open(urls.travelpayouts, "_blank", "noopener,noreferrer");
+            window.location.href = urls.travelpayouts;
         }
     }, [validateSearch, origin, destination, departDate, returnDate, lowestPrice, calendarCheapestPrice, ctx]);
 

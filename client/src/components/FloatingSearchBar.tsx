@@ -87,8 +87,8 @@ export default function FloatingSearchBar() {
       });
     }
 
-    // Affiliate link out
-    window.open(urlObj.travelpayouts, "_blank", "noopener,noreferrer");
+    // Navigate to in-site TPWL results
+    window.location.href = urlObj.travelpayouts;
   };
 
   // ── × clear handlers ──────────────────────────────────────────────────
