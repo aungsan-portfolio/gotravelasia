@@ -376,6 +376,7 @@ function FlightWidgetInner() {
 
                             <PopoverContent
                                 align="end" sideOffset={8}
+                                aria-describedby={undefined}
                                 role="dialog" aria-label="Select passengers and cabin class"
                                 className="w-[300px] p-5 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
                             >
