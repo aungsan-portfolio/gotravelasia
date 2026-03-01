@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import PriceCalendar from "@/components/PriceCalendar";
+import PriceCalendar from "@/components/price-calendar/PriceCalendar";
 
 const MemoizedPriceCalendar = React.memo(PriceCalendar, (prev, next) =>
     prev.origin === next.origin &&
