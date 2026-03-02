@@ -25,6 +25,7 @@ const BestTransfersBangkok = lazy(() => import("./pages/blog/BestTransfersBangko
 const BestInsuranceThailand = lazy(() => import("./pages/blog/BestInsuranceThailand"));
 const BestEsimThailand = lazy(() => import("./pages/blog/BestEsimThailand"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 
 function PageLoader() {
   return (
@@ -64,6 +65,7 @@ function Router() {
         <Route path="/terms-privacy" component={TermsAndPrivacy} />
         <Route path="/terms" component={TermsOfService} />
         <Route path="/contact" component={Contact} />
+        <Route path="/faq" component={FAQ} />
 
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
