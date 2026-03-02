@@ -149,7 +149,11 @@ export default function SignInModal({
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
 
-            <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden border-none rounded-[1.5rem] shadow-2xl bg-white [&>button]:hidden">
+            <DialogContent
+                className="sm:max-w-[440px] p-0 border-none rounded-[1.5rem] shadow-2xl bg-white [&>button]:hidden max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain"
+                style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+                aria-describedby={undefined}
+            >
                 {/* ── Close button ── */}
                 <button
                     onClick={() => setIsOpen(false)}
@@ -195,10 +199,12 @@ export default function SignInModal({
                                     key={route.id}
                                     onClick={() => handleRouteSelect(route.id)}
                                     disabled={isSubmitting}
-                                    className={`w-full h-12 text-left px-4 rounded-lg border transition-all text-sm font-medium ${selectedRoute === route.id
+                                    aria-busy={isSubmitting && selectedRoute === route.id}
+                                    aria-disabled={isSubmitting}
+                                    className={`w-full min-h-[44px] h-12 text-left px-4 rounded-lg border transition-all text-sm font-medium ${selectedRoute === route.id
                                         ? "border-[#581c87] bg-purple-50 text-[#581c87]"
                                         : "border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50/50"
-                                        } disabled:opacity-50`}
+                                        } disabled:opacity-50 disabled:pointer-events-none`}
                                 >
                                     {isSubmitting && selectedRoute === route.id ? (
                                         <span className="flex items-center gap-2">
@@ -296,7 +302,7 @@ export default function SignInModal({
 
                         <button
                             onClick={() => setStep(2)}
-                            className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-bold text-white transition-colors"
+                            className="w-full min-h-[44px] h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-bold text-white transition-colors active:scale-[0.98]"
                             style={{ background: '#581c87' }}
                         >
                             <Mail className="w-5 h-5" />

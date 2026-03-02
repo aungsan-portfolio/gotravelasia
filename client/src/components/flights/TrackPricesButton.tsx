@@ -83,7 +83,7 @@ export function TrackPricesButton({
             {/* ── Trigger Button ───────────────────────────────────────────── */}
             <button
                 onClick={() => setModalState("open")}
-                className="w-full lg:w-auto mt-3 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all duration-150 shadow-sm hover:shadow"
+                className="w-full lg:w-auto mt-3 flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl border text-sm font-bold transition-all duration-150 shadow-sm hover:shadow active:scale-[0.98]"
                 style={{
                     borderColor: "rgba(245,197,24,0.3)",
                     color: B.gold,
@@ -96,10 +96,13 @@ export function TrackPricesButton({
             {/* ── Modal Backdrop ───────────────────────────────────────────── */}
             {modalState !== "idle" && (
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                     onClick={(e) => e.target === e.currentTarget && handleClose()}
                 >
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-y-auto overscroll-contain animate-in zoom-in-95 duration-200"
+                        style={{ maxHeight: "calc(100dvh - 2rem)", paddingBottom: "env(safe-area-inset-bottom)" }}
+                    >
 
                         {/* ── Header ────────────────────────────────────────────── */}
                         <div className="px-6 py-5 relative" style={{ background: B.purpleDeep }}>
@@ -247,7 +250,10 @@ export function TrackPricesButton({
 
                                     <button
                                         onClick={handleSubmit}
-                                        className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0"
+                                        disabled={modalState === "loading"}
+                                        aria-busy={modalState === "loading"}
+                                        aria-disabled={modalState === "loading"}
+                                        className="mt-6 w-full min-h-[44px] min-w-[140px] flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 disabled:opacity-60 disabled:pointer-events-none"
                                         style={{ background: B.gold, color: B.purpleDeep }}
                                     >
                                         Start Tracking
