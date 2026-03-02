@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq } from "drizzle-orm";
-import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
+import { int, mysqlTable, text, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
 import mysql from "mysql2/promise";
 import { Resend } from "resend";
 
@@ -17,6 +17,21 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     lastNotifiedPrice: int("lastNotifiedPrice"),
     currency: varchar("currency", { length: 3 }).default("THB").notNull(),
     isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+// Queue schema
+const emailQueue = mysqlTable("emailQueue", {
+    id: int("id").autoincrement().primaryKey(),
+    toEmail: varchar("toEmail", { length: 320 }).notNull(),
+    subject: varchar("subject", { length: 255 }).notNull(),
+    htmlContent: text("htmlContent").notNull(),
+    status: varchar("status", { length: 20 }).default("pending").notNull(),
+    attempts: int("attempts").default(0).notNull(),
+    lastError: text("lastError"),
+    scheduledAt: timestamp("scheduledAt"), // nullable = send ASAP
+    sentAt: timestamp("sentAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -55,8 +70,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: "No active alerts to check." });
         }
 
-        const resendApiKey = process.env.RESEND_API_KEY;
-        const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
         const tpToken = process.env.TRAVELPAYOUTS_TOKEN;
 
         const results = [];
@@ -76,32 +89,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const threshold = referencePrice * 0.95;
 
             if (minPrice <= threshold) {
-                if (resendClient) {
-                    const dropAmount = referencePrice - minPrice;
-                    const percent = Math.round((dropAmount / referencePrice) * 100);
+                const dropAmount = referencePrice - minPrice;
+                const percent = Math.round((dropAmount / referencePrice) * 100);
 
-                    await resendClient.emails.send({
-                        from: "GoTravel Asia <onboarding@resend.dev>",
-                        to: alert.email,
-                        subject: `🔥 Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
-                        html: `
-                            <div style="font-family: sans-serif; color: #1e293b; padding: 20px;">
-                                <h2 style="color: #5B0EA6;">Good news! Your flight price dropped.</h2>
-                                <p>Route: <strong>${alert.origin}</strong> → <strong>${alert.destination}</strong> on <strong>${alert.departDate}</strong></p>
-                                <p>Price dropped from ${alert.currency} ${referencePrice} to <strong>${alert.currency} ${minPrice}</strong>.</p>
-                                <p style="margin-top: 20px;">
-                                    <a href="https://gotravel-asia.vercel.app/flights/results" style="background: #F5C518; color: #2D0558; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px;">View Deals</a>
-                                </p>
-                            </div>
-                        `
-                    }).catch(console.error);
-                }
+                // Queue the email instead of sending directly
+                await db.insert(emailQueue).values({
+                    toEmail: alert.email,
+                    subject: `🔥 Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
+                    htmlContent: `
+                        <div style="font-family: sans-serif; color: #1e293b; padding: 20px;">
+                            <h2 style="color: #5B0EA6;">Good news! Your flight price dropped.</h2>
+                            <p>Route: <strong>${alert.origin}</strong> → <strong>${alert.destination}</strong> on <strong>${alert.departDate}</strong></p>
+                            <p>Price dropped from ${alert.currency} ${referencePrice} to <strong>${alert.currency} ${minPrice}</strong>.</p>
+                            <p style="margin-top: 20px;">
+                                <a href="https://gotravel-asia.vercel.app/flights/results" style="background: #F5C518; color: #2D0558; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px;">View Deals</a>
+                            </p>
+                        </div>
+                    `,
+                    status: "pending",
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
 
                 await db.update(flightPriceAlerts)
                     .set({ lastNotifiedPrice: minPrice, updatedAt: new Date() })
                     .where(eq(flightPriceAlerts.id, alert.id));
 
-                results.push({ id: alert.id, old: referencePrice, new: minPrice });
+                results.push({ id: alert.id, old: referencePrice, new: minPrice, queued: true });
             }
         }
 
