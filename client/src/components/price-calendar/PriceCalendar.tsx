@@ -97,22 +97,21 @@ export default function PriceCalendar({
                     {MONTHS[month]} {year}
                 </h3>
                 {/* Navigation buttons inside the grid headers */}
-                {!isNext ? (
-                    <button
-                        onClick={handlePrev}
-                        disabled={!canGoPrev}
-                        className="absolute left-0 top-[6px] w-[32px] h-[32px] rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 disabled:opacity-30 disabled:hover:bg-gray-50 transition-colors z-10"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-                ) : (
-                    <button
-                        onClick={handleNext}
-                        className="absolute right-0 top-[6px] w-[32px] h-[32px] rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 transition-colors z-10"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                )}
+                <button
+                    onClick={handlePrev}
+                    disabled={!canGoPrev}
+                    /* On mobile, this always shows. On desktop, it only shows on the left grid (!isNext) */
+                    className={`absolute left-0 top-[6px] w-[32px] h-[32px] rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 disabled:opacity-30 disabled:hover:bg-gray-50 transition-colors z-10 ${isNext ? "md:hidden" : ""}`}
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={handleNext}
+                    /* On mobile, this always shows. On desktop, it only shows on the right grid (isNext) */
+                    className={`absolute right-0 top-[6px] w-[32px] h-[32px] rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 transition-colors z-10 ${!isNext ? "md:hidden" : ""}`}
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
 
                 <table className="w-full border-collapse table-fixed">
                     <thead>
