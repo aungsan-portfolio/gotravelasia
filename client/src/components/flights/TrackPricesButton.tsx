@@ -44,16 +44,6 @@ export function TrackPricesButton({
         setEmailError("");
         setModalState("loading");
 
-        // ← ဒါ ထည့်ပါ
-        console.log("Sending:", {
-            email,
-            origin: origin?.code,
-            destination: destination?.code,
-            departureDate: departDate, // using departDate from context
-            currentPrice,
-            currency,
-        });
-
         try {
             const res = await fetch("/api/price-alerts/subscribe", {
                 method: "POST",
@@ -69,18 +59,13 @@ export function TrackPricesButton({
                 }),
             });
 
-            // ← ဒါထည့်ပါ
-            console.log("Response status:", res.status);
             const data = await res.json().catch(() => ({}));
-            console.log("Response data:", data);
 
             if (!res.ok) setModalState("error");
             else if (data.alreadyExists) setModalState("duplicate");
             else setModalState("success");
 
         } catch (e) {
-            // ← ဒါထည့်ပါ
-            console.error("Fetch error:", e);
             setModalState("error");
         }
     };
@@ -156,8 +141,8 @@ export function TrackPricesButton({
                                     <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
                                     <h3 className="font-black text-gray-900 text-xl">Alert Created!</h3>
                                     <p className="text-gray-600 text-sm mt-2 leading-relaxed">
-                                        We'll email <strong>{email}</strong> the moment prices drop
-                                        on this route.
+                                        We've saved your route. We'll notify <strong>{email}</strong> when deals
+                                        become available.
                                     </p>
                                     {currentPrice ? (
                                         <div className="mt-4 bg-emerald-50 rounded-xl px-4 py-3 inline-block border border-emerald-100">
@@ -215,8 +200,8 @@ export function TrackPricesButton({
                             {modalState === "open" && (
                                 <>
                                     <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-                                        Enter your email and we'll notify you instantly when this
-                                        flight drops in price.
+                                        Enter your email and we'll save this route. You'll be
+                                        notified when deals become available.
                                     </p>
 
                                     <div>

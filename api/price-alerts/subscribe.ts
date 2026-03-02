@@ -36,38 +36,56 @@ function createMySQLConnection(dbUrl: string) {
     }
 }
 
+const ALLOWED_ORIGINS = [
+    "https://gotravelasia.com",
+    "https://www.gotravelasia.com",
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+].filter(Boolean);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // CORS — restrict to known origins
+    const origin = req.headers.origin || "";
+    if (ALLOWED_ORIGINS.some((o) => origin.startsWith(o))) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Vary", "Origin");
+    }
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
     let connection: mysql.Connection | null = null;
-    let debugInfo: any = {};
 
     try {
         const dbUrl = process.env.DATABASE_URL;
-        debugInfo.hasDbUrl = !!dbUrl;
-        
         if (!dbUrl) {
-            return res.status(500).json({ error: "DATABASE_URL not configured", debugInfo });
+            console.error("[price-alerts] DATABASE_URL not configured");
+            return res.status(500).json({ error: "Service temporarily unavailable" });
         }
 
-        // Try to connect
-        debugInfo.step = "creating_connection";
         connection = await createMySQLConnection(dbUrl);
-        
-        debugInfo.step = "initializing_drizzle";
         const db = drizzle(connection);
 
-        const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body || {};
+        const body = req.body || {};
+
+        // Honeypot — reject bots that fill hidden fields
+        if (body.hp) return res.status(200).json({ success: true });
+
+        const email = String(body.email ?? "").trim().toLowerCase();
+        const origin = String(body.origin ?? "").trim().toUpperCase();
+        const destination = String(body.destination ?? "").trim().toUpperCase();
+        const departDate = String(body.departDate ?? "").trim();
+        const returnDate = body.returnDate ? String(body.returnDate).trim() : null;
+        const currentPrice = Number(body.currentPrice) || 0;
+        const currency = String(body.currency ?? "THB").trim().toUpperCase();
+
         if (!email || !origin || !destination || !departDate) {
-            return res.status(400).json({ error: "Missing required fields: email, origin, destination, departDate" });
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: "Invalid email" });
         }
 
-        debugInfo.step = "checking_existing";
         const existing = await db.select().from(flightPriceAlerts).where(
             and(
                 eq(flightPriceAlerts.email, email),
@@ -82,29 +100,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true, alreadyExists: true });
         }
 
-        debugInfo.step = "inserting_alert";
         await db.insert(flightPriceAlerts).values({
             email,
             origin,
             destination,
             departDate,
-            returnDate: returnDate || null,
-            targetPrice: Number(currentPrice) || 0,
-            currency: currency || "THB",
+            returnDate,
+            targetPrice: currentPrice,
+            currency,
             isActive: true,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
 
+        // Server-side instrumentation only
+        console.info("[price-alerts] new_subscription", { email, origin, destination, departDate, createdAt: new Date().toISOString() });
+
         return res.status(200).json({ success: true, alreadyExists: false });
     } catch (error: any) {
-        return res.status(500).json({ 
-            error: "Failed to create price alert", 
-            detail: error?.message,
-            stack: error?.stack,
-            debugInfo
-        });
+        console.error("[price-alerts] error", error?.message, error?.stack);
+        return res.status(500).json({ error: "Something went wrong. Please try again." });
     } finally {
-        if (connection) await connection.end().catch(() => {});
+        if (connection) await connection.end().catch(() => { });
     }
 }
