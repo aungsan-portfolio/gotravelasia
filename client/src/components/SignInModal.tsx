@@ -1,8 +1,7 @@
 /**
  * @file SignInModal.tsx
- * @description Cheapflights-inspired sign-in modal with Google + Email options.
- * 3-step flow: Buttons → Email Input → Route Selection
- * Uses Web3Forms (free) + localStorage for zero-budget email capture.
+ * @description Price Alerts modal — email + route watchlist subscription.
+ * Uses /api/price-alerts/subscribe (DB-backed) as the single source of truth.
  */
 
 import { useState, useEffect } from "react";
@@ -14,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, Loader2, Mail, X } from "lucide-react";
-import { WEB3FORMS_KEY } from "@/lib/config";
 
 // ──────────────────────────────────────────────
 // Config
@@ -29,6 +27,15 @@ const WATCH_ROUTES = [
     { id: "mdl-bkk", label: "Mandalay → Bangkok" },
     { id: "other", label: "Other Destinations" },
 ];
+
+/** Map routeId → IATA codes for the API */
+const ROUTE_MAP: Record<string, { origin: string; destination: string }> = {
+    "rgn-bkk": { origin: "RGN", destination: "BKK" },
+    "rgn-sin": { origin: "RGN", destination: "SIN" },
+    "rgn-cnx": { origin: "RGN", destination: "CNX" },
+    "mdl-bkk": { origin: "MDL", destination: "BKK" },
+    "other": { origin: "", destination: "" },
+};
 
 // ──────────────────────────────────────────────
 // Component
@@ -45,7 +52,7 @@ export default function SignInModal({
     variant = "header",
 }: SignInModalProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 1=buttons, 2=email, 3=routes, 4=done
+    const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 1=intro, 2=email, 3=routes, 4=done
     const [email, setEmail] = useState("");
     const [selectedRoute, setSelectedRoute] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,44 +78,54 @@ export default function SignInModal({
         }
     }, [isOpen, isSubscribed]);
 
-    // ── Submit email to Web3Forms ──
+    // ── Step 2: Save email locally, go to route selection ──
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
+        // Save email locally; API call happens on route selection
+        localStorage.setItem(LS_EMAIL_KEY, email);
+        setSavedEmail(email);
+        setStep(3);
+    };
+
+    // ── Step 3: Route selected → single API call ──
+    const handleRouteSelect = async (routeId: string) => {
+        setSelectedRoute(routeId);
         setIsSubmitting(true);
 
+        const routeCodes = ROUTE_MAP[routeId] || { origin: "", destination: "" };
+
         try {
-            await fetch("https://api.web3forms.com/submit", {
+            const res = await fetch("/api/price-alerts/subscribe", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    access_key: WEB3FORMS_KEY,
-                    subject: "🔔 New Subscriber — GoTravelAsia",
-                    from_name: "GoTravel Sign In",
-                    email,
-                    message: `New sign-in subscriber: ${email}`,
+                    email: email || savedEmail,
+                    routeId,
+                    origin: routeCodes.origin,
+                    destination: routeCodes.destination,
+                    source: "modal",
                 }),
             });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                localStorage.setItem(LS_SUBSCRIBED_KEY, "true");
+                setIsSubscribed(true);
+                setStep(4);
+                setTimeout(() => setIsOpen(false), 2500);
+            }
         } catch {
-            // Silently fail — still save locally
+            // Silently fail — still mark as subscribed for UX
+            localStorage.setItem(LS_SUBSCRIBED_KEY, "true");
+            setIsSubscribed(true);
+            setStep(4);
+            setTimeout(() => setIsOpen(false), 2500);
+        } finally {
+            setIsSubmitting(false);
         }
-
-        localStorage.setItem(LS_EMAIL_KEY, email);
-        localStorage.setItem(LS_SUBSCRIBED_KEY, "true");
-        setIsSubscribed(true);
-        setSavedEmail(email);
-        setIsSubmitting(false);
-        setStep(3); // → Route selection
     };
-
-    // ── Save route & close ──
-    const handleRouteSelect = (routeId: string) => {
-        setSelectedRoute(routeId);
-        localStorage.setItem("gt_alert_route", routeId);
-        setStep(4);
-        setTimeout(() => setIsOpen(false), 2000);
-    };
-
 
     // ── Trigger button ──
     const defaultTrigger =
@@ -148,9 +165,9 @@ export default function SignInModal({
                         <div className="w-16 h-16 mx-auto bg-emerald-50 rounded-full flex items-center justify-center mb-4">
                             <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900">Welcome! 🎉</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">You're All Set! 🎉</h2>
                         <p className="text-gray-500 mt-2 text-sm">
-                            We'll send exclusive deals to your inbox.
+                            We've saved your route preference. You'll receive deal updates at:
                         </p>
                         <p className="text-sm font-medium text-gray-700 mt-1">{savedEmail}</p>
                     </div>
@@ -161,15 +178,15 @@ export default function SignInModal({
                     <div className="px-8 pb-10 pt-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl mb-6">
                             <p className="text-emerald-700 text-sm font-bold flex items-center gap-2">
-                                <CheckCircle2 size={18} /> Welcome to the inner circle!
+                                <CheckCircle2 size={18} /> Email saved!
                             </p>
                         </div>
 
                         <h3 className="text-lg font-bold text-gray-900 mb-2">
-                            One more step...
+                            Which route interests you?
                         </h3>
                         <p className="text-gray-500 text-sm mb-6">
-                            Which route should we watch first?
+                            Pick a route and we'll save it for you.
                         </p>
 
                         <div className="grid grid-cols-1 gap-2 mb-6">
@@ -177,12 +194,19 @@ export default function SignInModal({
                                 <button
                                     key={route.id}
                                     onClick={() => handleRouteSelect(route.id)}
+                                    disabled={isSubmitting}
                                     className={`w-full h-12 text-left px-4 rounded-lg border transition-all text-sm font-medium ${selectedRoute === route.id
                                         ? "border-[#581c87] bg-purple-50 text-[#581c87]"
                                         : "border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50/50"
-                                        }`}
+                                        } disabled:opacity-50`}
                                 >
-                                    {route.label}
+                                    {isSubmitting && selectedRoute === route.id ? (
+                                        <span className="flex items-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                                        </span>
+                                    ) : (
+                                        route.label
+                                    )}
                                 </button>
                             ))}
                         </div>
@@ -196,7 +220,7 @@ export default function SignInModal({
                             Enter your email
                         </h2>
                         <p className="text-gray-500 mt-2 text-sm">
-                            We'll send you exclusive deals and price alerts.
+                            We'll save your preferred routes and send deal updates.
                         </p>
 
                         <form onSubmit={handleEmailSubmit} className="mt-8 space-y-4">
@@ -211,14 +235,9 @@ export default function SignInModal({
                             />
                             <Button
                                 type="submit"
-                                disabled={isSubmitting}
                                 className="w-full h-14 rounded-xl bg-[#581c87] hover:bg-[#4c1d95] text-white font-bold text-lg shadow-lg shadow-purple-100 transition-all active:scale-[0.98]"
                             >
-                                {isSubmitting ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                ) : (
-                                    "Continue"
-                                )}
+                                Continue
                             </Button>
                         </form>
 
@@ -226,7 +245,7 @@ export default function SignInModal({
                             onClick={() => setStep(1)}
                             className="mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-center"
                         >
-                            ← Back to options
+                            ← Back
                         </button>
 
                         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
@@ -243,7 +262,7 @@ export default function SignInModal({
                     </div>
                 )}
 
-                {/* ═══════════ STEP 1: BUTTONS (Cheapflights Style) ═══════════ */}
+                {/* ═══════════ STEP 1: INTRO ═══════════ */}
                 {step === 1 && (
                     <div className="px-8 pb-10 pt-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <h2 className="text-3xl font-bold text-gray-900 tracking-tight leading-tight">
@@ -252,12 +271,10 @@ export default function SignInModal({
                             <span className="text-[#581c87]">Alerts.</span>
                         </h2>
 
-                        {/* Benefits intro */}
                         <p className="text-gray-500 mt-4 text-[15px] font-medium leading-relaxed">
                             Stay updated on the best Southeast Asia flight deals:
                         </p>
 
-                        {/* Bullet points with gold checks */}
                         <ul className="mt-4 mb-8 space-y-3">
                             {[
                                 "Compare prices across multiple airlines",
@@ -277,7 +294,6 @@ export default function SignInModal({
                             ))}
                         </ul>
 
-                        {/* ── Continue with Email ── */}
                         <button
                             onClick={() => setStep(2)}
                             className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-bold text-white transition-colors"
@@ -287,7 +303,6 @@ export default function SignInModal({
                             Continue with email
                         </button>
 
-                        {/* Legal */}
                         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
                             By adding your email you accept our{" "}
                             <a href="/terms" className="text-[#581c87] hover:underline">

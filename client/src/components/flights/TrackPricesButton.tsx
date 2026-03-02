@@ -56,6 +56,7 @@ export function TrackPricesButton({
                     returnDate: returnDate || null,
                     currentPrice: currentPrice && currentPrice > 0 ? currentPrice : 1, // Quick Fix
                     currency,
+                    source: "track_button",
                 }),
             });
 

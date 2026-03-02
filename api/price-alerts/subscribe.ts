@@ -1,25 +1,28 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { drizzle } from "drizzle-orm/mysql2";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
 import mysql from "mysql2/promise";
 
-// Inline schema
+// ── Inline schema ──────────────────────────────────────────────
 const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     id: int("id").autoincrement().primaryKey(),
     email: varchar("email", { length: 320 }).notNull(),
     origin: varchar("origin", { length: 3 }).notNull(),
     destination: varchar("destination", { length: 3 }).notNull(),
-    departDate: varchar("departDate", { length: 10 }).notNull(),
+    departDate: varchar("departDate", { length: 10 }),             // nullable for watchlist
     returnDate: varchar("returnDate", { length: 10 }),
     targetPrice: int("targetPrice").notNull(),
     lastNotifiedPrice: int("lastNotifiedPrice"),
     currency: varchar("currency", { length: 3 }).default("THB").notNull(),
+    routeId: varchar("routeId", { length: 20 }),                   // e.g. "rgn-bkk"
+    source: varchar("source", { length: 20 }).notNull().default("track_button"),
     isActive: boolean("isActive").default(true).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+// ── MySQL connection ───────────────────────────────────────────
 function createMySQLConnection(dbUrl: string) {
     try {
         const url = new URL(dbUrl);
@@ -36,17 +39,22 @@ function createMySQLConnection(dbUrl: string) {
     }
 }
 
+// ── CORS allowlist ─────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
     "https://gotravelasia.com",
     "https://www.gotravelasia.com",
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
 ].filter(Boolean);
 
+// ── Helpers ────────────────────────────────────────────────────
+const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+// ── Handler ────────────────────────────────────────────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS — restrict to known origins
-    const origin = req.headers.origin || "";
-    if (ALLOWED_ORIGINS.some((o) => origin.startsWith(o))) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
+    // CORS
+    const reqOrigin = req.headers.origin || "";
+    if (ALLOWED_ORIGINS.some((o) => reqOrigin.startsWith(o))) {
+        res.setHeader("Access-Control-Allow-Origin", reqOrigin);
         res.setHeader("Vary", "Origin");
     }
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -68,53 +76,96 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const body = req.body || {};
 
-        // Honeypot — reject bots that fill hidden fields
+        // Honeypot
         if (body.hp) return res.status(200).json({ success: true });
 
+        // ── Normalize inputs ───────────────────────────────────
         const email = String(body.email ?? "").trim().toLowerCase();
         const origin = String(body.origin ?? "").trim().toUpperCase();
         const destination = String(body.destination ?? "").trim().toUpperCase();
-        const departDate = String(body.departDate ?? "").trim();
+        const departDate = String(body.departDate ?? "").trim() || null;
         const returnDate = body.returnDate ? String(body.returnDate).trim() : null;
         const currentPrice = Number(body.currentPrice) || 0;
         const currency = String(body.currency ?? "THB").trim().toUpperCase();
+        const routeId = String(body.routeId ?? "").trim() || null;
+        const source = (String(body.source ?? "").trim() || "track_button") as string;
 
-        if (!email || !origin || !destination || !departDate) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        // ── Validate ───────────────────────────────────────────
+        if (!email || !isValidEmail(email)) {
             return res.status(400).json({ error: "Invalid email" });
         }
 
-        const existing = await db.select().from(flightPriceAlerts).where(
-            and(
-                eq(flightPriceAlerts.email, email),
-                eq(flightPriceAlerts.origin, origin),
-                eq(flightPriceAlerts.destination, destination),
-                eq(flightPriceAlerts.departDate, departDate),
-                eq(flightPriceAlerts.isActive, true)
-            )
-        ).limit(1);
+        const hasRoutePair = Boolean(origin && destination);
+        const hasRouteId = Boolean(routeId);
 
-        if (existing.length > 0) {
+        if (!hasRoutePair && !hasRouteId) {
+            return res.status(400).json({ error: "Missing route: provide origin+destination or routeId" });
+        }
+
+        // Track button requires departDate
+        if (source === "track_button" && !departDate) {
+            return res.status(400).json({ error: "Missing departDate for price tracking" });
+        }
+
+        // ── Duplicate check ────────────────────────────────────
+        let existing;
+        if (departDate && hasRoutePair) {
+            // Dated alert (TrackPricesButton)
+            existing = await db.select().from(flightPriceAlerts).where(
+                and(
+                    eq(flightPriceAlerts.email, email),
+                    eq(flightPriceAlerts.origin, origin),
+                    eq(flightPriceAlerts.destination, destination),
+                    eq(flightPriceAlerts.departDate, departDate),
+                    eq(flightPriceAlerts.isActive, true)
+                )
+            ).limit(1);
+        } else if (hasRouteId) {
+            // Watchlist alert (SignInModal)
+            existing = await db.select().from(flightPriceAlerts).where(
+                and(
+                    eq(flightPriceAlerts.email, email),
+                    eq(flightPriceAlerts.routeId, routeId!),
+                    eq(flightPriceAlerts.isActive, true)
+                )
+            ).limit(1);
+        } else {
+            // General watchlist (origin+destination, no date)
+            existing = await db.select().from(flightPriceAlerts).where(
+                and(
+                    eq(flightPriceAlerts.email, email),
+                    eq(flightPriceAlerts.origin, origin),
+                    eq(flightPriceAlerts.destination, destination),
+                    isNull(flightPriceAlerts.departDate),
+                    eq(flightPriceAlerts.isActive, true)
+                )
+            ).limit(1);
+        }
+
+        if (existing && existing.length > 0) {
             return res.status(200).json({ success: true, alreadyExists: true });
         }
 
+        // ── Insert ─────────────────────────────────────────────
         await db.insert(flightPriceAlerts).values({
             email,
-            origin,
-            destination,
+            origin: origin || "---",
+            destination: destination || "---",
             departDate,
             returnDate,
             targetPrice: currentPrice,
             currency,
+            routeId,
+            source,
             isActive: true,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
 
-        // Server-side instrumentation only
-        console.info("[price-alerts] new_subscription", { email, origin, destination, departDate, createdAt: new Date().toISOString() });
+        console.info("[price-alerts] new_subscription", {
+            email, origin, destination, departDate, routeId, source,
+            createdAt: new Date().toISOString(),
+        });
 
         return res.status(200).json({ success: true, alreadyExists: false });
     } catch (error: any) {
