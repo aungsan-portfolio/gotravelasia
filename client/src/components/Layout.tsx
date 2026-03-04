@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "wouter";
 import StickyCTA from "./StickyCTA";
 import FloatingSearchBar from "./FloatingSearchBar";
 import MobileNav from "./MobileNav";
@@ -10,6 +10,23 @@ import TripPlannerChat from "./TripPlannerChat";
 import { AFFILIATE } from "@/lib/config";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  const prevLocationRef = useRef(location);
+  const isResultsPage = location.startsWith('/flights/results');
+
+  // Force hard reload when leaving /flights/results → Travelpayouts CSS/script အကုန် ရှင်းမယ်
+  useEffect(() => {
+    const wasResults = prevLocationRef.current.startsWith('/flights/results');
+    const isResults = location.startsWith('/flights/results');
+
+    // Back button, footer link, any navigation အကုန် catch လုပ်မယ်
+    if (wasResults && !isResults) {
+      window.location.href = location;   // ← hard reload (pollution လုံးဝ ဖျက်မယ်)
+    }
+
+    prevLocationRef.current = location;
+  }, [location]);
+
   const [chatOpen, setChatOpen] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
 
@@ -44,12 +61,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 relative z-10 w-[200px]">
             {/* Hamburger Menu */}
             <MobileNav onPlanTrip={() => setChatOpen(true)} />
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/logo.webp" alt="GoTravel Logo" className="h-[36px] w-auto object-contain" />
-              <span className="font-extrabold text-[#5B0EA6] text-xl tracking-tight hidden sm:inline-block">
-                GO TRAVEL
-              </span>
-            </Link>
+            {isResultsPage ? (
+              <a href="/" className="flex items-center gap-2">
+                <img src="/logo.webp" alt="GoTravel Logo" className="h-[36px] w-auto object-contain" />
+                <span className="font-extrabold text-[#5B0EA6] text-xl tracking-tight hidden sm:inline-block">
+                  GO TRAVEL
+                </span>
+              </a>
+            ) : (
+              <Link href="/" className="flex items-center gap-2">
+                <img src="/logo.webp" alt="GoTravel Logo" className="h-[36px] w-auto object-contain" />
+                <span className="font-extrabold text-[#5B0EA6] text-xl tracking-tight hidden sm:inline-block">
+                  GO TRAVEL
+                </span>
+              </Link>
+            )}
           </div>
 
           {/* Embedded Floating Search Bar */}
