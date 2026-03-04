@@ -27,16 +27,16 @@ OUTPUT_PATH = os.path.join("client", "public", "data", "flight_data.json")
 
 # Southeast Asia main airports
 SEA_AIRPORTS = [
-    "RGN", "MDL", "BKK", "DMK", "CNX", "HKT",
-    "KUL", "SIN", "SGN", "HAN", "PNH", "REP",
-    "CGK", "DPS", "MNL"
+    "RGN", "MDL", "BKK", "SIN", "KUL", "CNX", "HKT",
+    "SGN", "HAN", "DAD", "JKT", "DPS", "MNL", "CEB", "BKI", "BWN"
 ]
 
 # Full Asia (Phase 1)
-JAPAN_AIRPORTS = ["HND", "NRT", "KIX", "FUK"]
-KOREA_AIRPORTS = ["ICN", "GMP"]
-INDIA_AIRPORTS = ["DEL", "BOM", "BLR", "MAA"]
-CHINA_AIRPORTS = ["PVG", "PEK", "CAN", "HKG"]
+JAPAN_AIRPORTS = ["TYO", "OSA"]
+KOREA_AIRPORTS = ["SEL", "PUS", "CJU"]
+INDIA_AIRPORTS = ["DEL", "CCU"]
+CHINA_AIRPORTS = ["BJS", "SHA", "CAN", "CTU", "HKG", "MFM"]
+TAIWAN_AIRPORTS = ["TPE"]
 
 MYANMAR_HUBS = ["RGN", "MDL"]
 
@@ -44,16 +44,15 @@ MYANMAR_HUBS = ["RGN", "MDL"]
 POPULAR_ROUTES = [
     ("RGN", "BKK"), ("BKK", "RGN"),
     ("MDL", "BKK"), ("BKK", "MDL"),
-    ("RGN", "DMK"), ("DMK", "RGN"),
     ("RGN", "SIN"), ("SIN", "RGN"),
     ("BKK", "SIN"), ("SIN", "BKK"),
-    ("DMK", "SIN"), ("SIN", "DMK"),
     ("HKT", "SIN"), ("SIN", "HKT"),
     ("CNX", "BKK"), ("BKK", "CNX"),
-    ("CNX", "DMK"), ("DMK", "CNX"),
     ("CNX", "SIN"), ("SIN", "CNX"),
     ("RGN", "KUL"), ("KUL", "RGN"),
     ("CNX", "HKT"), ("HKT", "CNX"),
+    ("RGN", "TYO"), ("TYO", "RGN"),
+    ("RGN", "SEL"), ("SEL", "RGN"),
 ]
 
 MONTHS_TO_SCAN = ["2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"]
@@ -184,6 +183,9 @@ class FlightBot:
             for cn in CHINA_AIRPORTS:
                 add_task(hub, cn, "China")
                 add_task(cn, hub, "China")
+            for tw in TAIWAN_AIRPORTS:
+                add_task(hub, tw, "Taiwan")
+                add_task(tw, hub, "Taiwan")
                     
         # Sort by score ascending (oldest first, priority first)
         tasks.sort(key=lambda x: x["score"])
