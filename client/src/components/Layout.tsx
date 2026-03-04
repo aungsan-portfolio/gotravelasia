@@ -58,7 +58,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3 relative z-10 w-[200px] justify-end">
-            <SignInModal variant="header" />
+            <SignInModal variant="header" autoOpen />
           </div>
         </div>
       </header>
