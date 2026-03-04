@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useFlightSearch } from "@/contexts/FlightSearchContext";
 
 type Props = {
     marker: string;          // TravelPayouts wl_id / affiliate id
@@ -9,6 +10,9 @@ export default function FlightWidget({
 }: Props) {
     const mountedRef = useRef(false);
     const [blocked, setBlocked] = useState(false);
+
+    // Read search parameters from context
+    const { origin, destination, departDate, returnDate, adults, childCount, infants, tripType } = useFlightSearch();
 
     useEffect(() => {
         // Prevent double-run in React Strict Mode (dev) & rerenders
@@ -37,10 +41,30 @@ export default function FlightWidget({
             return;
         }
 
+        // --- Prepare pre-fill parameters from context ---
+        const initParams: any = {};
+
+        if (origin) initParams.origin = { name: origin.name, iata: origin.code };
+        if (destination) initParams.destination = { name: destination.name, iata: destination.code };
+
+        if (departDate) initParams.departDate = departDate;
+        if (tripType === "return" && returnDate) {
+            initParams.returnDate = returnDate;
+        } else {
+            initParams.oneWay = true;
+        }
+
+        initParams.passengers = {
+            adults: adults > 0 ? adults : 1,
+            children: childCount || 0,
+            infants: infants || 0,
+        };
+
         // Set TPWL_CONFIGURATION before loading script (TP white-label expects this)
         (window as any).TPWL_CONFIGURATION = {
             ...(window as any).TPWL_CONFIGURATION,
             resultsURL: "https://gotravel-asia.vercel.app",
+            init: initParams,
         };
 
         const s = document.createElement("script");
@@ -64,7 +88,7 @@ export default function FlightWidget({
         return () => {
             window.clearTimeout(timeout);
         };
-    }, [marker]);
+    }, [marker, origin, destination, departDate, returnDate, adults, childCount, infants, tripType]);
 
     return (
         <div style={{ background: "#eef1f6", minHeight: "100vh" }}>
