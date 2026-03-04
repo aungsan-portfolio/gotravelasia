@@ -120,6 +120,30 @@ function durationLabel(transfers: number): string {
     return transfers === 0 ? "direct" : `${transfers} stop${transfers > 1 ? "s" : ""}`;
 }
 
+// ── Deal Scoring Algorithm ───────────────────────────────────────────────────
+// Weights: price saving 50 + direct bonus 25 + recency 15 + budget-fit 10
+// Produces a 0–100 score; higher = better deal to show the user.
+function scoreDeal(deal: DealCard, budget: number): number {
+    // Price saving (0–50): how much cheaper than the budget ceiling
+    const priceSave = Math.max(0, ((budget - deal.price) / budget) * 50);
+
+    // Direct flight bonus (0–25): direct flights are much more attractive
+    const directBonus = deal.transfers === 0 ? 25 : deal.transfers === 1 ? 10 : 0;
+
+    // Recency (0–15): flights departing within 30 days score highest
+    const daysAhead = Math.ceil(
+        (new Date(deal.date).getTime() - Date.now()) / 86_400_000
+    );
+    const recency = daysAhead > 0 && daysAhead < 30 ? 15
+        : daysAhead > 0 && daysAhead < 60 ? 8
+            : 3;
+
+    // Budget fit (0–10): bonus for deals that are well under the display budget
+    const budgetFit = deal.price <= budget ? 10 : deal.price <= budget * 1.25 ? 5 : 0;
+
+    return priceSave + directBonus + recency + budgetFit;
+}
+
 // ── Find cheapest deal for each destination from live data ────────────────────
 function findCheapestDeals(
     routes: Deal[],
@@ -174,66 +198,37 @@ export default memo(function CheapDealsCards() {
     const activeOrigins = activeNiche === "myanmar" ? MYANMAR_ORIGINS : ASIA_ORIGINS;
     const { deals: activeDeals, loading } = useMultiCheapDeals(activeOrigins);
 
-    // Compute deals for active tab with country diversity + fallback
+    // Compute deals for active tab using scoring algorithm + destination diversity
     const topDeals = useMemo(() => {
         if (activeDeals.length === 0) return [];
 
         const destinations = activeNiche === "myanmar" ? MYANMAR_DESTINATIONS : ASIA_DESTINATIONS;
-
         const allDeals = findCheapestDeals(activeDeals, activeOrigins, destinations);
 
-        // Sort by price ascending
-        allDeals.sort((a, b) => a.price - b.price);
+        if (allDeals.length === 0) return [];
 
+        // Compute a display budget from cheapest deal (round down to nearest $50)
+        const cheapest = Math.min(...allDeals.map(d => d.price));
+        const budget = Math.max(Math.floor((cheapest * 1.5) / 50) * 50, 50);
+
+        // Score all deals, then sort by score descending
+        const scored = allDeals
+            .map(deal => ({ deal, score: scoreDeal(deal, budget) }))
+            .sort((a, b) => b.score - a.score);
+
+        // Pick top N with destination diversity (no duplicate cities)
         const result: DealCard[] = [];
         const seenCity = new Set<string>();
-        const PRICE_CAP = 150; // Only show deals under $150 to keep the title attractive
 
-        // Pass 1: Prioritize Bangkok and Chiang Mai — but ONLY if price is affordable
-        const priorityCities = ["Bangkok", "Bangkok (DMK)", "Chiang Mai"];
-        for (const deal of allDeals) {
-            if (
-                priorityCities.includes(deal.destination) &&
-                !seenCity.has(deal.destination) &&
-                deal.price <= PRICE_CAP
-            ) {
-                result.push(deal);
-                seenCity.add(deal.destination);
-            }
-        }
-
-        // Pass 2: Fill the rest with cheapest *DIRECT* flights under price cap
-        for (const deal of allDeals) {
+        for (const { deal } of scored) {
             if (result.length >= CARDS_TO_SHOW) break;
-            if (!seenCity.has(deal.destination) && deal.transfers === 0 && deal.price <= PRICE_CAP) {
+            if (!seenCity.has(deal.destination)) {
                 result.push(deal);
                 seenCity.add(deal.destination);
             }
         }
 
-        // Pass 3: If still need more, allow any transfers but still under price cap
-        if (result.length < CARDS_TO_SHOW) {
-            for (const deal of allDeals) {
-                if (result.length >= CARDS_TO_SHOW) break;
-                if (!seenCity.has(deal.destination) && deal.price <= PRICE_CAP) {
-                    result.push(deal);
-                    seenCity.add(deal.destination);
-                }
-            }
-        }
-
-        // Pass 4: Last resort — if we truly have no cheap deals, take whatever is cheapest
-        if (result.length < CARDS_TO_SHOW) {
-            for (const deal of allDeals) {
-                if (result.length >= CARDS_TO_SHOW) break;
-                if (!seenCity.has(deal.destination)) {
-                    result.push(deal);
-                    seenCity.add(deal.destination);
-                }
-            }
-        }
-
-        // Final sorting to ensure cards display from cheapest to most expensive
+        // Final sort by price ascending for display consistency
         result.sort((a, b) => a.price - b.price);
 
         return result;
