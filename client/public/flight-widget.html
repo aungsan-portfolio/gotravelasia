@@ -1,65 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GO TRAVEL Flights</title>
   <style>
-    body, html {
+    body,
+    html {
       margin: 0;
       padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #eef1f6; /* Matching the background of the original container */
+      min-height: 100%;
+      background: #eef1f6;
     }
-    #tpwl-search, #tpwl-tickets {
+
+    #tpwl-search,
+    #tpwl-tickets {
       width: 100%;
-      min-height: 800px;
+    }
+
+    #fallback {
+      text-align: center;
+      padding-top: 120px;
+      color: #666;
+      font-family: sans-serif;
     }
   </style>
   <link rel="preconnect" href="https://tpwidg.com">
-  <link rel="dns-prefetch" href="https://tpwidg.com">
 </head>
+
 <body>
-  <!-- Container styling matching the original React implementation -->
-  <div style="background: #eef1f6; min-height: 100vh;">
-    <div style="max-width: 1152px; margin: 0 auto; padding: 0 1rem;">
-      <div style="background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border: 1px solid rgba(229, 231, 235, 0.6); padding: 1.25rem; margin-top: -1rem; position: relative; z-index: 20;">
+  <div style="background:#eef1f6; min-height:100vh;">
+    <!-- Search Box Container -->
+    <div style="max-width:1152px; margin:0 auto; padding:0 1rem;">
+      <div
+        style="background:white; border-radius:1rem; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); border:1px solid rgba(229,231,235,0.6); padding:0.75rem 1.25rem; margin-top:1rem;">
         <div id="tpwl-search"></div>
       </div>
     </div>
-    
-    <div style="max-width: 1152px; margin: 0 auto; padding: 1rem 1rem;">
+
+    <!-- Tickets Container -->
+    <div style="max-width:1152px; margin:0 auto; padding:1rem;">
       <div id="tpwl-tickets"></div>
     </div>
   </div>
 
-  <script src="https://tpwidg.com/wl_web/main.js" async></script>
-  <script>
-    const params = new URLSearchParams(location.search);
-    
-    // Set global config
-    window.TPWL_CONFIGURATION = {
-      wl_id: '12942', // hardcoded from config.ts AFFILIATE.TPWL_ID
-      resultsURL: window.location.origin + "/flights/results",
-      flightSearch: params.get('flightSearch') || ''
-    };
+  <!-- Visible fallback (debug) -->
+  <div id="fallback"
+    style="position: absolute; top: 0; left: 0; right: 0; z-index: 50; background: #eef1f6; height: 100vh;">
+    <p>🔍 Loading flight search...</p>
+    <p style="font-size:13px;margin-top:15px">Please wait a moment.</p>
+  </div>
 
-    // Auto-height sending to parent
-    let lastHeight = 0;
-    const ro = new ResizeObserver(() => {
-      // Need to measure the full scroll height of the internal container
-      const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 800);
-      if (Math.abs(h - lastHeight) > 30) {
-        lastHeight = h;
-        window.parent.postMessage({ action: 'setHeight', height: h }, '*');
-      }
-    });
-    
-    // Start observing once DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
+  <script>
+    (function () {
+      console.log('🚀 flight-widget.html LOADED');
+
+      const params = new URLSearchParams(location.search);
+      const flightSearch = params.get('flightSearch') || '';
+
+      // Set TP configuration
+      window.TPWL_CONFIGURATION = window.TPWL_CONFIGURATION || {};
+      window.TPWL_CONFIGURATION.resultsURL = 'https://gotravel-asia.vercel.app';
+      window.TPWL_CONFIGURATION.flightSearch = flightSearch;
+
+      console.log('📦 TPWL_CONFIGURATION set:', window.TPWL_CONFIGURATION);
+
+      // Inject widget logic
+      const script = document.createElement('script');
+      script.src = `https://tpwidg.com/wl_web/main.js?wl_id=12942${flightSearch ? '&flightSearch=' + flightSearch : ''}`;
+      script.async = true;
+      script.onload = () => {
+        console.log('✅ Travelpayouts script LOADED successfully');
+        // Hide fallback once script loads completely
+        setTimeout(() => {
+          const fallback = document.getElementById('fallback');
+          if (fallback) fallback.style.display = 'none';
+        }, 500); // give widget a half second to build UI
+      };
+
+      script.onerror = () => {
+        console.error('❌ Script load FAILED');
+        const fallback = document.getElementById('fallback');
+        if (fallback) fallback.innerHTML = '<p style="color:red;">❌ Error loading flight data. Please refresh.</p>';
+      };
+
+      document.body.appendChild(script);
+
+      // Auto-height adjusting
+      let lastHeight = 0;
+      const ro = new ResizeObserver(() => {
+        // use document.body.scrollHeight to get exact height of content
+        const h = Math.max(document.body.scrollHeight, 800);
+        if (Math.abs(h - lastHeight) > 30) {
+          lastHeight = h;
+          window.parent.postMessage({ action: 'setHeight', height: h }, '*');
+        }
+      });
       ro.observe(document.body);
-    });
+    })();
   </script>
 </body>
+
 </html>
