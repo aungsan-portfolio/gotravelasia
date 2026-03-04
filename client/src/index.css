@@ -296,3 +296,50 @@
   opacity: 0.35 !important;
   font-size: 10px !important;
 }
+
+/* --- Brand Color Overrides for Widgets (Purple & Gold) --- */
+/* Search Button / Primary Actions (Gold) */
+.tpwl-page [class*="button_mod_primary"],
+.tpwl-page [class*="Button_mod_primary"],
+.TPWL-widget [class*="button_mod_primary"],
+.TPWL-widget [class*="SubmitButton"] {
+  background-color: var(--secondary) !important; /* Gold */
+  color: var(--secondary-foreground) !important;
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.3) !important;
+  border-color: var(--secondary) !important;
+}
+
+.tpwl-page [class*="button_mod_primary"]:hover,
+.TPWL-widget [class*="SubmitButton"]:hover {
+  background-color: #d4a800 !important; /* Darker Gold */
+  box-shadow: 0 6px 16px rgba(245, 197, 24, 0.4) !important;
+}
+
+/* Active Tabs / Highlights (Purple) */
+.tpwl-page [class*="tab_mod_active"],
+.tpwl-page [class*="active_"],
+.TPWL-widget [class*="active_"] {
+  color: var(--primary) !important; /* Purple */
+}
+.tpwl-page [class*="tab_mod_active"]:after,
+.tpwl-page [class*="indicator"] {
+  background-color: var(--primary) !important;
+}
+
+/* Ticket Buy Button (Purple to stand out on cards) */
+.tpwl-page [class*="buy-button"],
+.tpwl-page [class*="BuyButton"] {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+.tpwl-page [class*="buy-button"]:hover,
+.tpwl-page [class*="BuyButton"]:hover {
+  background-color: #380b72 !important; /* Darker purple */
+}
+
+/* Links and minor highlights */
+.tpwl-page a,
+.tpwl-page [class*="link"] {
+  color: var(--primary) !important;
+}
