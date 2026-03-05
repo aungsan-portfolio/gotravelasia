@@ -28,14 +28,14 @@ OUTPUT_PATH = os.path.join("client", "public", "data", "flight_data.json")
 # Southeast Asia main airports
 SEA_AIRPORTS = [
     "RGN", "MDL", "BKK", "SIN", "KUL", "CNX", "HKT",
-    "SGN", "HAN", "DAD", "JKT", "DPS", "MNL", "CEB", "BKI", "BWN"
+    "SGN", "HAN", "DAD", "CGK", "DPS", "MNL", "CEB", "BKI", "BWN"
 ]
 
 # Full Asia (Phase 1)
-JAPAN_AIRPORTS = ["TYO", "OSA"]
-KOREA_AIRPORTS = ["SEL", "PUS", "CJU"]
+JAPAN_AIRPORTS = ["NRT", "KIX"]
+KOREA_AIRPORTS = ["ICN", "CJU"]
 INDIA_AIRPORTS = ["DEL", "CCU"]
-CHINA_AIRPORTS = ["BJS", "SHA", "CAN", "CTU", "HKG", "MFM"]
+CHINA_AIRPORTS = ["PEK", "PVG", "CAN", "CTU", "HKG", "MFM"]
 TAIWAN_AIRPORTS = ["TPE"]
 
 MYANMAR_HUBS = ["RGN", "MDL"]
@@ -55,8 +55,13 @@ POPULAR_ROUTES = [
     ("RGN", "SEL"), ("SEL", "RGN"),
 ]
 
+POPULAR_ROUTES_SET = frozenset(POPULAR_ROUTES)
+
 MONTHS_TO_SCAN = ["2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"]
 MAX_REQUESTS_PER_RUN = 200
+
+MIN_PRICE_USD = 10
+MAX_PRICE_USD = 5000
 
 
 def _build_session() -> requests.Session:
@@ -166,7 +171,7 @@ class FlightBot:
         # 1. SEA Routes (all combinations)
         for origin in SEA_AIRPORTS:
             for dest in SEA_AIRPORTS:
-                is_popular = (origin, dest) in POPULAR_ROUTES
+                is_popular = (origin, dest) in POPULAR_ROUTES_SET
                 add_task(origin, dest, "SEA", priority_boost=is_popular)
 
         # 2. Full Asia Phase 1 (Only RGN/MDL <-> New Airports)
@@ -229,7 +234,11 @@ class FlightBot:
 
             data = response.json()
 
-            if not data.get("success") or not data.get("data"):
+            if not data.get("success"):
+                logger.warning("API returned success=false for %s->%s %s", origin, destination, month)
+                return False
+
+            if not data.get("data"):
                 logger.debug("No deals found for %s -> %s (%s)", origin, destination, month)
                 return True # Request succeeded, just no deals
 
@@ -243,7 +252,7 @@ class FlightBot:
                 flight_num = str(flight_info.get("flight_number", ""))
                 transfers = flight_info.get("number_of_changes", 0)
 
-                if price is None or price < 0:
+                if not price or not (MIN_PRICE_USD <= price <= MAX_PRICE_USD):
                     continue
 
                 date_only = _parse_date(departure_at)
@@ -337,7 +346,7 @@ class FlightBot:
                 flight_num = str(e.get("flight_number", ""))
                 transfers = e.get("transfers", 0)
 
-                if not price or price <= 0 or not airline:
+                if not price or not (MIN_PRICE_USD <= price <= MAX_PRICE_USD) or not airline:
                     continue
 
                 date_only = _parse_date(departure_at)
@@ -375,9 +384,12 @@ class FlightBot:
         all_tasks = self.generate_tasks()
         logger.info("Total SEA combinations: %d", len(all_tasks))
         
-        tasks_to_run = all_tasks[:MAX_REQUESTS_PER_RUN]
+        # Each task makes 2 API calls (V1 and V3), so divide max requests by 2
+        tasks_to_run = all_tasks[:MAX_REQUESTS_PER_RUN // 2]
         logger.info("Running top %d tasks to respect rate limits", len(tasks_to_run))
         logger.info("=" * 60)
+
+        CHECKPOINT_EVERY = 50
 
         for i, task in enumerate(tasks_to_run, 1):
             logger.info("[%d/%d] Checking %s -> %s for %s (%s)", i, len(tasks_to_run), task["origin"], task["destination"], task["month"], task["region"])
@@ -386,8 +398,9 @@ class FlightBot:
             # Also fetch from v3 API for additional data density
             self.fetch_v3_prices(task["origin"], task["destination"], task["month"], task["region"])
             
-            if i < len(tasks_to_run):
-                time.sleep(THROTTLE_DELAY)
+            if i % CHECKPOINT_EVERY == 0:
+                logger.info("Checkpoint save at task %d...", i)
+                self.merge_and_save_results(tasks_to_run[:i])
 
         self.merge_and_save_results(tasks_to_run)
 
@@ -401,8 +414,11 @@ class FlightBot:
         logger.info("  Duration       : %.1fs", elapsed)
         logger.info("=" * 60)
 
+    def _route_key(self, route: dict) -> str:
+        return f"{route.get('origin')}_{route.get('destination')}_{route.get('date')}_{route.get('airline_code')}_{route.get('flight_num')}"
+
     def merge_and_save_results(self, processed_tasks: list[dict]) -> None:
-        # Create a set of keys that were processed in this run
+        # Create a set of base keys (orig_dest_month) that were processed in this run
         processed_keys = set(t["key"] for t in processed_tasks)
         
         # Keep old routes UNLESS they match a key we just processed
@@ -423,6 +439,17 @@ class FlightBot:
                 
         # Add all the new routes we just fetched
         final_routes.extend(self.new_routes)
+        
+        # Deduplicate final routes
+        seen_keys = set()
+        deduped_routes = []
+        for r in final_routes:
+            rk = self._route_key(r)
+            if rk not in seen_keys:
+                seen_keys.add(rk)
+                deduped_routes.append(r)
+        
+        final_routes = deduped_routes
         
         # Sort globally by price
         final_routes.sort(key=lambda x: x["price"])
