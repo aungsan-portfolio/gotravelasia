@@ -3,6 +3,14 @@
     "buildCommand": "pnpm build",
     "outputDirectory": "dist/public",
     "framework": null,
+    "functions": {
+        "api/price-alerts/subscribe.ts": {
+            "maxDuration": 10
+        },
+        "api/newsletter.ts": {
+            "maxDuration": 10
+        }
+    },
     "rewrites": [
         {
             "source": "/api/(.*)",
