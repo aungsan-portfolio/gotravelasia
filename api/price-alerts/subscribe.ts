@@ -22,22 +22,32 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-// ── MySQL connection ───────────────────────────────────────────
+// ── Parse DATABASE_URL ───────────────────────────────────────────
+function parseMySQLUrl(dbUrl: string) {
+    const url = new URL(dbUrl);
+    return {
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.slice(1),
+        ssl: { rejectUnauthorized: false },
+        connectTimeout: 10000,
+    };
+}
+
+// ── MySQL connection (single — for ensureTable) ───────────────────
 function createMySQLConnection(dbUrl: string) {
-    try {
-        const url = new URL(dbUrl);
-        return mysql.createConnection({
-            host: url.hostname,
-            port: parseInt(url.port) || 3306,
-            user: decodeURIComponent(url.username),
-            password: decodeURIComponent(url.password),
-            database: url.pathname.slice(1),
-            ssl: { rejectUnauthorized: false },
-            connectTimeout: 10000,
-        });
-    } catch (err: any) {
-        throw new Error(`Failed to parse DATABASE_URL: ${err.message}`);
-    }
+    return mysql.createConnection(parseMySQLUrl(dbUrl));
+}
+
+// ── MySQL pool (for Drizzle) ────────────────────────────────────
+function createMySQLPool(dbUrl: string) {
+    return mysql.createPool({
+        ...parseMySQLUrl(dbUrl),
+        waitForConnections: true,
+        connectionLimit: 3,
+    });
 }
 
 // ── Table auto-create ──────────────────────────────────────────
@@ -99,8 +109,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         connection = await createMySQLConnection(dbUrl);
         await ensureTable(connection);
 
-        // Use raw URL string — matches server/db.ts pattern
-        const db = drizzle(dbUrl);
+        // Use the SSL-configured connection object directly
+        const db = drizzle(connection);
 
         const body = req.body || {};
 
