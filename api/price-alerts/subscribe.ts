@@ -109,8 +109,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ALTER TABLE flightPriceAlerts ADD COLUMN routeId VARCHAR(20)
             `);
         } catch (e: any) {
-            // column ရှိပြီးသားဆိုရင် error ကို ignore လုပ်တယ်
-            if (!e.message?.includes("Duplicate column")) throw e;
+            // ER_DUP_FIELDNAME = column already exists -> ignore
+            const isDup =
+                e.code === "ER_DUP_FIELDNAME" ||
+                e.errno === 1060 ||
+                e.message?.includes("Duplicate column");
+            if (!isDup) throw e;
         }
 
         // ── 7. Duplicate check ─────────────────────────────────
@@ -140,8 +144,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, alreadyExists: false });
 
     } catch (error: any) {
-        console.error("[price-alerts] error", error?.message, error?.stack);
-        return res.status(500).json({ error: "Something went wrong. Please try again." });
+        console.error("[price-alerts] error", error?.code, error?.message, error?.stack);
+        return res.status(500).json({
+            error: "Something went wrong. Please try again.",
+            _debug: process.env.NODE_ENV !== "production" ? error?.message : undefined,
+        });
     } finally {
         if (connection) await connection.end().catch(() => { });
     }
