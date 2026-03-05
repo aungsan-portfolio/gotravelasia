@@ -4,7 +4,7 @@
  * and FlightSearchContext integration.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, type MouseEventHandler } from "react";
 import { Link } from "wouter";
 import { AIRPORTS } from "@/components/flights/flightWidget.data";
 import { useFlightSearch } from "@/contexts/FlightSearchContext";
@@ -14,7 +14,9 @@ import { AFFILIATE } from "@/lib/config";
 const POPULAR_DESTINATIONS = AIRPORTS.filter(
     (a) => (a as any).isPopular || a.country === "Myanmar"
 );
-const COUNTRIES = [...new Set(AIRPORTS.map((a) => a.country))];
+const COUNTRIES = [...new Set(AIRPORTS.map((a) => a.country))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
 
 const EXPLORE_CITIES = [
     { code: "BKK", name: "Bangkok", country: "Thailand" },
@@ -68,8 +70,7 @@ function FooterColumn({
                 </span>
             </div>
             <div
-                className="flex flex-col gap-2.5 overflow-hidden transition-all duration-300 sm:max-h-[500px]"
-                style={{ maxHeight: open ? "300px" : "0px" }}
+                className={`flex flex-col gap-2.5 overflow-hidden transition-all duration-300 sm:!max-h-[500px] ${open ? "max-h-[300px]" : "max-h-0"}`}
             >
                 {children}
             </div>
@@ -115,7 +116,7 @@ function FooterLink({
     href: string;
     children: React.ReactNode;
     external?: boolean;
-    onClick?: () => void;
+    onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
     const cls =
         "text-[13px] no-underline transition-colors hover:text-white relative group";
@@ -239,7 +240,7 @@ export default function Footer() {
                             value={nlEmail}
                             onChange={(e) => setNlEmail(e.target.value)}
                             required
-                            className="py-[11px] px-[18px] border-none outline-none text-sm text-white w-[200px] sm:w-[240px]"
+                            className="py-[11px] px-[18px] border-none outline-none text-sm text-white w-[200px] sm:w-[240px] placeholder:text-white/40"
                             style={{
                                 background: "rgba(255,255,255,0.12)",
                                 fontFamily: "'DM Sans', sans-serif",
@@ -370,10 +371,12 @@ export default function Footer() {
                     {EXPLORE_CITIES.map((city) => (
                         <FooterLink
                             key={city.code}
-                            href="/#flights"
-                            onClick={() =>
-                                prefillDest(city.code, city.name, city.country)
-                            }
+                            href={`/flights/to/${city.name.toLowerCase().replace(/\s+/g, "-")}`}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                prefillDest(city.code, city.name, city.country);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
                         >
                             Flights to {city.name}
                         </FooterLink>
@@ -386,7 +389,7 @@ export default function Footer() {
                     <FooterLink href="/faq">FAQ</FooterLink>
                     <FooterLink href="/contact">Contact Us</FooterLink>
                     <FooterLink href="/about">About Us</FooterLink>
-                    <FooterLink href={AFFILIATE.AIRALO_URL} external>
+                    <FooterLink href={AFFILIATE?.AIRALO_URL ?? "https://airalo.com"} external>
                         Travel eSIM — Airalo
                     </FooterLink>
                 </FooterColumn>
@@ -408,7 +411,7 @@ export default function Footer() {
                                 (country) => (
                                     <Link
                                         key={country}
-                                        href="/#flights"
+                                        href={`/flights/to/${country.toLowerCase().replace(/\s+/g, "-")}`}
                                         className="text-[13px] font-medium no-underline transition-colors hover:text-[#FFD700] truncate"
                                         style={{ color: "#7b5baa" }}
                                     >
@@ -428,23 +431,28 @@ export default function Footer() {
                             Popular cities
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-1.5">
-                            {POPULAR_DESTINATIONS.map((airport) => (
-                                <Link
-                                    key={airport.code}
-                                    href="/#flights"
-                                    className="text-[13px] font-medium no-underline transition-colors hover:text-[#FFD700] truncate"
-                                    style={{ color: "#7b5baa" }}
-                                    onClick={() =>
-                                        prefillDest(
-                                            airport.code,
-                                            airport.name,
-                                            airport.country
-                                        )
-                                    }
-                                >
-                                    Flights to {airport.name.replace(/\s*\(.*?\)\s*/g, "")}
-                                </Link>
-                            ))}
+                            {POPULAR_DESTINATIONS.map((airport) => {
+                                const cityName = airport.name.replace(/\s*\(.*?\)\s*/g, "");
+                                return (
+                                    <Link
+                                        key={airport.code}
+                                        href={`/flights/to/${cityName.toLowerCase().replace(/\s+/g, "-")}`}
+                                        className="text-[13px] font-medium no-underline transition-colors hover:text-[#FFD700] truncate"
+                                        style={{ color: "#7b5baa" }}
+                                        onClick={(e: React.MouseEvent) => {
+                                            e.preventDefault();
+                                            prefillDest(
+                                                airport.code,
+                                                airport.name,
+                                                airport.country
+                                            );
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                        }}
+                                    >
+                                        Flights to {cityName}
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -460,25 +468,28 @@ export default function Footer() {
                         Trusted partners
                     </span>
                     <div className="flex items-center gap-4 flex-wrap">
-                        {[
-                            "Aviasales",
-                            "Agoda",
-                            "Trip.com",
-                            "12Go Asia",
-                            "Klook",
-                            "Airalo",
-                            "Travelpayouts",
-                        ].map((name) => (
-                            <span
+                        {([
+                            ["Aviasales", "https://aviasales.com"],
+                            ["Agoda", "https://agoda.com"],
+                            ["Trip.com", "https://trip.com"],
+                            ["12Go Asia", "https://12go.asia"],
+                            ["Klook", "https://klook.com"],
+                            ["Airalo", "https://airalo.com"],
+                            ["Travelpayouts", "https://travelpayouts.com"],
+                        ] as const).map(([name, url]) => (
+                            <a
                                 key={name}
-                                className="text-xs font-bold rounded-md px-3 py-1.5 cursor-default"
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer sponsored"
+                                className="text-xs font-bold rounded-md px-3 py-1.5 no-underline transition-all hover:border-[rgba(245,197,24,0.4)] hover:text-white/50"
                                 style={{
                                     color: "rgba(255,255,255,0.35)",
                                     border: "1px solid rgba(255,255,255,0.1)",
                                 }}
                             >
                                 {name}
-                            </span>
+                            </a>
                         ))}
                     </div>
                 </div>
