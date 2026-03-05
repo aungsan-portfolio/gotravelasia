@@ -25,8 +25,13 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
 // ── MySQL connection ───────────────────────────────────────────
 function createMySQLConnection(dbUrl: string) {
     try {
+        const url = new URL(dbUrl);
         return mysql.createConnection({
-            uri: dbUrl,
+            host: url.hostname,
+            port: parseInt(url.port) || 3306,
+            user: decodeURIComponent(url.username),
+            password: decodeURIComponent(url.password),
+            database: url.pathname.slice(1),
             ssl: { rejectUnauthorized: false },
             connectTimeout: 10000,
         });
@@ -90,9 +95,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "Service temporarily unavailable" });
         }
 
+        // Raw connection for ensureTable (CREATE TABLE IF NOT EXISTS)
         connection = await createMySQLConnection(dbUrl);
         await ensureTable(connection);
-        const db = drizzle(connection);
+
+        // Use raw URL string — matches server/db.ts pattern
+        const db = drizzle(dbUrl);
 
         const body = req.body || {};
 
