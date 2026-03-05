@@ -20,7 +20,6 @@ import {
     useRef,
     type MouseEventHandler,
 } from "react";
-import { useLocation } from "wouter";
 import { AIRPORTS } from "@/components/flights/flightWidget.data";
 import { useFlightSearch } from "@/contexts/FlightSearchContext";
 import { AFFILIATE } from "@/lib/config";
@@ -269,30 +268,26 @@ function FooterLink({
 
 export default function Footer() {
     const { setDestination, setCabinClass } = useFlightSearch();
-    const [, navigate] = useLocation();
     const [nlStatus, setNlStatus] = useState<NlStatus>("idle");
     const [nlEmail, setNlEmail] = useState("");
     const resetTimer = useRef<ReturnType<typeof setTimeout>>();
 
     // ── Navigate to home page flights tab ─────────────────────
     const goToFlights = useCallback(() => {
-        navigate("/");
-        setTimeout(() => {
-            if (typeof window !== "undefined") {
-                // Use replaceState to avoid polluting browser history
-                history.replaceState(null, "", "/#flights");
-                window.dispatchEvent(new HashChangeEvent("hashchange"));
-            }
-        }, 100);
-    }, [navigate]);
+        if (typeof window !== "undefined") {
+            window.location.href = "/#flights";
+        }
+    }, []);
 
     // ── Pre-fill destination + navigate to flights ────────────
     const prefillDest = useCallback(
         (code: string, name: string, country: string) => {
             setDestination({ code, name, country });
-            goToFlights();
+            if (typeof window !== "undefined") {
+                window.location.href = "/#flights";
+            }
         },
-        [setDestination, goToFlights]
+        [setDestination]
     );
 
     // ── Newsletter submit [Fix 3 + Fix 4] ────────────────────
