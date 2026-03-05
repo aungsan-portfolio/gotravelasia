@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import OptimizedImage from "@/seo/OptimizedImage";
 // Badge import removed — using native spans for mobile compatibility
 // Radix Tabs removed — causes touch/scroll freeze on mobile browsers
 import {
@@ -167,12 +168,12 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                     {/* ── Image Showcase ── */}
                     <div className="lg:col-span-2 relative bg-slate-100 overflow-hidden aspect-[16/10] lg:aspect-auto lg:h-full">
                         {/* Image — state-driven, no Radix portals */}
-                        <img
+                        <OptimizedImage
                             src={activeTab === "exterior" ? exteriorImg : activeTab === "1st-class" ? firstImg : secondImg}
                             alt={activeTab === "exterior" ? "CNR Special Express Train" : activeTab === "1st-class" ? "CNR 1st Class Private Cabin" : "CNR 2nd Class AC Sleeper"}
-                            className="w-full h-full object-cover absolute inset-0"
-                            loading="lazy"
-                            decoding="async"
+                            width={600}
+                            height={375}
+                            priority={true}
                         />
 
                         {/* Label */}

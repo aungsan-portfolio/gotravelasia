@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, Suspense } from "react";
 import Layout from "@/components/Layout";
-import { usePageMeta } from "@/hooks/usePageMeta";
+import SEO from "@/seo/SEO";
 import HeroSection from "@/components/HeroSection";
 import FlightWidget from "@/components/flights/FlightWidget";
 import CheapDealsCards from "@/components/CheapDealsCards";
@@ -32,13 +32,6 @@ function TabSkeleton() {
 
 
 export default function Home() {
-  usePageMeta({
-    title: "Compare Cheap Flights, Hotels & Transport in Southeast Asia",
-    description: "Compare cheap flights, buses, trains and hotels across Southeast Asia. Book from anywhere with instant price comparison on GoTravel Asia.",
-    path: "/",
-    keywords: "travel asia, southeast asia travel, cheap flights asia, bangkok flights, singapore hotels, bali deals, asia transport, asia travel comparison",
-  });
-
   const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
 
   // Read URL hash to switch tabs (connected to nav links)
@@ -56,6 +49,7 @@ export default function Home() {
   }, []);
   return (
     <Layout>
+      <SEO path="/" />
       <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
         {activeTab === "flights" && <FlightWidget />}
 

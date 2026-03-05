@@ -1,17 +1,11 @@
 import { Link } from "wouter";
 import Layout from "@/components/Layout";
-import { usePageMeta } from "@/hooks/usePageMeta";
+import SEO from "@/seo/SEO";
 
 export default function CookieSettings() {
-    usePageMeta({
-        title: "Cookie Settings - GoTravel Asia",
-        description:
-            "Manage your cookie preferences on GoTravel Asia. Learn about the cookies we use and control your privacy settings.",
-        path: "/cookies",
-    });
-
     return (
         <Layout>
+            <SEO path="/cookies" />
             <section className="py-24 bg-background">
                 <div className="container max-w-4xl">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-8">

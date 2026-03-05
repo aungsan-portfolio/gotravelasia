@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { USD_TO_THB_RATE } from "@/const";
+import OptimizedImage from "@/seo/OptimizedImage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CheapDealsCards — Live pricing from flight_data.json bot
@@ -317,22 +318,12 @@ export default memo(function CheapDealsCards() {
                     >
                         {/* Image */}
                         <div className="w-full h-[180px] lg:h-[168px] overflow-hidden rounded-t-[10px] shrink-0">
-                            <img
+                            <OptimizedImage
                                 src={deal.image}
                                 alt={`Flights to ${deal.destination}`}
-                                loading="lazy"
-                                className="w-full h-full object-cover object-center block transition-transform duration-[400ms] ease-out group-hover:scale-[1.04]"
-                                onError={(e) => {
-                                    // Auto-fallback to local image if external breaks
-                                    const img = e.currentTarget;
-                                    if (!img.src.includes('/images/')) {
-                                        const slug = deal.destination.toLowerCase().replace(/ \([^)]*\)/g, '').replace(/\s+/g, '-');
-                                        img.src = `/images/destinations/${slug}.webp`;
-                                    } else {
-                                        // Ultimate fallback if local webp also missing
-                                        img.src = "/images/og-default.webp";
-                                    }
-                                }}
+                                width={400}
+                                height={180}
+                                imgClassName="object-center transition-transform duration-[400ms] ease-out group-hover:scale-[1.04]"
                             />
                         </div>
 

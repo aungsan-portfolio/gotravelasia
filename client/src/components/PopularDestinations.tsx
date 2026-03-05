@@ -1,4 +1,5 @@
 import { useState, memo } from "react";
+import OptimizedImage from "@/seo/OptimizedImage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PopularDestinations — SEO destination cards with real flight search links
@@ -157,8 +158,8 @@ export default memo(function PopularDestinations() {
                             key={f.id}
                             onClick={() => setActiveFilter(f.id)}
                             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${activeFilter === f.id
-                                    ? "text-white shadow-lg"
-                                    : "text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200"
+                                ? "text-white shadow-lg"
+                                : "text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200"
                                 }`}
                             style={activeFilter === f.id
                                 ? { background: B.purple }
@@ -181,11 +182,12 @@ export default memo(function PopularDestinations() {
                     >
                         {/* Image */}
                         <div className="relative h-44 overflow-hidden">
-                            <img
+                            <OptimizedImage
                                 src={dest.image}
                                 alt={`Flights to ${dest.city}`}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                loading="lazy"
+                                width={400}
+                                height={176}
+                                imgClassName="transition-transform duration-500 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

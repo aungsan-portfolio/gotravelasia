@@ -9,6 +9,10 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./i18n"; // Initialize i18next
 import "./index.css";
+import { HelmetProvider } from "react-helmet-async";
+import { trackWebVitals } from "@/seo/performance";
+
+trackWebVitals();
 
 const queryClient = new QueryClient();
 
@@ -58,7 +62,9 @@ createRoot(document.getElementById("root")!).render(
   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
       </QueryClientProvider>
     </trpc.Provider>
   </Suspense>

@@ -1,17 +1,11 @@
 import { Link } from "wouter";
 import Layout from "@/components/Layout";
-import { usePageMeta } from "@/hooks/usePageMeta";
+import SEO from "@/seo/SEO";
 
 export default function About() {
-    usePageMeta({
-        title: "About Us - GoTravel Asia",
-        description:
-            "Learn about GoTravel Asia — your trusted travel companion for discovering cheap flights, hotels, and transport across Southeast Asia.",
-        path: "/about",
-    });
-
     return (
         <Layout>
+            <SEO path="/about" />
             <section className="py-24 bg-background">
                 <div className="container max-w-4xl">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-8">

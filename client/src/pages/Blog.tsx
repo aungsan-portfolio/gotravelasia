@@ -1,15 +1,9 @@
 import Layout from "@/components/Layout";
 import { Link } from "wouter";
-import { usePageMeta } from "@/hooks/usePageMeta";
+import SEO from "@/seo/SEO";
+import OptimizedImage from "@/seo/OptimizedImage";
 
 export default function Blog() {
-  usePageMeta({
-    title: "Southeast Asia Travel Blog - Guides, Tips & Deals",
-    description: "Expert travel guides for Southeast Asia. Tips on cheap flights to Thailand, hotel reviews, transport hacks, and insider advice for traveling Asia on a budget.",
-    path: "/blog",
-    keywords: "travel asia blog, southeast asia travel tips, thailand travel guide, cheap flights asia, bangkok travel advice, asia budget travel",
-  });
-
   const posts = [
     {
       title: "10 Best Things to Do in Bangkok (2026 Guide)",
@@ -50,6 +44,7 @@ export default function Blog() {
 
   return (
     <Layout>
+      <SEO path="/blog" />
       <section className="py-24 bg-background">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center mb-16">
@@ -62,27 +57,29 @@ export default function Blog() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post, index) => (
               <Link key={index} href={post.link} className="group block border border-border bg-card hover:border-primary transition-colors h-full flex flex-col">
-                  <div className="aspect-video overflow-hidden bg-muted relative">
-                    <img 
-                      src={post.image} 
-                      alt={post.title} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute top-4 left-4 bg-primary text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
-                      {post.category}
-                    </div>
+                <div className="aspect-video overflow-hidden bg-muted relative">
+                  <OptimizedImage
+                    src={post.image}
+                    alt={post.title}
+                    width={400}
+                    height={225}
+                    imgClassName="transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4 bg-primary text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                    {post.category}
                   </div>
-                  <div className="p-6 flex-1 flex flex-col">
-                    <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors leading-tight">
-                      {post.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-4 flex-1">
-                      {post.excerpt}
-                    </p>
-                    <div className="text-primary text-sm font-bold uppercase tracking-wider flex items-center gap-2 mt-auto">
-                      Read Article <span className="text-lg">→</span>
-                    </div>
+                </div>
+                <div className="p-6 flex-1 flex flex-col">
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors leading-tight">
+                    {post.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4 flex-1">
+                    {post.excerpt}
+                  </p>
+                  <div className="text-primary text-sm font-bold uppercase tracking-wider flex items-center gap-2 mt-auto">
+                    Read Article <span className="text-lg">→</span>
                   </div>
+                </div>
               </Link>
             ))}
           </div>
