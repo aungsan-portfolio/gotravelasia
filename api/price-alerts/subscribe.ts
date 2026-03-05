@@ -25,13 +25,8 @@ const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
 // ── MySQL connection ───────────────────────────────────────────
 function createMySQLConnection(dbUrl: string) {
     try {
-        const url = new URL(dbUrl);
         return mysql.createConnection({
-            host: url.hostname,
-            port: parseInt(url.port) || 3306,
-            user: decodeURIComponent(url.username),
-            password: decodeURIComponent(url.password),
-            database: url.pathname.slice(1),
+            uri: dbUrl,
             ssl: { rejectUnauthorized: false },
             connectTimeout: 10000,
         });
