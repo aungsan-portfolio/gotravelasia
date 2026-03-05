@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-const features = [
+interface Feature {
+    icon: string;
+    title: string;
+    desc: string;
+}
+
+const features: Feature[] = [
     {
         icon: "⚡",
         title: "Real-time prices",
@@ -33,7 +39,12 @@ const features = [
     },
 ];
 
-const faqs = [
+interface Faq {
+    q: string;
+    a: string;
+}
+
+const faqs: Faq[] = [
     {
         q: "Is GoTravel Asia free to use?",
         a: "100% free. We earn from partners, never from you.",
@@ -106,7 +117,11 @@ export default function AboutSection() {
                         </div>
                     </div>
                     <button
-                        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                        onClick={() => {
+                            if (typeof window !== "undefined") {
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                        }}
                         className="bg-[#FFD700] text-[#2a0050] font-bold text-[14px] py-3 px-7 rounded-xl no-underline whitespace-nowrap shadow-[0_4px_16px_rgba(255,215,0,0.35)] transition-transform duration-200 hover:scale-105 active:scale-95"
                     >
                         Search flights →
