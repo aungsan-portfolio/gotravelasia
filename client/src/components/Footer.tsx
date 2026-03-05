@@ -20,7 +20,7 @@ import {
     useRef,
     type MouseEventHandler,
 } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { AIRPORTS } from "@/components/flights/flightWidget.data";
 import { useFlightSearch } from "@/contexts/FlightSearchContext";
 import { AFFILIATE } from "@/lib/config";
@@ -257,9 +257,9 @@ function FooterLink({
     }
 
     return (
-        <Link href={href} className={cls} style={style} onClick={onClick}>
+        <a href={href} className={cls} style={style} onClick={onClick}>
             {children}
-        </Link>
+        </a>
     );
 }
 
@@ -417,7 +417,7 @@ export default function Footer() {
 
                 {/* Brand */}
                 <div>
-                    <Link href="/" className="flex items-center gap-2.5 mb-4 no-underline">
+                    <a href="/" className="flex items-center gap-2.5 mb-4 no-underline">
                         <div
                             className="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0"
                             style={{ background: "#F5C518" }}
@@ -427,7 +427,7 @@ export default function Footer() {
                         <span className="text-[17px] font-extrabold text-white tracking-tight">
                             Go<span style={{ color: "#F5C518" }}>Travel</span> Asia
                         </span>
-                    </Link>
+                    </a>
                     <p
                         className="text-[13px] leading-relaxed mb-5 max-w-[220px]"
                         style={{ color: "rgba(255,255,255,0.5)" }}
@@ -551,7 +551,7 @@ export default function Footer() {
                                     ? (AIRPORTS as Airport[]).find(a => a.code === primaryCode)
                                     : (AIRPORTS as Airport[]).find(a => a.country === country);
                                 return (
-                                    <Link
+                                    <a
                                         key={country}
                                         href="/#flights"
                                         className="text-[13px] font-medium no-underline
@@ -567,7 +567,7 @@ export default function Footer() {
                                         }}
                                     >
                                         Flights to {country}
-                                    </Link>
+                                    </a>
                                 );
                             })}
                         </div>
@@ -591,7 +591,7 @@ export default function Footer() {
                                 {POPULAR_DESTINATIONS.map((airport) => {
                                     const cityName = airport.name.replace(/\s*\(.*?\)\s*/g, "");
                                     return (
-                                        <Link
+                                        <a
                                             key={airport.code}
                                             href="/#flights"
                                             className="text-[13px] font-medium no-underline
@@ -607,7 +607,7 @@ export default function Footer() {
                                             }}
                                         >
                                             Flights to {cityName}
-                                        </Link>
+                                        </a>
                                     );
                                 })}
                             </div>
@@ -654,24 +654,28 @@ export default function Footer() {
                 <div className="container max-w-[1100px] mx-auto py-5 px-6 sm:px-12
                                 flex flex-col sm:flex-row items-start sm:items-center
                                 justify-between gap-3">
-                    <div className="flex items-center flex-wrap">
+                    <div className="flex items-center flex-wrap" style={{ gap: 0 }}>
                         {LEGAL_LINKS.map((link, i, arr) => (
-                            <Link
+                            <a
                                 key={link.label}
                                 href={link.href}
-                                className="text-xs no-underline px-3 transition-colors
+                                className="text-xs no-underline transition-colors
                                            hover:text-white/70"
                                 style={{
                                     color: "rgba(255,255,255,0.4)",
-                                    paddingLeft: i === 0 ? 0 : undefined,
+                                    padding: "0 12px",
+                                    paddingLeft: i === 0 ? 0 : 12,
                                     borderRight:
                                         i < arr.length - 1
                                             ? "1px solid rgba(255,255,255,0.15)"
                                             : "none",
+                                    textDecoration: "none",
+                                    fontSize: 12,
+                                    lineHeight: 1,
                                 }}
                             >
                                 {link.label}
-                            </Link>
+                            </a>
                         ))}
                     </div>
                     <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
