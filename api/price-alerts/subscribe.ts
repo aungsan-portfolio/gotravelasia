@@ -34,13 +34,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "Service temporarily unavailable" });
         }
 
-        // ── 2. Parse body safely ───────────────────────────────
+        // -- 2. Parse body safely (Vercel framework:null needs manual body parse) --
         let body: any = {};
         try {
-            if (typeof req.body === "string") {
+            if (typeof req.body === "string" && req.body) {
                 body = JSON.parse(req.body);
             } else if (req.body && typeof req.body === "object") {
                 body = req.body;
+            } else {
+                // fallback: read raw stream (Vercel framework:null)
+                const rawBody = await new Promise<string>((resolve, reject) => {
+                    let data = "";
+                    req.on("data", (chunk: Buffer) => { data += chunk.toString(); });
+                    req.on("end", () => resolve(data));
+                    req.on("error", reject);
+                });
+                if (rawBody) body = JSON.parse(rawBody);
             }
         } catch {
             return res.status(400).json({ error: "Invalid JSON body" });
