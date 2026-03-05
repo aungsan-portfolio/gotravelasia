@@ -36,22 +36,24 @@ function parseMySQLUrl(dbUrl: string) {
     };
 }
 
-// ── MySQL connection (single — for ensureTable) ───────────────────
-function createMySQLConnection(dbUrl: string) {
-    return mysql.createConnection(parseMySQLUrl(dbUrl));
-}
-
-// ── MySQL pool (for Drizzle) ────────────────────────────────────
+// ── MySQL pool (for both ensureTable + Drizzle) ───────────────────
 function createMySQLPool(dbUrl: string) {
+    const url = new URL(dbUrl);
     return mysql.createPool({
-        ...parseMySQLUrl(dbUrl),
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.slice(1),
+        ssl: { rejectUnauthorized: false },
+        connectTimeout: 10000,
+        connectionLimit: 1,
         waitForConnections: true,
-        connectionLimit: 3,
     });
 }
 
 // ── Table auto-create ──────────────────────────────────────────
-async function ensureTable(connection: mysql.Connection) {
+async function ensureTable(connection: mysql.PoolConnection) {
     await connection.execute(`
         CREATE TABLE IF NOT EXISTS flightPriceAlerts (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    let connection: mysql.Connection | null = null;
+    let pool: mysql.Pool | null = null;
 
     try {
         const dbUrl = process.env.DATABASE_URL;
@@ -105,19 +107,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "Service temporarily unavailable" });
         }
 
-        console.log("[price-alerts] step1: parsing URL...");
-        const config = parseMySQLUrl(dbUrl);
-        console.log("[price-alerts] step2: URL parsed, connecting... host:", config.host);
+        // ✅ Pool ဆေါက်ပၲး ensureTable အတြက် connection ယူပီ
+        pool = createMySQLPool(dbUrl);
+        const conn = await pool.getConnection();
+        await ensureTable(conn);
+        conn.release();
 
-        // Raw connection for ensureTable (CREATE TABLE IF NOT EXISTS)
-        connection = await createMySQLConnection(dbUrl);
-        console.log("[price-alerts] step3: connected, running ensureTable...");
-        await ensureTable(connection);
-        console.log("[price-alerts] step4: table ensured, creating drizzle...");
-
-        // Use the SSL-configured connection object directly
-        const db = drizzle(connection);
-        console.log("[price-alerts] step5: drizzle ready");
+        // ✅ Pool ကိုပဲ drizzle ထဲထည့်ပီ
+        const db = drizzle(pool);
 
         const body = req.body || {};
 
@@ -217,6 +214,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error("[price-alerts] error", error?.message, error?.stack);
         return res.status(500).json({ error: "Something went wrong. Please try again." });
     } finally {
-        if (connection) await connection.end().catch(() => { });
+        if (pool) await pool.end().catch(() => { });
     }
 }
