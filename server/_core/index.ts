@@ -94,42 +94,6 @@ async function startServer() {
     res.type("application/xml").send(buildSitemapXml());
   });
 
-  // ── Newsletter Subscribe ──
-  app.post("/api/newsletter", async (req, res) => {
-    try {
-      const { email } = req.body;
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({ error: "Invalid email" });
-      }
-
-      // Log the subscription
-      console.log(`[Newsletter] New subscriber: ${email}`);
-
-      // Send welcome email via Resend (if configured)
-      const resendKey = process.env.RESEND_API_KEY;
-      if (resendKey) {
-        try {
-          const resend = new Resend(resendKey);
-          await resend.emails.send({
-            from: "GoTravel Asia <onboarding@resend.dev>",
-            to: email,
-            subject: "Welcome to GoTravel Asia! ✈️",
-            html: `<h2>Welcome aboard! 🎉</h2>
-              <p>Thanks for subscribing to GoTravel Asia flight deals.</p>
-              <p>We'll send you the best flight deals across Southeast Asia — no spam, just savings.</p>
-              <p>— The GoTravel Team</p>`,
-          });
-        } catch (emailErr) {
-          console.error("[Newsletter] Email send failed:", emailErr);
-        }
-      }
-
-      res.json({ ok: true });
-    } catch (err) {
-      console.error("[Newsletter] Error:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
 
   // Gemini Chat Proxy (rate limited: 10 req/hr per IP)
   app.post("/api/chat", rateLimit(chatRateLimits, 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."), async (req, res) => {
