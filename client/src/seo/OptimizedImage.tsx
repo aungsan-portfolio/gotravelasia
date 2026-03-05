@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -13,21 +13,16 @@ interface OptimizedImageProps {
     /** Tailwind classes to apply directly to the inner <img> (e.g., hover effects) */
     imgClassName?: string;
     style?: React.CSSProperties;
-    /** true = load immediately (above-fold hero images) */
+    /** true = load immediately, fetchpriority=high (hero/LCP images only) */
     priority?: boolean;
-    /** Object-fit style */
+    /** CSS object-fit */
     fit?: "cover" | "contain" | "fill";
-    /** Called when image loads successfully */
     onLoad?: () => void;
 }
 
-// ─────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────
-
-/** Tiny 4×3 gray LQIP placeholder (base64) */
-const PLACEHOLDER_BLUR =
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAADAAQDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAABgUEB//EABsQAAMBAQEBAAAAAAAAAAAAAAABAgMEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCw4Fxt3lgbNZFhsRCBgKoBtqCgAAP/2Q==";
+// Tiny gray LQIP placeholder shown while real image loads
+const LQIP =
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARCAADAAQDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAABgUEB//EABsQAAMBAQEBAAAAAAAAAAAAAAABAgMEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCw4Fxt3lgbNZFhsRCBgKoBtqCgAAP/2Q==";
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT
@@ -47,96 +42,71 @@ export default function OptimizedImage({
 }: OptimizedImageProps) {
     const [loaded, setLoaded] = useState(false);
     const [errored, setErrored] = useState(false);
-    const [visible, setVisible] = useState(priority); // priority = load immediately
-    const imgRef = useRef<HTMLImageElement>(null);
 
-    // IntersectionObserver — start loading when near viewport
-    useEffect(() => {
-        if (priority || visible) return;
-        const el = imgRef.current;
-        if (!el) return;
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setVisible(true);
-                    observer.disconnect();
-                }
-            },
-            { rootMargin: "200px" } // start loading 200px before entering viewport
+    if (errored) {
+        return (
+            <div
+                className={className}
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#e8e0f0",
+                    color: "#9d80c0",
+                    fontSize: 32,
+                    ...style,
+                }}
+            >
+                ✈
+            </div>
         );
-
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [priority, visible]);
-
-    const wrapStyle: React.CSSProperties = {
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        background: "#e8e0f0",
-        ...style,
-    };
+    }
 
     return (
-        <div style={wrapStyle} className={className}>
-            {/* Blur placeholder — shown until real image loads */}
-            {!loaded && !errored && (
+        <div
+            className={className}
+            style={{ position: "relative", overflow: "hidden", ...style }}
+        >
+            {/* LQIP blur — shown until real image fades in */}
+            {!loaded && (
                 <img
-                    src={PLACEHOLDER_BLUR}
+                    src={LQIP}
                     alt=""
                     aria-hidden="true"
                     style={{
-                        position: "absolute", inset: 0,
-                        width: "100%", height: "100%",
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
                         objectFit: fit,
-                        filter: "blur(8px)",
-                        transform: "scale(1.05)",
-                        transition: "opacity 0.3s",
+                        filter: "blur(12px)",
+                        transform: "scale(1.08)",
                     }}
                 />
             )}
 
-            {/* Real image */}
-            {visible && !errored && (
-                <img
-                    ref={imgRef}
-                    src={src}
-                    alt={alt}
-                    width={width}
-                    height={height}
-                    loading={priority ? "eager" : "lazy"}
-                    decoding={priority ? "sync" : "async"}
-                    fetchPriority={priority ? "high" : "low"}
-                    className={imgClassName}
-                    style={{
-                        position: "absolute", inset: 0,
-                        width: "100%", height: "100%",
-                        objectFit: fit,
-                        opacity: loaded ? 1 : 0,
-                        transition: "opacity 0.4s ease",
-                    }}
-                    onLoad={() => { setLoaded(true); onLoad?.(); }}
-                    onError={() => setErrored(true)}
-                />
-            )}
-
-            {/* Error fallback */}
-            {errored && (
-                <div style={{
-                    position: "absolute", inset: 0,
-                    display: "flex", alignItems: "center",
-                    justifyContent: "center",
-                    background: "#e8e0f0", color: "#9d80c0",
-                    fontSize: 28,
-                }}>
-                    ✈
-                </div>
-            )}
-
-            {/* CLS prevention — invisible spacer maintains aspect ratio */}
-            <div style={{ paddingBottom: `${(height / width) * 100}%` }} />
+            {/* Real image — native lazy loading, no IO race condition */}
+            <img
+                src={src}
+                alt={alt}
+                width={width}
+                height={height}
+                loading={priority ? "eager" : "lazy"}
+                decoding={priority ? "sync" : "async"}
+                // @ts-expect-error — fetchpriority not yet in all TS DOM types
+                fetchpriority={priority ? "high" : "auto"}
+                className={imgClassName}
+                style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    objectFit: fit,
+                    opacity: loaded ? 1 : 0,
+                    transition: "opacity 0.35s ease",
+                }}
+                onLoad={() => { setLoaded(true); onLoad?.(); }}
+                onError={() => setErrored(true)}
+            />
         </div>
     );
 }
@@ -163,3 +133,4 @@ export function preloadImage(src: string) {
     link.setAttribute("fetchpriority", "high");
     document.head.appendChild(link);
 }
+

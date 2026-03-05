@@ -93,9 +93,10 @@ export default function SEO({
     const finalTitle = title ?? pageMeta.title ?? SITE.name;
     const finalDesc = description ?? pageMeta.description ?? SITE.defaultDesc;
     const canonical = `${SITE.url}${path}`;
-    const ogImage = (image ?? SITE.defaultImage).startsWith("http")
-        ? (image ?? SITE.defaultImage)
-        : `${SITE.url}${image ?? SITE.defaultImage}`;
+    const resolvedImage = image ?? SITE.defaultImage;
+    const ogImage = resolvedImage.startsWith("http")
+        ? resolvedImage
+        : `${SITE.url}${resolvedImage}`;
 
     // Note: Org & Website schemas are already handled globally in App.tsx -> <WebsiteJsonLd />
     // [Fix 2] Only push page-specific schemas here to avoid duplication
@@ -120,6 +121,7 @@ export default function SEO({
             <meta property="og:description" content={finalDesc} />
             <meta property="og:url" content={canonical} />
             <meta property="og:image" content={ogImage} />
+            <meta property="og:image:alt" content={finalTitle} />
             <meta property="og:image:width" content="1200" />
             <meta property="og:image:height" content="630" />
             <meta property="og:locale" content="en_US" />
@@ -136,7 +138,7 @@ export default function SEO({
                 <script
                     key={i}
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(s) }}
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(s).replace(/</g, "\\u003c") }}
                 />
             ))}
         </Helmet>
