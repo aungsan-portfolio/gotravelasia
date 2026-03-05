@@ -72,7 +72,7 @@ const PARTNER_LINKS = [
 const LEGAL_LINKS = [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Use", href: "/terms" },
-    { label: "Cookie Settings", href: "/privacy" },
+    { label: "Cookie Settings", href: "/cookies" },
     { label: "Sitemap", href: "/sitemap.xml" },
 ] as const;
 
@@ -80,12 +80,27 @@ const LEGAL_LINKS = [
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
-/** SSR-safe scroll to top [Fix 8] */
-function safeScrollTop() {
-    if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-}
+/** Country → primary airport code map for reliable destination lookup */
+const COUNTRY_PRIMARY_AIRPORT: Record<string, string> = {
+    Thailand: "BKK",
+    Japan: "TYO",
+    Singapore: "SIN",
+    Indonesia: "DPS",
+    Malaysia: "KUL",
+    Vietnam: "SGN",
+    Cambodia: "PNH",
+    Philippines: "MNL",
+    Myanmar: "RGN",
+    "South Korea": "ICN",
+    India: "DEL",
+    "Sri Lanka": "CMB",
+    Laos: "VTE",
+    China: "PEK",
+    "Hong Kong": "HKG",
+    Taiwan: "TPE",
+    Maldives: "MLE",
+    Nepal: "KTM",
+};
 
 /** "Chiang Mai" → "chiang-mai" */
 function toSlug(str: string) {
@@ -262,10 +277,11 @@ export default function Footer() {
     // ── Navigate to home page flights tab ─────────────────────
     const goToFlights = useCallback(() => {
         navigate("/");
-        // Trigger hash change after route renders (Home.tsx listens for #flights)
         setTimeout(() => {
             if (typeof window !== "undefined") {
-                window.location.hash = "flights";
+                // Use replaceState to avoid polluting browser history
+                history.replaceState(null, "", "/#flights");
+                window.dispatchEvent(new HashChangeEvent("hashchange"));
             }
         }, 100);
     }, [navigate]);
@@ -458,7 +474,7 @@ export default function Footer() {
                     </FooterLink>
                     <FooterLink
                         href="/#flights"
-                        onClick={(e) => { e.preventDefault(); setCabinClass("C"); goToFlights(); }}
+                        onClick={(e) => { e.preventDefault(); setCabinClass?.("C"); goToFlights(); }}
                     >
                         Business class
                     </FooterLink>
@@ -507,6 +523,7 @@ export default function Footer() {
                     <FooterLink href="/blog">Travel Blog</FooterLink>
                     <FooterLink href="/faq">FAQ</FooterLink>
                     <FooterLink href="/contact">Contact Us</FooterLink>
+                    <FooterLink href="/about">About Us</FooterLink>
                     <FooterLink
                         href={AFFILIATE?.AIRALO_URL ?? "https://airalo.com"}
                         external
@@ -528,8 +545,11 @@ export default function Footer() {
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-1.5">
                             {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => {
-                                // Find the first airport in this country to use as destination
-                                const airport = (AIRPORTS as Airport[]).find(a => a.country === country);
+                                // Use primary airport map for reliable lookup
+                                const primaryCode = COUNTRY_PRIMARY_AIRPORT[country];
+                                const airport = primaryCode
+                                    ? (AIRPORTS as Airport[]).find(a => a.code === primaryCode)
+                                    : (AIRPORTS as Airport[]).find(a => a.country === country);
                                 return (
                                     <Link
                                         key={country}
