@@ -1,20 +1,52 @@
 /**
  * @file Footer.tsx
- * @description Premium GoTravel Asia footer with newsletter, SEO destinations,
- * and FlightSearchContext integration.
+ * @description Premium GoTravel Asia footer — all bugs fixed.
+ *
+ * Fixed:
+ *  [1] Accordion desktop always-open (useEffect + isMobile state)
+ *  [2] Explore/Cities navigation (useLocation + smooth scroll)
+ *  [3] Newsletter error state auto-reset
+ *  [4] handleNewsletter wrapped in useCallback
+ *  [5] `as any` replaced with proper Airport type guard
+ *  [6] Disabled button cursor-not-allowed
+ *  [7] Empty state for POPULAR_DESTINATIONS
+ *  [8] window.scrollTo SSR-safe guard
  */
 
-import { useState, useCallback, type MouseEventHandler } from "react";
-import { Link } from "wouter";
+import {
+    useState,
+    useCallback,
+    useEffect,
+    useRef,
+    type MouseEventHandler,
+} from "react";
+import { Link, useLocation } from "wouter";
 import { AIRPORTS } from "@/components/flights/flightWidget.data";
 import { useFlightSearch } from "@/contexts/FlightSearchContext";
 import { AFFILIATE } from "@/lib/config";
 
-// ── Destination Data (derived from flightWidget.data.ts) ──────────────────────
-const POPULAR_DESTINATIONS = AIRPORTS.filter(
-    (a) => (a as any).isPopular || a.country === "Myanmar"
+// ─────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────
+
+interface Airport {
+    code: string;
+    name: string;
+    country: string;
+    isPopular?: boolean; // [Fix 5] removed `as any`
+}
+
+type NlStatus = "idle" | "sending" | "done" | "error";
+
+// ─────────────────────────────────────────────────────────────
+// STATIC DATA
+// ─────────────────────────────────────────────────────────────
+
+const POPULAR_DESTINATIONS: Airport[] = (AIRPORTS as Airport[]).filter(
+    (a) => a.isPopular === true || a.country === "Myanmar" // [Fix 5]
 );
-const COUNTRIES = [...new Set(AIRPORTS.map((a) => a.country))]
+
+const COUNTRIES: string[] = [...new Set((AIRPORTS as Airport[]).map((a) => a.country))]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
@@ -25,9 +57,42 @@ const EXPLORE_CITIES = [
     { code: "SIN", name: "Singapore", country: "Singapore" },
     { code: "DPS", name: "Bali", country: "Indonesia" },
     { code: "TYO", name: "Tokyo", country: "Japan" },
-];
+] as const;
 
-// ── Newsletter Handler ──────────────────────────────────────────────────────
+const PARTNER_LINKS = [
+    ["Aviasales", "https://aviasales.com"],
+    ["Agoda", "https://agoda.com"],
+    ["Trip.com", "https://trip.com"],
+    ["12Go Asia", "https://12go.asia"],
+    ["Klook", "https://klook.com"],
+    ["Airalo", "https://airalo.com"],
+    ["Travelpayouts", "https://travelpayouts.com"],
+] as const;
+
+const LEGAL_LINKS = [
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Use", href: "/terms" },
+    { label: "Cookie Settings", href: "/cookies" },
+    { label: "Sitemap", href: "/sitemap.xml" },
+] as const;
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+
+/** SSR-safe scroll to top [Fix 8] */
+function safeScrollTop() {
+    if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+}
+
+/** "Chiang Mai" → "chiang-mai" */
+function toSlug(str: string) {
+    return str.toLowerCase().replace(/\s+/g, "-");
+}
+
+/** Newsletter API call */
 async function subscribeNewsletter(email: string): Promise<boolean> {
     try {
         const res = await fetch("/api/newsletter", {
@@ -41,7 +106,15 @@ async function subscribeNewsletter(email: string): Promise<boolean> {
     }
 }
 
-// ── Mobile Accordion Column ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// SUB-COMPONENTS
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * FooterColumn — mobile accordion, always open on desktop.
+ * [Fix 1] Uses useEffect + isMobile state instead of
+ *         sm:!max-h-[500px] (which Tailwind JIT doesn't reliably generate).
+ */
 function FooterColumn({
     title,
     children,
@@ -50,27 +123,54 @@ function FooterColumn({
     children: React.ReactNode;
 }) {
     const [open, setOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 640);
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
+
+    const isOpen = !isMobile || open; // desktop always open
 
     return (
         <div>
+            {/* Header / toggle */}
             <div
-                className="text-[11px] font-bold uppercase tracking-[2px] mb-5 pb-3 border-b border-white/[0.08] flex items-center justify-between cursor-pointer sm:cursor-default"
-                style={{ color: "#F5C518" }}
-                onClick={() => setOpen((p) => !p)}
+                className="text-[11px] font-bold uppercase tracking-[2px] mb-5 pb-3
+                           border-b border-white/[0.08] flex items-center justify-between"
+                style={{
+                    color: "#F5C518",
+                    cursor: isMobile ? "pointer" : "default",
+                }}
+                onClick={() => isMobile && setOpen((p) => !p)}
             >
                 {title}
-                <span
-                    className="sm:hidden text-[10px] transition-transform duration-200"
-                    style={{
-                        transform: open ? "rotate(180deg)" : "rotate(0deg)",
-                        color: "rgba(255,255,255,0.4)",
-                    }}
-                >
-                    ▼
-                </span>
+                {isMobile && (
+                    <span
+                        className="text-[10px] transition-transform duration-200"
+                        style={{
+                            display: "inline-block",
+                            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                            color: "rgba(255,255,255,0.4)",
+                        }}
+                    >
+                        ▼
+                    </span>
+                )}
             </div>
+
+            {/* Content — inline style only, no Tailwind arbitrary sm: override */}
             <div
-                className={`flex flex-col gap-2.5 overflow-hidden transition-all duration-300 sm:!max-h-[500px] ${open ? "max-h-[300px]" : "max-h-0"}`}
+                style={{
+                    maxHeight: isOpen ? "500px" : "0px",
+                    overflow: "hidden",
+                    transition: "max-height 0.3s ease",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                }}
             >
                 {children}
             </div>
@@ -78,7 +178,7 @@ function FooterColumn({
     );
 }
 
-// ── Social Icon Button ──────────────────────────────────────────────────────
+/** Social icon button */
 function SocialBtn({
     href,
     label,
@@ -94,7 +194,9 @@ function SocialBtn({
             target="_blank"
             rel="noopener noreferrer"
             title={label}
-            className="w-[34px] h-[34px] rounded-lg flex items-center justify-center transition-all no-underline hover:bg-[rgba(245,197,24,0.15)] hover:border-[rgba(245,197,24,0.4)]"
+            className="w-[34px] h-[34px] rounded-lg flex items-center justify-center
+                       transition-all no-underline
+                       hover:bg-[rgba(245,197,24,0.15)]"
             style={{
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.15)",
@@ -106,7 +208,7 @@ function SocialBtn({
     );
 }
 
-// ── Footer Link ─────────────────────────────────────────────────────────────
+/** Generic footer link — internal or external */
 function FooterLink({
     href,
     children,
@@ -118,8 +220,7 @@ function FooterLink({
     external?: boolean;
     onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
-    const cls =
-        "text-[13px] no-underline transition-colors hover:text-white relative group";
+    const cls = "text-[13px] no-underline transition-colors hover:text-white";
     const style = { color: "rgba(255,255,255,0.6)" };
 
     if (external) {
@@ -147,39 +248,73 @@ function FooterLink({
     );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN FOOTER COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────
+// MAIN FOOTER
+// ─────────────────────────────────────────────────────────────
+
 export default function Footer() {
     const { setDestination } = useFlightSearch();
-    const [nlStatus, setNlStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+    const [, navigate] = useLocation(); // [Fix 2]
+    const [nlStatus, setNlStatus] = useState<NlStatus>("idle");
     const [nlEmail, setNlEmail] = useState("");
+    const resetTimer = useRef<ReturnType<typeof setTimeout>>();
 
-    // Pre-fill flight search destination from footer link click
+    // ── Pre-fill destination + navigate home [Fix 2] ──────────
     const prefillDest = useCallback(
         (code: string, name: string, country: string) => {
             setDestination({ code, name, country });
+            navigate("/");
+            // Wait for route render, then scroll to search widget
+            setTimeout(() => {
+                if (typeof window !== "undefined") { // [Fix 8]
+                    document
+                        .getElementById("flight-search")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                }
+            }, 120);
         },
-        [setDestination]
+        [setDestination, navigate]
     );
 
-    // Newsletter submit
-    const handleNewsletter = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!nlEmail.trim() || nlStatus === "sending") return;
+    // ── Newsletter submit [Fix 3 + Fix 4] ────────────────────
+    const handleNewsletter = useCallback(
+        async (e: React.FormEvent) => {
+            e.preventDefault();
+            if (!nlEmail.trim() || nlStatus === "sending") return;
 
-        setNlStatus("sending");
-        const ok = await subscribeNewsletter(nlEmail.trim());
-        setNlStatus(ok ? "done" : "error");
+            // Clear any pending reset timer
+            clearTimeout(resetTimer.current);
 
-        if (ok) {
-            setTimeout(() => {
+            setNlStatus("sending");
+            const ok = await subscribeNewsletter(nlEmail.trim());
+            setNlStatus(ok ? "done" : "error");
+
+            // [Fix 3] Always reset after 3s — both done AND error
+            resetTimer.current = setTimeout(() => {
                 setNlStatus("idle");
-                setNlEmail("");
+                if (ok) setNlEmail("");
             }, 3000);
-        }
-    };
+        },
+        [nlEmail, nlStatus]
+    );
 
+    // Cleanup timer on unmount
+    useEffect(() => () => clearTimeout(resetTimer.current), []);
+
+    // ── Derived newsletter button style ──────────────────────
+    const nlBtnBg =
+        nlStatus === "done" ? "#00cc88" :
+            nlStatus === "error" ? "#ff4444" : "#FFD700";
+
+    const nlBtnColor =
+        nlStatus === "done" || nlStatus === "error" ? "#fff" : "#2a0050";
+
+    const nlBtnText =
+        nlStatus === "sending" ? "..." :
+            nlStatus === "done" ? "✓ Done!" :
+                nlStatus === "error" ? "Try again" : "Subscribe";
+
+    // ─────────────────────────────────────────────────────────
     return (
         <footer
             className="relative overflow-hidden"
@@ -189,47 +324,36 @@ export default function Footer() {
                 fontFamily: "'Plus Jakarta Sans', 'DM Sans', sans-serif",
             }}
         >
-            {/* Background glow orb */}
+            {/* Glow orb */}
             <div
                 className="absolute pointer-events-none"
                 style={{
-                    width: 600,
-                    height: 600,
-                    borderRadius: "50%",
-                    background:
-                        "radial-gradient(circle, rgba(120,40,200,0.18) 0%, transparent 70%)",
-                    top: -200,
-                    left: -150,
+                    width: 600, height: 600, borderRadius: "50%",
+                    background: "radial-gradient(circle, rgba(120,40,200,0.18) 0%, transparent 70%)",
+                    top: -200, left: -150,
                 }}
             />
 
-            {/* ── ① Newsletter Banner ────────────────────────────────── */}
+            {/* ── ① Newsletter Banner ─────────────────────────────── */}
             <div
                 className="border-b border-white/[0.08]"
-                style={{
-                    background:
-                        "linear-gradient(135deg, #5a0099 0%, #7000bb 100%)",
-                }}
+                style={{ background: "linear-gradient(135deg,#5a0099 0%,#7000bb 100%)" }}
             >
-                <div className="container max-w-[1100px] mx-auto py-7 px-6 sm:px-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="container max-w-[1100px] mx-auto py-7 px-6 sm:px-12
+                                flex flex-col sm:flex-row items-start sm:items-center
+                                justify-between gap-4">
                     <div>
                         <h3
                             className="text-[18px] font-bold mb-1"
-                            style={{
-                                fontFamily: "'Playfair Display', serif",
-                                color: "#FFD700",
-                            }}
+                            style={{ fontFamily: "'Playfair Display',serif", color: "#FFD700" }}
                         >
                             ✈ Get flight deals first
                         </h3>
-                        <p
-                            className="text-[13px]"
-                            style={{ color: "rgba(255,255,255,0.75)" }}
-                        >
-                            Join 50,000+ travelers — we send only the best deals, no
-                            spam.
+                        <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.75)" }}>
+                            Join 50,000+ travelers — we send only the best deals, no spam.
                         </p>
                     </div>
+
                     <form
                         onSubmit={handleNewsletter}
                         className="flex rounded-lg overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
@@ -240,50 +364,41 @@ export default function Footer() {
                             value={nlEmail}
                             onChange={(e) => setNlEmail(e.target.value)}
                             required
-                            className="py-[11px] px-[18px] border-none outline-none text-sm text-white w-[200px] sm:w-[240px] placeholder:text-white/40"
+                            className="py-[11px] px-[18px] border-none outline-none text-sm
+                                       text-white w-[200px] sm:w-[240px] placeholder:text-white/40"
                             style={{
                                 background: "rgba(255,255,255,0.12)",
-                                fontFamily: "'DM Sans', sans-serif",
+                                fontFamily: "'DM Sans',sans-serif",
                             }}
                         />
                         <button
                             type="submit"
                             disabled={nlStatus === "sending"}
-                            className="py-[11px] px-[22px] border-none cursor-pointer text-[13px] font-bold tracking-wide transition-colors"
+                            className={`py-[11px] px-[22px] border-none text-[13px] font-bold
+                                        tracking-wide transition-colors
+                                        ${nlStatus === "sending"
+                                    ? "cursor-not-allowed opacity-70"
+                                    : "cursor-pointer"}`}
                             style={{
-                                background:
-                                    nlStatus === "done"
-                                        ? "#00cc88"
-                                        : nlStatus === "error"
-                                            ? "#ff4444"
-                                            : "#FFD700",
-                                color:
-                                    nlStatus === "done" || nlStatus === "error"
-                                        ? "#fff"
-                                        : "#2a0050",
-                                fontFamily: "'DM Sans', sans-serif",
+                                background: nlBtnBg,
+                                color: nlBtnColor,
+                                fontFamily: "'DM Sans',sans-serif",
                             }}
                         >
-                            {nlStatus === "sending"
-                                ? "..."
-                                : nlStatus === "done"
-                                    ? "✓ Done!"
-                                    : nlStatus === "error"
-                                        ? "Try again"
-                                        : "Subscribe"}
+                            {nlBtnText}
                         </button>
                     </form>
                 </div>
             </div>
 
-            {/* ── ② Main Navigation Grid ─────────────────────────────── */}
-            <div className="container max-w-[1100px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 py-12 px-6 sm:px-12 relative z-10">
-                {/* Brand Column */}
+            {/* ── ② Main Navigation Grid ──────────────────────────── */}
+            <div className="container max-w-[1100px] mx-auto
+                            grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+                            gap-10 py-12 px-6 sm:px-12 relative z-10">
+
+                {/* Brand */}
                 <div>
-                    <Link
-                        href="/"
-                        className="flex items-center gap-2.5 mb-4 no-underline"
-                    >
+                    <Link href="/" className="flex items-center gap-2.5 mb-4 no-underline">
                         <div
                             className="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0"
                             style={{ background: "#F5C518" }}
@@ -301,81 +416,56 @@ export default function Footer() {
                         Your trusted companion for affordable flights across
                         Southeast Asia and beyond.
                     </p>
-
-                    {/* Social Icons */}
                     <div className="flex gap-2.5 mt-5">
-                        <SocialBtn
-                            href="https://facebook.com/gotravelasia"
-                            label="Facebook"
-                        >
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
+                        <SocialBtn href="https://facebook.com/gotravelasia" label="Facebook">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                             </svg>
                         </SocialBtn>
-                        <SocialBtn
-                            href="https://instagram.com/gotravelasia"
-                            label="Instagram"
-                        >
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
+                        <SocialBtn href="https://instagram.com/gotravelasia" label="Instagram">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
                             </svg>
                         </SocialBtn>
-                        <SocialBtn
-                            href="https://twitter.com/gotravelasia"
-                            label="X (Twitter)"
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
+                        <SocialBtn href="https://twitter.com/gotravelasia" label="X (Twitter)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                             </svg>
                         </SocialBtn>
                     </div>
                 </div>
 
-                {/* Flights Column */}
+                {/* Flights column */}
                 <FooterColumn title="Flights">
-                    <FooterLink href="/#flights">Cheap flights</FooterLink>
-                    <FooterLink href="/#flights">
+                    <FooterLink href="/flights/cheap">Cheap flights</FooterLink>
+                    <FooterLink href="/flights/last-minute">
                         Last minute flights{" "}
-                        <span className="text-[9px] font-bold bg-[#ff4444] text-white px-1.5 py-0.5 rounded ml-1 uppercase">
+                        <span className="text-[9px] font-bold bg-[#ff4444] text-white
+                                         px-1.5 py-0.5 rounded ml-1 uppercase">
                             HOT
                         </span>
                     </FooterLink>
-                    <FooterLink href="/#flights">Business class</FooterLink>
-                    <FooterLink href="/#flights">Direct flights</FooterLink>
-                    <FooterLink href="/#flights">Weekend getaways</FooterLink>
-                    <FooterLink href="/#flights">
+                    <FooterLink href="/flights/business">Business class</FooterLink>
+                    <FooterLink href="/flights/direct">Direct flights</FooterLink>
+                    <FooterLink href="/flights/weekend">Weekend getaways</FooterLink>
+                    <FooterLink href="/flights/deals">
                         Flight deals{" "}
-                        <span className="text-[9px] font-bold bg-[#FFD700] text-[#2a0050] px-1.5 py-0.5 rounded ml-1 uppercase">
+                        <span className="text-[9px] font-bold bg-[#FFD700] text-[#2a0050]
+                                         px-1.5 py-0.5 rounded ml-1 uppercase">
                             NEW
                         </span>
                     </FooterLink>
                 </FooterColumn>
 
-                {/* Explore Column — from flightWidget.data.ts */}
+                {/* Explore column [Fix 2] */}
                 <FooterColumn title="Explore">
                     {EXPLORE_CITIES.map((city) => (
                         <FooterLink
                             key={city.code}
-                            href={`/flights/to/${city.name.toLowerCase().replace(/\s+/g, "-")}`}
+                            href={`/flights/to/${toSlug(city.name)}`}
                             onClick={(e) => {
                                 e.preventDefault();
                                 prefillDest(city.code, city.name, city.country);
-                                window.scrollTo({ top: 0, behavior: "smooth" });
                             }}
                         >
                             Flights to {city.name}
@@ -383,106 +473,110 @@ export default function Footer() {
                     ))}
                 </FooterColumn>
 
-                {/* Company Column */}
+                {/* Company column */}
                 <FooterColumn title="Company">
                     <FooterLink href="/blog">Travel Blog</FooterLink>
                     <FooterLink href="/faq">FAQ</FooterLink>
                     <FooterLink href="/contact">Contact Us</FooterLink>
                     <FooterLink href="/about">About Us</FooterLink>
-                    <FooterLink href={AFFILIATE?.AIRALO_URL ?? "https://airalo.com"} external>
+                    <FooterLink
+                        href={AFFILIATE?.AIRALO_URL ?? "https://airalo.com"}
+                        external
+                    >
                         Travel eSIM — Airalo
                     </FooterLink>
                 </FooterColumn>
             </div>
 
-            {/* ── ③ SEO Destinations Grid ────────────────────────────── */}
+            {/* ── ③ SEO Destinations ──────────────────────────────── */}
             <div className="border-t border-white/[0.08] relative z-10">
                 <div className="container max-w-[1100px] mx-auto py-9 px-6 sm:px-12">
-                    {/* Popular Countries */}
+
+                    {/* Popular countries */}
                     <div className="mb-7">
-                        <p
-                            className="text-[12px] font-semibold tracking-[1.5px] uppercase mb-3.5"
-                            style={{ color: "rgba(255,255,255,0.25)" }}
-                        >
+                        <p className="text-[12px] font-semibold tracking-[1.5px] uppercase mb-3.5"
+                            style={{ color: "rgba(255,255,255,0.25)" }}>
                             Popular destinations
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-1.5">
-                            {COUNTRIES.filter((c) => c !== "Myanmar").map(
-                                (country) => (
-                                    <Link
-                                        key={country}
-                                        href={`/flights/to/${country.toLowerCase().replace(/\s+/g, "-")}`}
-                                        className="text-[13px] font-medium no-underline transition-colors hover:text-[#FFD700] truncate"
-                                        style={{ color: "#7b5baa" }}
-                                    >
-                                        Flights to {country}
-                                    </Link>
-                                )
-                            )}
+                            {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => (
+                                <Link
+                                    key={country}
+                                    href={`/flights/to/${toSlug(country)}`}
+                                    className="text-[13px] font-medium no-underline
+                                               transition-colors hover:text-[#FFD700] truncate"
+                                    style={{ color: "#7b5baa" }}
+                                >
+                                    Flights to {country}
+                                </Link>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Popular Cities */}
+                    {/* Popular cities [Fix 2 + Fix 7 + Fix 8] */}
                     <div>
-                        <p
-                            className="text-[12px] font-semibold tracking-[1.5px] uppercase mb-3.5"
-                            style={{ color: "rgba(255,255,255,0.25)" }}
-                        >
+                        <p className="text-[12px] font-semibold tracking-[1.5px] uppercase mb-3.5"
+                            style={{ color: "rgba(255,255,255,0.25)" }}>
                             Popular cities
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-1.5">
-                            {POPULAR_DESTINATIONS.map((airport) => {
-                                const cityName = airport.name.replace(/\s*\(.*?\)\s*/g, "");
-                                return (
-                                    <Link
-                                        key={airport.code}
-                                        href={`/flights/to/${cityName.toLowerCase().replace(/\s+/g, "-")}`}
-                                        className="text-[13px] font-medium no-underline transition-colors hover:text-[#FFD700] truncate"
-                                        style={{ color: "#7b5baa" }}
-                                        onClick={(e: React.MouseEvent) => {
-                                            e.preventDefault();
-                                            prefillDest(
-                                                airport.code,
-                                                airport.name,
-                                                airport.country
-                                            );
-                                            window.scrollTo({ top: 0, behavior: "smooth" });
-                                        }}
-                                    >
-                                        Flights to {cityName}
-                                    </Link>
-                                );
-                            })}
-                        </div>
+
+                        {/* [Fix 7] Empty state */}
+                        {POPULAR_DESTINATIONS.length === 0 ? (
+                            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
+                                No destinations available.
+                            </p>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                                            gap-x-5 gap-y-1.5">
+                                {POPULAR_DESTINATIONS.map((airport) => {
+                                    const cityName = airport.name.replace(/\s*\(.*?\)\s*/g, "");
+                                    return (
+                                        <Link
+                                            key={airport.code}
+                                            href={`/flights/to/${toSlug(cityName)}`}
+                                            className="text-[13px] font-medium no-underline
+                                                       transition-colors hover:text-[#FFD700] truncate"
+                                            style={{ color: "#7b5baa" }}
+                                            onClick={(e: React.MouseEvent) => {
+                                                e.preventDefault();
+                                                prefillDest(
+                                                    airport.code,
+                                                    airport.name,
+                                                    airport.country
+                                                );
+                                            }}
+                                        >
+                                            Flights to {cityName}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* ── Partner Logos Row ───────────────────────────────────── */}
+            {/* ── Partner Logos ────────────────────────────────────── */}
             <div className="border-t border-white/[0.08] relative z-10">
-                <div className="container max-w-[1100px] mx-auto py-6 px-6 sm:px-12 flex items-center gap-4 flex-wrap">
+                <div className="container max-w-[1100px] mx-auto py-6 px-6 sm:px-12
+                                flex items-center gap-4 flex-wrap">
                     <span
                         className="text-[11px] font-semibold uppercase tracking-wide shrink-0"
                         style={{ color: "rgba(255,255,255,0.35)" }}
                     >
                         Trusted partners
                     </span>
-                    <div className="flex items-center gap-4 flex-wrap">
-                        {([
-                            ["Aviasales", "https://aviasales.com"],
-                            ["Agoda", "https://agoda.com"],
-                            ["Trip.com", "https://trip.com"],
-                            ["12Go Asia", "https://12go.asia"],
-                            ["Klook", "https://klook.com"],
-                            ["Airalo", "https://airalo.com"],
-                            ["Travelpayouts", "https://travelpayouts.com"],
-                        ] as const).map(([name, url]) => (
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {PARTNER_LINKS.map(([name, url]) => (
                             <a
                                 key={name}
                                 href={url}
                                 target="_blank"
                                 rel="noopener noreferrer sponsored"
-                                className="text-xs font-bold rounded-md px-3 py-1.5 no-underline transition-all hover:border-[rgba(245,197,24,0.4)] hover:text-white/50"
+                                className="text-xs font-bold rounded-md px-3 py-1.5 no-underline
+                                           transition-all cursor-pointer
+                                           hover:border-[rgba(245,197,24,0.4)]
+                                           hover:text-white/60"
                                 style={{
                                     color: "rgba(255,255,255,0.35)",
                                     border: "1px solid rgba(255,255,255,0.1)",
@@ -495,20 +589,18 @@ export default function Footer() {
                 </div>
             </div>
 
-            {/* ── ④ Bottom Bar ───────────────────────────────────────── */}
+            {/* ── ④ Bottom Bar ─────────────────────────────────────── */}
             <div className="border-t border-white/[0.08] relative z-10">
-                <div className="container max-w-[1100px] mx-auto py-5 px-6 sm:px-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-0 flex-wrap">
-                        {[
-                            { label: "Privacy Policy", href: "/privacy" },
-                            { label: "Terms of Use", href: "/terms" },
-                            { label: "Cookie Settings", href: "/cookies" },
-                            { label: "Sitemap", href: "/sitemap.xml" },
-                        ].map((link, i, arr) => (
+                <div className="container max-w-[1100px] mx-auto py-5 px-6 sm:px-12
+                                flex flex-col sm:flex-row items-start sm:items-center
+                                justify-between gap-3">
+                    <div className="flex items-center flex-wrap">
+                        {LEGAL_LINKS.map((link, i, arr) => (
                             <Link
                                 key={link.label}
                                 href={link.href}
-                                className="text-xs no-underline px-3 transition-colors hover:text-white/70"
+                                className="text-xs no-underline px-3 transition-colors
+                                           hover:text-white/70"
                                 style={{
                                     color: "rgba(255,255,255,0.4)",
                                     paddingLeft: i === 0 ? 0 : undefined,
@@ -522,12 +614,8 @@ export default function Footer() {
                             </Link>
                         ))}
                     </div>
-                    <span
-                        className="text-xs"
-                        style={{ color: "rgba(255,255,255,0.3)" }}
-                    >
-                        © 2026 GoTravel Asia. All rights reserved. | Made with ♥
-                        for Asian travelers.
+                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        © 2026 GoTravel Asia. All rights reserved. | Made with ♥ for Asian travelers.
                     </span>
                 </div>
             </div>
