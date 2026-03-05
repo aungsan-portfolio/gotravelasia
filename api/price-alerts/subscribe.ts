@@ -103,6 +103,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             )
         `);
 
+        // ── 6b. Migration — add routeId if table already existed ──
+        await connection.execute(`
+            ALTER TABLE flightPriceAlerts
+            ADD COLUMN IF NOT EXISTS routeId VARCHAR(20)
+        `);
+
         // ── 7. Duplicate check ─────────────────────────────────
         const [rows] = await connection.execute<mysql.RowDataPacket[]>(
             `SELECT id FROM flightPriceAlerts
