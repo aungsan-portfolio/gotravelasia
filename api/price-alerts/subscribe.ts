@@ -148,7 +148,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error("[price-alerts] error", error?.code, error?.message, error?.stack);
         return res.status(500).json({
             error: "Something went wrong. Please try again.",
-            _debug: process.env.NODE_ENV !== "production" ? error?.message : undefined,
+            _debug: error?.message,   // ← ယာယီ always ပြပါ
+            _code: error?.code,       // ← MySQL error code ပြပါ
         });
     } finally {
         if (connection) await connection.end().catch(() => { });
