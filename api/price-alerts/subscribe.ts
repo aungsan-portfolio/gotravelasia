@@ -33,16 +33,40 @@ function createMySQLConnection(dbUrl: string) {
             password: decodeURIComponent(url.password),
             database: url.pathname.slice(1),
             ssl: { rejectUnauthorized: false },
+            connectTimeout: 10000,
         });
     } catch (err: any) {
         throw new Error(`Failed to parse DATABASE_URL: ${err.message}`);
     }
 }
 
+// ── Table auto-create ──────────────────────────────────────────
+async function ensureTable(connection: mysql.Connection) {
+    await connection.execute(`
+        CREATE TABLE IF NOT EXISTS flightPriceAlerts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(320) NOT NULL,
+            origin VARCHAR(3) NOT NULL,
+            destination VARCHAR(3) NOT NULL,
+            departDate VARCHAR(10),
+            returnDate VARCHAR(10),
+            targetPrice INT NOT NULL,
+            lastNotifiedPrice INT,
+            currency VARCHAR(3) NOT NULL DEFAULT 'THB',
+            routeId VARCHAR(20),
+            source VARCHAR(20) NOT NULL DEFAULT 'track_button',
+            isActive BOOLEAN NOT NULL DEFAULT TRUE,
+            createdAt TIMESTAMP NOT NULL DEFAULT NOW(),
+            updatedAt TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW()
+        )
+    `);
+}
+
 // ── CORS allowlist ─────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
     "https://gotravelasia.com",
     "https://www.gotravelasia.com",
+    "https://gotravel-asia.vercel.app",
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
 ].filter(Boolean);
 
@@ -72,6 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         connection = await createMySQLConnection(dbUrl);
+        await ensureTable(connection);
         const db = drizzle(connection);
 
         const body = req.body || {};
