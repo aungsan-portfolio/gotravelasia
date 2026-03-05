@@ -37,23 +37,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // ── 2. Parse body safely ───────────────────────────────
         let body: any = {};
         try {
-            if (req.body && typeof req.body === "object" && Object.keys(req.body).length > 0) {
-                // Vercel က parse ပြီးသား object
+            if (req.body && typeof req.body === "object") {
                 body = req.body;
-            } else if (typeof req.body === "string" && req.body.trim() !== "") {
-                // String ဖြစ်ပြီး empty မဟုတ်မှ parse
+            } else if (typeof req.body === "string" && req.body.trim()) {
                 body = JSON.parse(req.body);
-            } else {
-                // req.body က empty/undefined → raw stream ကနေ ဖတ်
-                const raw = await new Promise<string>((resolve, reject) => {
-                    let data = "";
-                    req.on("data", (chunk) => (data += chunk));
-                    req.on("end", () => resolve(data));
-                    req.on("error", reject);
-                });
-                if (!raw.trim()) return res.status(400).json({ error: "Empty request body" });
-                body = JSON.parse(raw);
             }
+            // empty ဖြစ်ရင် body = {} သာ — validation မှာ ဆက် catch ဖြစ်မည်
         } catch {
             return res.status(400).json({ error: "Invalid JSON body" });
         }
