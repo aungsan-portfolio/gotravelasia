@@ -253,27 +253,30 @@ function FooterLink({
 // ─────────────────────────────────────────────────────────────
 
 export default function Footer() {
-    const { setDestination } = useFlightSearch();
-    const [, navigate] = useLocation(); // [Fix 2]
+    const { setDestination, setCabinClass } = useFlightSearch();
+    const [, navigate] = useLocation();
     const [nlStatus, setNlStatus] = useState<NlStatus>("idle");
     const [nlEmail, setNlEmail] = useState("");
     const resetTimer = useRef<ReturnType<typeof setTimeout>>();
 
-    // ── Pre-fill destination + navigate home [Fix 2] ──────────
+    // ── Navigate to home page flights tab ─────────────────────
+    const goToFlights = useCallback(() => {
+        navigate("/");
+        // Trigger hash change after route renders (Home.tsx listens for #flights)
+        setTimeout(() => {
+            if (typeof window !== "undefined") {
+                window.location.hash = "flights";
+            }
+        }, 100);
+    }, [navigate]);
+
+    // ── Pre-fill destination + navigate to flights ────────────
     const prefillDest = useCallback(
         (code: string, name: string, country: string) => {
             setDestination({ code, name, country });
-            navigate("/");
-            // Wait for route render, then scroll to search widget
-            setTimeout(() => {
-                if (typeof window !== "undefined") { // [Fix 8]
-                    document
-                        .getElementById("flight-search")
-                        ?.scrollIntoView({ behavior: "smooth" });
-                }
-            }, 120);
+            goToFlights();
         },
-        [setDestination, navigate]
+        [setDestination, goToFlights]
     );
 
     // ── Newsletter submit [Fix 3 + Fix 4] ────────────────────
@@ -437,18 +440,44 @@ export default function Footer() {
 
                 {/* Flights column */}
                 <FooterColumn title="Flights">
-                    <FooterLink href="/#flights">Cheap flights</FooterLink>
-                    <FooterLink href="/#flights">
+                    <FooterLink
+                        href="/#flights"
+                        onClick={(e) => { e.preventDefault(); goToFlights(); }}
+                    >
+                        Cheap flights
+                    </FooterLink>
+                    <FooterLink
+                        href="/#flights"
+                        onClick={(e) => { e.preventDefault(); goToFlights(); }}
+                    >
                         Last minute flights{" "}
                         <span className="text-[9px] font-bold bg-[#ff4444] text-white
                                          px-1.5 py-0.5 rounded ml-1 uppercase">
                             HOT
                         </span>
                     </FooterLink>
-                    <FooterLink href="/#flights">Business class</FooterLink>
-                    <FooterLink href="/#flights">Direct flights</FooterLink>
-                    <FooterLink href="/#flights">Weekend getaways</FooterLink>
-                    <FooterLink href="/#flights">
+                    <FooterLink
+                        href="/#flights"
+                        onClick={(e) => { e.preventDefault(); setCabinClass("C"); goToFlights(); }}
+                    >
+                        Business class
+                    </FooterLink>
+                    <FooterLink
+                        href="/#flights"
+                        onClick={(e) => { e.preventDefault(); goToFlights(); }}
+                    >
+                        Direct flights
+                    </FooterLink>
+                    <FooterLink
+                        href="/#flights"
+                        onClick={(e) => { e.preventDefault(); goToFlights(); }}
+                    >
+                        Weekend getaways
+                    </FooterLink>
+                    <FooterLink
+                        href="/#flights"
+                        onClick={(e) => { e.preventDefault(); goToFlights(); }}
+                    >
                         Flight deals{" "}
                         <span className="text-[9px] font-bold bg-[#FFD700] text-[#2a0050]
                                          px-1.5 py-0.5 rounded ml-1 uppercase">
@@ -498,17 +527,29 @@ export default function Footer() {
                             Popular destinations
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-1.5">
-                            {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => (
-                                <Link
-                                    key={country}
-                                    href="/#flights"
-                                    className="text-[13px] font-medium no-underline
-                                               transition-colors hover:text-[#FFD700] truncate"
-                                    style={{ color: "#7b5baa" }}
-                                >
-                                    Flights to {country}
-                                </Link>
-                            ))}
+                            {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => {
+                                // Find the first airport in this country to use as destination
+                                const airport = (AIRPORTS as Airport[]).find(a => a.country === country);
+                                return (
+                                    <Link
+                                        key={country}
+                                        href="/#flights"
+                                        className="text-[13px] font-medium no-underline
+                                                   transition-colors hover:text-[#FFD700] truncate"
+                                        style={{ color: "#7b5baa" }}
+                                        onClick={(e: React.MouseEvent) => {
+                                            e.preventDefault();
+                                            if (airport) {
+                                                prefillDest(airport.code, airport.name, airport.country);
+                                            } else {
+                                                goToFlights();
+                                            }
+                                        }}
+                                    >
+                                        Flights to {country}
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
 
