@@ -105,12 +105,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "Service temporarily unavailable" });
         }
 
+        console.log("[price-alerts] step1: parsing URL...");
+        const config = parseMySQLUrl(dbUrl);
+        console.log("[price-alerts] step2: URL parsed, connecting... host:", config.host);
+
         // Raw connection for ensureTable (CREATE TABLE IF NOT EXISTS)
         connection = await createMySQLConnection(dbUrl);
+        console.log("[price-alerts] step3: connected, running ensureTable...");
         await ensureTable(connection);
+        console.log("[price-alerts] step4: table ensured, creating drizzle...");
 
         // Use the SSL-configured connection object directly
         const db = drizzle(connection);
+        console.log("[price-alerts] step5: drizzle ready");
 
         const body = req.body || {};
 
