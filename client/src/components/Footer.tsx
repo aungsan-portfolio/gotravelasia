@@ -72,7 +72,7 @@ const PARTNER_LINKS = [
 const LEGAL_LINKS = [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Use", href: "/terms" },
-    { label: "Cookie Settings", href: "/cookies" },
+    { label: "Cookie Settings", href: "/privacy" },
     { label: "Sitemap", href: "/sitemap.xml" },
 ] as const;
 
@@ -437,18 +437,18 @@ export default function Footer() {
 
                 {/* Flights column */}
                 <FooterColumn title="Flights">
-                    <FooterLink href="/flights/cheap">Cheap flights</FooterLink>
-                    <FooterLink href="/flights/last-minute">
+                    <FooterLink href="/#flights">Cheap flights</FooterLink>
+                    <FooterLink href="/#flights">
                         Last minute flights{" "}
                         <span className="text-[9px] font-bold bg-[#ff4444] text-white
                                          px-1.5 py-0.5 rounded ml-1 uppercase">
                             HOT
                         </span>
                     </FooterLink>
-                    <FooterLink href="/flights/business">Business class</FooterLink>
-                    <FooterLink href="/flights/direct">Direct flights</FooterLink>
-                    <FooterLink href="/flights/weekend">Weekend getaways</FooterLink>
-                    <FooterLink href="/flights/deals">
+                    <FooterLink href="/#flights">Business class</FooterLink>
+                    <FooterLink href="/#flights">Direct flights</FooterLink>
+                    <FooterLink href="/#flights">Weekend getaways</FooterLink>
+                    <FooterLink href="/#flights">
                         Flight deals{" "}
                         <span className="text-[9px] font-bold bg-[#FFD700] text-[#2a0050]
                                          px-1.5 py-0.5 rounded ml-1 uppercase">
@@ -462,7 +462,7 @@ export default function Footer() {
                     {EXPLORE_CITIES.map((city) => (
                         <FooterLink
                             key={city.code}
-                            href={`/flights/to/${toSlug(city.name)}`}
+                            href="/#flights"
                             onClick={(e) => {
                                 e.preventDefault();
                                 prefillDest(city.code, city.name, city.country);
@@ -478,7 +478,6 @@ export default function Footer() {
                     <FooterLink href="/blog">Travel Blog</FooterLink>
                     <FooterLink href="/faq">FAQ</FooterLink>
                     <FooterLink href="/contact">Contact Us</FooterLink>
-                    <FooterLink href="/about">About Us</FooterLink>
                     <FooterLink
                         href={AFFILIATE?.AIRALO_URL ?? "https://airalo.com"}
                         external
@@ -502,7 +501,7 @@ export default function Footer() {
                             {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => (
                                 <Link
                                     key={country}
-                                    href={`/flights/to/${toSlug(country)}`}
+                                    href="/#flights"
                                     className="text-[13px] font-medium no-underline
                                                transition-colors hover:text-[#FFD700] truncate"
                                     style={{ color: "#7b5baa" }}
@@ -533,7 +532,7 @@ export default function Footer() {
                                     return (
                                         <Link
                                             key={airport.code}
-                                            href={`/flights/to/${toSlug(cityName)}`}
+                                            href="/#flights"
                                             className="text-[13px] font-medium no-underline
                                                        transition-colors hover:text-[#FFD700] truncate"
                                             style={{ color: "#7b5baa" }}
