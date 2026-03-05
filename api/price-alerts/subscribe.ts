@@ -104,18 +104,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             )
         `);
 
-        // ── 6b. Migration — add routeId if table already existed ──
-        try {
-            await connection.execute(`
-                ALTER TABLE flightPriceAlerts ADD COLUMN routeId VARCHAR(20)
-            `);
-        } catch (e: any) {
-            // ER_DUP_FIELDNAME = column already exists -> ignore
-            const isDup =
-                e.code === "ER_DUP_FIELDNAME" ||
-                e.errno === 1060 ||
-                e.message?.includes("Duplicate column");
-            if (!isDup) throw e;
+        // ── 6b. Migration — add missing columns ──────────────────
+        const migrations = [
+            { sql: `ALTER TABLE flightPriceAlerts ADD COLUMN routeId VARCHAR(20)` },
+            { sql: `ALTER TABLE flightPriceAlerts ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'track_button'` },
+            { sql: `ALTER TABLE flightPriceAlerts ADD COLUMN returnDate VARCHAR(10)` },
+            { sql: `ALTER TABLE flightPriceAlerts ADD COLUMN currency VARCHAR(3) NOT NULL DEFAULT 'USD'` },
+            { sql: `ALTER TABLE flightPriceAlerts ADD COLUMN lastNotifiedPrice INT` },
+        ];
+
+        for (const m of migrations) {
+            try {
+                await connection.execute(m.sql);
+            } catch (e: any) {
+                // ER_DUP_FIELDNAME = column already exists -> ignore
+                const isDup =
+                    e.code === "ER_DUP_FIELDNAME" ||
+                    e.errno === 1060 ||
+                    e.message?.includes("Duplicate column");
+                if (!isDup) throw e;
+            }
         }
 
         // ── 7. Duplicate check ─────────────────────────────────
