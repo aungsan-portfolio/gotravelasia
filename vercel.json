@@ -5,8 +5,7 @@
     "framework": null,
     "functions": {
         "api/price-alerts/subscribe.ts": {
-            "maxDuration": 10,
-            "includeFiles": "lib/**"
+            "maxDuration": 10
         },
         "api/newsletter.ts": {
             "maxDuration": 10
