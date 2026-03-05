@@ -32,8 +32,8 @@ export default function Contact() {
                                     <div>
                                         <h3 className="font-semibold text-lg">Email Us</h3>
                                         <p className="text-muted-foreground">
-                                            <a href="mailto:support@gotravelasia.com" className="text-primary hover:underline">
-                                                support@gotravelasia.com
+                                            <a href="mailto:GoTravelAsia@outlook.com" className="text-primary hover:underline">
+                                                GoTravelAsia@outlook.com
                                             </a>
                                         </p>
                                         <p className="text-sm text-muted-foreground mt-1">Response Time: Within 24-48 hours</p>
@@ -55,8 +55,8 @@ export default function Contact() {
                             <p className="text-muted-foreground leading-relaxed">
                                 Interested in partnering with GoTravelAsia? We're always looking for new affiliate relationships
                                 and collaboration opportunities. Reach out to us at{" "}
-                                <a href="mailto:partners@gotravelasia.com" className="text-primary hover:underline">
-                                    partners@gotravelasia.com
+                                <a href="mailto:GoTravelAsia@outlook.com" className="text-primary hover:underline">
+                                    GoTravelAsia@outlook.com
                                 </a>
                             </p>
                         </section>

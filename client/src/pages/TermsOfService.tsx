@@ -124,7 +124,7 @@ export default function TermsOfService() {
                             <h2 className="text-2xl font-bold mb-4">11. Contact Us</h2>
                             <p className="text-muted-foreground leading-relaxed">
                                 For questions about these Terms, contact us at:<br />
-                                <strong>Email:</strong> legal@gotravelasia.com<br />
+                                <strong>Email:</strong> GoTravelAsia@outlook.com<br />
                                 <strong>Address:</strong> Chiang Mai, Thailand
                             </p>
                         </section>

@@ -103,10 +103,10 @@ export default function CookieSettings() {
                                 </Link>
                                 . If you have questions about our cookie practices, contact us at{" "}
                                 <a
-                                    href="mailto:support@gotravelasia.com"
+                                    href="mailto:GoTravelAsia@outlook.com"
                                     className="text-primary hover:underline"
                                 >
-                                    support@gotravelasia.com
+                                    GoTravelAsia@outlook.com
                                 </a>
                                 .
                             </p>
