@@ -1,80 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { drizzle } from "drizzle-orm/mysql2";
-import { eq, and, isNull } from "drizzle-orm";
-import { int, mysqlTable, varchar, boolean, timestamp } from "drizzle-orm/mysql-core";
 import mysql from "mysql2/promise";
 
-// ── Inline schema ──────────────────────────────────────────────
-const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
-    id: int("id").autoincrement().primaryKey(),
-    email: varchar("email", { length: 320 }).notNull(),
-    origin: varchar("origin", { length: 3 }).notNull(),
-    destination: varchar("destination", { length: 3 }).notNull(),
-    departDate: varchar("departDate", { length: 10 }),             // nullable for watchlist
-    returnDate: varchar("returnDate", { length: 10 }),
-    targetPrice: int("targetPrice").notNull(),
-    lastNotifiedPrice: int("lastNotifiedPrice"),
-    currency: varchar("currency", { length: 3 }).default("THB").notNull(),
-    routeId: varchar("routeId", { length: 20 }),                   // e.g. "rgn-bkk"
-    source: varchar("source", { length: 20 }).notNull().default("track_button"),
-    isActive: boolean("isActive").default(true).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-// ── Parse DATABASE_URL ───────────────────────────────────────────
-function parseMySQLUrl(dbUrl: string) {
-    const url = new URL(dbUrl);
-    return {
-        host: url.hostname,
-        port: parseInt(url.port) || 3306,
-        user: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: url.pathname.slice(1),
-        ssl: { rejectUnauthorized: false },
-        connectTimeout: 10000,
-    };
-}
-
-// ── MySQL pool (for both ensureTable + Drizzle) ───────────────────
-function createMySQLPool(dbUrl: string) {
-    const url = new URL(dbUrl);
-    return mysql.createPool({
-        host: url.hostname,
-        port: parseInt(url.port) || 3306,
-        user: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: url.pathname.slice(1),
-        ssl: { rejectUnauthorized: false },
-        connectTimeout: 10000,
-        connectionLimit: 1,
-        waitForConnections: true,
-    });
-}
-
-// ── Table auto-create ──────────────────────────────────────────
-async function ensureTable(connection: mysql.PoolConnection) {
-    await connection.execute(`
-        CREATE TABLE IF NOT EXISTS flightPriceAlerts (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(320) NOT NULL,
-            origin VARCHAR(3) NOT NULL,
-            destination VARCHAR(3) NOT NULL,
-            departDate VARCHAR(10),
-            returnDate VARCHAR(10),
-            targetPrice INT NOT NULL,
-            lastNotifiedPrice INT,
-            currency VARCHAR(3) NOT NULL DEFAULT 'THB',
-            routeId VARCHAR(20),
-            source VARCHAR(20) NOT NULL DEFAULT 'track_button',
-            isActive BOOLEAN NOT NULL DEFAULT TRUE,
-            createdAt TIMESTAMP NOT NULL DEFAULT NOW(),
-            updatedAt TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW()
-        )
-    `);
-}
-
-// ── CORS allowlist ─────────────────────────────────────────────
+// ── CORS ───────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
     "https://gotravelasia.com",
     "https://www.gotravelasia.com",
@@ -82,12 +9,11 @@ const ALLOWED_ORIGINS = [
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
 ].filter(Boolean);
 
-// ── Helpers ────────────────────────────────────────────────────
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 // ── Handler ────────────────────────────────────────────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS
+    // CORS headers
     const reqOrigin = req.headers.origin || "";
     if (ALLOWED_ORIGINS.some((o) => reqOrigin.startsWith(o))) {
         res.setHeader("Access-Control-Allow-Origin", reqOrigin);
@@ -98,122 +24,115 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === "OPTIONS") return res.status(200).end();
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    let pool: mysql.Pool | null = null;
+    let connection: mysql.Connection | null = null;
 
     try {
+        // ── 1. DATABASE_URL check ──────────────────────────────
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) {
-            console.error("[price-alerts] DATABASE_URL not configured");
+            console.error("[price-alerts] DATABASE_URL missing");
             return res.status(500).json({ error: "Service temporarily unavailable" });
         }
 
-        // ✅ Pool ဆေါက်ပၲး ensureTable အတြက် connection ယူပီ
-        pool = createMySQLPool(dbUrl);
-        const conn = await pool.getConnection();
-        await ensureTable(conn);
-        conn.release();
-
-        // ✅ Pool ကိုပဲ drizzle ထဲထည့်ပီ
-        const db = drizzle(pool);
-
-        const body = req.body || {};
+        // ── 2. Parse body safely ───────────────────────────────
+        let body: any = {};
+        try {
+            if (typeof req.body === "string") {
+                body = JSON.parse(req.body);
+            } else if (req.body && typeof req.body === "object") {
+                body = req.body;
+            }
+        } catch {
+            return res.status(400).json({ error: "Invalid JSON body" });
+        }
 
         // Honeypot
         if (body.hp) return res.status(200).json({ success: true });
 
-        // ── Normalize inputs ───────────────────────────────────
+        // ── 3. Normalize inputs ────────────────────────────────
         const email = String(body.email ?? "").trim().toLowerCase();
         const origin = String(body.origin ?? "").trim().toUpperCase();
         const destination = String(body.destination ?? "").trim().toUpperCase();
         const departDate = String(body.departDate ?? "").trim() || null;
         const returnDate = body.returnDate ? String(body.returnDate).trim() : null;
         const currentPrice = Number(body.currentPrice) || 0;
-        const currency = String(body.currency ?? "THB").trim().toUpperCase();
+        const currency = String(body.currency ?? "USD").trim().toUpperCase();
         const routeId = String(body.routeId ?? "").trim() || null;
-        const source = (String(body.source ?? "").trim() || "track_button") as string;
+        const source = String(body.source ?? "track_button").trim();
 
-        // ── Validate ───────────────────────────────────────────
+        // ── 4. Validate ────────────────────────────────────────
         if (!email || !isValidEmail(email)) {
             return res.status(400).json({ error: "Invalid email" });
         }
-
-        const hasRoutePair = Boolean(origin && destination);
-        const hasRouteId = Boolean(routeId);
-
-        if (!hasRoutePair && !hasRouteId) {
-            return res.status(400).json({ error: "Missing route: provide origin+destination or routeId" });
+        if (!origin || !destination) {
+            return res.status(400).json({ error: "Missing origin or destination" });
         }
-
-        // Track button requires departDate
         if (source === "track_button" && !departDate) {
-            return res.status(400).json({ error: "Missing departDate for price tracking" });
+            return res.status(400).json({ error: "Missing departDate" });
         }
 
-        // ── Duplicate check ────────────────────────────────────
-        let existing;
-        if (departDate && hasRoutePair) {
-            // Dated alert (TrackPricesButton)
-            existing = await db.select().from(flightPriceAlerts).where(
-                and(
-                    eq(flightPriceAlerts.email, email),
-                    eq(flightPriceAlerts.origin, origin),
-                    eq(flightPriceAlerts.destination, destination),
-                    eq(flightPriceAlerts.departDate, departDate),
-                    eq(flightPriceAlerts.isActive, true)
-                )
-            ).limit(1);
-        } else if (hasRouteId) {
-            // Watchlist alert (SignInModal)
-            existing = await db.select().from(flightPriceAlerts).where(
-                and(
-                    eq(flightPriceAlerts.email, email),
-                    eq(flightPriceAlerts.routeId, routeId!),
-                    eq(flightPriceAlerts.isActive, true)
-                )
-            ).limit(1);
-        } else {
-            // General watchlist (origin+destination, no date)
-            existing = await db.select().from(flightPriceAlerts).where(
-                and(
-                    eq(flightPriceAlerts.email, email),
-                    eq(flightPriceAlerts.origin, origin),
-                    eq(flightPriceAlerts.destination, destination),
-                    isNull(flightPriceAlerts.departDate),
-                    eq(flightPriceAlerts.isActive, true)
-                )
-            ).limit(1);
-        }
+        // ── 5. Connect ─────────────────────────────────────────
+        const url = new URL(dbUrl);
+        connection = await mysql.createConnection({
+            host: url.hostname,
+            port: parseInt(url.port) || 3306,
+            user: decodeURIComponent(url.username),
+            password: decodeURIComponent(url.password),
+            database: url.pathname.slice(1),
+            ssl: { rejectUnauthorized: false },
+            connectTimeout: 10000,
+        });
 
-        if (existing && existing.length > 0) {
+        // ── 6. Create table if not exists ─────────────────────
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS flightPriceAlerts (
+                id                INT AUTO_INCREMENT PRIMARY KEY,
+                email             VARCHAR(320) NOT NULL,
+                origin            VARCHAR(3)   NOT NULL,
+                destination       VARCHAR(3)   NOT NULL,
+                departDate        VARCHAR(10),
+                returnDate        VARCHAR(10),
+                targetPrice       INT          NOT NULL DEFAULT 0,
+                lastNotifiedPrice INT,
+                currency          VARCHAR(3)   NOT NULL DEFAULT 'USD',
+                routeId           VARCHAR(20),
+                source            VARCHAR(20)  NOT NULL DEFAULT 'track_button',
+                isActive          TINYINT(1)   NOT NULL DEFAULT 1,
+                createdAt         TIMESTAMP    NOT NULL DEFAULT NOW(),
+                updatedAt         TIMESTAMP    NOT NULL DEFAULT NOW() ON UPDATE NOW()
+            )
+        `);
+
+        // ── 7. Duplicate check ─────────────────────────────────
+        const [rows] = await connection.execute<mysql.RowDataPacket[]>(
+            `SELECT id FROM flightPriceAlerts
+             WHERE email = ? AND origin = ? AND destination = ?
+               AND departDate = ? AND isActive = 1
+             LIMIT 1`,
+            [email, origin, destination, departDate]
+        );
+
+        if (rows.length > 0) {
             return res.status(200).json({ success: true, alreadyExists: true });
         }
 
-        // ── Insert ─────────────────────────────────────────────
-        await db.insert(flightPriceAlerts).values({
-            email,
-            origin: origin || "---",
-            destination: destination || "---",
-            departDate,
-            returnDate,
-            targetPrice: currentPrice,
-            currency,
-            routeId,
-            source,
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+        // ── 8. Insert ──────────────────────────────────────────
+        await connection.execute(
+            `INSERT INTO flightPriceAlerts
+                (email, origin, destination, departDate, returnDate,
+                 targetPrice, currency, routeId, source, isActive)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            [email, origin, destination, departDate, returnDate,
+                currentPrice, currency, routeId, source]
+        );
 
-        console.info("[price-alerts] new_subscription", {
-            email, origin, destination, departDate, routeId, source,
-            createdAt: new Date().toISOString(),
-        });
-
+        console.info("[price-alerts] subscribed", { email, origin, destination, departDate });
         return res.status(200).json({ success: true, alreadyExists: false });
+
     } catch (error: any) {
         console.error("[price-alerts] error", error?.message, error?.stack);
         return res.status(500).json({ error: "Something went wrong. Please try again." });
     } finally {
-        if (pool) await pool.end().catch(() => { });
+        if (connection) await connection.end().catch(() => { });
     }
 }
