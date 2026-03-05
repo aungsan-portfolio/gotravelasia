@@ -10,7 +10,18 @@ export default async function handler(
     }
 
     try {
-        const { email } = req.body;
+        // Safe parsing of req.body to prevent TypeError if undefined
+        let email: string | undefined;
+
+        if (typeof req.body === "string") {
+            try {
+                email = JSON.parse(req.body).email;
+            } catch {
+                email = undefined;
+            }
+        } else if (req.body && typeof req.body === "object") {
+            email = req.body.email;
+        }
 
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return res.status(400).json({ error: "Invalid email" });
