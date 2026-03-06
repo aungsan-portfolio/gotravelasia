@@ -285,9 +285,14 @@ export default function TransportScheduleWidget() {
                             </span>
                         )}
                         {options.length > 0 && (
-                            <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                                {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
-                            </span>
+                            <div className="flex items-center gap-2 flex-wrap justify-end">
+                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                                    ⚠️ Sample data — verify prices on 12Go.asia
+                                </span>
+                                <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                                    {options.length} option{options.length !== 1 ? "s" : ""} — cheapest first
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -405,11 +410,15 @@ export default function TransportScheduleWidget() {
             </div>
 
             {/* ── Affiliate Disclosure ── */}
-            <div className="p-4 bg-muted/30 border border-border rounded-lg text-xs text-muted-foreground">
+            <div className="p-4 bg-muted/30 border border-border rounded-lg text-xs text-muted-foreground space-y-1">
                 <p>
                     🔗 <strong>Affiliate Link:</strong> We earn a small commission when
                     you book through our links. This helps us provide free travel guides.
                     Your price remains the same.
+                </p>
+                <p>
+                    📋 <strong>Sample Data:</strong> Schedules and prices shown are for reference only.
+                    Actual availability and fares may differ — always confirm on 12Go.asia before booking.
                 </p>
             </div>
         </div>
