@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updated_at": "2026-03-06 01:19",
+    "updated_at": "2026-03-06 01:46",
     "currency": "USD",
     "direct_only": true,
     "total_routes_tracked": 1001,
@@ -16,7 +16,7 @@
       "transfers": 0,
       "flight_num": "521",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     }
   },
   "routes": [
@@ -31,7 +31,7 @@
       "transfers": 0,
       "flight_num": "521",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "DMK",
@@ -112,19 +112,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 21.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-07-08",
-      "transfers": 0,
-      "flight_num": "4109",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "CNX",
       "price": 21.0,
@@ -135,7 +122,20 @@
       "transfers": 0,
       "flight_num": "3416",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 21.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-07-08",
+      "transfers": 0,
+      "flight_num": "4109",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -187,7 +187,7 @@
       "transfers": 0,
       "flight_num": "3434",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "CNX",
@@ -200,7 +200,7 @@
       "transfers": 0,
       "flight_num": "107",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -213,7 +213,7 @@
       "transfers": 0,
       "flight_num": "4105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -226,7 +226,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -239,7 +239,7 @@
       "transfers": 0,
       "flight_num": "645",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -252,7 +252,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -265,7 +265,7 @@
       "transfers": 0,
       "flight_num": "645",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -278,7 +278,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -320,58 +320,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 25.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-16",
-      "transfers": 0,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 25.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-13",
-      "transfers": 0,
-      "flight_num": "3436",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 25.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-01",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 25.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-02",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "CNX",
       "price": 25.0,
@@ -382,7 +330,7 @@
       "transfers": 0,
       "flight_num": "8439",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -395,7 +343,7 @@
       "transfers": 0,
       "flight_num": "8435",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -408,7 +356,7 @@
       "transfers": 0,
       "flight_num": "4106",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -421,7 +369,7 @@
       "transfers": 0,
       "flight_num": "4106",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -434,7 +382,72 @@
       "transfers": 0,
       "flight_num": "3427",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 25.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-16",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 25.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-13",
+      "transfers": 0,
+      "flight_num": "3436",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 25.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-07-01",
+      "transfers": 0,
+      "flight_num": "4105",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 25.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-01",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 25.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-02",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -461,6 +474,32 @@
       "flight_num": "3437",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
+    },
+    {
+      "origin": "BKK",
+      "destination": "CNX",
+      "price": 26.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-21",
+      "transfers": 0,
+      "flight_num": "3425",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "BKK",
+      "destination": "CNX",
+      "price": 26.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-10",
+      "transfers": 0,
+      "flight_num": "3437",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "CNX",
@@ -473,7 +512,20 @@
       "transfers": 0,
       "flight_num": "109",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 26.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-06-29",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -486,7 +538,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -499,7 +551,7 @@
       "transfers": 0,
       "flight_num": "645",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -512,7 +564,7 @@
       "transfers": 0,
       "flight_num": "653",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -525,7 +577,7 @@
       "transfers": 0,
       "flight_num": "653",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -538,7 +590,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -551,33 +603,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "BKK",
-      "destination": "CNX",
-      "price": 26.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-21",
-      "transfers": 0,
-      "flight_num": "3425",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "BKK",
-      "destination": "CNX",
-      "price": 26.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-10",
-      "transfers": 0,
-      "flight_num": "3437",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -746,7 +772,7 @@
       "transfers": 0,
       "flight_num": "3428",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -759,7 +785,7 @@
       "transfers": 0,
       "flight_num": "3428",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -772,7 +798,7 @@
       "transfers": 0,
       "flight_num": "3430",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -785,33 +811,7 @@
       "transfers": 0,
       "flight_num": "3420",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 27.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-25",
-      "transfers": 0,
-      "flight_num": "3436",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 27.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-21",
-      "transfers": 0,
-      "flight_num": "3426",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -824,7 +824,7 @@
       "transfers": 0,
       "flight_num": "3431",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -837,7 +837,7 @@
       "transfers": 0,
       "flight_num": "3437",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -850,7 +850,7 @@
       "transfers": 0,
       "flight_num": "3414",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -863,7 +863,7 @@
       "transfers": 0,
       "flight_num": "8164",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -876,7 +876,7 @@
       "transfers": 0,
       "flight_num": "3445",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -889,7 +889,7 @@
       "transfers": 0,
       "flight_num": "8435",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -902,7 +902,33 @@
       "transfers": 0,
       "flight_num": "3433",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 27.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-25",
+      "transfers": 0,
+      "flight_num": "3436",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 27.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-21",
+      "transfers": 0,
+      "flight_num": "3426",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -1097,7 +1123,7 @@
       "transfers": 0,
       "flight_num": "3415",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -1110,7 +1136,7 @@
       "transfers": 0,
       "flight_num": "4103",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -1123,7 +1149,7 @@
       "transfers": 0,
       "flight_num": "4103",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -1136,7 +1162,7 @@
       "transfers": 0,
       "flight_num": "3428",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -1149,46 +1175,7 @@
       "transfers": 0,
       "flight_num": "3444",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 28.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-26",
-      "transfers": 0,
-      "flight_num": "3426",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 28.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-09",
-      "transfers": 0,
-      "flight_num": "521",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 28.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-07-26",
-      "transfers": 0,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -1201,7 +1188,7 @@
       "transfers": 0,
       "flight_num": "3437",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1214,7 +1201,7 @@
       "transfers": 0,
       "flight_num": "3427",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1227,7 +1214,7 @@
       "transfers": 0,
       "flight_num": "3429",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1240,7 +1227,7 @@
       "transfers": 0,
       "flight_num": "518",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1253,7 +1240,46 @@
       "transfers": 0,
       "flight_num": "3443",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 28.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-26",
+      "transfers": 0,
+      "flight_num": "3426",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 28.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-09",
+      "transfers": 0,
+      "flight_num": "521",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 28.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-07-26",
+      "transfers": 0,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -1526,7 +1552,7 @@
       "transfers": 0,
       "flight_num": "3438",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -1539,59 +1565,7 @@
       "transfers": 0,
       "flight_num": "3428",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 29.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-07",
-      "transfers": 0,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 29.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-18",
-      "transfers": 0,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 29.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-06-05",
-      "transfers": 0,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 29.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-08-13",
-      "transfers": 0,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -1604,7 +1578,7 @@
       "transfers": 0,
       "flight_num": "518",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1617,7 +1591,7 @@
       "transfers": 0,
       "flight_num": "3437",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1630,7 +1604,7 @@
       "transfers": 0,
       "flight_num": "3433",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1643,7 +1617,7 @@
       "transfers": 0,
       "flight_num": "510",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1656,7 +1630,7 @@
       "transfers": 0,
       "flight_num": "3439",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1669,7 +1643,7 @@
       "transfers": 0,
       "flight_num": "510",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1682,7 +1656,7 @@
       "transfers": 0,
       "flight_num": "510",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1695,7 +1669,7 @@
       "transfers": 0,
       "flight_num": "510",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1708,7 +1682,59 @@
       "transfers": 0,
       "flight_num": "510",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 29.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-07",
+      "transfers": 0,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 29.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-18",
+      "transfers": 0,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 29.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-06-05",
+      "transfers": 0,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 29.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-08-13",
+      "transfers": 0,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -1825,33 +1851,7 @@
       "transfers": 0,
       "flight_num": "521",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 30.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-08-14",
-      "transfers": 0,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 30.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-08-15",
-      "transfers": 0,
-      "flight_num": "3417",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -1864,7 +1864,7 @@
       "transfers": 0,
       "flight_num": "126",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1877,7 +1877,7 @@
       "transfers": 0,
       "flight_num": "4108",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1890,7 +1890,7 @@
       "transfers": 0,
       "flight_num": "4104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -1903,7 +1903,33 @@
       "transfers": 0,
       "flight_num": "3425",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 30.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-08-14",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 30.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-08-15",
+      "transfers": 0,
+      "flight_num": "3417",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -1955,7 +1981,7 @@
       "transfers": 0,
       "flight_num": "4103",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -1968,33 +1994,7 @@
       "transfers": 0,
       "flight_num": "3426",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 31.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-26",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 31.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-10",
-      "transfers": 0,
-      "flight_num": "0659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -2007,7 +2007,7 @@
       "transfers": 0,
       "flight_num": "504",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2020,7 +2020,7 @@
       "transfers": 0,
       "flight_num": "3443",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2033,7 +2033,33 @@
       "transfers": 0,
       "flight_num": "3437",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 31.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-26",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 31.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-10",
+      "transfers": 0,
+      "flight_num": "0659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2153,71 +2179,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 32.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-12",
-      "transfers": 0,
-      "flight_num": "521",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 32.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-11",
-      "transfers": 0,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 32.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-06",
-      "transfers": 0,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 32.0,
-      "currency": "USD",
-      "airline_code": "VZ",
-      "airline": "VZ",
-      "date": "2026-03-20",
-      "transfers": 1,
-      "flight_num": "119",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 32.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-05",
-      "transfers": 0,
-      "flight_num": "645",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 32.0,
@@ -2231,6 +2192,45 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 32.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-12",
+      "transfers": 0,
+      "flight_num": "521",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 32.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-11",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 32.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-06",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "CNX",
       "price": 32.0,
@@ -2241,7 +2241,7 @@
       "transfers": 0,
       "flight_num": "502",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2254,7 +2254,7 @@
       "transfers": 0,
       "flight_num": "506",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2267,7 +2267,33 @@
       "transfers": 0,
       "flight_num": "148",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 32.0,
+      "currency": "USD",
+      "airline_code": "VZ",
+      "airline": "VZ",
+      "date": "2026-03-20",
+      "transfers": 1,
+      "flight_num": "119",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 32.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-05",
+      "transfers": 0,
+      "flight_num": "645",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2449,7 +2475,7 @@
       "transfers": 0,
       "flight_num": "119",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -2462,7 +2488,7 @@
       "transfers": 0,
       "flight_num": "519",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -2475,7 +2501,7 @@
       "transfers": 0,
       "flight_num": "3440",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -2488,46 +2514,7 @@
       "transfers": 0,
       "flight_num": "123",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 33.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-30",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 33.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-31",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 33.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-03",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -2540,7 +2527,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2553,7 +2540,7 @@
       "transfers": 0,
       "flight_num": "3445",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2566,7 +2553,46 @@
       "transfers": 0,
       "flight_num": "502",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 33.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-30",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 33.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-31",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 33.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-03",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2657,20 +2683,7 @@
       "transfers": 0,
       "flight_num": "141",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 34.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-24",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -2683,7 +2696,20 @@
       "transfers": 0,
       "flight_num": "110",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 34.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-24",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2774,7 +2800,7 @@
       "transfers": 0,
       "flight_num": "3415",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -2787,7 +2813,7 @@
       "transfers": 0,
       "flight_num": "519",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -2800,7 +2826,7 @@
       "transfers": 0,
       "flight_num": "504",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2813,7 +2839,7 @@
       "transfers": 0,
       "flight_num": "3445",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2826,7 +2852,7 @@
       "transfers": 0,
       "flight_num": "2104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2839,7 +2865,7 @@
       "transfers": 0,
       "flight_num": "3433",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2852,7 +2878,7 @@
       "transfers": 0,
       "flight_num": "3433",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -2865,7 +2891,7 @@
       "transfers": 0,
       "flight_num": "3429",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2891,7 +2917,7 @@
       "transfers": 0,
       "flight_num": "502",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2917,7 +2943,7 @@
       "transfers": 0,
       "flight_num": "3438",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -2930,7 +2956,7 @@
       "transfers": 0,
       "flight_num": "3425",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -2969,7 +2995,7 @@
       "transfers": 0,
       "flight_num": "3420",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3008,7 +3034,7 @@
       "transfers": 0,
       "flight_num": "4103",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -3021,20 +3047,7 @@
       "transfers": 0,
       "flight_num": "3417",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 40.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-20",
-      "transfers": 0,
-      "flight_num": "657",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -3047,7 +3060,20 @@
       "transfers": 0,
       "flight_num": "502",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 40.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-20",
+      "transfers": 0,
+      "flight_num": "657",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3086,7 +3112,7 @@
       "transfers": 0,
       "flight_num": "124",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -3099,7 +3125,7 @@
       "transfers": 0,
       "flight_num": "142",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "CNX",
@@ -3138,7 +3164,7 @@
       "transfers": 0,
       "flight_num": "503",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "HKT",
@@ -3190,46 +3216,7 @@
       "transfers": 0,
       "flight_num": "102",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 44.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-13",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 44.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-18",
-      "transfers": 0,
-      "flight_num": "645",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 44.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-07",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -3255,7 +3242,46 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 44.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-13",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 44.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-18",
+      "transfers": 0,
+      "flight_num": "645",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 44.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-07",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "CNX",
@@ -3269,58 +3295,6 @@
       "flight_num": "3420",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 45.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-19",
-      "transfers": 0,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 45.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-15",
-      "transfers": 0,
-      "flight_num": "657",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 45.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-13",
-      "transfers": 0,
-      "flight_num": "657",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 45.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-17",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -3362,6 +3336,19 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 45.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-19",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "CNX",
       "price": 45.0,
@@ -3372,7 +3359,46 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 45.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-15",
+      "transfers": 0,
+      "flight_num": "657",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 45.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-13",
+      "transfers": 0,
+      "flight_num": "657",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 45.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-17",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3414,32 +3440,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 46.0,
-      "currency": "USD",
-      "airline_code": "VZ",
-      "airline": "VZ",
-      "date": "2026-03-09",
-      "transfers": 0,
-      "flight_num": "119",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 46.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-18",
-      "transfers": 0,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 46.0,
@@ -3466,6 +3466,32 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 46.0,
+      "currency": "USD",
+      "airline_code": "VZ",
+      "airline": "VZ",
+      "date": "2026-03-09",
+      "transfers": 0,
+      "flight_num": "119",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 46.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-18",
+      "transfers": 0,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 47.0,
@@ -3476,7 +3502,7 @@
       "transfers": 0,
       "flight_num": "659",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3528,7 +3554,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3580,7 +3606,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -3593,7 +3619,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -3606,7 +3632,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -3619,7 +3645,7 @@
       "transfers": 1,
       "flight_num": "312",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -3632,7 +3658,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -3645,7 +3671,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3713,32 +3739,6 @@
       "found_at": "2026-03-06 01:19"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 52.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-15",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 52.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-27",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 52.0,
@@ -3749,7 +3749,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -3762,7 +3762,33 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 52.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-15",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 52.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-27",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3804,32 +3830,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 53.0,
-      "currency": "USD",
-      "airline_code": "VZ",
-      "airline": "VZ",
-      "date": "2026-03-21",
-      "transfers": 1,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 53.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-14",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 53.0,
@@ -3840,7 +3840,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -3853,7 +3853,7 @@
       "transfers": 0,
       "flight_num": "518",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -3866,7 +3866,33 @@
       "transfers": 0,
       "flight_num": "3427",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 53.0,
+      "currency": "USD",
+      "airline_code": "VZ",
+      "airline": "VZ",
+      "date": "2026-03-21",
+      "transfers": 1,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 53.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-14",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -3973,19 +3999,6 @@
       "found_at": "2026-03-06 01:19"
     },
     {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 54.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-07-01",
-      "transfers": 1,
-      "flight_num": "3446",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "CNX",
       "price": 54.0,
@@ -4035,7 +4048,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4048,7 +4061,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4061,7 +4074,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4074,7 +4087,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4087,7 +4100,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4100,7 +4113,7 @@
       "transfers": 0,
       "flight_num": "502",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4113,7 +4126,7 @@
       "transfers": 0,
       "flight_num": "3445",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4126,7 +4139,20 @@
       "transfers": 0,
       "flight_num": "4104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 54.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-07-01",
+      "transfers": 1,
+      "flight_num": "3446",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -4168,45 +4194,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 55.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-27",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 55.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-11",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 55.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-25",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 55.0,
@@ -4217,7 +4204,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4230,7 +4217,7 @@
       "transfers": 0,
       "flight_num": "627",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4243,7 +4230,7 @@
       "transfers": 0,
       "flight_num": "621",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4256,7 +4243,46 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 55.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-27",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 55.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-11",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 55.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-25",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -4350,45 +4376,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 56.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-15",
-      "transfers": 0,
-      "flight_num": "519",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 56.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-02",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 56.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-26",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "CNX",
       "price": 56.0,
@@ -4402,6 +4389,32 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 56.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-15",
+      "transfers": 0,
+      "flight_num": "519",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 56.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-02",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 56.0,
@@ -4412,7 +4425,7 @@
       "transfers": 0,
       "flight_num": "615",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4425,7 +4438,7 @@
       "transfers": 1,
       "flight_num": "316",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4438,7 +4451,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4451,7 +4464,7 @@
       "transfers": 0,
       "flight_num": "351",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -4464,7 +4477,20 @@
       "transfers": 0,
       "flight_num": "3437",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 56.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-26",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -4480,6 +4506,19 @@
       "found_at": "2026-03-04 12:43"
     },
     {
+      "origin": "HKT",
+      "destination": "CNX",
+      "price": 57.0,
+      "currency": "USD",
+      "airline_code": "VZ",
+      "airline": "VZ",
+      "date": "2026-03-16",
+      "transfers": 0,
+      "flight_num": "417",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:19"
+    },
+    {
       "origin": "CNX",
       "destination": "BKK",
       "price": 57.0,
@@ -4490,20 +4529,7 @@
       "transfers": 0,
       "flight_num": "505",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 57.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-26",
-      "transfers": 0,
-      "flight_num": "3428",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -4516,20 +4542,20 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
-      "origin": "HKT",
-      "destination": "CNX",
+      "origin": "CNX",
+      "destination": "BKK",
       "price": 57.0,
       "currency": "USD",
-      "airline_code": "VZ",
-      "airline": "VZ",
-      "date": "2026-03-16",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-26",
       "transfers": 0,
-      "flight_num": "417",
+      "flight_num": "3428",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -4607,7 +4633,7 @@
       "transfers": 0,
       "flight_num": "639",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4620,7 +4646,7 @@
       "transfers": 0,
       "flight_num": "504",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -4711,7 +4737,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4724,33 +4750,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 59.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-23",
-      "transfers": 1,
-      "flight_num": "3428",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 59.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-05",
-      "transfers": 1,
-      "flight_num": "3420",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4763,7 +4763,33 @@
       "transfers": 0,
       "flight_num": "3419",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 59.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-23",
+      "transfers": 1,
+      "flight_num": "3428",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 59.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-05",
+      "transfers": 1,
+      "flight_num": "3420",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -4779,97 +4805,6 @@
       "found_at": "2026-03-04 12:43"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-17",
-      "transfers": 0,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-07",
-      "transfers": 0,
-      "flight_num": "3426",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-27",
-      "transfers": 0,
-      "flight_num": "254",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-28",
-      "transfers": 1,
-      "flight_num": "3448",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-19",
-      "transfers": 0,
-      "flight_num": "645",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-14",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 60.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-04",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 60.0,
@@ -4883,6 +4818,45 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-17",
+      "transfers": 0,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-07",
+      "transfers": 0,
+      "flight_num": "3426",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-27",
+      "transfers": 0,
+      "flight_num": "254",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 60.0,
@@ -4893,7 +4867,7 @@
       "transfers": 1,
       "flight_num": "312",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -4906,7 +4880,59 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-28",
+      "transfers": 1,
+      "flight_num": "3448",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-19",
+      "transfers": 0,
+      "flight_num": "645",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-14",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 60.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-04",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -4959,71 +4985,6 @@
       "flight_num": "503",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
-    },
-    {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 61.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-08",
-      "transfers": 0,
-      "flight_num": "503",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 61.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-02",
-      "transfers": 0,
-      "flight_num": "251",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 61.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-24",
-      "transfers": 1,
-      "flight_num": "4109",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 61.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-20",
-      "transfers": 1,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 61.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-28",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -5052,6 +5013,32 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 61.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-08",
+      "transfers": 0,
+      "flight_num": "503",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 61.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-02",
+      "transfers": 0,
+      "flight_num": "251",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 61.0,
@@ -5062,7 +5049,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -5075,7 +5062,46 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 61.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-24",
+      "transfers": 1,
+      "flight_num": "4109",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 61.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-20",
+      "transfers": 1,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 61.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-28",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -5166,7 +5192,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -5179,7 +5205,7 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -5260,71 +5286,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 63.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-06",
-      "transfers": 0,
-      "flight_num": "521",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 63.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-18",
-      "transfers": 0,
-      "flight_num": "253",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 63.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-20",
-      "transfers": 0,
-      "flight_num": "251",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 63.0,
-      "currency": "USD",
-      "airline_code": "DD",
-      "airline": "DD",
-      "date": "2026-03-12",
-      "transfers": 1,
-      "flight_num": "137",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 63.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-16",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 63.0,
@@ -5364,6 +5325,45 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 63.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-06",
+      "transfers": 0,
+      "flight_num": "521",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 63.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-18",
+      "transfers": 0,
+      "flight_num": "253",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 63.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-20",
+      "transfers": 0,
+      "flight_num": "251",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 63.0,
@@ -5374,7 +5374,7 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -5387,7 +5387,7 @@
       "transfers": 0,
       "flight_num": "621",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -5400,7 +5400,7 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -5413,7 +5413,33 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 63.0,
+      "currency": "USD",
+      "airline_code": "DD",
+      "airline": "DD",
+      "date": "2026-03-12",
+      "transfers": 1,
+      "flight_num": "137",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 63.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-16",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -5468,6 +5494,19 @@
       "found_at": "2026-03-04 12:44"
     },
     {
+      "origin": "HKT",
+      "destination": "CNX",
+      "price": 64.0,
+      "currency": "USD",
+      "airline_code": "VZ",
+      "airline": "VZ",
+      "date": "2026-03-10",
+      "transfers": 0,
+      "flight_num": "415",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:19"
+    },
+    {
       "origin": "RGN",
       "destination": "BKK",
       "price": 64.0,
@@ -5478,7 +5517,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -5491,7 +5530,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -5504,7 +5543,7 @@
       "transfers": 1,
       "flight_num": "3420",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "CNX",
@@ -5517,20 +5556,7 @@
       "transfers": 1,
       "flight_num": "3428",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "CNX",
-      "price": 64.0,
-      "currency": "USD",
-      "airline_code": "VZ",
-      "airline": "VZ",
-      "date": "2026-03-10",
-      "transfers": 0,
-      "flight_num": "415",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -5624,6 +5650,19 @@
       "found_at": "2026-03-04 12:44"
     },
     {
+      "origin": "HKT",
+      "destination": "CNX",
+      "price": 65.0,
+      "currency": "USD",
+      "airline_code": "DD",
+      "airline": "DD",
+      "date": "2026-03-24",
+      "transfers": 1,
+      "flight_num": "539",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:19"
+    },
+    {
       "origin": "RGN",
       "destination": "BKK",
       "price": 65.0,
@@ -5634,7 +5673,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -5647,7 +5686,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -5660,7 +5699,7 @@
       "transfers": 0,
       "flight_num": "254",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "CNX",
@@ -5673,7 +5712,7 @@
       "transfers": 1,
       "flight_num": "4103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -5686,20 +5725,7 @@
       "transfers": 0,
       "flight_num": "653",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "CNX",
-      "price": 65.0,
-      "currency": "USD",
-      "airline_code": "DD",
-      "airline": "DD",
-      "date": "2026-03-24",
-      "transfers": 1,
-      "flight_num": "539",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -5793,58 +5819,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 66.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-17",
-      "transfers": 0,
-      "flight_num": "254",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 66.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-05-01",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 66.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-27",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 66.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-17",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 66.0,
@@ -5897,6 +5871,32 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 66.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-17",
+      "transfers": 0,
+      "flight_num": "254",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 66.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-05-01",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 66.0,
@@ -5907,7 +5907,7 @@
       "transfers": 0,
       "flight_num": "617",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -5920,7 +5920,33 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 66.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-27",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 66.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-17",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -5975,97 +6001,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "BKK",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-10",
-      "transfers": 0,
-      "flight_num": "519",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-13",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-03",
-      "transfers": 0,
-      "flight_num": "253",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-11",
-      "transfers": 0,
-      "flight_num": "253",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-04-09",
-      "transfers": 1,
-      "flight_num": "821",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-04-08",
-      "transfers": 1,
-      "flight_num": "821",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 67.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-06",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "SIN",
       "price": 67.0,
@@ -6079,6 +6014,58 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "CNX",
+      "destination": "BKK",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-10",
+      "transfers": 0,
+      "flight_num": "519",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-13",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-03",
+      "transfers": 0,
+      "flight_num": "253",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-11",
+      "transfers": 0,
+      "flight_num": "253",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 67.0,
@@ -6089,7 +6076,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -6102,7 +6089,7 @@
       "transfers": 1,
       "flight_num": "308",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -6115,7 +6102,46 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-04-09",
+      "transfers": 1,
+      "flight_num": "821",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-04-08",
+      "transfers": 1,
+      "flight_num": "821",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 67.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-06",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -6142,32 +6168,6 @@
       "flight_num": "357",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 68.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-07-02",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 68.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-23",
-      "transfers": 0,
-      "flight_num": "251",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -6202,11 +6202,37 @@
       "currency": "USD",
       "airline_code": "SL",
       "airline": "SL",
+      "date": "2026-07-02",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 68.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-23",
+      "transfers": 0,
+      "flight_num": "251",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 68.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
       "date": "2026-04-07",
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -6232,59 +6258,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 69.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-11",
-      "transfers": 1,
-      "flight_num": "3428",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 69.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-31",
-      "transfers": 1,
-      "flight_num": "507",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 69.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-25",
-      "transfers": 1,
-      "flight_num": "3428",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 69.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-04",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -6297,7 +6271,7 @@
       "transfers": 1,
       "flight_num": "536",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -6310,7 +6284,72 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 69.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-08",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 69.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-11",
+      "transfers": 1,
+      "flight_num": "3428",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 69.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-31",
+      "transfers": 1,
+      "flight_num": "507",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 69.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-25",
+      "transfers": 1,
+      "flight_num": "3428",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 69.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-04",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -6365,58 +6404,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 70.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-26",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 70.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-20",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 70.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-04-10",
-      "transfers": 1,
-      "flight_num": "1821",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 70.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-02",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "CNX",
       "price": 70.0,
@@ -6430,6 +6417,32 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 70.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-26",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 70.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-20",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 70.0,
@@ -6440,7 +6453,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -6453,20 +6466,7 @@
       "transfers": 1,
       "flight_num": "706",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 70.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-08",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6479,7 +6479,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6492,7 +6492,33 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 70.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-04-10",
+      "transfers": 1,
+      "flight_num": "1821",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 70.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-02",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -6519,97 +6545,6 @@
       "flight_num": "3029",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-26",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-02",
-      "transfers": 0,
-      "flight_num": "644",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-07-09",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-07-11",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-11",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-10",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 71.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-20",
-      "transfers": 1,
-      "flight_num": "8436",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -6639,6 +6574,71 @@
     },
     {
       "origin": "SIN",
+      "destination": "HKT",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-26",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-02",
+      "transfers": 0,
+      "flight_num": "644",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-07-09",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-07-11",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-11",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
       "destination": "BKK",
       "price": 71.0,
       "currency": "USD",
@@ -6648,7 +6648,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6661,7 +6661,7 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6674,7 +6674,7 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6687,7 +6687,7 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6700,7 +6700,33 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-10",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 71.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-20",
+      "transfers": 1,
+      "flight_num": "8436",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -6739,46 +6765,7 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 72.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-22",
-      "transfers": 1,
-      "flight_num": "3417",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 72.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-11",
-      "transfers": 1,
-      "flight_num": "505",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 72.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-17",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -6791,7 +6778,7 @@
       "transfers": 1,
       "flight_num": "3001",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6804,7 +6791,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6817,7 +6804,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6830,7 +6817,46 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 72.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-22",
+      "transfers": 1,
+      "flight_num": "3417",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 72.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-11",
+      "transfers": 1,
+      "flight_num": "505",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 72.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-17",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6844,32 +6870,6 @@
       "flight_num": "350",
       "region": "SEA",
       "found_at": "2026-03-04 12:45"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 73.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-10",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 73.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-07",
-      "transfers": 0,
-      "flight_num": "103",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
     },
     {
       "origin": "HKT",
@@ -6904,11 +6904,37 @@
       "currency": "USD",
       "airline_code": "SL",
       "airline": "SL",
+      "date": "2026-05-10",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 73.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-07",
+      "transfers": 0,
+      "flight_num": "103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 73.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
       "date": "2026-04-09",
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6947,20 +6973,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 74.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-03",
-      "transfers": 0,
-      "flight_num": "659",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -6973,7 +6986,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6986,7 +6999,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -6999,7 +7012,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7012,7 +7025,7 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7025,7 +7038,20 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 74.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-03",
+      "transfers": 0,
+      "flight_num": "659",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7065,58 +7091,6 @@
       "flight_num": "101",
       "region": "SEA",
       "found_at": "2026-03-04 12:45"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 75.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-07-04",
-      "transfers": 0,
-      "flight_num": "644",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 75.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-07-08",
-      "transfers": 0,
-      "flight_num": "652",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 75.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-03-10",
-      "transfers": 0,
-      "flight_num": "390",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 75.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-14",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -7146,6 +7120,58 @@
     },
     {
       "origin": "SIN",
+      "destination": "HKT",
+      "price": 75.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-07-04",
+      "transfers": 0,
+      "flight_num": "644",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 75.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-07-08",
+      "transfers": 0,
+      "flight_num": "652",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 75.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "8M",
+      "date": "2026-03-10",
+      "transfers": 0,
+      "flight_num": "390",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 75.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-14",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
       "destination": "BKK",
       "price": 75.0,
       "currency": "USD",
@@ -7155,7 +7181,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7168,7 +7194,7 @@
       "transfers": 0,
       "flight_num": "626",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7181,7 +7207,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7259,46 +7285,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 76.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-16",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 76.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-13",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 76.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-18",
-      "transfers": 1,
-      "flight_num": "825",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7311,7 +7298,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7324,7 +7311,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7337,7 +7324,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7350,7 +7337,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7363,7 +7350,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7376,7 +7363,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7389,7 +7376,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7402,7 +7389,46 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 76.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-16",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 76.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-13",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 76.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-18",
+      "transfers": 1,
+      "flight_num": "825",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7441,20 +7467,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 77.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-14",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7467,7 +7480,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7480,7 +7493,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7493,7 +7506,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7506,7 +7519,7 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7519,7 +7532,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7532,7 +7545,7 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7545,7 +7558,20 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 77.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-14",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -7610,7 +7636,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7623,7 +7649,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7636,7 +7662,7 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -7649,7 +7675,7 @@
       "transfers": 0,
       "flight_num": "253",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -7662,20 +7688,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 78.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-04-12",
-      "transfers": 1,
-      "flight_num": "1821",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -7688,7 +7701,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -7701,7 +7714,7 @@
       "transfers": 0,
       "flight_num": "351",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -7714,7 +7727,7 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -7727,7 +7740,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7740,7 +7753,7 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -7753,7 +7766,20 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 78.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-04-12",
+      "transfers": 1,
+      "flight_num": "1821",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -7834,19 +7860,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "RGN",
-      "destination": "BKK",
-      "price": 79.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-06",
-      "transfers": 0,
-      "flight_num": "252",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "CNX",
       "price": 79.0,
@@ -7860,6 +7873,19 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "RGN",
+      "destination": "BKK",
+      "price": 79.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-06",
+      "transfers": 0,
+      "flight_num": "252",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 79.0,
@@ -7870,7 +7896,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7883,7 +7909,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -7909,7 +7935,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -7922,7 +7948,7 @@
       "transfers": 0,
       "flight_num": "626",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -7964,19 +7990,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 81.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-07-10",
-      "transfers": 0,
-      "flight_num": "658",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
       "origin": "HKT",
       "destination": "CNX",
       "price": 81.0,
@@ -7990,6 +8003,19 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 81.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-07-10",
+      "transfers": 0,
+      "flight_num": "658",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 81.0,
@@ -8000,7 +8026,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8013,7 +8039,7 @@
       "transfers": 0,
       "flight_num": "626",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8026,7 +8052,7 @@
       "transfers": 0,
       "flight_num": "626",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8039,7 +8065,7 @@
       "transfers": 0,
       "flight_num": "356",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -8066,32 +8092,6 @@
       "flight_num": "101",
       "region": "SEA",
       "found_at": "2026-03-04 12:45"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 82.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-08",
-      "transfers": 0,
-      "flight_num": "658",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 82.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-07",
-      "transfers": 1,
-      "flight_num": "4103",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -8120,6 +8120,19 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 82.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-08",
+      "transfers": 0,
+      "flight_num": "658",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 82.0,
@@ -8130,7 +8143,7 @@
       "transfers": 1,
       "flight_num": "716",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8143,7 +8156,7 @@
       "transfers": 0,
       "flight_num": "620",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8156,7 +8169,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8169,7 +8182,7 @@
       "transfers": 0,
       "flight_num": "638",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8182,7 +8195,7 @@
       "transfers": 0,
       "flight_num": "610",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8195,7 +8208,20 @@
       "transfers": 0,
       "flight_num": "678",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 82.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-03-07",
+      "transfers": 1,
+      "flight_num": "4103",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -8261,32 +8287,6 @@
       "flight_num": "356",
       "region": "SEA",
       "found_at": "2026-03-04 12:45"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 83.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-15",
-      "transfers": 0,
-      "flight_num": "652",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "SIN",
-      "destination": "HKT",
-      "price": 83.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-08-14",
-      "transfers": 0,
-      "flight_num": "658",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
     },
     {
       "origin": "HKT",
@@ -8302,6 +8302,32 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 83.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-15",
+      "transfers": 0,
+      "flight_num": "652",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "SIN",
+      "destination": "HKT",
+      "price": 83.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-08-14",
+      "transfers": 0,
+      "flight_num": "658",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 83.0,
@@ -8312,7 +8338,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -8325,7 +8351,7 @@
       "transfers": 1,
       "flight_num": "3118",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8338,7 +8364,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8351,7 +8377,7 @@
       "transfers": 0,
       "flight_num": "356",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8364,7 +8390,7 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -8429,7 +8455,7 @@
       "transfers": 1,
       "flight_num": "881",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8442,7 +8468,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -8507,33 +8533,7 @@
       "transfers": 0,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 85.0,
-      "currency": "USD",
-      "airline_code": "DD",
-      "airline": "DD",
-      "date": "2026-03-09",
-      "transfers": 1,
-      "flight_num": "141",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 85.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-04-03",
-      "transfers": 1,
-      "flight_num": "511",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -8546,7 +8546,7 @@
       "transfers": 0,
       "flight_num": "351",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -8559,7 +8559,7 @@
       "transfers": 1,
       "flight_num": "770",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8572,7 +8572,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8585,7 +8585,33 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 85.0,
+      "currency": "USD",
+      "airline_code": "DD",
+      "airline": "DD",
+      "date": "2026-03-09",
+      "transfers": 1,
+      "flight_num": "141",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 85.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-04-03",
+      "transfers": 1,
+      "flight_num": "511",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8637,7 +8663,7 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8650,7 +8676,7 @@
       "transfers": 0,
       "flight_num": "638",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8663,7 +8689,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8676,7 +8702,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8689,7 +8715,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8718,19 +8744,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 87.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-15",
-      "transfers": 1,
-      "flight_num": "3417",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 87.0,
@@ -8741,7 +8754,7 @@
       "transfers": 1,
       "flight_num": "536",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -8754,7 +8767,7 @@
       "transfers": 0,
       "flight_num": "621",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8767,7 +8780,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8780,7 +8793,20 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 87.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-15",
+      "transfers": 1,
+      "flight_num": "3417",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -8794,58 +8820,6 @@
       "flight_num": "251",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 88.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-03-11",
-      "transfers": 0,
-      "flight_num": "391",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 88.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-03-12",
-      "transfers": 0,
-      "flight_num": "391",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 88.0,
-      "currency": "USD",
-      "airline_code": "DD",
-      "airline": "DD",
-      "date": "2026-04-10",
-      "transfers": 1,
-      "flight_num": "135",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 88.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-03-19",
-      "transfers": 0,
-      "flight_num": "102",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -8862,6 +8836,32 @@
     },
     {
       "origin": "BKK",
+      "destination": "RGN",
+      "price": 88.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "8M",
+      "date": "2026-03-11",
+      "transfers": 0,
+      "flight_num": "391",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
+      "destination": "RGN",
+      "price": 88.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "8M",
+      "date": "2026-03-12",
+      "transfers": 0,
+      "flight_num": "391",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
       "destination": "SIN",
       "price": 88.0,
       "currency": "USD",
@@ -8871,7 +8871,7 @@
       "transfers": 0,
       "flight_num": "625",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -8884,7 +8884,7 @@
       "transfers": 0,
       "flight_num": "148",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8897,7 +8897,33 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 88.0,
+      "currency": "USD",
+      "airline_code": "DD",
+      "airline": "DD",
+      "date": "2026-04-10",
+      "transfers": 1,
+      "flight_num": "135",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 88.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-03-19",
+      "transfers": 0,
+      "flight_num": "102",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -8939,19 +8965,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 89.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-04-11",
-      "transfers": 1,
-      "flight_num": "833",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 89.0,
@@ -8962,7 +8975,7 @@
       "transfers": 0,
       "flight_num": "609",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -8975,7 +8988,7 @@
       "transfers": 0,
       "flight_num": "621",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -8988,7 +9001,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9001,7 +9014,7 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9014,7 +9027,20 @@
       "transfers": 0,
       "flight_num": "644",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 89.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-04-11",
+      "transfers": 1,
+      "flight_num": "833",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -9053,7 +9079,7 @@
       "transfers": 0,
       "flight_num": "254",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -9066,7 +9092,7 @@
       "transfers": 0,
       "flight_num": "390",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -9079,7 +9105,7 @@
       "transfers": 0,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -9092,7 +9118,7 @@
       "transfers": 1,
       "flight_num": "714",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -9105,7 +9131,7 @@
       "transfers": 0,
       "flight_num": "356",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -9147,19 +9173,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 91.0,
-      "currency": "USD",
-      "airline_code": "DD",
-      "airline": "DD",
-      "date": "2026-03-08",
-      "transfers": 1,
-      "flight_num": "127",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 91.0,
@@ -9170,7 +9183,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -9183,7 +9196,7 @@
       "transfers": 0,
       "flight_num": "356",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9196,7 +9209,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9209,7 +9222,20 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 91.0,
+      "currency": "USD",
+      "airline_code": "DD",
+      "airline": "DD",
+      "date": "2026-03-08",
+      "transfers": 1,
+      "flight_num": "127",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -9261,7 +9287,7 @@
       "transfers": 1,
       "flight_num": "770",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -9274,7 +9300,7 @@
       "transfers": 0,
       "flight_num": "621",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -9287,7 +9313,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9300,7 +9326,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9313,7 +9339,7 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -9365,7 +9391,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9378,7 +9404,7 @@
       "transfers": 0,
       "flight_num": "638",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9391,7 +9417,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9404,7 +9430,7 @@
       "transfers": 0,
       "flight_num": "610",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9430,7 +9456,7 @@
       "transfers": 0,
       "flight_num": "656",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -9443,33 +9469,7 @@
       "transfers": 0,
       "flight_num": "351",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 94.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-20",
-      "transfers": 1,
-      "flight_num": "833",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 94.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-04-05",
-      "transfers": 1,
-      "flight_num": "827",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -9482,7 +9482,33 @@
       "transfers": 0,
       "flight_num": "626",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 94.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-20",
+      "transfers": 1,
+      "flight_num": "833",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 94.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-04-05",
+      "transfers": 1,
+      "flight_num": "827",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -9511,32 +9537,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 95.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-21",
-      "transfers": 1,
-      "flight_num": "819",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 95.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-04-22",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 95.0,
@@ -9547,7 +9547,7 @@
       "transfers": 1,
       "flight_num": "764",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -9560,7 +9560,7 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9573,7 +9573,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9586,7 +9586,7 @@
       "transfers": 1,
       "flight_num": "720",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9599,7 +9599,7 @@
       "transfers": 1,
       "flight_num": "718",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9612,7 +9612,33 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 95.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-21",
+      "transfers": 1,
+      "flight_num": "819",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 95.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-04-22",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9628,19 +9654,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 96.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-24",
-      "transfers": 1,
-      "flight_num": "819",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "SIN",
       "destination": "BKK",
       "price": 96.0,
@@ -9651,7 +9664,20 @@
       "transfers": 0,
       "flight_num": "356",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 96.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-24",
+      "transfers": 1,
+      "flight_num": "819",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -9693,19 +9719,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "CNX",
-      "destination": "SIN",
-      "price": 97.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-10",
-      "transfers": 1,
-      "flight_num": "855",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "RGN",
       "price": 97.0,
@@ -9716,7 +9729,7 @@
       "transfers": 0,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -9729,7 +9742,7 @@
       "transfers": 1,
       "flight_num": "311",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -9742,7 +9755,7 @@
       "transfers": 1,
       "flight_num": "700",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9755,7 +9768,20 @@
       "transfers": 1,
       "flight_num": "716",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "SIN",
+      "price": 97.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-10",
+      "transfers": 1,
+      "flight_num": "855",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -9836,19 +9862,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 99.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-05-18",
-      "transfers": 0,
-      "flight_num": "657",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "SIN",
       "destination": "BKK",
       "price": 99.0,
@@ -9859,7 +9872,7 @@
       "transfers": 0,
       "flight_num": "614",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9872,7 +9885,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9885,7 +9898,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9898,7 +9911,20 @@
       "transfers": 1,
       "flight_num": "700",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 99.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-05-18",
+      "transfers": 0,
+      "flight_num": "657",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9924,7 +9950,7 @@
       "transfers": 1,
       "flight_num": "889",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -9937,7 +9963,7 @@
       "transfers": 0,
       "flight_num": "624",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9950,7 +9976,7 @@
       "transfers": 1,
       "flight_num": "718",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9963,7 +9989,7 @@
       "transfers": 0,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -9976,7 +10002,7 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -10005,19 +10031,6 @@
       "found_at": "2026-02-28 18:23"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 101.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-10",
-      "transfers": 1,
-      "flight_num": "825",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 101.0,
@@ -10028,7 +10041,20 @@
       "transfers": 1,
       "flight_num": "3112",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 101.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-10",
+      "transfers": 1,
+      "flight_num": "825",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -10093,7 +10119,7 @@
       "transfers": 0,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10106,7 +10132,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -10119,7 +10145,7 @@
       "transfers": 1,
       "flight_num": "1726",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -10187,19 +10213,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 103.0,
-      "currency": "USD",
-      "airline_code": "DD",
-      "airline": "DD",
-      "date": "2026-03-06",
-      "transfers": 1,
-      "flight_num": "137",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 103.0,
@@ -10210,7 +10223,7 @@
       "transfers": 1,
       "flight_num": "762",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10223,7 +10236,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -10236,7 +10249,7 @@
       "transfers": 1,
       "flight_num": "720",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -10249,7 +10262,20 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 103.0,
+      "currency": "USD",
+      "airline_code": "DD",
+      "airline": "DD",
+      "date": "2026-03-06",
+      "transfers": 1,
+      "flight_num": "137",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -10288,7 +10314,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -10314,7 +10340,7 @@
       "transfers": 1,
       "flight_num": "722",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -10369,19 +10395,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 106.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-09",
-      "transfers": 1,
-      "flight_num": "821",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 106.0,
@@ -10392,7 +10405,20 @@
       "transfers": 0,
       "flight_num": "617",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 106.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-09",
+      "transfers": 1,
+      "flight_num": "821",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -10447,19 +10473,6 @@
       "found_at": "2026-03-04 12:44"
     },
     {
-      "origin": "CNX",
-      "destination": "SIN",
-      "price": 107.0,
-      "currency": "USD",
-      "airline_code": "VZ",
-      "airline": "VZ",
-      "date": "2026-03-09",
-      "transfers": 1,
-      "flight_num": "119",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "BKK",
       "destination": "SIN",
       "price": 107.0,
@@ -10470,7 +10483,20 @@
       "transfers": 1,
       "flight_num": "702",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "CNX",
+      "destination": "SIN",
+      "price": 107.0,
+      "currency": "USD",
+      "airline_code": "VZ",
+      "airline": "VZ",
+      "date": "2026-03-09",
+      "transfers": 1,
+      "flight_num": "119",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -10548,7 +10574,7 @@
       "transfers": 1,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10561,7 +10587,7 @@
       "transfers": 0,
       "flight_num": "356",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -10587,7 +10613,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10600,7 +10626,7 @@
       "transfers": 1,
       "flight_num": "714",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -10652,7 +10678,7 @@
       "transfers": 0,
       "flight_num": "501",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10665,7 +10691,7 @@
       "transfers": 1,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -10717,7 +10743,7 @@
       "transfers": 1,
       "flight_num": "9855",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -10756,7 +10782,7 @@
       "transfers": 0,
       "flight_num": "652",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -10769,7 +10795,7 @@
       "transfers": 0,
       "flight_num": "237",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "MDL",
@@ -10782,7 +10808,7 @@
       "transfers": 1,
       "flight_num": "374",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10795,7 +10821,7 @@
       "transfers": 1,
       "flight_num": "702",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -10860,7 +10886,7 @@
       "transfers": 1,
       "flight_num": "311",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10873,7 +10899,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -10938,7 +10964,7 @@
       "transfers": 1,
       "flight_num": "891",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -10951,7 +10977,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -10964,7 +10990,7 @@
       "transfers": 1,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -10993,19 +11019,6 @@
       "found_at": "2026-03-04 12:45"
     },
     {
-      "origin": "RGN",
-      "destination": "KUL",
-      "price": 117.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-03-09",
-      "transfers": 0,
-      "flight_num": "501",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "HKT",
       "destination": "CNX",
       "price": 117.0,
@@ -11017,6 +11030,19 @@
       "flight_num": "415",
       "region": "SEA",
       "found_at": "2026-03-06 01:19"
+    },
+    {
+      "origin": "RGN",
+      "destination": "KUL",
+      "price": 117.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "8M",
+      "date": "2026-03-09",
+      "transfers": 0,
+      "flight_num": "501",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "MDL",
@@ -11032,19 +11058,6 @@
       "found_at": "2026-02-28 18:30"
     },
     {
-      "origin": "CNX",
-      "destination": "SIN",
-      "price": 118.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-03-06",
-      "transfers": 0,
-      "flight_num": "677",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
       "origin": "RGN",
       "destination": "BKK",
       "price": 118.0,
@@ -11055,7 +11068,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -11068,7 +11081,20 @@
       "transfers": 1,
       "flight_num": "700",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "SIN",
+      "price": 118.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-03-06",
+      "transfers": 0,
+      "flight_num": "677",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -11094,20 +11120,7 @@
       "transfers": 0,
       "flight_num": "373",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "CNX",
-      "destination": "HKT",
-      "price": 119.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-04-28",
-      "transfers": 0,
-      "flight_num": "3440",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -11120,7 +11133,7 @@
       "transfers": 1,
       "flight_num": "306",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -11133,7 +11146,7 @@
       "transfers": 1,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11146,7 +11159,7 @@
       "transfers": 0,
       "flight_num": "0652",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11159,7 +11172,20 @@
       "transfers": 1,
       "flight_num": "430",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "CNX",
+      "destination": "HKT",
+      "price": 119.0,
+      "currency": "USD",
+      "airline_code": "FD",
+      "airline": "FD",
+      "date": "2026-04-28",
+      "transfers": 0,
+      "flight_num": "3440",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -11198,20 +11224,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 120.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-22",
-      "transfers": 1,
-      "flight_num": "1821",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -11224,7 +11237,7 @@
       "transfers": 2,
       "flight_num": "812",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -11237,7 +11250,7 @@
       "transfers": 1,
       "flight_num": "678",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11250,7 +11263,7 @@
       "transfers": 1,
       "flight_num": "722",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11263,7 +11276,20 @@
       "transfers": 1,
       "flight_num": "700",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 120.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-22",
+      "transfers": 1,
+      "flight_num": "1821",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -11289,7 +11315,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -11328,7 +11354,7 @@
       "transfers": 0,
       "flight_num": "104",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11341,7 +11367,7 @@
       "transfers": 1,
       "flight_num": "720",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -11354,7 +11380,7 @@
       "transfers": 0,
       "flight_num": "362",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "HKT",
@@ -11367,7 +11393,7 @@
       "transfers": 1,
       "flight_num": "1821",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11393,7 +11419,7 @@
       "transfers": 0,
       "flight_num": "251",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "DMK",
@@ -11432,7 +11458,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -11445,7 +11471,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11458,7 +11484,7 @@
       "transfers": 1,
       "flight_num": "720",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11474,6 +11500,19 @@
       "found_at": "2026-03-04 12:45"
     },
     {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 126.0,
+      "currency": "USD",
+      "airline_code": "TR",
+      "airline": "TR",
+      "date": "2026-06-19",
+      "transfers": 0,
+      "flight_num": "653",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:19"
+    },
+    {
       "origin": "BKK",
       "destination": "RGN",
       "price": 126.0,
@@ -11484,7 +11523,7 @@
       "transfers": 0,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "HKT",
@@ -11497,20 +11536,7 @@
       "transfers": 0,
       "flight_num": "653",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 126.0,
-      "currency": "USD",
-      "airline_code": "TR",
-      "airline": "TR",
-      "date": "2026-06-19",
-      "transfers": 0,
-      "flight_num": "653",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -11562,7 +11588,7 @@
       "transfers": 1,
       "flight_num": "890",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -11575,7 +11601,7 @@
       "transfers": 1,
       "flight_num": "884",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -11588,7 +11614,7 @@
       "transfers": 0,
       "flight_num": "357",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11601,7 +11627,7 @@
       "transfers": 1,
       "flight_num": "103",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "KUL",
@@ -11614,7 +11640,7 @@
       "transfers": 1,
       "flight_num": "896",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -11627,7 +11653,7 @@
       "transfers": 0,
       "flight_num": "621",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -11679,7 +11705,7 @@
       "transfers": 1,
       "flight_num": "884",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -11692,7 +11718,7 @@
       "transfers": 1,
       "flight_num": "896",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "DMK",
@@ -11731,7 +11757,7 @@
       "transfers": 0,
       "flight_num": "238",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11744,7 +11770,7 @@
       "transfers": 0,
       "flight_num": "238",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11757,7 +11783,7 @@
       "transfers": 1,
       "flight_num": "700",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -11783,20 +11809,7 @@
       "transfers": 0,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "HKT",
-      "destination": "SIN",
-      "price": 132.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-07",
-      "transfers": 1,
-      "flight_num": "827",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -11809,7 +11822,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11822,7 +11835,7 @@
       "transfers": 1,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11835,7 +11848,20 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "SIN",
+      "price": 132.0,
+      "currency": "USD",
+      "airline_code": "AK",
+      "airline": "AK",
+      "date": "2026-03-07",
+      "transfers": 1,
+      "flight_num": "827",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11861,7 +11887,7 @@
       "transfers": 1,
       "flight_num": "827",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -11887,7 +11913,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -11900,7 +11926,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -11913,7 +11939,7 @@
       "transfers": 0,
       "flight_num": "361",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -11926,7 +11952,7 @@
       "transfers": 1,
       "flight_num": "4419",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -11965,7 +11991,7 @@
       "transfers": 0,
       "flight_num": "100",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -11979,19 +12005,6 @@
       "flight_num": "3001",
       "region": "SEA",
       "found_at": "2026-03-04 12:44"
-    },
-    {
-      "origin": "BKK",
-      "destination": "RGN",
-      "price": 138.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-03-07",
-      "transfers": 0,
-      "flight_num": "336",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
     },
     {
       "origin": "HKT",
@@ -12008,6 +12021,19 @@
     },
     {
       "origin": "BKK",
+      "destination": "RGN",
+      "price": 138.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "8M",
+      "date": "2026-03-07",
+      "transfers": 0,
+      "flight_num": "336",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
+      "origin": "BKK",
       "destination": "SIN",
       "price": 138.0,
       "currency": "USD",
@@ -12017,7 +12043,7 @@
       "transfers": 0,
       "flight_num": "609",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12030,7 +12056,7 @@
       "transfers": 2,
       "flight_num": "8550",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -12043,7 +12069,7 @@
       "transfers": 1,
       "flight_num": "700",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -12056,7 +12082,7 @@
       "transfers": 0,
       "flight_num": "235",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12069,7 +12095,7 @@
       "transfers": 0,
       "flight_num": "101",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -12108,7 +12134,7 @@
       "transfers": 0,
       "flight_num": "362",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12121,7 +12147,7 @@
       "transfers": 1,
       "flight_num": "702",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -12134,7 +12160,7 @@
       "transfers": 0,
       "flight_num": "658",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -12147,7 +12173,7 @@
       "transfers": 1,
       "flight_num": "892",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12160,7 +12186,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "DMK",
@@ -12199,20 +12225,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
-    },
-    {
-      "origin": "MDL",
-      "destination": "BKK",
-      "price": 147.0,
-      "currency": "USD",
-      "airline_code": "8M",
-      "airline": "8M",
-      "date": "2026-03-18",
-      "transfers": 0,
-      "flight_num": "362",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "HKT",
@@ -12228,6 +12241,19 @@
       "found_at": "2026-03-06 01:19"
     },
     {
+      "origin": "MDL",
+      "destination": "BKK",
+      "price": 147.0,
+      "currency": "USD",
+      "airline_code": "8M",
+      "airline": "8M",
+      "date": "2026-03-18",
+      "transfers": 0,
+      "flight_num": "362",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:45"
+    },
+    {
       "origin": "SIN",
       "destination": "RGN",
       "price": 147.0,
@@ -12238,7 +12264,7 @@
       "transfers": 0,
       "flight_num": "238",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -12251,7 +12277,7 @@
       "transfers": 0,
       "flight_num": "350",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -12264,7 +12290,7 @@
       "transfers": 1,
       "flight_num": "604",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "MDL",
@@ -12277,7 +12303,7 @@
       "transfers": 0,
       "flight_num": "362",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -12290,7 +12316,7 @@
       "transfers": 1,
       "flight_num": "892",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "DMK",
@@ -12316,7 +12342,7 @@
       "transfers": 1,
       "flight_num": "787",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -12368,7 +12394,7 @@
       "transfers": 1,
       "flight_num": "520",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12381,7 +12407,7 @@
       "transfers": 0,
       "flight_num": "503",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "MDL",
@@ -12394,7 +12420,7 @@
       "transfers": 0,
       "flight_num": "0337",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "BKK",
@@ -12407,7 +12433,7 @@
       "transfers": 0,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12420,7 +12446,7 @@
       "transfers": 0,
       "flight_num": "105",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "CNX",
@@ -12432,6 +12458,19 @@
       "date": "2026-03-06",
       "transfers": 0,
       "flight_num": "135",
+      "region": "SEA",
+      "found_at": "2026-03-06 01:46"
+    },
+    {
+      "origin": "HKT",
+      "destination": "CNX",
+      "price": 156.0,
+      "currency": "USD",
+      "airline_code": "SL",
+      "airline": "SL",
+      "date": "2026-05-01",
+      "transfers": 0,
+      "flight_num": "765",
       "region": "SEA",
       "found_at": "2026-03-06 01:19"
     },
@@ -12446,20 +12485,7 @@
       "transfers": 1,
       "flight_num": "896",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "HKT",
-      "destination": "CNX",
-      "price": 156.0,
-      "currency": "USD",
-      "airline_code": "SL",
-      "airline": "SL",
-      "date": "2026-05-01",
-      "transfers": 0,
-      "flight_num": "765",
-      "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12485,7 +12511,7 @@
       "transfers": 1,
       "flight_num": "888",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12550,7 +12576,7 @@
       "transfers": 1,
       "flight_num": "888",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12563,7 +12589,7 @@
       "transfers": 1,
       "flight_num": "252",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -12576,7 +12602,7 @@
       "transfers": 1,
       "flight_num": "312",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12589,7 +12615,7 @@
       "transfers": 0,
       "flight_num": "501",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "MDL",
@@ -12602,7 +12628,7 @@
       "transfers": 0,
       "flight_num": "362",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12628,7 +12654,7 @@
       "transfers": 1,
       "flight_num": "4102",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12641,7 +12667,7 @@
       "transfers": 0,
       "flight_num": "234",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "BKK",
@@ -12654,7 +12680,7 @@
       "transfers": 0,
       "flight_num": "361",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12667,7 +12693,7 @@
       "transfers": 0,
       "flight_num": "254",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -12680,20 +12706,7 @@
       "transfers": 1,
       "flight_num": "892",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "KUL",
-      "destination": "RGN",
-      "price": 179.0,
-      "currency": "USD",
-      "airline_code": "FD",
-      "airline": "FD",
-      "date": "2026-03-21",
-      "transfers": 2,
-      "flight_num": "309",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -12706,7 +12719,7 @@
       "transfers": 1,
       "flight_num": "892",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "MDL",
@@ -12719,7 +12732,7 @@
       "transfers": 0,
       "flight_num": "362",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12758,7 +12771,7 @@
       "transfers": 1,
       "flight_num": "467",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "KUL",
@@ -12771,7 +12784,7 @@
       "transfers": 2,
       "flight_num": "868",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12810,7 +12823,7 @@
       "transfers": 1,
       "flight_num": "391",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12860,7 +12873,7 @@
       "transfers": 0,
       "flight_num": "521",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "SIN",
@@ -12873,7 +12886,7 @@
       "transfers": 0,
       "flight_num": "466",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "KUL",
@@ -12886,7 +12899,7 @@
       "transfers": 3,
       "flight_num": "6128",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "MDL",
@@ -12912,7 +12925,7 @@
       "transfers": 0,
       "flight_num": "704",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "KUL",
@@ -12925,7 +12938,7 @@
       "transfers": 1,
       "flight_num": "3048",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -12943,19 +12956,6 @@
     {
       "origin": "KUL",
       "destination": "RGN",
-      "price": 274.0,
-      "currency": "USD",
-      "airline_code": "AK",
-      "airline": "AK",
-      "date": "2026-03-22",
-      "transfers": 0,
-      "flight_num": "880",
-      "region": "SEA",
-      "found_at": "2026-03-05 21:02"
-    },
-    {
-      "origin": "KUL",
-      "destination": "RGN",
       "price": 281.0,
       "currency": "USD",
       "airline_code": "AK",
@@ -12964,7 +12964,7 @@
       "transfers": 0,
       "flight_num": "896",
       "region": "SEA",
-      "found_at": "2026-03-05 21:02"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "SIN",
@@ -12977,7 +12977,7 @@
       "transfers": 0,
       "flight_num": "238",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:46"
     },
     {
       "origin": "RGN",
@@ -12990,7 +12990,7 @@
       "transfers": 1,
       "flight_num": "370",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -13016,7 +13016,7 @@
       "transfers": 0,
       "flight_num": "361",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     },
     {
       "origin": "RGN",
@@ -13029,7 +13029,7 @@
       "transfers": 0,
       "flight_num": "231",
       "region": "SEA",
-      "found_at": "2026-03-06 01:19"
+      "found_at": "2026-03-06 01:45"
     }
   ]
 }
