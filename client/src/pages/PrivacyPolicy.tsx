@@ -1,50 +1,75 @@
-import { Link } from "wouter";
-import { usePageMeta } from "@/hooks/usePageMeta";
-import Layout from "@/components/Layout";
+import { useEffect } from "react";
+import { Shield } from "lucide-react";
 
-export default function TermsAndPrivacy() {
-  usePageMeta({
-    title: "Privacy Policy & Terms",
-    description: "GoTravel Asia privacy policy, terms of service, affiliate disclosure, and cookie policy for our Southeast Asia travel comparison platform.",
-    path: "/privacy",
-  });
+export default function PrivacyPolicy() {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.title = "Privacy Policy — GoTravel Asia";
+  }, []);
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto px-4 py-12 prose prose-lg dark:prose-invert">
-        <h1 className="text-4xl font-bold mb-8">Terms of Service & Privacy Policy</h1>
-        <p className="text-sm text-muted-foreground mb-12">Last Updated: February 2026</p>
+    <div className="min-h-screen bg-background pb-12">
+      <div className="bg-primary/5 border-b border-border py-12 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 mb-3">
+            <Shield className="w-8 h-8 text-primary" />
+            <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
+              Legal
+            </span>
+          </div>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Privacy Policy</h1>
+          <p className="text-muted-foreground text-sm">Last updated: March 6, 2026</p>
+        </div>
+      </div>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">1. Affiliate Disclosure</h2>
-          <p>
-            GoTravelAsia participates in various affiliate marketing programs, which means we may get paid commissions on editorially chosen products purchased through our links to retailer sites (such as Agoda, Booking.com, Klook).
-          </p>
-          <p className="font-bold">
-            This comes at NO extra cost to you. It helps us maintain this site and provide free travel guides.
-          </p>
-        </section>
+      <div className="max-w-3xl mx-auto px-4 py-12 prose prose-slate dark:prose-invert">
+        <p>
+          At GoTravel Asia, we take your privacy seriously. This privacy policy describes
+          how we collect, use, and protect your personal information when you use our website.
+        </p>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">2. Content Liability</h2>
-          <p>
-            The information provided on GoTravelAsia is for general informational purposes only. We are not responsible for any booking issues, flight cancellations, or hotel discrepancies. Please verify all details directly with the booking provider.
-          </p>
-        </section>
+        <h2>1. Information We Collect</h2>
+        <p>
+          We only collect information that is necessary to provide our services. This includes:
+        </p>
+        <ul>
+          <li><strong>Email Addresses:</strong> When you subscribe to our newsletter or price alerts, we store your email address securely.</li>
+          <li><strong>Usage Data:</strong> We collect anonymous data on how visitors interact with our site to improve the user experience.</li>
+          <li><strong>Cookies:</strong> We use cookies to manage sessions and store your preferences. You can manage these in our <a href="/cookies">Cookie Settings</a>.</li>
+        </ul>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">3. Cookies</h2>
-          <p>
-            We use cookies to ensure you get the best experience on our website and to track affiliate referrals.
-          </p>
-        </section>
+        <h2>2. How We Use Your Information</h2>
+        <p>Your information is used strictly to:</p>
+        <ul>
+          <li>Send you the newsletters and customized travel alerts you requested.</li>
+          <li>Improve the functionality and performance of our website.</li>
+        </ul>
+        <p>We <strong>do not</strong> sell your personal data to third parties.</p>
 
-        <p className="text-center mt-12">
-          <Link href="/" className="text-primary hover:underline">
-            ← Back to Home
-          </Link>
+        <h2>3. Third-Party Services</h2>
+        <p>
+          Our application integrates with third-party providers such as Travelpayouts and 12Go Asia to provide flight and transport searches.
+          When you interact with these widgets, you are subject to the privacy policies of those respective services.
+        </p>
+
+        <h2>4. Data Security</h2>
+        <p>
+          We implement industry-standard security measures to protect your personal information.
+          Our backend limits data exposure and follows secure coding practices.
+        </p>
+
+        <h2>5. Your Rights</h2>
+        <p>
+          If you wish to access, correct, or delete any personal information we hold about you, please
+          contact us.
+        </p>
+
+        <h2>6. Contact Us</h2>
+        <p>
+          If you have any questions about this Privacy Policy, please reach out to us at
+          <a href="mailto:contact@gotravelasia.com"> contact@gotravelasia.com</a>.
         </p>
       </div>
-    </Layout>
+    </div>
   );
 }
