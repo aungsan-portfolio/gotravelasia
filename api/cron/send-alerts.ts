@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { and, asc, eq, isNull, or, lte } from "drizzle-orm";
 import { int, mysqlTable, text, varchar, timestamp } from "drizzle-orm/mysql-core";
 import mysql from "mysql2/promise";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 // Inline schema for the queue table
 export const emailQueue = mysqlTable("emailQueue", {
@@ -46,10 +46,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) return res.status(500).json({ error: "DATABASE_URL not configured" });
 
-        const resendApiKey = process.env.RESEND_API_KEY;
-        if (!resendApiKey) return res.status(500).json({ error: "RESEND_API_KEY not configured" });
+        const emailUser = process.env.EMAIL_USER;
+        const emailPass = process.env.EMAIL_PASS;
+        if (!emailUser || !emailPass) return res.status(500).json({ error: "EMAIL_USER or EMAIL_PASS not configured" });
 
-        const fromEmail = process.env.ALERT_FROM_EMAIL || "GoTravel Asia <onboarding@resend.dev>";
+        const fromEmail = process.env.ALERT_FROM_EMAIL || `GoTravel Asia <${emailUser}>`;
         const batchSize = Number(process.env.EMAIL_BATCH_SIZE || 50);
 
         // 3) Connect to DB
@@ -92,13 +93,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: "No pending emails." });
         }
 
-        const resend = new Resend(resendApiKey);
+        const transporter = nodemailer.createTransport({
+            host: "smtp-mail.outlook.com",
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: emailUser,
+                pass: emailPass,
+            },
+        });
         const results: Array<{ id: number; ok: boolean; error?: string }> = [];
 
         // 5) Send + mark
         for (const row of pending) {
             try {
-                await resend.emails.send({
+                await transporter.sendMail({
                     from: fromEmail,
                     to: row.toEmail,
                     subject: row.subject,

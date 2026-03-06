@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import mysql from "mysql2/promise";
 
 const ALLOWED_ORIGINS = [
@@ -89,12 +89,22 @@ export default async function handler(
             }
         }
 
-        const resendKey = process.env.RESEND_API_KEY;
-        if (resendKey) {
+        const emailUser = process.env.EMAIL_USER;
+        const emailPass = process.env.EMAIL_PASS;
+        if (emailUser && emailPass) {
             try {
-                const resend = new Resend(resendKey);
-                await resend.emails.send({
-                    from: process.env.EMAIL_FROM || "GoTravel Asia <onboarding@resend.dev>",
+                const transporter = nodemailer.createTransport({
+                    host: "smtp-mail.outlook.com",
+                    port: 587,
+                    secure: false, // true for 465, false for other ports
+                    auth: {
+                        user: emailUser,
+                        pass: emailPass,
+                    },
+                });
+
+                await transporter.sendMail({
+                    from: process.env.EMAIL_FROM || `GoTravel Asia <${emailUser}>`,
                     to: email,
                     subject: "Welcome to GoTravel Asia! ✈️",
                     html: `
