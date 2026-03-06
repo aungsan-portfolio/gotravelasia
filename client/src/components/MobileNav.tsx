@@ -26,7 +26,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                 </Button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-[280px] flex flex-col">
+            <SheetContent side="left" className="w-[280px] flex flex-col bg-[#FFD700]">
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                         <img src="/logo.webp" alt="GoTravel Logo" className="h-8 w-auto" />
@@ -37,7 +37,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                 {onPlanTrip && (
                     <Button
                         onClick={handlePlanTrip}
-                        className="mt-8 w-full bg-[#5B0EA6] hover:bg-[#4a0b8a] text-white font-semibold"
+                        className="mt-8 w-full bg-gray-900 hover:bg-gray-700 text-[#FFD700] font-semibold"
                     >
                         <Plane className="w-4 h-4 mr-2" />
                         Plan My Trip
@@ -48,23 +48,23 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                     <a
                         href="/#flights"
                         onClick={handleLinkClick}
-                        className="flex items-center gap-3 py-3 px-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium text-[15px]"
+                        className="flex items-center gap-3 py-3 px-3 text-gray-900 hover:bg-[#FFC200] rounded-lg transition-colors font-medium text-[15px]"
                     >
-                        <Plane className="w-5 h-5 text-gray-500" /> Flights
+                        <Plane className="w-5 h-5 text-gray-800" /> Flights
                     </a>
                     <a
                         href="/#hotels"
                         onClick={handleLinkClick}
-                        className="flex items-center gap-3 py-3 px-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium text-[15px]"
+                        className="flex items-center gap-3 py-3 px-3 text-gray-900 hover:bg-[#FFC200] rounded-lg transition-colors font-medium text-[15px]"
                     >
-                        <Hotel className="w-5 h-5 text-gray-500" /> Hotels
+                        <Hotel className="w-5 h-5 text-gray-800" /> Hotels
                     </a>
                     <a
                         href="/#transport"
                         onClick={handleLinkClick}
-                        className="flex items-center gap-3 py-3 px-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium text-[15px]"
+                        className="flex items-center gap-3 py-3 px-3 text-gray-900 hover:bg-[#FFC200] rounded-lg transition-colors font-medium text-[15px]"
                     >
-                        <Bus className="w-5 h-5 text-gray-500" /> Transport
+                        <Bus className="w-5 h-5 text-gray-800" /> Transport
                     </a>
                 </nav>
             </SheetContent>
