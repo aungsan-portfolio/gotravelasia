@@ -1,4 +1,27 @@
-export default async function handler(req: any, res: any) {
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+const ALLOWED_ORIGINS = [
+    "https://gotravelasia.com",
+    "https://www.gotravelasia.com",
+    "https://gotravel-asia.vercel.app",
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+].filter(Boolean);
+
+function setCors(req: VercelRequest, res: VercelResponse) {
+    const origin = req.headers.origin || "";
+    if (ALLOWED_ORIGINS.some((o) => origin.startsWith(o))) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Vary", "Origin");
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    setCors(req, res);
+    if (req.method === "OPTIONS") return res.status(200).end();
+    if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+
     try {
         const token = process.env.TRAVELPAYOUTS_TOKEN;
         if (!token) {

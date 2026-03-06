@@ -10,6 +10,74 @@ const ALLOWED_ORIGINS = [
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
+// ── One-time schema migration (runs once per cold-start) ──────────────
+let schemaReady: Promise<void> | null = null;
+
+function createConnection() {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) throw new Error("DATABASE_URL not configured");
+    const url = new URL(dbUrl);
+    return mysql.createConnection({
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.slice(1),
+        ssl: { rejectUnauthorized: false },
+        connectTimeout: 10000,
+    });
+}
+
+async function runMigrations() {
+    const conn = await createConnection();
+    try {
+        await conn.execute(`
+            CREATE TABLE IF NOT EXISTS flightPriceAlerts (
+                id                INT AUTO_INCREMENT PRIMARY KEY,
+                email             VARCHAR(320) NOT NULL,
+                origin            VARCHAR(3)   NOT NULL,
+                destination       VARCHAR(3)   NOT NULL,
+                departDate        VARCHAR(10),
+                returnDate        VARCHAR(10),
+                targetPrice       INT          NOT NULL DEFAULT 0,
+                lastNotifiedPrice INT,
+                currency          VARCHAR(3)   NOT NULL DEFAULT 'USD',
+                routeId           VARCHAR(20),
+                source            VARCHAR(20)  NOT NULL DEFAULT 'track_button',
+                isActive          TINYINT(1)   NOT NULL DEFAULT 1,
+                createdAt         TIMESTAMP    NOT NULL DEFAULT NOW(),
+                updatedAt         TIMESTAMP    NOT NULL DEFAULT NOW() ON UPDATE NOW()
+            )
+        `);
+        const COLUMN_MIGRATIONS = [
+            `ALTER TABLE flightPriceAlerts ADD COLUMN routeId VARCHAR(20)`,
+            `ALTER TABLE flightPriceAlerts ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'track_button'`,
+            `ALTER TABLE flightPriceAlerts ADD COLUMN returnDate VARCHAR(10)`,
+            `ALTER TABLE flightPriceAlerts ADD COLUMN currency VARCHAR(3) NOT NULL DEFAULT 'USD'`,
+            `ALTER TABLE flightPriceAlerts ADD COLUMN lastNotifiedPrice INT`,
+        ];
+        for (const sql of COLUMN_MIGRATIONS) {
+            try { await conn.execute(sql); }
+            catch (e: any) {
+                if (!(e.code === "ER_DUP_FIELDNAME" || e.errno === 1060)) throw e;
+            }
+        }
+    } finally {
+        await conn.end().catch(() => { });
+    }
+}
+
+function ensureSchema(): Promise<void> {
+    if (!schemaReady) {
+        schemaReady = runMigrations().catch((err) => {
+            schemaReady = null; // allow retry on next request if migration fails
+            throw err;
+        });
+    }
+    return schemaReady;
+}
+
+// ── Request handler (no migrations — just business logic) ─────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reqOrigin = req.headers.origin || "";
     if (ALLOWED_ORIGINS.some((o) => reqOrigin.startsWith(o))) {
@@ -26,6 +94,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl) return res.status(500).json({ error: "Service temporarily unavailable" });
+
+        // Wait for schema to be ready (instant after first cold-start)
+        await ensureSchema();
 
         let body: any = {};
         if (req.body && typeof req.body === "object") body = req.body;
@@ -47,49 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!origin || !destination) return res.status(400).json({ error: "Missing origin or destination" });
         if (source === "track_button" && !departDate) return res.status(400).json({ error: "Missing departDate" });
 
-        const url = new URL(dbUrl);
-        connection = await mysql.createConnection({
-            host: url.hostname,
-            port: parseInt(url.port) || 3306,
-            user: decodeURIComponent(url.username),
-            password: decodeURIComponent(url.password),
-            database: url.pathname.slice(1),
-            ssl: { rejectUnauthorized: false },
-            connectTimeout: 10000,
-        });
-
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS flightPriceAlerts (
-                id                INT AUTO_INCREMENT PRIMARY KEY,
-                email             VARCHAR(320) NOT NULL,
-                origin            VARCHAR(3)   NOT NULL,
-                destination       VARCHAR(3)   NOT NULL,
-                departDate        VARCHAR(10),
-                returnDate        VARCHAR(10),
-                targetPrice       INT          NOT NULL DEFAULT 0,
-                lastNotifiedPrice INT,
-                currency          VARCHAR(3)   NOT NULL DEFAULT 'USD',
-                routeId           VARCHAR(20),
-                source            VARCHAR(20)  NOT NULL DEFAULT 'track_button',
-                isActive          TINYINT(1)   NOT NULL DEFAULT 1,
-                createdAt         TIMESTAMP    NOT NULL DEFAULT NOW(),
-                updatedAt         TIMESTAMP    NOT NULL DEFAULT NOW() ON UPDATE NOW()
-            )
-        `);
-
-        const COLUMN_MIGRATIONS = [
-            `ALTER TABLE flightPriceAlerts ADD COLUMN routeId VARCHAR(20)`,
-            `ALTER TABLE flightPriceAlerts ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'track_button'`,
-            `ALTER TABLE flightPriceAlerts ADD COLUMN returnDate VARCHAR(10)`,
-            `ALTER TABLE flightPriceAlerts ADD COLUMN currency VARCHAR(3) NOT NULL DEFAULT 'USD'`,
-            `ALTER TABLE flightPriceAlerts ADD COLUMN lastNotifiedPrice INT`,
-        ];
-        for (const sql of COLUMN_MIGRATIONS) {
-            try { await connection.execute(sql); }
-            catch (e: any) {
-                if (!(e.code === "ER_DUP_FIELDNAME" || e.errno === 1060)) throw e;
-            }
-        }
+        connection = await createConnection();
 
         const [rows] = await connection.execute<mysql.RowDataPacket[]>(
             `SELECT id FROM flightPriceAlerts
