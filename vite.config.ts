@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -156,6 +157,51 @@ const plugins = [
   tailwindcss(),
   jsxLocPlugin(),
   ...(isDev ? [vitePluginManusDebugCollector()] : []),
+  VitePWA({
+    registerType: "autoUpdate",
+    workbox: {
+      globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,json}"],
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/api\.travelpayouts\.com\/.*/i,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "flight-api-cache",
+            expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 }, // 1 hour
+          },
+        },
+        {
+          urlPattern: /\/data\/transport\.json/,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "transport-data",
+            expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 }, // 24 hours
+          },
+        },
+      ],
+    },
+    manifest: {
+      name: "GoTravel Asia",
+      short_name: "GoTravel",
+      description: "Best flight deals across Southeast Asia",
+      theme_color: "#0f172a",
+      background_color: "#0f172a",
+      display: "standalone",
+      start_url: "/",
+      icons: [
+        {
+          src: "/icons/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+        },
+        {
+          src: "/icons/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+        },
+      ],
+    },
+  }),
 ];
 
 export default defineConfig({
