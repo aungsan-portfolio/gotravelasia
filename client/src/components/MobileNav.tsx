@@ -37,7 +37,7 @@ export default function MobileNav({ onPlanTrip }: MobileNavProps) {
                 {onPlanTrip && (
                     <Button
                         onClick={handlePlanTrip}
-                        className="mt-8 w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                        className="mt-8 w-full bg-[#5B0EA6] hover:bg-[#4a0b8a] text-white font-semibold"
                     >
                         <Plane className="w-4 h-4 mr-2" />
                         Plan My Trip
