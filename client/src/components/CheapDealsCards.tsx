@@ -264,18 +264,15 @@ export default memo(function CheapDealsCards() {
         return result;
     }, [activeNiche, activeDeals, activeOrigins]);
 
-    // Dynamic hook title
-    const dynamicCeiling = useMemo(() => {
+    // Dynamic hook title — "from $X" is more attractive than "under $X"
+    const cheapestPrice = useMemo(() => {
         if (topDeals.length === 0) return 100;
-        const maxPrice = Math.max(...topDeals.map(d => d.price));
-        return Math.ceil(maxPrice / 50) * 50;
+        return Math.min(...topDeals.map(d => d.price));
     }, [topDeals]);
 
-    const thbCeiling = Math.ceil((dynamicCeiling * USD_TO_THB_RATE) / 500) * 500;
-
     const hookTitle = activeNiche === "myanmar"
-        ? `Flights from Myanmar under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(thbCeiling, "THB")})`
-        : `Explore Southeast Asia under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(thbCeiling, "THB")})`;
+        ? `Cheap flights from Myanmar from ${formatPrice(cheapestPrice, "USD")} (${formatPrice(Math.round(cheapestPrice * USD_TO_THB_RATE), "THB")})`
+        : `Explore Southeast Asia from ${formatPrice(cheapestPrice, "USD")} (${formatPrice(Math.round(cheapestPrice * USD_TO_THB_RATE), "THB")})`;
 
     if (loading) {
         return (
