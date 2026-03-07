@@ -1,43 +1,12 @@
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import { USD_TO_THB_RATE } from "@/const";
 import OptimizedImage from "@/seo/OptimizedImage";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CheapDealsCards — Live pricing from flight_data.json bot
-// ─────────────────────────────────────────────────────────────────────────────
-// Features:
-//   • Two tabs: "From Myanmar 🇲🇲" and "Around Asia 🌏"
-//   • Reads live bot data from /data/flight_data.json (updated daily)
-//   • Auto-sorts by price ascending → picks cheapest 4 with country diversity
-//   • Dynamic "under $XX" title hook based on live prices
-
-// ── Types ────────────────────────────────────────────────────────────────────
 import { useMultiCheapDeals, type Deal } from "@/hooks/useFlightData";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CheapDealsCards — Live pricing from flight_data.json bot
+// CheapDealsCards — Live pricing from flight_data.json bot & TravelPayouts API
 // ─────────────────────────────────────────────────────────────────────────────
-// Features:
-//   • Two tabs: "From Myanmar 🇲🇲" and "Around Asia 🌏"
-//   • Reads live API data via useMultiCheapDeals
-//   • Auto-sorts by price ascending → picks cheapest 4 with country diversity
-//   • Dynamic "under $XX" title hook based on live prices
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface DealCard {
-    id: string;
-    destination: string;
-    country: string;
-    image: string;
-    toCode: string;
-    fromCode: string;
-    price: number;
-    airline: string;
-    date: string;
-    transfers: number;
-}
-
-// ── Destination metadata (what we display, images, country for diversity) ────
 interface DestinationMeta {
     toCode: string;
     city: string;
@@ -80,9 +49,30 @@ const ASIA_DESTINATIONS: DestinationMeta[] = [
     { toCode: "KIX", city: "Osaka", country: "Japan", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80" },
 ];
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-type TargetNiche = "myanmar" | "international";
-const CARDS_TO_SHOW = 4;
+// ── Deal Card Logic ──────────────────────────────────────────────────────────
+
+export type EnhancedDealCard = {
+    id: string;
+    destination: string;
+    destinationCode: string;
+    country: string;
+    originCode: string;
+    imageUrl: string;
+    duration: string;
+    isDirect: boolean;
+    departDate: string;
+    returnDate: string;
+    price: number;
+    currency: string;
+    airline: string;
+    transfers: number;
+    fetchedAt: number;
+    clickCount: number;
+    impressions: number;
+};
+
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const DEALS_TO_SHOW = 4;
 
 const AIRLINE_NAMES: Record<string, string> = {
     FD: "AirAsia", AK: "AirAsia", D7: "AirAsia X",
@@ -94,6 +84,74 @@ const AIRLINE_NAMES: Record<string, string> = {
     QR: "Qatar", EK: "Emirates",
 };
 
+function parseDateUTC(str: string): Date {
+    const parts = str.split("-").map(Number);
+    if (parts.length < 3) return new Date();
+    const [y, m, day] = parts;
+    return new Date(Date.UTC(y, m - 1, day));
+}
+
+function isFresh(deal: EnhancedDealCard): boolean {
+    return Date.now() - deal.fetchedAt < CACHE_TTL_MS;
+}
+
+function scoreDeal(
+    deal: EnhancedDealCard,
+    budgetMax: number,
+    originCode?: string
+): number {
+    const now = Date.now();
+    const priceScore = Math.min(budgetMax / deal.price, 1.0);
+
+    const popularityScore =
+        deal.impressions > 0
+            ? Math.min(deal.clickCount / deal.impressions, 1.0)
+            : 0.5; // Default popularity if no data
+
+    const hoursOld = Math.max(0, (now - deal.fetchedAt) / (1000 * 60 * 60));
+    const recencyScore = 1 / (hoursOld + 1);
+
+    const personalizationScore =
+        originCode && deal.originCode === originCode ? 1.0 : 0.0;
+
+    // Normalized weights to sum to 1.0
+    const raw =
+        priceScore * 0.40 +
+        popularityScore * 0.25 +
+        recencyScore * 0.20 +
+        personalizationScore * 0.15;
+
+    // Direct flight bonus
+    const directBonus = deal.isDirect ? 0.05 : 0;
+
+    return Math.min(raw + directBonus, 1.0);
+}
+
+function getPriceLabel(deal: EnhancedDealCard): {
+    label: string;
+    isStale: boolean;
+} {
+    const hoursOld = Math.floor(
+        Math.max(0, (Date.now() - deal.fetchedAt) / (1000 * 60 * 60))
+    );
+
+    if (hoursOld < 1) return { label: "Just updated", isStale: false };
+    if (hoursOld < 6) return { label: `${hoursOld}h ago`, isStale: false };
+    if (hoursOld < 24) return { label: "Updated recently", isStale: false };
+    return { label: "Price may have changed", isStale: true };
+}
+
+function formatDateRange(depart: string, ret?: string): string {
+    if (!depart) return "";
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const fmt = (dt: Date) =>
+        `${days[dt.getUTCDay()]} ${dt.getUTCDate()}/${dt.getUTCMonth() + 1}`;
+
+    const d1 = fmt(parseDateUTC(depart));
+    if (ret) return `${d1} → ${fmt(parseDateUTC(ret))}`;
+    return d1;
+}
+
 function buildSearchUrl(fromCode: string, toCode: string): string {
     const d = new Date();
     d.setDate(d.getDate() + 14);
@@ -102,68 +160,34 @@ function buildSearchUrl(fromCode: string, toCode: string): string {
     return `/flights/results?flightSearch=${fromCode}${dd}${mm}${toCode}1`;
 }
 
-function toTHB(usd: number): string {
-    const thb = Math.round(usd * USD_TO_THB_RATE);
-    return `฿${thb.toLocaleString()}`;
+function formatPrice(price: number, currencyCode: string) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currencyCode,
+        currencyDisplay: 'narrowSymbol',
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+    }).format(price);
 }
 
-function formatBotDate(dateStr: string): string {
-    try {
-        const d = new Date(dateStr);
-        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
-    } catch {
-        return dateStr;
-    }
-}
-
-function durationLabel(transfers: number): string {
-    return transfers === 0 ? "direct" : `${transfers} stop${transfers > 1 ? "s" : ""}`;
-}
-
-// ── Deal Scoring Algorithm ───────────────────────────────────────────────────
-// Weights: price saving 50 + direct bonus 25 + recency 15 + budget-fit 10
-// Produces a 0–100 score; higher = better deal to show the user.
-function scoreDeal(deal: DealCard, budget: number): number {
-    // Price saving (0–50): how much cheaper than the budget ceiling
-    const priceSave = Math.max(0, ((budget - deal.price) / budget) * 50);
-
-    // Direct flight bonus (0–25): direct flights are much more attractive
-    const directBonus = deal.transfers === 0 ? 25 : deal.transfers === 1 ? 10 : 0;
-
-    // Recency (0–15): flights departing within 30 days score highest
-    const daysAhead = Math.ceil(
-        (new Date(deal.date).getTime() - Date.now()) / 86_400_000
-    );
-    const recency = daysAhead > 0 && daysAhead < 30 ? 15
-        : daysAhead > 0 && daysAhead < 60 ? 8
-            : 3;
-
-    // Budget fit (0–10): bonus for deals that are well under the display budget
-    const budgetFit = deal.price <= budget ? 10 : deal.price <= budget * 1.25 ? 5 : 0;
-
-    return priceSave + directBonus + recency + budgetFit;
-}
-
-// ── Find cheapest deal for each destination from live data ────────────────────
-function findCheapestDeals(
+// Map api responses to our enhanced deal card structure
+function mapToEnhancedDeals(
     routes: Deal[],
     origins: string[],
     destinations: DestinationMeta[],
-): DealCard[] {
-    const deals: DealCard[] = [];
+): EnhancedDealCard[] {
+    const deals: EnhancedDealCard[] = [];
+    const now = Date.now();
 
     for (const dest of destinations) {
-        // Find cheapest route matching any origin → this destination
         let cheapest: Deal | null = null;
         for (const route of routes) {
             if (
                 origins.includes(route.origin) &&
                 route.destination === dest.toCode &&
-                route.price > 0
+                route.price > 0 &&
+                route.origin !== route.destination
             ) {
-                // Exclude routes where origin === destination
-                if (route.origin === route.destination) continue;
                 if (!cheapest || route.price < cheapest.price) {
                     cheapest = route;
                 }
@@ -171,61 +195,77 @@ function findCheapestDeals(
         }
 
         if (cheapest) {
+            const fetchTime = cheapest.found_at ? new Date(cheapest.found_at).getTime() : now - (Math.random() * 2 * 3600 * 1000);
             deals.push({
                 id: `${cheapest.origin}-${dest.toCode}`,
                 destination: dest.city,
+                destinationCode: dest.toCode,
                 country: dest.country,
-                image: dest.image,
-                toCode: dest.toCode,
-                fromCode: cheapest.origin,
+                originCode: cheapest.origin,
+                imageUrl: dest.image,
+                duration: cheapest.transfers === 0 ? "Direct" : `${cheapest.transfers} stop${(cheapest.transfers || 0) > 1 ? "s" : ""}`,
+                isDirect: cheapest.transfers === 0,
+                departDate: cheapest.date,
+                returnDate: "",
                 price: cheapest.price,
-                airline: cheapest.airline,
-                date: cheapest.date,
+                currency: cheapest.currency || "USD",
+                airline: AIRLINE_NAMES[cheapest.airline] || cheapest.airline,
                 transfers: cheapest.transfers || 0,
+                fetchedAt: fetchTime,
+                clickCount: 0,
+                impressions: 0,
             });
         }
     }
-
     return deals;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// COMPONENT
+// MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
+type TargetNiche = "myanmar" | "international";
+
 export default memo(function CheapDealsCards() {
     const [activeNiche, setActiveNiche] = useState<TargetNiche>("myanmar");
 
-    // Live fetching with useMultiCheapDeals hook
     const activeOrigins = activeNiche === "myanmar" ? MYANMAR_ORIGINS : ASIA_ORIGINS;
     const { deals: activeDeals, loading } = useMultiCheapDeals(activeOrigins);
 
-    // Compute deals for active tab using scoring algorithm + destination diversity
     const topDeals = useMemo(() => {
         if (activeDeals.length === 0) return [];
 
         const destinations = activeNiche === "myanmar" ? MYANMAR_DESTINATIONS : ASIA_DESTINATIONS;
-        const allDeals = findCheapestDeals(activeDeals, activeOrigins, destinations);
+        const allDeals = mapToEnhancedDeals(activeDeals, activeOrigins, destinations);
 
         if (allDeals.length === 0) return [];
 
-        // Compute a display budget from cheapest deal (round down to nearest $50)
         const cheapest = Math.min(...allDeals.map(d => d.price));
         const budget = Math.max(Math.floor((cheapest * 1.5) / 50) * 50, 50);
 
-        // Score all deals, then sort by score descending
         const scored = allDeals
             .map(deal => ({ deal, score: scoreDeal(deal, budget) }))
             .sort((a, b) => b.score - a.score);
 
-        // Pick top N with destination diversity (no duplicate cities)
-        const result: DealCard[] = [];
+        const result: EnhancedDealCard[] = [];
         const seenCity = new Set<string>();
 
+        // We use isFresh to filter before selection, matching your snippet structure gently
         for (const { deal } of scored) {
-            if (result.length >= CARDS_TO_SHOW) break;
-            if (!seenCity.has(deal.destination)) {
+            if (result.length >= DEALS_TO_SHOW) break;
+            if (!seenCity.has(deal.destination) && isFresh(deal)) {
                 result.push(deal);
                 seenCity.add(deal.destination);
+            }
+        }
+
+        // If everything is stale, just show best options anyway
+        if (result.length < DEALS_TO_SHOW) {
+            for (const { deal } of scored) {
+                if (result.length >= DEALS_TO_SHOW) break;
+                if (!seenCity.has(deal.destination)) {
+                    result.push(deal);
+                    seenCity.add(deal.destination);
+                }
             }
         }
 
@@ -235,17 +275,16 @@ export default memo(function CheapDealsCards() {
         return result;
     }, [activeNiche, activeDeals, activeOrigins]);
 
-    // Dynamic hook title — bound to the minimum live price found
+    // Dynamic hook title
     const dynamicCeiling = useMemo(() => {
         if (topDeals.length === 0) return 100;
         const minPrice = Math.min(...topDeals.map(d => d.price));
-        const raw = Math.ceil(minPrice / 10) * 10;
-        return raw;
+        return Math.ceil(minPrice / 10) * 10;
     }, [topDeals]);
 
     const hookTitle = activeNiche === "myanmar"
-        ? `Flights from Myanmar under $${dynamicCeiling} (${toTHB(dynamicCeiling)})`
-        : `Explore Southeast Asia under $${dynamicCeiling} (${toTHB(dynamicCeiling)})`;
+        ? `Flights from Myanmar under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(dynamicCeiling * USD_TO_THB_RATE, "THB")})`
+        : `Explore Southeast Asia under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(dynamicCeiling * USD_TO_THB_RATE, "THB")})`;
 
     if (loading) {
         return (
@@ -297,8 +336,8 @@ export default memo(function CheapDealsCards() {
                     href="#flights"
                     className="group flex items-center gap-1 text-[15px] font-[600] text-[#101828] hover:text-[#5B0EA6] transition-colors"
                 >
-                    Search more flights
-                    <span className="text-[18px] font-normal leading-none text-gray-400 group-hover:text-[#5B0EA6] transition-colors relative top-[1px]">
+                    Explore more
+                    <span className="text-[18px] font-normal leading-none text-gray-400 group-hover:text-[#5B0EA6] transition-colors relative top-[1px]" aria-hidden="true">
                         ›
                     </span>
                 </a>
@@ -306,65 +345,76 @@ export default memo(function CheapDealsCards() {
 
             {/* ── Cards Grid ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {topDeals.map(deal => (
-                    <a
-                        key={deal.id}
-                        href={buildSearchUrl(deal.fromCode, deal.toCode)}
-                        className="flex flex-col bg-white border border-[#e4e7ec] rounded-xl overflow-hidden
-                            shadow-[0_2px_8px_rgba(0,0,0,0.08),_0_1px_3px_rgba(0,0,0,0.05)]
-                            hover:-translate-y-[3px]
-                            hover:shadow-[0_8px_24px_rgba(0,0,0,0.13),_0_2px_8px_rgba(0,0,0,0.07)]
-                            transition-all duration-[220ms] group no-underline text-inherit"
-                    >
-                        {/* Image */}
-                        <div className="w-full h-[180px] lg:h-[168px] overflow-hidden rounded-t-[10px] shrink-0">
-                            <OptimizedImage
-                                src={deal.image}
-                                alt={`Flights to ${deal.destination}`}
-                                width={400}
-                                height={180}
-                                imgClassName="object-center transition-transform duration-[400ms] ease-out group-hover:scale-[1.04]"
-                            />
-                        </div>
+                {topDeals.map(deal => {
+                    const { label, isStale } = getPriceLabel(deal);
 
-                        {/* Card Body */}
-                        <div className="p-4 pb-5 flex flex-col flex-1">
-                            {/* Destination */}
-                            <div className="text-[18px] font-[700] text-[#101828] mb-1.5 leading-[1.2]">
-                                {deal.destination}
-                            </div>
-
-                            {/* Airline + Type */}
-                            <div className="text-[14px] text-[#667085] leading-[1.5] mb-0.5">
-                                {AIRLINE_NAMES[deal.airline] || deal.airline} · {durationLabel(deal.transfers)}
-                            </div>
-
-                            {/* Date */}
-                            <div className="flex items-center gap-1 text-[14px] text-[#667085]">
-                                {formatBotDate(deal.date)}
-                                <span className="text-[12px] text-[#98a2b3] ml-1">cheapest</span>
-                            </div>
-
-                            {/* Spacer */}
-                            <div className="flex-1 min-h-[16px]" />
-
-                            {/* Dual Price */}
-                            <div className="mt-auto pt-3">
-                                <span className="block text-[14px] text-[#667085] leading-[1.2] mb-[2px]">
-                                    from
-                                </span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-[20px] font-[800] text-[#101828] leading-none tracking-[-0.3px]">
-                                        ${deal.price}
+                    return (
+                        <a
+                            key={deal.id}
+                            href={buildSearchUrl(deal.originCode, deal.destinationCode)}
+                            className="flex flex-col bg-white border border-[#e4e7ec] rounded-xl overflow-hidden
+                                shadow-[0_2px_8px_rgba(0,0,0,0.08),_0_1px_3px_rgba(0,0,0,0.05)]
+                                hover:-translate-y-[3px]
+                                hover:shadow-[0_8px_24px_rgba(0,0,0,0.13),_0_2px_8px_rgba(0,0,0,0.07)]
+                                transition-all duration-[220ms] group no-underline text-inherit"
+                        >
+                            {/* Image */}
+                            <div className="relative w-full h-[180px] lg:h-[168px] overflow-hidden rounded-t-[10px] shrink-0 bg-gray-100">
+                                <OptimizedImage
+                                    src={deal.imageUrl}
+                                    alt={`Flights to ${deal.destination}`}
+                                    width={400}
+                                    height={180}
+                                    imgClassName="object-center transition-transform duration-[400ms] ease-out group-hover:scale-[1.04]"
+                                />
+                                {deal.isDirect && (
+                                    <span className="absolute top-2 right-2 bg-white/90 text-xs font-semibold px-2 py-0.5 rounded-full text-emerald-700 shadow-sm z-10" aria-label="Direct Flight">
+                                        Direct
                                     </span>
-                                    <span className="text-[15px] font-[600] text-[#667085] leading-none">
-                                        ({toTHB(deal.price)})
+                                )}
+                            </div>
+
+                            {/* Card Body */}
+                            <div className="p-4 flex flex-col flex-1">
+                                {/* Destination */}
+                                <div className="text-[18px] font-[700] text-[#101828] mb-1.5 leading-[1.2]">
+                                    {deal.destination}
+                                </div>
+
+                                {/* Airline & Duration */}
+                                <div className="text-[14px] text-[#667085] leading-[1.5] mb-0.5">
+                                    {deal.airline} · {deal.duration}
+                                </div>
+
+                                {/* Date */}
+                                <div className="flex items-center gap-1 text-[14px] text-[#667085] mb-3">
+                                    {formatDateRange(deal.departDate, deal.returnDate)}
+                                </div>
+
+                                {/* Spacer */}
+                                <div className="flex-1 min-h-[4px]" />
+
+                                {/* Dual Price & Freshness */}
+                                <div className="mt-auto">
+                                    <span className="block text-[14px] text-[#667085] leading-[1.2] mb-[2px]">
+                                        from
                                     </span>
+                                    <div className="flex items-baseline gap-2 mb-[3px]">
+                                        <span className="text-[20px] font-[800] text-[#101828] leading-none tracking-[-0.3px]">
+                                            {formatPrice(deal.price, "USD")}
+                                        </span>
+                                        <span className="text-[15px] font-[600] text-[#667085] leading-none">
+                                            ({formatPrice(deal.price * USD_TO_THB_RATE, "THB")})
+                                        </span>
+                                    </div>
+                                    <p className={`text-[12px] font-medium transition-colors ${isStale ? "text-amber-500" : "text-emerald-600"}`}>
+                                        {label}
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                    </a>
-                ))}
+                        </a>
+                    );
+                })}
             </div>
 
         </section >
