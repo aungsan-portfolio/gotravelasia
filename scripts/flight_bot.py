@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
 from typing import Optional
 
 import requests
@@ -57,7 +58,12 @@ POPULAR_ROUTES = [
 
 POPULAR_ROUTES_SET = frozenset(POPULAR_ROUTES)
 
-MONTHS_TO_SCAN = ["2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"]
+def _generate_months(ahead=6):
+    """Auto-generate next N months so the bot never goes stale."""
+    now = datetime.now(timezone.utc)
+    return [(now + relativedelta(months=i)).strftime("%Y-%m") for i in range(ahead)]
+
+MONTHS_TO_SCAN = _generate_months()
 MAX_REQUESTS_PER_RUN = 200
 
 MIN_PRICE_USD = 10
@@ -266,6 +272,7 @@ class FlightBot:
                 if not airline:
                     continue
 
+                now_ts = int(_now_utc().timestamp() * 1000)
                 self.new_routes.append({
                     "origin": origin,
                     "destination": destination,
@@ -278,6 +285,7 @@ class FlightBot:
                     "flight_num": flight_num,
                     "region": region,
                     "found_at": _now_utc().strftime("%Y-%m-%d %H:%M"),
+                    "fetchedAt": now_ts,
                 })
                 count += 1
 
@@ -353,6 +361,7 @@ class FlightBot:
                 if not date_only or not date_only.startswith(month):
                     continue
 
+                now_ts = int(_now_utc().timestamp() * 1000)
                 self.new_routes.append({
                     "origin": origin,
                     "destination": destination,
@@ -365,6 +374,7 @@ class FlightBot:
                     "flight_num": flight_num,
                     "region": region,
                     "found_at": _now_utc().strftime("%Y-%m-%d %H:%M"),
+                    "fetchedAt": now_ts,
                 })
                 count += 1
 
@@ -372,9 +382,16 @@ class FlightBot:
                 logger.info("v3: Found %d deals for %s -> %s (%s)", count, origin, destination, month)
             return True
 
-        except Exception as exc:
-            logger.debug("v3 error for %s -> %s: %s", origin, destination, exc)
-            return False
+        except requests.exceptions.Timeout:
+            logger.warning("v3 Timeout: %s->%s", origin, destination)
+            self.errors += 1
+        except requests.exceptions.RequestException as exc:
+            logger.warning("v3 Request failed: %s->%s: %s", origin, destination, exc)
+            self.errors += 1
+        except (json.JSONDecodeError, ValueError) as exc:
+            logger.warning("v3 Bad JSON: %s->%s: %s", origin, destination, exc)
+            self.errors += 1
+        return False
 
     def run(self) -> None:
         start_time = time.monotonic()
@@ -390,19 +407,22 @@ class FlightBot:
         logger.info("=" * 60)
 
         CHECKPOINT_EVERY = 50
+        processed_so_far = []
 
         for i, task in enumerate(tasks_to_run, 1):
             logger.info("[%d/%d] Checking %s -> %s for %s (%s)", i, len(tasks_to_run), task["origin"], task["destination"], task["month"], task["region"])
-            success = self.fetch_prices_for_month(task["origin"], task["destination"], task["month"], task["region"])
+            self.fetch_prices_for_month(task["origin"], task["destination"], task["month"], task["region"])
             time.sleep(THROTTLE_DELAY)
             # Also fetch from v3 API for additional data density
             self.fetch_v3_prices(task["origin"], task["destination"], task["month"], task["region"])
-            
+
+            processed_so_far.append(task)
+
             if i % CHECKPOINT_EVERY == 0:
                 logger.info("Checkpoint save at task %d...", i)
-                self.merge_and_save_results(tasks_to_run[:i])
+                self.merge_and_save_results(processed_so_far)
 
-        self.merge_and_save_results(tasks_to_run)
+        self.merge_and_save_results(processed_so_far)
 
         elapsed = time.monotonic() - start_time
         logger.info("=" * 60)
@@ -459,11 +479,14 @@ class FlightBot:
         
         overall_cheapest = final_routes[0] if final_routes else None
 
+        has_directs = any(r.get("transfers", 1) == 0 for r in final_routes)
+
         output: dict = {
             "meta": {
                 "updated_at": now_str,
                 "currency": "USD",
-                "direct_only": True,
+                "direct_only": False,
+                "has_direct_flights": has_directs,
                 "total_routes_tracked": len(final_routes),
                 "errors_this_run": self.errors,
                 "overall_cheapest": overall_cheapest,
