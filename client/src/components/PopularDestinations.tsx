@@ -1,5 +1,6 @@
-import { useState, memo } from "react";
+import { useState, memo, useMemo } from "react";
 import OptimizedImage from "@/seo/OptimizedImage";
+import { useFlightData } from "@/hooks/useFlightData";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PopularDestinations — SEO destination cards with real flight search links
@@ -21,7 +22,7 @@ interface Destination {
     code: string;
     emoji: string;
     image: string;
-    fromPrice: number;
+    fallbackPrice: number;
     duration: string;
     popularFor: string;
     tags: string[];
@@ -32,7 +33,7 @@ const DESTINATIONS: Destination[] = [
     {
         city: "Bangkok", country: "Thailand", code: "BKK", emoji: "🏯",
         image: "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80",
-        fromPrice: 89, duration: "1h 30m",
+        fallbackPrice: 50, duration: "1h 30m",
         popularFor: "Street food, temples, nightlife",
         tags: ["city", "budget"],
         routes: [
@@ -43,7 +44,7 @@ const DESTINATIONS: Destination[] = [
     {
         city: "Singapore", country: "Singapore", code: "SIN", emoji: "🦁",
         image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80",
-        fromPrice: 145, duration: "2h 45m",
+        fallbackPrice: 100, duration: "2h 45m",
         popularFor: "Gardens, hawker food, shopping",
         tags: ["city"],
         routes: [
@@ -54,7 +55,7 @@ const DESTINATIONS: Destination[] = [
     {
         city: "Bali", country: "Indonesia", code: "DPS", emoji: "🌴",
         image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80",
-        fromPrice: 178, duration: "3h 10m",
+        fallbackPrice: 150, duration: "3h 10m",
         popularFor: "Beaches, rice terraces, surf",
         tags: ["beach"],
         routes: [
@@ -65,7 +66,7 @@ const DESTINATIONS: Destination[] = [
     {
         city: "Kuala Lumpur", country: "Malaysia", code: "KUL", emoji: "🗼",
         image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80",
-        fromPrice: 99, duration: "1h 50m",
+        fallbackPrice: 85, duration: "1h 50m",
         popularFor: "KLCC towers, street food, culture",
         tags: ["city", "budget"],
         routes: [
@@ -76,7 +77,7 @@ const DESTINATIONS: Destination[] = [
     {
         city: "Hanoi", country: "Vietnam", code: "HAN", emoji: "🏮",
         image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400&q=80",
-        fromPrice: 115, duration: "2h 0m",
+        fallbackPrice: 95, duration: "2h 0m",
         popularFor: "Old quarter, pho, Ha Long Bay",
         tags: ["city", "budget"],
         routes: [
@@ -87,7 +88,7 @@ const DESTINATIONS: Destination[] = [
     {
         city: "Tokyo", country: "Japan", code: "NRT", emoji: "🗻",
         image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80",
-        fromPrice: 320, duration: "6h 30m",
+        fallbackPrice: 250, duration: "6h 30m",
         popularFor: "Culture, anime, ramen, cherry blossoms",
         tags: ["city"],
         routes: [
@@ -99,14 +100,14 @@ const DESTINATIONS: Destination[] = [
 
 // ── Popular Routes Data ──────────────────────────────────────────────────────
 const POPULAR_ROUTES = [
-    { from: "Yangon", to: "Bangkok", fromCode: "RGN", toCode: "BKK", price: 89 },
-    { from: "Bangkok", to: "Singapore", fromCode: "BKK", toCode: "SIN", price: 65 },
-    { from: "Yangon", to: "Singapore", fromCode: "RGN", toCode: "SIN", price: 142 },
-    { from: "Bangkok", to: "Bali", fromCode: "BKK", toCode: "DPS", price: 115 },
-    { from: "Singapore", to: "Tokyo", fromCode: "SIN", toCode: "NRT", price: 280 },
-    { from: "Kuala Lumpur", to: "Hanoi", fromCode: "KUL", toCode: "HAN", price: 78 },
-    { from: "Bangkok", to: "Osaka", fromCode: "BKK", toCode: "KIX", price: 195 },
-    { from: "Manila", to: "Seoul", fromCode: "MNL", toCode: "ICN", price: 155 },
+    { from: "Yangon", to: "Bangkok", fromCode: "RGN", toCode: "BKK", fallbackPrice: 50 },
+    { from: "Bangkok", to: "Singapore", fromCode: "BKK", toCode: "SIN", fallbackPrice: 65 },
+    { from: "Yangon", to: "Singapore", fromCode: "RGN", toCode: "SIN", fallbackPrice: 100 },
+    { from: "Bangkok", to: "Bali", fromCode: "BKK", toCode: "DPS", fallbackPrice: 115 },
+    { from: "Singapore", to: "Tokyo", fromCode: "SIN", toCode: "NRT", fallbackPrice: 280 },
+    { from: "Kuala Lumpur", to: "Hanoi", fromCode: "KUL", toCode: "HAN", fallbackPrice: 78 },
+    { from: "Bangkok", to: "Osaka", fromCode: "BKK", toCode: "KIX", fallbackPrice: 195 },
+    { from: "Manila", to: "Seoul", fromCode: "MNL", toCode: "ICN", fallbackPrice: 155 },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -134,6 +135,31 @@ const FILTERS: { id: FilterId; label: string }[] = [
 // ═════════════════════════════════════════════════════════════════════════════
 export default memo(function PopularDestinations() {
     const [activeFilter, setActiveFilter] = useState<FilterId>("all");
+    const { deals } = useFlightData();
+
+    // Calculate dynamic lowest prices for each destination regardless of origin
+    const destinationPrices = useMemo(() => {
+        const prices: Record<string, number> = {};
+        for (const deal of deals) {
+            const dest = deal.destination;
+            if (!prices[dest] || deal.price < prices[dest]) {
+                prices[dest] = deal.price;
+            }
+        }
+        return prices;
+    }, [deals]);
+
+    // Calculate dynamic lowest prices for specific routes
+    const routePrices = useMemo(() => {
+        const prices: Record<string, number> = {};
+        for (const deal of deals) {
+            const key = `${deal.origin}-${deal.destination}`;
+            if (!prices[key] || deal.price < prices[key]) {
+                prices[key] = deal.price;
+            }
+        }
+        return prices;
+    }, [deals]);
 
     const filtered = activeFilter === "all"
         ? DESTINATIONS
@@ -174,66 +200,78 @@ export default memo(function PopularDestinations() {
 
             {/* ── Destination Cards Grid ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-16">
-                {filtered.map(dest => (
-                    <a
-                        key={dest.code}
-                        href={buildSearchUrl(dest.routes[0].fromCode, dest.code)}
-                        className="group block rounded-2xl overflow-hidden border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    >
-                        {/* Image */}
-                        <div className="relative h-44 overflow-hidden">
-                            <OptimizedImage
-                                src={dest.image}
-                                alt={`Flights to ${dest.city}`}
-                                width={400}
-                                height={176}
-                                imgClassName="transition-transform duration-500 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                {filtered.map(dest => {
+                    const lowestPrice = destinationPrices[dest.code] || dest.fallbackPrice;
 
-                            {/* Price badge */}
-                            <div
-                                className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-md"
-                                style={{ background: B.gold, color: B.purpleDeep }}
-                            >
-                                from ${dest.fromPrice}
-                            </div>
+                    return (
+                        <a
+                            key={dest.code}
+                            href={buildSearchUrl(dest.routes[0].fromCode, dest.code)}
+                            className="group block rounded-2xl overflow-hidden border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                        >
+                            {/* Image */}
+                            <div className="relative h-44 overflow-hidden">
+                                <OptimizedImage
+                                    src={dest.image}
+                                    alt={`Flights to ${dest.city}`}
+                                    width={400}
+                                    height={176}
+                                    imgClassName="transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                            {/* City name */}
-                            <div className="absolute bottom-3 left-4 text-white">
-                                <div className="font-extrabold text-lg leading-tight">
-                                    {dest.emoji} {dest.city}
+                                {/* Price badge */}
+                                <div
+                                    className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-md"
+                                    style={{ background: B.gold, color: B.purpleDeep }}
+                                >
+                                    from ${Math.floor(lowestPrice)}
                                 </div>
-                                <div className="text-xs text-white/80">{dest.country}</div>
-                            </div>
-                        </div>
 
-                        {/* Details */}
-                        <div className="p-4">
-                            <div className="text-xs text-gray-400 mb-3">
-                                ⏱️ {dest.duration} · {dest.popularFor}
+                                {/* City name */}
+                                <div className="absolute bottom-3 left-4 text-white">
+                                    <div className="font-extrabold text-lg leading-tight">
+                                        {dest.emoji} {dest.city}
+                                    </div>
+                                    <div className="text-xs text-white/80">{dest.country}</div>
+                                </div>
                             </div>
 
-                            {/* Route links */}
-                            <div className="flex flex-col gap-1.5">
-                                {dest.routes.map(route => (
-                                    <span
-                                        key={route.fromCode}
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            window.location.href = buildSearchUrl(route.fromCode, dest.code);
-                                        }}
-                                        className="text-sm font-medium cursor-pointer transition-colors hover:underline"
-                                        style={{ color: B.purple }}
-                                    >
-                                        ✈️ {route.from} → {dest.city}
-                                    </span>
-                                ))}
+                            {/* Details */}
+                            <div className="p-4">
+                                <div className="text-xs text-gray-400 mb-3">
+                                    ⏱️ {dest.duration} · {dest.popularFor}
+                                </div>
+
+                                {/* Route links */}
+                                <div className="flex flex-col gap-1.5">
+                                    {dest.routes.map(route => {
+                                        const routePrice = routePrices[`${route.fromCode}-${dest.code}`];
+                                        return (
+                                            <span
+                                                key={route.fromCode}
+                                                onClick={e => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    window.location.href = buildSearchUrl(route.fromCode, dest.code);
+                                                }}
+                                                className="flex items-center justify-between text-sm font-medium cursor-pointer transition-colors hover:underline"
+                                                style={{ color: B.purple }}
+                                            >
+                                                <span>✈️ {route.from} → {dest.city}</span>
+                                                {routePrice && (
+                                                    <span className="text-xs font-bold text-gray-500 px-2 py-0.5 bg-gray-100 rounded">
+                                                        ${Math.floor(routePrice)}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    </a>
-                ))}
+                        </a>
+                    )
+                })}
             </div>
 
             {/* ── Popular Routes Grid (SEO internal links) ── */}
@@ -243,20 +281,24 @@ export default memo(function PopularDestinations() {
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-                    {POPULAR_ROUTES.map((route, i) => (
-                        <a
-                            key={i}
-                            href={buildSearchUrl(route.fromCode, route.toCode)}
-                            className="flex justify-between items-center px-4 py-3 bg-white rounded-xl border border-gray-100 transition-all hover:border-purple-300 hover:shadow-md group"
-                        >
-                            <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                                {route.from} → {route.to}
-                            </span>
-                            <span className="text-sm font-bold text-emerald-600">
-                                ${route.price}
-                            </span>
-                        </a>
-                    ))}
+                    {POPULAR_ROUTES.map((route, i) => {
+                        const routePrice = routePrices[`${route.fromCode}-${route.toCode}`] || route.fallbackPrice;
+
+                        return (
+                            <a
+                                key={i}
+                                href={buildSearchUrl(route.fromCode, route.toCode)}
+                                className="flex justify-between items-center px-4 py-3 bg-white rounded-xl border border-gray-100 transition-all hover:border-purple-300 hover:shadow-md group"
+                            >
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                                    {route.from} → {route.to}
+                                </span>
+                                <span className="text-sm font-bold text-emerald-600">
+                                    ${Math.floor(routePrice)}
+                                </span>
+                            </a>
+                        )
+                    })}
                 </div>
 
                 {/* SEO destination pills */}
