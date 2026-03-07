@@ -267,13 +267,15 @@ export default memo(function CheapDealsCards() {
     // Dynamic hook title
     const dynamicCeiling = useMemo(() => {
         if (topDeals.length === 0) return 100;
-        const minPrice = Math.min(...topDeals.map(d => d.price));
-        return Math.ceil(minPrice / 10) * 10;
+        const maxPrice = Math.max(...topDeals.map(d => d.price));
+        return Math.ceil(maxPrice / 50) * 50;
     }, [topDeals]);
 
+    const thbCeiling = Math.ceil((dynamicCeiling * USD_TO_THB_RATE) / 500) * 500;
+
     const hookTitle = activeNiche === "myanmar"
-        ? `Flights from Myanmar under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(dynamicCeiling * USD_TO_THB_RATE, "THB")})`
-        : `Explore Southeast Asia under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(dynamicCeiling * USD_TO_THB_RATE, "THB")})`;
+        ? `Flights from Myanmar under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(thbCeiling, "THB")})`
+        : `Explore Southeast Asia under ${formatPrice(dynamicCeiling, "USD")} (${formatPrice(thbCeiling, "THB")})`;
 
     if (loading) {
         return (
