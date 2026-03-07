@@ -24,7 +24,7 @@ const MYANMAR_DESTINATIONS: DestinationMeta[] = [
     { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "/images/destinations/kuala-lumpur.webp" },
     { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "/images/destinations/hanoi.webp" },
     { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "/images/destinations/ho-chi-minh.webp" },
-    { toCode: "ICN", city: "Seoul", country: "South Korea", image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80" },
+    { toCode: "ICN", city: "Seoul", country: "South Korea", image: "/images/destinations/seoul.webp" },
     { toCode: "NRT", city: "Tokyo", country: "Japan", image: "/images/tokyo.webp" },
     { toCode: "HKT", city: "Phuket", country: "Thailand", image: "/images/phuket.webp" },
     { toCode: "DPS", city: "Bali", country: "Indonesia", image: "/images/bali.webp" },
@@ -43,10 +43,10 @@ const ASIA_DESTINATIONS: DestinationMeta[] = [
     { toCode: "RGN", city: "Yangon", country: "Myanmar", image: "/images/destinations/yangon.png" },
     { toCode: "MDL", city: "Mandalay", country: "Myanmar", image: "/images/destinations/mandalay.png" },
     { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "/images/destinations/hanoi.webp" },
-    { toCode: "MNL", city: "Manila", country: "Philippines", image: "https://images.unsplash.com/photo-1573455494060-c5595004fb6c?w=400&q=80" },
+    { toCode: "MNL", city: "Manila", country: "Philippines", image: "/images/destinations/manila.webp" },
     { toCode: "DPS", city: "Bali", country: "Indonesia", image: "/images/bali.webp" },
-    { toCode: "ICN", city: "Seoul", country: "South Korea", image: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80" },
-    { toCode: "KIX", city: "Osaka", country: "Japan", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80" },
+    { toCode: "ICN", city: "Seoul", country: "South Korea", image: "/images/destinations/seoul.webp" },
+    { toCode: "KIX", city: "Osaka", country: "Japan", image: "/images/destinations/osaka.webp" },
 ];
 
 // ── Deal Card Logic ──────────────────────────────────────────────────────────
