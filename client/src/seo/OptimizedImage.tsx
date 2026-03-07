@@ -95,14 +95,12 @@ export default function OptimizedImage({
                 decoding={priority ? "sync" : "async"}
                 // @ts-expect-error — fetchpriority not yet in all TS DOM types
                 fetchpriority={priority ? "high" : "auto"}
-                className={imgClassName}
+                className={`${loaded ? "opacity-100" : "opacity-0"} transition-all duration-500 ease-out ${imgClassName || ""}`}
                 style={{
                     display: "block",
                     width: "100%",
                     height: "100%",
                     objectFit: fit,
-                    opacity: loaded ? 1 : 0,
-                    transition: "opacity 0.35s ease",
                 }}
                 onLoad={() => { setLoaded(true); onLoad?.(); }}
                 onError={() => setErrored(true)}
