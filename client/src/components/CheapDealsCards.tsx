@@ -249,23 +249,12 @@ export default memo(function CheapDealsCards() {
         const result: EnhancedDealCard[] = [];
         const seenCity = new Set<string>();
 
-        // We use isFresh to filter before selection, matching your snippet structure gently
+        // Pick top N with destination diversity (no duplicate cities)
         for (const { deal } of scored) {
             if (result.length >= DEALS_TO_SHOW) break;
-            if (!seenCity.has(deal.destination) && isFresh(deal)) {
+            if (!seenCity.has(deal.destination)) {
                 result.push(deal);
                 seenCity.add(deal.destination);
-            }
-        }
-
-        // If everything is stale, just show best options anyway
-        if (result.length < DEALS_TO_SHOW) {
-            for (const { deal } of scored) {
-                if (result.length >= DEALS_TO_SHOW) break;
-                if (!seenCity.has(deal.destination)) {
-                    result.push(deal);
-                    seenCity.add(deal.destination);
-                }
             }
         }
 
@@ -415,6 +404,24 @@ export default memo(function CheapDealsCards() {
                         </a>
                     );
                 })}
+
+                {/* Skeleton fillers — keeps grid 4 columns always */}
+                {topDeals.length < DEALS_TO_SHOW &&
+                    Array.from({ length: DEALS_TO_SHOW - topDeals.length }).map((_, i) => (
+                        <div
+                            key={`skeleton-${i}`}
+                            className="flex flex-col rounded-xl overflow-hidden bg-gray-50 border border-gray-200/80"
+                        >
+                            <div className="h-[180px] lg:h-[168px] bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+                            <div className="p-4 space-y-3">
+                                <div className="h-4 bg-gray-200 rounded-md w-3/4 animate-pulse" />
+                                <div className="h-3 bg-gray-100 rounded-md w-1/2 animate-pulse" />
+                                <div className="h-3 bg-gray-100 rounded-md w-2/3 animate-pulse" />
+                                <div className="h-5 bg-gray-200 rounded-md w-1/3 mt-4 animate-pulse" />
+                            </div>
+                        </div>
+                    ))
+                }
             </div>
 
         </section >
