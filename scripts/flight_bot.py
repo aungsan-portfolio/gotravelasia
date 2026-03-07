@@ -250,6 +250,7 @@ class FlightBot:
 
             route_data = data["data"].get(destination, {})
             count = 0
+            now_ts = int(_now_utc().timestamp() * 1000)
 
             for _flight_id, flight_info in route_data.items():
                 price = flight_info.get("price")
@@ -272,7 +273,6 @@ class FlightBot:
                 if not airline:
                     continue
 
-                now_ts = int(_now_utc().timestamp() * 1000)
                 self.new_routes.append({
                     "origin": origin,
                     "destination": destination,
@@ -347,6 +347,7 @@ class FlightBot:
                 return True
 
             count = 0
+            now_ts = int(_now_utc().timestamp() * 1000)
             for e in arr:
                 price = e.get("price")
                 departure_at = e.get("departure_at", "")
@@ -361,7 +362,6 @@ class FlightBot:
                 if not date_only or not date_only.startswith(month):
                     continue
 
-                now_ts = int(_now_utc().timestamp() * 1000)
                 self.new_routes.append({
                     "origin": origin,
                     "destination": destination,
