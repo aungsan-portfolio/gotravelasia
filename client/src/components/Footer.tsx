@@ -41,11 +41,11 @@ type NlStatus = "idle" | "sending" | "done" | "error";
 // STATIC DATA
 // ─────────────────────────────────────────────────────────────
 
-const POPULAR_DESTINATIONS: Airport[] = (AIRPORTS as Airport[]).filter(
+const POPULAR_DESTINATIONS: Airport[] = (AIRPORTS as readonly Airport[]).filter(
     (a) => a.isPopular === true || a.country === "Myanmar" // [Fix 5]
 );
 
-const COUNTRIES: string[] = [...new Set((AIRPORTS as Airport[]).map((a) => a.country))]
+const COUNTRIES: string[] = Array.from(new Set((AIRPORTS as readonly Airport[]).map((a) => a.country)))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
@@ -270,7 +270,7 @@ export default function Footer() {
     const { setDestination, setCabinClass } = useFlightSearch();
     const [nlStatus, setNlStatus] = useState<NlStatus>("idle");
     const [nlEmail, setNlEmail] = useState("");
-    const resetTimer = useRef<ReturnType<typeof setTimeout>>();
+    const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     // ── Navigate to home page flights tab ─────────────────────
     const goToFlights = useCallback(() => {
@@ -543,8 +543,8 @@ export default function Footer() {
                                 // Use primary airport map for reliable lookup
                                 const primaryCode = COUNTRY_PRIMARY_AIRPORT[country];
                                 const airport = primaryCode
-                                    ? (AIRPORTS as Airport[]).find(a => a.code === primaryCode)
-                                    : (AIRPORTS as Airport[]).find(a => a.country === country);
+                                    ? (AIRPORTS as readonly Airport[]).find(a => a.code === primaryCode)
+                                    : (AIRPORTS as readonly Airport[]).find(a => a.country === country);
                                 return (
                                     <a
                                         key={country}

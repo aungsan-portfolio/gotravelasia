@@ -250,9 +250,9 @@ export function TrackPricesButton({
 
                                     <button
                                         onClick={handleSubmit}
-                                        disabled={modalState === "loading"}
-                                        aria-busy={modalState === "loading"}
-                                        aria-disabled={modalState === "loading"}
+                                        disabled={false}
+                                        aria-busy={false}
+                                        aria-disabled={false}
                                         className="mt-6 w-full min-h-[44px] min-w-[140px] flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 disabled:opacity-60 disabled:pointer-events-none"
                                         style={{ background: B.gold, color: B.purpleDeep }}
                                     >
