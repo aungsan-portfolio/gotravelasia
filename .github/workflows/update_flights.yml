@@ -2,8 +2,8 @@ name: Update Flight Prices
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Run every 6 hours
-  workflow_dispatch:        # Allow manual trigger from GitHub UI
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   update-prices:
@@ -13,39 +13,72 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # ✅ Built-in caching for pip (no need for separate cache step)
+          cache-dependency-path: 'scripts/requirements.txt'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r scripts/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
 
-    - name: Run Flight Bot
-      env:
-        TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
-      run: |
-        python scripts/flight_bot.py
+      - name: Run Flight Bot
+        env:
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+        run: |
+          python scripts/flight_bot.py
 
-    - name: Commit and Push
-      run: |
-        git config user.name "GoTravel Price Bot"
-        git config user.email "bot@gotravel.asia"
-        git add client/public/data/flight_data.json
-        # Check if there are changes before committing
-        if git diff --staged --quiet; then
-          echo "No changes to commit"
-          exit 0
-        fi
-        git commit -m "🤖 Auto-update flight prices [$(date -u +'%Y-%m-%d %H:%M UTC')]"
-        
-        # Pull latest changes before pushing to avoid conflicts
-        # Use -X theirs to always favor the newly generated bot data on conflict
-        git pull --rebase -X theirs origin main
-        
-        git push origin main
+      # ✅ Ensure that the JSON files are structurally sound before committing
+      - name: Validate output JSON
+        run: |
+          python -c "
+          import json, sys
+          for path in [
+              'client/public/data/flight_data.json',
+              'client/public/data/transport.json',
+          ]:
+              try:
+                  with open(path) as f:
+                      data = json.load(f)
+                  if not isinstance(data, (list, dict)) or len(data) == 0:
+                      print(f'❌ {path} — empty or invalid')
+                      sys.exit(1)
+                  print(f'✅ {path} — {len(data)} records')
+              except Exception as e:
+                  print(f'❌ {path} — {e}')
+                  sys.exit(1)
+          "
+
+      - name: Commit and Push
+        run: |
+          git config user.name "GoTravel Price Bot"
+          git config user.email "bot@gotravel.asia"
+
+          # ✅ Stage exactly the files that the bot might update
+          git add client/public/data/flight_data.json \
+                  client/public/data/transport.json
+
+          if git diff --staged --quiet; then
+            echo "✅ No changes to commit — prices unchanged"
+            exit 0
+          fi
+
+          git commit -m "🤖 Auto-update prices [$(date -u +'%Y-%m-%d %H:%M UTC')]"
+
+          # Fetch and rebase to avoid merge commits/conflicts with remote
+          git fetch origin main
+          git rebase -X theirs origin/main
+          git push origin main
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Flight bot failed at $(date -u +'%Y-%m-%d %H:%M UTC')"
