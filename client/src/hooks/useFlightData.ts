@@ -277,34 +277,36 @@ export function useMultiCheapDeals(origins: string[]) {
     return () => { cancelled = true; };
   }, [origins.join(",")]); // Rate-limit friendly: only refetches when origins array changes (tab switch)
 
-  // Graceful fallback: Merge bot data if API fails completely or returns nothing
-  // For partial success, we merge the API data with bot data for the missing origins
+  // Merge live API data with static Bot cache data
   const finalDeals = useMemo(() => {
     if (loading) return []; // Prefer skeleton while loading
 
-    // Complete success and we have data
-    if (errorCount === 0 && cheapDeals.length > 0) return cheapDeals;
-
-    // Combine cheapDeals (live) and botDeals (fallback)
-    // Live data takes strict priority
     const mergedMap = new Map<string, Deal>();
 
-    // 1. Add bot data as baseline
+    // 1. Add bot data as baseline (Amadeus often provides exclusive direct flights)
     for (const bot of botDeals) {
       if (bot.price <= 0 || !origins.includes(bot.origin)) continue;
       mergedMap.set(`${bot.origin}-${bot.destination}`, bot);
     }
 
-    // 2. Overwrite with live data
+    // 2. Add or Overwrite with Live Data
     for (const live of cheapDeals) {
       if (live.price <= 0) continue;
-      mergedMap.set(`${live.origin}-${live.destination}`, live);
+      const key = `${live.origin}-${live.destination}`;
+      const existingBot = mergedMap.get(key);
+
+      // Strict Priority: If the static cache found a Direct flight, and the live API
+      // only returned a Layover flight, KEEP the direct flight so UI doesn't lose it.
+      if (existingBot && existingBot.transfers === 0 && (live.transfers || 0) !== 0) {
+        continue;
+      }
+      mergedMap.set(key, live);
     }
 
     const mergedList = Array.from(mergedMap.values());
     mergedList.sort((a, b) => a.price - b.price);
     return mergedList;
-  }, [cheapDeals, botDeals, loading, errorCount, origins]);
+  }, [cheapDeals, botDeals, loading, origins]);
 
   return { deals: finalDeals, loading, errorCount };
 }
