@@ -41,8 +41,17 @@ export default memo(function CheapDealsCards() {
 
         // Filter to affordable deals under the THB cap
         const affordable = allDeals.filter(d => d.price * USD_TO_THB_RATE <= MAX_HOOK_THB);
-        // Fallback: if nothing passes the cap, use the cheapest N deals anyway
-        const pool = affordable.length > 0 ? affordable : allDeals;
+        let pool = affordable;
+
+        // Fallback: if we don't have enough affordable deals to fill the grid (4 cards),
+        // pull the cheapest from the remaining unaffordable deals to fill the gaps
+        if (affordable.length < DEALS_TO_SHOW) {
+            const unaffordable = allDeals
+                .filter(d => d.price * USD_TO_THB_RATE > MAX_HOOK_THB)
+                .sort((a, b) => a.price - b.price);
+
+            pool = [...affordable, ...unaffordable.slice(0, DEALS_TO_SHOW - affordable.length)];
+        }
 
         const cheapest = Math.min(...pool.map(d => d.price));
         const budget = Math.max(Math.floor((cheapest * 1.5) / 50) * 50, 50);
