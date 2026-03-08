@@ -43,9 +43,7 @@ export default function SpecialOffers() {
                     {offers.map((offer, i) => (
                         <a
                             key={i}
-                            href={`https://www.aviasales.com/search${offer.link}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href={`/flights/results?flightSearch=${offer.origin}${new Date(offer.departure_at).getDate().toString().padStart(2, '0')}${(new Date(offer.departure_at).getMonth() + 1).toString().padStart(2, '0')}${offer.destination}1`}
                             className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col"
                         >
                             <div className="p-5 flex flex-col h-full relative">
