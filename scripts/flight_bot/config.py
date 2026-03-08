@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
-load_dotenv(".env.local")
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env.local")
+load_dotenv(env_path)
 
 # ─── HTTP / Rate Limiting ──────────────────────────────────────────────────
 REQUEST_TIMEOUT = 10
@@ -60,5 +61,6 @@ def _generate_months(ahead=6):
     return [(now + relativedelta(months=i)).strftime("%Y-%m") for i in range(ahead)]
 
 MONTHS_TO_SCAN = _generate_months(ahead=9)   # 9 months = more date coverage
-MAX_REQUESTS_PER_RUN = 1000                   # 5x increase (≈8 min at 0.5s delay)
+MAX_REQUESTS_PER_RUN = 1000                  # 5x increase (≈8 min at 0.5s delay)
+AMADEUS_MAX_REQUESTS_PER_RUN = 20            # Free limit: ~66 daily -> 20 route-months (60 API calls)
 CHECKPOINT_EVERY = 50

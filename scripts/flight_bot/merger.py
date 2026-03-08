@@ -53,16 +53,34 @@ def merge_and_save(existing_data: dict, new_routes: list,
     # Add all the new routes we just fetched
     final_routes.extend(new_routes)
 
-    # Deduplicate
-    seen_keys = set()
-    deduped_routes = []
+    # Deduplicate - Prioritize Amadeus Over TravelPayouts
+    # When multiple sources find flights for the exact same route on the same date,
+    # we want the highest quality data (Amadeus > Bots).
+    best_deals = {}
+    
     for r in final_routes:
-        rk = _route_key(r)
-        if rk not in seen_keys:
-            seen_keys.add(rk)
-            deduped_routes.append(r)
+        # Key deduplicates down to the Origin -> Dest -> Exact Date
+        # (We only want 1 flight recommendation per day per route)
+        rk = f"{r.get('origin')}_{r.get('destination')}_{r.get('date')}"
+        
+        existing = best_deals.get(rk)
+        if not existing:
+            best_deals[rk] = r
+            continue
+            
+        # Priority Logic
+        # 1. Amadeus beats Non-Amadeus
+        r_is_amadeus = r.get("is_amadeus", False)
+        ex_is_amadeus = existing.get("is_amadeus", False)
+        
+        if r_is_amadeus and not ex_is_amadeus:
+            best_deals[rk] = r
+        elif r_is_amadeus == ex_is_amadeus:
+            # If both are same tier, take cheaper
+            if r["price"] < existing["price"]:
+                best_deals[rk] = r
 
-    final_routes = deduped_routes
+    final_routes = list(best_deals.values())
 
     # Sort globally by price
     final_routes.sort(key=lambda x: x["price"])
