@@ -1,6 +1,6 @@
 import { useState, memo, useMemo } from "react";
 import OptimizedImage from "@/seo/OptimizedImage";
-import { useFlightData } from "@/hooks/useFlightData";
+import { useFlightData, useLivePriceMap } from "@/hooks/useFlightData";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PopularDestinations — SEO destination cards with real flight search links
@@ -135,31 +135,38 @@ const FILTERS: { id: FilterId; label: string }[] = [
 // ═════════════════════════════════════════════════════════════════════════════
 export default memo(function PopularDestinations() {
     const [activeFilter, setActiveFilter] = useState<FilterId>("all");
-    const { deals } = useFlightData();
 
-    // Calculate dynamic lowest prices for each destination regardless of origin
+    // Gather all requested routes for live batching
+    const routesToFetch = useMemo(() => {
+        const arr: { origin: string; destination: string }[] = [];
+        for (const dest of DESTINATIONS) {
+            for (const r of dest.routes) {
+                arr.push({ origin: r.fromCode, destination: dest.code });
+            }
+        }
+        for (const pr of POPULAR_ROUTES) {
+            arr.push({ origin: pr.fromCode, destination: pr.toCode });
+        }
+        return arr;
+    }, []);
+
+    const livePricesMap = useLivePriceMap(routesToFetch);
+
+    // Provide legacy lowest-route lookups
     const destinationPrices = useMemo(() => {
         const prices: Record<string, number> = {};
-        for (const deal of deals) {
-            const dest = deal.destination;
-            if (!prices[dest] || deal.price < prices[dest]) {
-                prices[dest] = deal.price;
+        for (const dest of DESTINATIONS) {
+            let lowest = Infinity;
+            for (const r of dest.routes) {
+                const live = livePricesMap[`${r.fromCode}-${dest.code}`];
+                if (live && live < lowest) lowest = live;
             }
+            if (lowest !== Infinity) prices[dest.code] = lowest;
         }
         return prices;
-    }, [deals]);
+    }, [livePricesMap]);
 
-    // Calculate dynamic lowest prices for specific routes
-    const routePrices = useMemo(() => {
-        const prices: Record<string, number> = {};
-        for (const deal of deals) {
-            const key = `${deal.origin}-${deal.destination}`;
-            if (!prices[key] || deal.price < prices[key]) {
-                prices[key] = deal.price;
-            }
-        }
-        return prices;
-    }, [deals]);
+    const routePrices = livePricesMap;
 
     const filtered = activeFilter === "all"
         ? DESTINATIONS
