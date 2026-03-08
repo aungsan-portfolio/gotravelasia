@@ -87,6 +87,23 @@ export default function FlightWidget({
 
         return () => {
             window.clearTimeout(timeout);
+            // CRITICAL FIX: The TravelPayouts script injects numerous global nodes/iframes that crash React routing (white screen).
+            // We must aggressively clean up everything it injects or force a clean mount next time.
+            const script = document.getElementById(SCRIPT_ID);
+            if (script) script.remove();
+
+            // The widget creates its own styles and hidden iframes. 
+            // In a SPA, if these aren't removed, the next render will clash.
+            document.querySelectorAll('iframe[src*="travelpayouts"], iframe[src*="tpwidg"], style[id^="tpwl-"]').forEach(el => el.remove());
+
+            // Clean out the container manually so React doesn't get confused by mutated nodes.
+            const searchEl = document.getElementById("tpwl-search");
+            const ticketsEl = document.getElementById("tpwl-tickets");
+            if (searchEl) searchEl.innerHTML = "";
+            if (ticketsEl) ticketsEl.innerHTML = "";
+
+            // Also reset the mounted ref so it can re-init if the user comes back.
+            mountedRef.current = false;
         };
     }, [marker, origin, destination, departDate, returnDate, adults, childCount, infants, tripType]);
 
