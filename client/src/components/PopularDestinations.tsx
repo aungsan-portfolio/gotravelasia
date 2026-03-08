@@ -314,10 +314,23 @@ export default memo(function PopularDestinations() {
                         Popular Destinations
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                        {["Bangkok", "Singapore", "Kuala Lumpur", "Bali", "Tokyo", "Seoul", "Hanoi", "Ho Chi Minh City", "Manila", "Osaka", "Hong Kong", "Taipei"].map(city => (
+                        {[
+                            { city: "Bangkok", code: "BKK" },
+                            { city: "Singapore", code: "SIN" },
+                            { city: "Kuala Lumpur", code: "KUL" },
+                            { city: "Bali", code: "DPS" },
+                            { city: "Tokyo", code: "NRT" },
+                            { city: "Seoul", code: "ICN" },
+                            { city: "Hanoi", code: "HAN" },
+                            { city: "Ho Chi Minh City", code: "SGN" },
+                            { city: "Manila", code: "MNL" },
+                            { city: "Osaka", code: "KIX" },
+                            { city: "Hong Kong", code: "HKG" },
+                            { city: "Taipei", code: "TPE" },
+                        ].map(({ city, code }) => (
                             <a
                                 key={city}
-                                href={`/flights/results?flightSearch=RGN${city.slice(0, 3).toUpperCase()}1`}
+                                href={buildSearchUrl("RGN", code)}
                                 className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-600 transition-all hover:text-white hover:border-transparent"
                                 style={{ ["--hover-bg" as string]: B.purple }}
                                 onMouseEnter={e => { e.currentTarget.style.background = B.purple; e.currentTarget.style.color = B.white; }}

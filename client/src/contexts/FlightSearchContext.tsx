@@ -174,15 +174,20 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
             const dd = String(d.getDate()).padStart(2, "0");
             const mm = String(d.getMonth() + 1).padStart(2, "0");
 
-            let fs = `${origin.code}${dd}${mm}${destination.code}${adults}`;
+            let fs = `${origin.code}${dd}${mm}${destination.code}`;
 
-            // If return trip, append return date segment
+            // If return trip, append return date segment BEFORE passengers
             if (returnDate) {
                 const rd = new Date(returnDate + "T00:00:00");
                 const rdd = String(rd.getDate()).padStart(2, "0");
                 const rmm = String(rd.getMonth() + 1).padStart(2, "0");
                 fs += `${rdd}${rmm}`;
             }
+
+            // Standard TP format: {Origin}{DDMM}{Dest}[{DDMM}]{Adults}{Children}{Infants}{Class}
+            // Adding children, infants, and cabin class for full compatibility
+            const tpClass = cabinClass === "W" ? "Y" : cabinClass; // TP mostly uses Y, C, F
+            fs += `${adults}${childCount}${infants}${tpClass}`;
 
             return `/flights/results?flightSearch=${fs}`;
         };
