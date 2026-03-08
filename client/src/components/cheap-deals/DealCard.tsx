@@ -50,8 +50,16 @@ export default memo(function DealCard({ deal }: DealCardProps) {
                 </div>
 
                 {/* Airline & Duration */}
-                <div className="text-[14px] text-[#667085] leading-[1.5] mb-0.5">
-                    {deal.airline} · {deal.duration}
+                <div className="flex items-center gap-1.5 text-[14px] text-[#667085] leading-[1.5] mb-0.5">
+                    {deal.airlineCode ? (
+                        <img
+                            src={`http://pics.avs.io/100/100/${deal.airlineCode}.png`}
+                            alt={deal.airline}
+                            className="w-4 h-4 object-contain rounded-sm"
+                            loading="lazy"
+                        />
+                    ) : null}
+                    <span>{deal.airline} · {deal.duration}</span>
                 </div>
 
                 {/* Date */}

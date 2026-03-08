@@ -4,6 +4,7 @@ import SEO from "@/seo/SEO";
 import HeroSection from "@/components/HeroSection";
 import FlightWidget from "@/components/flights/FlightWidget";
 import CheapDealsCards from "@/components/cheap-deals";
+import SpecialOffers from "@/components/cheap-deals/SpecialOffers";
 import PopularDestinations from "@/components/PopularDestinations";
 import HomeFAQSection from "@/components/HomeFAQSection";
 import AboutSection from "@/components/AboutSection";
@@ -67,6 +68,8 @@ export default function Home() {
           )}
         </Suspense>
       </HeroSection>
+
+      <SpecialOffers />
 
       <CheapDealsCards />
 

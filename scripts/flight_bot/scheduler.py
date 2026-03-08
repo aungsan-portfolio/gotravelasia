@@ -4,7 +4,7 @@ Task generation and priority sorting.
 from .config import (
     SEA_AIRPORTS, JAPAN_AIRPORTS, KOREA_AIRPORTS,
     INDIA_AIRPORTS, CHINA_AIRPORTS, TAIWAN_AIRPORTS,
-    MYANMAR_HUBS, POPULAR_ROUTES_SET, MONTHS_TO_SCAN,
+    MYANMAR_HUBS, POPULAR_ROUTES_SET, MONTHS_TO_SCAN, UAE_AIRPORTS
 )
 
 
@@ -12,7 +12,7 @@ def generate_tasks(last_fetched_map: dict) -> list[dict]:
     """Build and sort the full list of fetch tasks, oldest-first."""
     tasks = []
 
-    def add_task(origin, dest, region_tag, priority_boost=False):
+    def add_task(origin, dest, region_tag):
         if origin == dest:
             return
         for month in MONTHS_TO_SCAN:
@@ -20,7 +20,7 @@ def generate_tasks(last_fetched_map: dict) -> list[dict]:
             last_fetched = last_fetched_map.get(key, "2000-01-01 00:00")
 
             score = last_fetched
-            if priority_boost:
+            if (origin, dest) in POPULAR_ROUTES_SET:
                 score = "1_" + score
             else:
                 score = "2_" + score
@@ -37,8 +37,7 @@ def generate_tasks(last_fetched_map: dict) -> list[dict]:
     # 1. SEA Routes (all combinations)
     for origin in SEA_AIRPORTS:
         for dest in SEA_AIRPORTS:
-            is_popular = (origin, dest) in POPULAR_ROUTES_SET
-            add_task(origin, dest, "SEA", priority_boost=is_popular)
+            add_task(origin, dest, "SEA")
 
     # 2. Full Asia Phase 1 (Only RGN/MDL <-> New Airports)
     for hub in MYANMAR_HUBS:
@@ -57,6 +56,9 @@ def generate_tasks(last_fetched_map: dict) -> list[dict]:
         for tw in TAIWAN_AIRPORTS:
             add_task(hub, tw, "Taiwan")
             add_task(tw, hub, "Taiwan")
+        for uae in UAE_AIRPORTS:
+            add_task(hub, uae, "UAE")
+            add_task(uae, hub, "UAE")
 
     # Sort by score ascending (oldest first, priority first)
     tasks.sort(key=lambda x: x["score"])

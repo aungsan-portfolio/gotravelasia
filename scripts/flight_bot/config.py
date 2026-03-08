@@ -25,15 +25,16 @@ MAX_PRICE_USD = 5000
 
 # ─── Airport Lists ─────────────────────────────────────────────────────────
 SEA_AIRPORTS = [
-    "RGN", "MDL", "BKK", "SIN", "KUL", "CNX", "HKT",
-    "SGN", "HAN", "DAD", "CGK", "DPS", "MNL", "CEB", "BKI", "BWN"
+    "RGN", "MDL", "BKK", "DMK", "SIN", "KUL", "CNX", "HKT",
+    "SGN", "HAN", "DAD", "CGK", "DPS", "MNL", "CEB", "BKI", "BWN", "PNH"
 ]
 
 JAPAN_AIRPORTS = ["NRT", "KIX"]
 KOREA_AIRPORTS = ["ICN", "CJU"]
-INDIA_AIRPORTS = ["DEL", "CCU"]
-CHINA_AIRPORTS = ["PEK", "PVG", "CAN", "CTU", "HKG", "MFM"]
+INDIA_AIRPORTS = ["DEL", "CCU", "MAA", "GAY"]
+CHINA_AIRPORTS = ["PEK", "PVG", "SHA", "CAN", "CTU", "HKG", "MFM", "KMG", "CSX", "CKG"]
 TAIWAN_AIRPORTS = ["TPE"]
+UAE_AIRPORTS = ["DXB"]
 
 MYANMAR_HUBS = ["RGN", "MDL"]
 
@@ -54,6 +55,26 @@ POPULAR_ROUTES = [
     ("BKK", "SGN"), ("SGN", "BKK"),
     ("SIN", "DPS"), ("DPS", "SIN"),
     ("KUL", "DPS"), ("DPS", "KUL"),
+    # User requested direct flights from RGN
+    ("RGN", "DMK"), ("DMK", "RGN"),
+    ("RGN", "CNX"), ("CNX", "RGN"),
+    ("RGN", "PEK"), ("PEK", "RGN"),
+    ("RGN", "CAN"), ("CAN", "RGN"),
+    ("RGN", "KMG"), ("KMG", "RGN"),
+    ("RGN", "PVG"), ("PVG", "RGN"),
+    ("RGN", "SHA"), ("SHA", "RGN"),
+    ("RGN", "CSX"), ("CSX", "RGN"),
+    ("RGN", "CKG"), ("CKG", "RGN"),
+    ("RGN", "ICN"), ("ICN", "RGN"),
+    ("RGN", "CCU"), ("CCU", "RGN"),
+    ("RGN", "MAA"), ("MAA", "RGN"),
+    ("RGN", "GAY"), ("GAY", "RGN"),
+    ("RGN", "PNH"), ("PNH", "RGN"),
+    ("RGN", "TPE"), ("TPE", "RGN"),
+    ("RGN", "DXB"), ("DXB", "RGN"),
+    ("RGN", "HAN"), ("HAN", "RGN"),
+    ("RGN", "SGN"), ("SGN", "RGN"),
+    ("RGN", "DAD"), ("DAD", "RGN"),
 ]
 
 POPULAR_ROUTES_SET = frozenset(POPULAR_ROUTES)
@@ -66,5 +87,5 @@ def _generate_months(ahead=6):
 
 MONTHS_TO_SCAN = _generate_months(ahead=9)   # 9 months = more date coverage
 MAX_REQUESTS_PER_RUN = 1000                  # 5x increase (≈8 min at 0.5s delay)
-AMADEUS_MAX_REQUESTS_PER_RUN = 20            # Free limit: ~66 daily -> 20 route-months (60 API calls)
+AMADEUS_MAX_REQUESTS_PER_RUN = 30            # Free limit: ~66 daily -> 30 route-months (90 API calls)
 CHECKPOINT_EVERY = 50

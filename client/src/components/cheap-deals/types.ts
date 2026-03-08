@@ -16,6 +16,7 @@ export type EnhancedDealCard = {
     price: number;
     currency: string;
     airline: string;
+    airlineCode?: string;
     transfers: number;
     fetchedAt: number;
     clickCount: number;

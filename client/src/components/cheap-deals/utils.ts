@@ -158,6 +158,7 @@ export function mapToEnhancedDeals(
             price: finalDeal.price,
             currency: finalDeal.currency || "USD",
             airline: AIRLINE_NAMES[finalDeal.airline] ?? finalDeal.airline,
+            airlineCode: finalDeal.airline_code || finalDeal.airline,
             transfers: finalDeal.transfers ?? 0,
             fetchedAt: fetchTime,
             clickCount: 0,

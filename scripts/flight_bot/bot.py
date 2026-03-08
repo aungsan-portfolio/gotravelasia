@@ -9,7 +9,7 @@ from typing import Optional
 from .config import MAX_REQUESTS_PER_RUN, AMADEUS_MAX_REQUESTS_PER_RUN, THROTTLE_DELAY, CHECKPOINT_EVERY
 from .session import build_session
 from .scheduler import generate_tasks
-from .fetcher import fetch_prices_v1, fetch_prices_v3, fetch_amadeus
+from .fetcher import fetch_prices_v3, fetch_amadeus
 from .merger import load_existing_data, merge_and_save
 
 logger = logging.getLogger(__name__)
@@ -97,11 +97,6 @@ class FlightBot:
                     task["origin"], task["destination"], task["month"], task["region"],
                 )
                 
-            fetch_prices_v1(
-                self.session, task["origin"], task["destination"],
-                task["month"], task["region"], self.new_routes, self.counter,
-            )
-            time.sleep(THROTTLE_DELAY * 0.5) # Slight throttle 
             fetch_prices_v3(
                 self.session, self.token or "", task["origin"], task["destination"],
                 task["month"], task["region"], self.new_routes, self.counter,

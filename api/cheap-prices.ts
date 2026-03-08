@@ -45,11 +45,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json(cached);
         }
 
-        const url = `https://api.travelpayouts.com/v1/prices/cheap?${new URLSearchParams({
+        const url = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
             token,
             origin,
             currency,
-            page: "1",
+            limit: "30",
+            sorting: "price",
+            direct: "true", // Strongly requested by user to get quality Yangon direct flights
+            unique: "false"
         })}`;
 
         const controller = new AbortController();
@@ -64,7 +67,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const data = await response.json();
-        const result = { success: true, data: data.data || {}, currency };
+
+        // The V3 API returns a flat array of deals.
+        // We must map it back into the nested dictionary format the frontend `useMultiCheapDeals` expects:
+        // { "DEST": { "0": { price, airline, departure_at, number_of_changes } } }
+        const mappedData: Record<string, Record<string, any>> = {};
+
+        if (data.success && Array.isArray(data.data)) {
+            data.data.forEach((deal: any, index: number) => {
+                const dest = deal.destination;
+                if (!mappedData[dest]) {
+                    mappedData[dest] = {};
+                }
+                mappedData[dest][String(index)] = {
+                    price: deal.price,
+                    airline: deal.airline,
+                    departure_at: deal.departure_at,
+                    number_of_changes: deal.transfers,
+                    flight_number: deal.flight_number
+                };
+            });
+        }
+
+        const result = { success: true, data: mappedData, currency };
 
         setCache(cacheKey, result);
 

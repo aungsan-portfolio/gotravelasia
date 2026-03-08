@@ -11,6 +11,7 @@ export const AIRPORTS = [
     { code: "SEL", name: "Seoul (All Airports)", country: "South Korea", isPopular: true },
 
     // 🇹🇭 Thailand (Others)
+    { code: "DMK", name: "Bangkok (Don Mueang)", country: "Thailand" },
     { code: "CNX", name: "Chiang Mai", country: "Thailand" },
     { code: "HKT", name: "Phuket", country: "Thailand" },
 
@@ -44,6 +45,9 @@ export const AIRPORTS = [
     { code: "BJS", name: "Beijing (All Airports)", country: "China" },
     { code: "SHA", name: "Shanghai (All Airports)", country: "China" },
     { code: "CAN", name: "Guangzhou", country: "China" },
+    { code: "KMG", name: "Kunming", country: "China" },
+    { code: "CSX", name: "Changsha", country: "China" },
+    { code: "CKG", name: "Chongqing", country: "China" },
     { code: "CTU", name: "Chengdu", country: "China" },
 
     // 🇭🇰 / 🇲🇴 Hong Kong & Macau
@@ -53,6 +57,14 @@ export const AIRPORTS = [
     // 🇮🇳 India
     { code: "CCU", name: "Kolkata", country: "India" },
     { code: "DEL", name: "Delhi (Indira Gandhi)", country: "India" },
+    { code: "MAA", name: "Chennai", country: "India" },
+    { code: "GAY", name: "Gaya", country: "India" },
+
+    // 🇰🇭 Cambodia
+    { code: "PNH", name: "Phnom Penh", country: "Cambodia" },
+
+    // 🇦🇪 UAE
+    { code: "DXB", name: "Dubai", country: "United Arab Emirates" },
 
     // 🇧🇳 Brunei
     { code: "BWN", name: "Bandar Seri Begawan", country: "Brunei" },

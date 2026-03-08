@@ -241,6 +241,7 @@ export function useMultiCheapDeals(origins: string[]) {
               date: info.departure_at?.split("T")[0] || "",
               price: info.price || 0,
               airline: info.airline || "",
+              airline_code: info.airline || "",
               transfers: info.number_of_changes ?? 0,
             });
           }
