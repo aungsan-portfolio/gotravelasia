@@ -264,15 +264,11 @@ export default memo(function CheapDealsCards() {
         return result;
     }, [activeNiche, activeDeals, activeOrigins]);
 
-    // Dynamic hook title — "from $X" is more attractive than "under $X"
-    const cheapestPrice = useMemo(() => {
-        if (topDeals.length === 0) return 100;
-        return Math.min(...topDeals.map(d => d.price));
-    }, [topDeals]);
-
+    // Clean hook title — no price in header to avoid trust issues
+    // Each card already shows its own "from $X" price
     const hookTitle = activeNiche === "myanmar"
-        ? `Cheap flights from Myanmar from ${formatPrice(cheapestPrice, "USD")} (${formatPrice(Math.round(cheapestPrice * USD_TO_THB_RATE), "THB")})`
-        : `Explore Southeast Asia from ${formatPrice(cheapestPrice, "USD")} (${formatPrice(Math.round(cheapestPrice * USD_TO_THB_RATE), "THB")})`;
+        ? "Cheap flights from Myanmar ✈️"
+        : "Explore Southeast Asia ✈️";
 
     if (loading) {
         return (
