@@ -50,6 +50,10 @@ POPULAR_ROUTES = [
     ("CNX", "HKT"), ("HKT", "CNX"),
     ("RGN", "TYO"), ("TYO", "RGN"),
     ("RGN", "SEL"), ("SEL", "RGN"),
+    ("BKK", "DAD"), ("DAD", "BKK"),
+    ("BKK", "SGN"), ("SGN", "BKK"),
+    ("SIN", "DPS"), ("DPS", "SIN"),
+    ("KUL", "DPS"), ("DPS", "KUL"),
 ]
 
 POPULAR_ROUTES_SET = frozenset(POPULAR_ROUTES)
