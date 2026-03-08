@@ -126,8 +126,8 @@ export default function FloatingSearchBar() {
       {/* ── Fields Row ── */}
       <div className="flex items-center gap-[5px] flex-1 min-w-0 overflow-x-auto scrollbar-none">
 
-        {/* Trip type pill */}
-        <div className={pillCls} onClick={scrollToWidget}>
+        {/* Trip type pill - hidden on mobile to save space */}
+        <div className={`${pillCls} hidden md:flex`} onClick={scrollToWidget}>
           {tripLabel}
         </div>
 
@@ -136,7 +136,7 @@ export default function FloatingSearchBar() {
 
         {/* Origin airport pill */}
         <div className={pillCls} onClick={scrollToWidget}>
-          <span className="truncate max-w-[80px]">{originName}</span>
+          <span className="truncate max-w-[60px] xs:max-w-[80px]">{originName}</span>
           {ctx.origin && (
             <span
               onClick={clearOrigin}
@@ -159,7 +159,7 @@ export default function FloatingSearchBar() {
 
         {/* Destination airport pill */}
         <div className={pillCls} onClick={scrollToWidget}>
-          <span className="truncate max-w-[80px]">{destName}</span>
+          <span className="truncate max-w-[60px] xs:max-w-[80px]">{destName}</span>
           {ctx.destination && (
             <span
               onClick={clearDestination}
@@ -185,9 +185,10 @@ export default function FloatingSearchBar() {
         {/* Divider */}
         <div className="w-px h-4 bg-white/[0.12] shrink-0 mx-0.5" />
 
-        {/* Passengers pill */}
+        {/* Passengers pill - shortened on mobile */}
         <div className={pillCls} onClick={scrollToWidget}>
-          {paxLabel}
+          <span className="hidden xs:inline">{paxLabel}</span>
+          <span className="xs:hidden">{totalPax} Pax</span>
         </div>
 
         {/* ── GOLD SEARCH BUTTON ── */}
