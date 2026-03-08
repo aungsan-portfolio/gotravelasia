@@ -51,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             currency,
             limit: "30",
             sorting: "price",
-            direct: "true", // Strongly requested by user to get quality Yangon direct flights
+            market: "th",
             unique: "false"
         })}`;
 

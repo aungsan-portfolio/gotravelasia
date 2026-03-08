@@ -3,6 +3,7 @@ import OptimizedImage from "@/seo/OptimizedImage";
 import { ArrowRight, Plane, Tag } from "lucide-react";
 import { formatPrice } from "./utils";
 import { USD_TO_THB_RATE } from "@/const";
+import { buildTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
 
 export default function SpecialOffers() {
     const [offers, setOffers] = useState<any[]>([]);
@@ -40,44 +41,53 @@ export default function SpecialOffers() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-                    {offers.map((offer, i) => (
-                        <a
-                            key={i}
-                            href={`/flights/results?flightSearch=${offer.origin}${new Date(offer.departure_at).getDate().toString().padStart(2, '0')}${(new Date(offer.departure_at).getMonth() + 1).toString().padStart(2, '0')}${offer.destination}1`}
-                            className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col"
-                        >
-                            <div className="p-5 flex flex-col h-full relative">
-                                {/* Discount logic just for display impact */}
-                                <div className="absolute top-0 right-0 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                                    HOT DEAL
-                                </div>
+                    {offers.map((offer, i) => {
+                        const offerDate = offer.departure_at.split('T')[0]; // simple YYYY-MM-DD string
 
-                                <span className="text-xs font-semibold text-rose-500 mb-2 uppercase tracking-wide">
-                                    {offer.airline_title || offer.airline}
-                                </span>
-
-                                <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">
-                                    {offer.origin_name} <ArrowRight className="inline w-4 h-4 text-gray-400 mx-1" /> {offer.destination_name}
-                                </h3>
-
-                                <p className="text-sm text-gray-500 mb-6">
-                                    {new Date(offer.departure_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </p>
-
-                                <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-gray-500 mb-0.5">As low as</span>
-                                        <span className="text-xl font-black text-gray-900 leading-none">
-                                            {formatPrice(offer.price, "USD")}
-                                        </span>
+                        return (
+                            <a
+                                key={i}
+                                href={buildTravelpayoutsResultsUrl({
+                                    origin: offer.origin,
+                                    destination: offer.destination,
+                                    departDate: offerDate,
+                                    adults: 1
+                                })}
+                                className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col"
+                            >
+                                <div className="p-5 flex flex-col h-full relative">
+                                    {/* Discount logic just for display impact */}
+                                    <div className="absolute top-0 right-0 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                                        HOT DEAL
                                     </div>
-                                    <div className="bg-rose-50 text-rose-600 rounded-full p-2 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                                        <Plane className="w-5 h-5 -rotate-45" />
+
+                                    <span className="text-xs font-semibold text-rose-500 mb-2 uppercase tracking-wide">
+                                        {offer.airline_title || offer.airline}
+                                    </span>
+
+                                    <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">
+                                        {offer.origin_name} <ArrowRight className="inline w-4 h-4 text-gray-400 mx-1" /> {offer.destination_name}
+                                    </h3>
+
+                                    <p className="text-sm text-gray-500 mb-6">
+                                        {new Date(offer.departure_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </p>
+
+                                    <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-500 mb-0.5">As low as</span>
+                                            <span className="text-xl font-black text-gray-900 leading-none">
+                                                {formatPrice(offer.price, "USD")}
+                                            </span>
+                                        </div>
+                                        <div className="bg-rose-50 text-rose-600 rounded-full p-2 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                                            <Plane className="w-5 h-5 -rotate-45" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </a>
-                    ))}
+                            </a>
+                        );
+                    })}
                 </div>
             </div>
         </section>

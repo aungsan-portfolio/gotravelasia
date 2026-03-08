@@ -1,6 +1,7 @@
 import { useState, memo, useMemo } from "react";
 import OptimizedImage from "@/seo/OptimizedImage";
 import { useFlightData, useLivePriceMap } from "@/hooks/useFlightData";
+import { buildSeoTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PopularDestinations — SEO destination cards with real flight search links
@@ -111,14 +112,9 @@ const POPULAR_ROUTES = [
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-/** Build a working /flights/results link from origin+dest codes */
+/** Build a working /flights/results link from origin+dest codes using the shared strict formatter */
 function buildSearchUrl(fromCode: string, toCode: string): string {
-    // Use a date 14 days from now for best prices
-    const d = new Date();
-    d.setDate(d.getDate() + 14);
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    return `/flights/results?flightSearch=${fromCode}${dd}${mm}${toCode}1`;
+    return buildSeoTravelpayoutsResultsUrl(fromCode, toCode, 14);
 }
 
 // ── Filter Tabs ──────────────────────────────────────────────────────────────

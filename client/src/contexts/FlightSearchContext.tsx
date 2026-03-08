@@ -26,6 +26,8 @@ export type CabinCode = "Y" | "W" | "C" | "F";
 export type TripType = "return" | "one-way";
 export type FlexibilityType = "exact" | "3days" | "week" | "month";
 
+import { buildTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
+
 export interface FlightSearchState {
     // Core
     tripType: TripType;
@@ -168,28 +170,18 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
         };
 
         // --- Travelpayouts White Label (in-site) URL builder ---
-        // Format: /flights/results?flightSearch={origin}{DD}{MM}{destination}{adults}
         const buildTravelpayouts = () => {
-            const d = new Date(departDate + "T00:00:00");
-            const dd = String(d.getDate()).padStart(2, "0");
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-
-            let fs = `${origin.code}${dd}${mm}${destination.code}`;
-
-            // If return trip, append return date segment BEFORE passengers
-            if (returnDate) {
-                const rd = new Date(returnDate + "T00:00:00");
-                const rdd = String(rd.getDate()).padStart(2, "0");
-                const rmm = String(rd.getMonth() + 1).padStart(2, "0");
-                fs += `${rdd}${rmm}`;
-            }
-
-            // Standard TP format: {Origin}{DDMM}{Dest}[{DDMM}]{Adults}{Children}{Infants}{Class}
-            // Adding children, infants, and cabin class for full compatibility
-            const tpClass = cabinClass === "W" ? "Y" : cabinClass; // TP mostly uses Y, C, F
-            fs += `${adults}${childCount}${infants}${tpClass}`;
-
-            return `/flights/results?flightSearch=${fs}`;
+            if (!origin || !destination) return "/flights/results";
+            return buildTravelpayoutsResultsUrl({
+                origin: origin.code,
+                destination: destination.code,
+                departDate,
+                returnDate,
+                adults,
+                children: childCount,
+                infants,
+                cabinClass,
+            });
         };
 
         return {

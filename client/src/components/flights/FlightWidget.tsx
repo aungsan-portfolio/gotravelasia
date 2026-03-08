@@ -41,46 +41,11 @@ import { AirportCombobox } from "./AirportCombobox";
 import { CalendarDropdown } from "./CalendarDropdown";
 import { RecentSearchesPanel } from "./RecentSearchesPanel";
 import { TrackPricesButton } from "./TrackPricesButton";
-import { CABIN_OPTIONS, AIRPORT_MAP } from "./flightWidget.data";
+import { CABIN_OPTIONS, AIRPORT_MAP, B, cellBorder, cellFocus, labelStyle } from "./flightWidget.data";
+import { FlightWidgetErrorBoundary } from "./FlightWidgetErrorBoundary";
+import { PassengerMenu } from "./PassengerMenu";
 import type { RecentSearchRecord } from "./flightWidget.recent";
 import type { FlexibilityType } from "@/contexts/FlightSearchContext";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 1) BRAND TOKENS — single source of truth for GoTravel colours
-// ─────────────────────────────────────────────────────────────────────────────
-const B = {
-    purple: "#5B0EA6",
-    purpleDeep: "#2D0558",
-    gold: "#F5C518",
-    white: "#FFFFFF",
-    text: "#1a0a2e",
-    textMuted: "#8B7AA0",
-    glassBase: "rgba(255,255,255,0.12)",
-    glassBorder: "rgba(255,255,255,0.18)",
-    glassFocus: "rgba(245,197,24,0.12)",
-    error: "#fba09d",
-} as const;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2) SHARED STYLE OBJECTS — DRY
-// ─────────────────────────────────────────────────────────────────────────────
-const cellBorder: React.CSSProperties = {
-    borderBottom: `1px solid ${B.glassBorder}`,
-    borderRight: `1px solid ${B.glassBorder}`,
-};
-const cellFocus: React.CSSProperties = {
-    background: B.glassFocus,
-    boxShadow: `inset 0 0 0 1.5px ${B.gold}`,
-};
-const labelStyle: React.CSSProperties = {
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    color: B.gold,
-    marginBottom: 2,
-    lineHeight: 1,
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3) PURE HELPERS
@@ -89,7 +54,7 @@ function clamp(n: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, n));
 }
 
-function formatTravelerLabel(adults: number, children: number, infants: number): string {
+export function formatTravelerLabel(adults: number, children: number, infants: number): string {
     const total = adults + children + infants;
     return total === 1 ? "1 Traveler" : `${total} Travelers`;
 }
@@ -99,93 +64,6 @@ function fmtDisplayDate(dateStr: string): string {
     const d = new Date(dateStr + "T00:00:00");
     return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 4) ERROR BOUNDARY — graceful crash recovery
-// ─────────────────────────────────────────────────────────────────────────────
-class FlightWidgetErrorBoundary extends Component<
-    { children: ReactNode },
-    { hasError: boolean; msg: string }
-> {
-    state = { hasError: false, msg: "" };
-
-    static getDerivedStateFromError(e: Error) {
-        return { hasError: true, msg: e.message };
-    }
-
-    componentDidCatch(e: Error, info: ErrorInfo) {
-        console.error("[FlightWidget]", e, info);
-        if (typeof posthog !== "undefined" && posthog.__loaded) {
-            posthog.capture("flight_widget_error", { message: e.message });
-        }
-    }
-
-    render() {
-        if (!this.state.hasError) return this.props.children;
-        return (
-            <div
-                role="alert"
-                className="flex flex-col items-center justify-center gap-4 py-12 px-6 rounded-2xl text-center"
-                style={{ background: B.glassBase, border: `1.5px solid ${B.glassBorder}` }}
-            >
-                <AlertTriangle className="w-10 h-10" style={{ color: B.gold }} />
-                <div>
-                    <p className="font-bold text-white text-lg mb-1">Widget failed to load</p>
-                    <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>{this.state.msg}</p>
-                </div>
-                <button
-                    onClick={() => this.setState({ hasError: false, msg: "" })}
-                    className="px-5 py-2 rounded-xl font-bold text-sm active:scale-[0.97] transition-all"
-                    style={{ background: B.gold, color: B.purpleDeep }}
-                >
-                    Retry
-                </button>
-            </div>
-        );
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 5) PAX STEPPER — memoized
-// ─────────────────────────────────────────────────────────────────────────────
-const PaxStepper = memo(function PaxStepper({
-    label, sub, value, min, max, onChange,
-}: {
-    label: string; sub: string; value: number; min: number; max: number; onChange: (v: number) => void;
-}) {
-    const dec = useCallback(() => onChange(clamp(value - 1, min, max)), [value, min, max, onChange]);
-    const inc = useCallback(() => onChange(clamp(value + 1, min, max)), [value, min, max, onChange]);
-
-    return (
-        <div className="flex items-center justify-between">
-            <div>
-                <div className="text-sm font-bold" style={{ color: B.text }}>{label}</div>
-                <div className="text-xs" style={{ color: B.textMuted }}>{sub}</div>
-            </div>
-            <div role="group" aria-label={label} className="flex items-center gap-2">
-                <button
-                    type="button" onClick={dec} disabled={value <= min}
-                    aria-label={`Decrease ${label}, current ${value}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border transition disabled:opacity-40"
-                    style={{ borderColor: "rgba(91,14,166,0.2)", color: B.purple }}
-                >
-                    <Minus className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <span className="w-8 text-center text-sm font-black" style={{ color: B.text }} aria-live="polite" aria-atomic="true">
-                    {value}
-                </span>
-                <button
-                    type="button" onClick={inc} disabled={value >= max}
-                    aria-label={`Increase ${label}, current ${value}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border transition disabled:opacity-40"
-                    style={{ borderColor: "rgba(91,14,166,0.2)", color: B.purple }}
-                >
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                </button>
-            </div>
-        </div>
-    );
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 6) MAIN WIDGET — Layout Glue only
@@ -356,76 +234,18 @@ function FlightWidgetInner() {
 
                     {/* ── TRAVELERS & CLASS ── */}
                     <div className="relative transition-colors" style={cellBorder}>
-                        <Popover open={s.openPax} onOpenChange={s.setOpenPax}>
-                            <PopoverTrigger asChild>
-                                <button
-                                    type="button"
-                                    ref={s.paxTriggerRef}
-                                    aria-label={`Travelers and cabin class: ${travelerLabel}, ${cabinLabel}`}
-                                    aria-haspopup="dialog"
-                                    aria-expanded={s.openPax}
-                                    className="w-full h-full min-h-[64px] px-4 py-3 flex items-center transition-colors text-left outline-none"
-                                    style={s.openPax ? cellFocus : {}}
-                                >
-                                    <Users className="w-4 h-4 mr-2.5 shrink-0" style={{ color: "rgba(255,255,255,0.45)" }} aria-hidden="true" />
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <span style={labelStyle}>Travelers &amp; Class</span>
-                                        <span className="font-bold text-white text-sm leading-snug truncate">{travelerLabel}, {cabinLabel}</span>
-                                    </div>
-                                    <ChevronDown className={`w-4 h-4 ml-2 shrink-0 transition-transform ${s.openPax ? "rotate-180" : ""}`} style={{ color: "rgba(255,255,255,0.45)" }} aria-hidden="true" />
-                                </button>
-                            </PopoverTrigger>
-
-                            <PopoverContent
-                                align="end" sideOffset={8}
-                                aria-describedby={undefined}
-                                role="dialog" aria-label="Select passengers and cabin class"
-                                className="w-[300px] p-5 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-sm font-black" style={{ color: B.text }}>Passengers</span>
-                                    <button type="button" onClick={() => s.setOpenPax(false)} aria-label="Close passenger selector"
-                                        className="text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors">Close</button>
-                                </div>
-                                <div className="space-y-3">
-                                    <PaxStepper label="Adults" sub="12+" value={s.adults} min={1} max={9} onChange={s.setAdults} />
-                                    <PaxStepper label="Children" sub="2–11" value={s.children} min={0} max={8} onChange={s.setChildren} />
-                                    <PaxStepper label="Infants" sub="Under 2" value={s.infants} min={0} max={s.adults} onChange={s.setInfants} />
-
-                                    <div className="pt-3 border-t border-gray-100">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <Armchair className="w-4 h-4" style={{ color: B.purple }} aria-hidden="true" />
-                                            <span className="text-sm font-black" style={{ color: B.text }}>Cabin class</span>
-                                        </div>
-                                        <div role="radiogroup" aria-label="Cabin class" className="grid grid-cols-2 gap-2">
-                                            {CABIN_OPTIONS.map(opt => {
-                                                const active = opt.value === s.cabinClass;
-                                                return (
-                                                    <button
-                                                        key={opt.value} type="button" role="radio" aria-checked={active}
-                                                        onClick={() => s.setCabinClass(opt.value)}
-                                                        className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${active ? "border-transparent text-white" : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
-                                                            }`}
-                                                        style={active ? { background: B.purple, boxShadow: `0 3px 10px rgba(91,14,166,0.3)` } : {}}
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-end pt-2">
-                                        <button
-                                            ref={s.doneButtonRef} type="button" onClick={() => s.setOpenPax(false)}
-                                            className="px-5 py-2 rounded-xl font-bold text-sm text-white"
-                                            style={{ background: B.purple, boxShadow: `0 3px 10px rgba(91,14,166,0.25)` }}
-                                        >
-                                            Done
-                                        </button>
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        <PassengerMenu
+                            open={s.openPax}
+                            setOpen={s.setOpenPax}
+                            adults={s.adults}
+                            childrenCount={s.children}
+                            infants={s.infants}
+                            cabinClass={s.cabinClass}
+                            setAdults={s.setAdults}
+                            setChildrenCount={s.setChildren}
+                            setInfants={s.setInfants}
+                            setCabinClass={s.setCabinClass}
+                        />
                     </div>
 
                     {/* ── SEARCH BUTTON ── */}

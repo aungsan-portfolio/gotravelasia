@@ -1,3 +1,41 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// 1) BRAND TOKENS & STYLES (Extracted from FlightWidget.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+export const B = {
+    purple: "#5B0EA6",
+    purpleDeep: "#2D0558",
+    gold: "#F5C518",
+    white: "#FFFFFF",
+    text: "#1a0a2e",
+    textMuted: "#8B7AA0",
+    glassBase: "rgba(255,255,255,0.12)",
+    glassBorder: "rgba(255,255,255,0.18)",
+    glassFocus: "rgba(245,197,24,0.12)",
+    error: "#fba09d",
+} as const;
+
+export const cellBorder: React.CSSProperties = {
+    borderBottom: `1px solid ${B.glassBorder}`,
+    borderRight: `1px solid ${B.glassBorder}`,
+};
+
+export const cellFocus: React.CSSProperties = {
+    background: B.glassFocus,
+    boxShadow: `inset 0 0 0 1.5px ${B.gold}`,
+};
+
+export const labelStyle: React.CSSProperties = {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    color: B.gold,
+    marginBottom: 2,
+    lineHeight: 1,
+};
+
+import React from "react";
+
 export const AIRPORTS = [
     // 🇲🇲 HOME (Myanmar)
     { code: "RGN", name: "Yangon (ရန်ကုန်)", country: "Myanmar" },

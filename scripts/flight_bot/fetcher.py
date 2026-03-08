@@ -49,8 +49,7 @@ def fetch_prices_v3(session: requests.Session, token: str,
         "departure_at": month,
         "sorting": "price",
         "limit": "30",
-        "one_way": "true",
-        "direct": "true", # Enforce direct flights for better quality Yangon/Asia data
+        "market": "th", # Use Thailand market for accurate SEA prices & context
         "currency": "USD",
     }
 

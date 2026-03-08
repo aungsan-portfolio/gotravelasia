@@ -87,22 +87,26 @@ export default function FlightWidget({
 
         return () => {
             window.clearTimeout(timeout);
-            // CRITICAL FIX: The TravelPayouts script injects numerous global nodes/iframes that crash React routing (white screen).
-            // We must aggressively clean up everything it injects or force a clean mount next time.
+
+            // 1. Remove the main exact script
             const script = document.getElementById(SCRIPT_ID);
             if (script) script.remove();
 
-            // The widget creates its own styles and hidden iframes. 
-            // In a SPA, if these aren't removed, the next render will clash.
-            document.querySelectorAll('iframe[src*="travelpayouts"], iframe[src*="tpwidg"], style[id^="tpwl-"]').forEach(el => el.remove());
+            // 2. Remove specific global styles from Travelpayouts
+            document.querySelectorAll('style[id^="tpwl-"]').forEach(el => el.remove());
 
-            // Clean out the container manually so React doesn't get confused by mutated nodes.
-            const searchEl = document.getElementById("tpwl-search");
-            const ticketsEl = document.getElementById("tpwl-tickets");
-            if (searchEl) searchEl.innerHTML = "";
-            if (ticketsEl) ticketsEl.innerHTML = "";
+            // 3. Remove only global pop-up iframes (direct children of body) to avoid wiping other embeds
+            document.querySelectorAll('body > iframe[src*="travelpayouts"], body > iframe[src*="tpwidg"]').forEach(el => el.remove());
 
-            // Also reset the mounted ref so it can re-init if the user comes back.
+            // 4. Clean up global config objects injected by the widget to prevent stale state on re-entry
+            if ((window as any).TPWL) {
+                delete (window as any).TPWL;
+            }
+
+            // Note: We intentionally DO NOT use `searchEl.innerHTML = ""` anymore. 
+            // React owns these container divs and will unmount them. Aggressive DOM wiping 
+            // clashes with React Strict Mode and double-mount testing lifecycles.
+
             mountedRef.current = false;
         };
     }, [marker, origin, destination, departDate, returnDate, adults, childCount, infants, tripType]);
