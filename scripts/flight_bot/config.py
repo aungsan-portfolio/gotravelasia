@@ -59,6 +59,6 @@ def _generate_months(ahead=6):
     now = datetime.now(timezone.utc)
     return [(now + relativedelta(months=i)).strftime("%Y-%m") for i in range(ahead)]
 
-MONTHS_TO_SCAN = _generate_months()
-MAX_REQUESTS_PER_RUN = 200
+MONTHS_TO_SCAN = _generate_months(ahead=9)   # 9 months = more date coverage
+MAX_REQUESTS_PER_RUN = 1000                   # 5x increase (≈8 min at 0.5s delay)
 CHECKPOINT_EVERY = 50

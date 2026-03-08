@@ -126,9 +126,8 @@ export async function fetchAmadeusCalendarPrices(
 
         // Build result: real sample dates + interpolated nearby dates
         const result: Record<string, any> = {};
-        const avgPrice = samplePrices.reduce((s, p) => s + p.price, 0) / samplePrices.length;
 
-        // Add real sample dates
+        // 1. Add real sample dates FIRST
         for (const sp of samplePrices) {
             result[sp.date] = {
                 price: sp.price,
@@ -138,14 +137,16 @@ export async function fetchAmadeusCalendarPrices(
                 departure_at: `${sp.date}T00:00:00`,
                 transfers: sp.transfers,
                 is_amadeus: true,
+                is_estimated_amadeus: false,
             };
         }
 
-        // Interpolate: fill nearby dates (±3 days from each sample) with estimated prices
+        // 2. Interpolate nearby dates without overwriting real dates
         for (const sp of samplePrices) {
             const spDate = new Date(sp.date + "T00:00:00");
             for (let offset = -3; offset <= 3; offset++) {
                 if (offset === 0) continue; // Skip the sample date itself
+
                 const nearby = new Date(spDate);
                 nearby.setDate(nearby.getDate() + offset);
 
@@ -153,10 +154,13 @@ export async function fetchAmadeusCalendarPrices(
                 if (nearby.getMonth() + 1 !== mon || nearby.getFullYear() !== year) continue;
 
                 const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(nearby.getDate()).padStart(2, "0")}`;
-                if (result[nearbyKey]) continue; // Don't overwrite real data
 
-                // Add slight price variation (±5%)
+                // CRITICAL FIX: Don't overwrite real data OR better estimates
+                if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
+
+                // Add slight price variation (±2%)
                 const variance = 1 + (Math.abs(offset) * 0.02) * (offset > 0 ? 1 : -1);
+
                 result[nearbyKey] = {
                     price: Math.round(sp.price * variance * 100) / 100,
                     origin,

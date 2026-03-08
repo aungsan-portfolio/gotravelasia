@@ -107,6 +107,8 @@ export function mapToEnhancedDeals(
 
     for (const dest of destinations) {
         let cheapest: Deal | null = null;
+        let bestDirect: Deal | null = null;
+
         for (const route of routes) {
             if (
                 origins.includes(route.origin) &&
@@ -115,31 +117,48 @@ export function mapToEnhancedDeals(
                 route.origin !== route.destination
             ) {
                 if (!cheapest || route.price < cheapest.price) cheapest = route;
+
+                // Track the cheapest direct flight
+                if (route.transfers === 0) {
+                    if (!bestDirect || route.price < bestDirect.price) {
+                        bestDirect = route;
+                    }
+                }
             }
         }
-        if (!cheapest) continue;
 
-        const fetchTime = cheapest.found_at
-            ? new Date(cheapest.found_at).getTime()
+        // Prefer direct flight if it exists and is within 30% price premium of the absolute cheapest
+        let selectedDeal = cheapest;
+        if (cheapest && bestDirect) {
+            if (bestDirect.price <= cheapest.price * 1.3) {
+                selectedDeal = bestDirect;
+            }
+        }
+
+        if (!selectedDeal) continue;
+        const finalDeal = selectedDeal; // TypeScript narrowing helper
+
+        const fetchTime = finalDeal.found_at
+            ? new Date(finalDeal.found_at).getTime()
             : now - CACHE_TTL_MS;
 
         deals.push({
-            id: `${cheapest.origin}-${dest.toCode}`,
+            id: `${finalDeal.origin}-${dest.toCode}`,
             destination: dest.city,
             destinationCode: dest.toCode,
             country: dest.country,
-            originCode: cheapest.origin,
+            originCode: finalDeal.origin,
             imageUrl: dest.image,
-            duration: cheapest.transfers === 0
+            duration: finalDeal.transfers === 0
                 ? "Direct"
-                : `${cheapest.transfers} stop${(cheapest.transfers ?? 0) > 1 ? "s" : ""}`,
-            isDirect: cheapest.transfers === 0,
-            departDate: cheapest.date,
+                : `${finalDeal.transfers} stop${(finalDeal.transfers ?? 0) > 1 ? "s" : ""}`,
+            isDirect: finalDeal.transfers === 0,
+            departDate: finalDeal.date,
             returnDate: "",
-            price: cheapest.price,
-            currency: cheapest.currency || "USD",
-            airline: AIRLINE_NAMES[cheapest.airline] ?? cheapest.airline,
-            transfers: cheapest.transfers ?? 0,
+            price: finalDeal.price,
+            currency: finalDeal.currency || "USD",
+            airline: AIRLINE_NAMES[finalDeal.airline] ?? finalDeal.airline,
+            transfers: finalDeal.transfers ?? 0,
             fetchedAt: fetchTime,
             clickCount: 0,
             impressions: 0,
