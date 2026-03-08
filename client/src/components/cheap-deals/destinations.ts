@@ -17,7 +17,7 @@ export const MYANMAR_DESTINATIONS: DestinationMeta[] = [
     { toCode: "KUL", city: "Kuala Lumpur", country: "Malaysia", image: "/images/destinations/kuala-lumpur.webp" },
     { toCode: "HAN", city: "Hanoi", country: "Vietnam", image: "/images/destinations/hanoi.webp" },
     { toCode: "SGN", city: "Ho Chi Minh City", country: "Vietnam", image: "/images/destinations/ho-chi-minh.webp" },
-    { toCode: "DAD", city: "Da Nang", country: "Vietnam", image: "/images/destinations/ho-chi-minh.webp" },
+    { toCode: "DAD", city: "Da Nang", country: "Vietnam", image: "/images/destinations/da-nang.webp" },
     { toCode: "NHA", city: "Nha Trang", country: "Vietnam", image: "/images/phuket.webp" },
     { toCode: "PQC", city: "Phu Quoc", country: "Vietnam", image: "/images/bali.webp" },
     { toCode: "CAN", city: "Guangzhou", country: "China", image: "/images/destinations/hanoi.webp" },
