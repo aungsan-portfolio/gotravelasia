@@ -14,7 +14,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import fs from "fs";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
-import { createPriceAlert, getActivePriceAlerts, updateAlertPrice } from "../db";
+import { createPriceAlert, getActivePriceAlerts, updateAlertPrice, saveSubscriber } from "../db";
 import { Resend } from "resend";
 
 // ─── Rate Limiting ───
@@ -78,6 +78,126 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
     }
   }
   throw new Error(`No available port found starting from ${startPort}`);
+}
+
+// ─── Premium Welcome Email Template ───
+function buildWelcomeEmailHtml(email: string): string {
+  const SITE = "https://gotravel-asia.vercel.app";
+  const deals = [
+    { flag: "🇹🇭", from: "Yangon", to: "Bangkok", code: "RGN-BKK", price: 38 },
+    { flag: "🇸🇬", from: "Yangon", to: "Singapore", code: "RGN-SIN", price: 89 },
+    { flag: "🇹🇭", from: "Yangon", to: "Chiang Mai", code: "RGN-CNX", price: 62 },
+    { flag: "🇲🇾", from: "Yangon", to: "Kuala Lumpur", code: "RGN-KUL", price: 95 },
+    { flag: "🇭🇰", from: "Yangon", to: "Hong Kong", code: "RGN-HKG", price: 112 },
+  ];
+
+  const dealRows = deals.map(d => `
+    <tr>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+          <td style="font-size: 20px; width: 36px; vertical-align: middle;">${d.flag}</td>
+          <td style="vertical-align: middle;">
+            <span style="font-weight: 700; color: #1e293b; font-size: 14px;">${d.from} → ${d.to}</span><br/>
+            <span style="font-size: 12px; color: #94a3b8;">${d.code}</span>
+          </td>
+          <td style="text-align: right; vertical-align: middle;">
+            <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">$${Math.round(d.price * 1.65)}</span><br/>
+            <span style="font-size: 18px; font-weight: 800; color: #16a34a;">$${d.price}</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>`).join("");
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Welcome to GoTravel Asia</title>
+<!--[if mso]><style>table{border-collapse:collapse;}td{font-family:Arial,sans-serif;}</style><![endif]-->
+</head><body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8fafc;">
+<tr><td align="center" style="padding: 32px 16px;">
+<table cellpadding="0" cellspacing="0" border="0" width="520" style="max-width: 520px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+<!-- Header -->
+<tr><td style="background: linear-gradient(135deg, #180840 0%, #2D0558 50%, #5B0EA6 100%); padding: 40px 32px 32px; text-align: center;">
+  <div style="font-size: 32px; margin-bottom: 8px;">✈️</div>
+  <h1 style="color: #F5C518; font-size: 26px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.5px;">GoTravel Asia</h1>
+  <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin: 0;">Your flight deal alerts are ready</p>
+</td></tr>
+
+<!-- Welcome Text -->
+<tr><td style="padding: 32px 32px 16px;">
+  <h2 style="color: #1e293b; font-size: 22px; font-weight: 800; margin: 0 0 12px;">Welcome aboard! 🎉</h2>
+  <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 0;">
+    You're now signed up for <strong style="color: #1e293b;">24/7 price monitoring</strong> across Southeast Asia's best flight routes. When prices drop, you'll be the first to know.
+  </p>
+</td></tr>
+
+<!-- Stats Bar -->
+<tr><td style="padding: 0 32px 24px;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #f8fafc; border-radius: 12px;">
+    <tr>
+      <td style="padding: 16px; text-align: center; width: 33%;">
+        <div style="font-size: 22px; font-weight: 800; color: #5B0EA6;">50+</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Routes</div>
+      </td>
+      <td style="padding: 16px; text-align: center; width: 33%; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+        <div style="font-size: 22px; font-weight: 800; color: #5B0EA6;">$54</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Avg Saved</div>
+      </td>
+      <td style="padding: 16px; text-align: center; width: 33%;">
+        <div style="font-size: 22px; font-weight: 800; color: #5B0EA6;">24/7</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Monitoring</div>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+
+<!-- Deal Section Title -->
+<tr><td style="padding: 0 32px 8px;">
+  <h3 style="color: #1e293b; font-size: 16px; font-weight: 800; margin: 0;">🔥 Today's Best Deals</h3>
+  <p style="color: #94a3b8; font-size: 12px; margin: 4px 0 0;">Routes we're watching for you</p>
+</td></tr>
+
+<!-- Deals Table -->
+<tr><td style="padding: 0 32px 24px;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; overflow: hidden;">
+    ${dealRows}
+  </table>
+</td></tr>
+
+<!-- CTA -->
+<tr><td style="padding: 0 32px 32px; text-align: center;">
+  <a href="${SITE}" style="display: inline-block; background: linear-gradient(135deg, #F5C518 0%, #F59E0B 100%); color: #2D0558; font-size: 16px; font-weight: 800; padding: 16px 40px; border-radius: 12px; text-decoration: none; letter-spacing: 0.3px; box-shadow: 0 4px 16px rgba(245,197,24,0.35);">
+    Search Flights Now →
+  </a>
+  <p style="color: #94a3b8; font-size: 11px; margin: 12px 0 0;">Set your preferred routes and get instant alerts</p>
+</td></tr>
+
+<!-- How It Works -->
+<tr><td style="padding: 24px 32px; background: #fefce8; border-top: 1px solid #fef08a;">
+  <h4 style="color: #854d0e; font-size: 13px; font-weight: 700; margin: 0 0 12px;">⚡ How Price Alerts Work</h4>
+  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr><td style="padding: 4px 0; color: #92400e; font-size: 13px;">1️⃣ Search any route on GoTravel Asia</td></tr>
+    <tr><td style="padding: 4px 0; color: #92400e; font-size: 13px;">2️⃣ We monitor prices 24/7 automatically</td></tr>
+    <tr><td style="padding: 4px 0; color: #92400e; font-size: 13px;">3️⃣ Get notified instantly when prices drop</td></tr>
+  </table>
+</td></tr>
+
+<!-- Footer -->
+<tr><td style="padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+  <p style="color: #94a3b8; font-size: 11px; margin: 0 0 8px; line-height: 1.6;">
+    This email was sent to <strong>${email}</strong> because you signed up at
+    <a href="${SITE}" style="color: #5B0EA6; text-decoration: none;">gotravel-asia.vercel.app</a>.
+  </p>
+  <p style="color: #cbd5e1; font-size: 10px; margin: 0;">
+    Reply to this email to unsubscribe. No spam, ever. 💜
+  </p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
 }
 
 async function startServer() {
@@ -415,6 +535,79 @@ async function startServer() {
     } catch (error) {
       console.error("Price alert subscription error:", error);
       res.status(500).json({ error: "Failed to create price alert" });
+    }
+  });
+
+  // ─── Two-Flow Alerts Submit API ───
+  // (က) Route context present → auto-save alert (reuses createPriceAlert)
+  // (ခ) No route context     → save subscriber email + send welcome email
+  app.post("/api/alerts/submit", async (req, res) => {
+    try {
+      const { email, source, origin, destination, departDate, currentPrice, currency } = req.body;
+
+      if (!email) {
+        res.status(400).json({ error: "Email is required" });
+        return;
+      }
+
+      const hasRoute = origin && destination && departDate;
+
+      if (hasRoute) {
+        // ── (က) Route detected → auto-save PriceAlert ──────────
+        const alert = {
+          email,
+          origin: String(origin).toUpperCase(),
+          destination: String(destination).toUpperCase(),
+          departDate: String(departDate),
+          returnDate: null,
+          targetPrice: Number(currentPrice) || 0,
+          currency: currency || "USD",
+          isActive: true,
+        };
+
+        const result = await createPriceAlert(alert);
+        console.log(`[Alert ✅] ${email} → ${origin}-${destination} | source: ${source || "popup"}`);
+
+        res.json({
+          success: true,
+          flow: "auto-saved",
+          route: `${origin}-${destination}`,
+          message: `Alert saved for ${origin} → ${destination}`,
+          alreadyExists: result.alreadyExists,
+        });
+      } else {
+        // ── (ခ) No route → save subscriber email ────────────────
+        const result = await saveSubscriber(email, source || "popup");
+        console.log(`[Subscriber ✅] ${email} | source: ${source || "popup"}`);
+
+        // Send welcome email via Resend if configured
+        const resendApiKey = process.env.RESEND_API_KEY;
+        if (resendApiKey && !result.alreadyExists) {
+          try {
+            const resendClient = new Resend(resendApiKey);
+            await resendClient.emails.send({
+              from: "GoTravel Asia <onboarding@resend.dev>",
+              to: email,
+              subject: "✈️ Welcome to GoTravel Asia — Your flight deal alerts are ready!",
+              html: buildWelcomeEmailHtml(email),
+            }).catch((emailErr) => {
+              console.warn("[Resend] Welcome email failed:", emailErr);
+            });
+          } catch (emailErr) {
+            console.warn("[Resend] Welcome email error:", emailErr);
+          }
+        }
+
+        res.json({
+          success: true,
+          flow: "welcome-email",
+          message: "You're in! We'll email you top deals soon.",
+          alreadyExists: result.alreadyExists,
+        });
+      }
+    } catch (error) {
+      console.error("[POST /api/alerts/submit] error:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

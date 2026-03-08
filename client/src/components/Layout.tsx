@@ -8,6 +8,7 @@ import Footer from "./Footer";
 // Language switcher removed — English-only for international Asia market
 import SignInModal from "./SignInModal";
 import TripPlannerChat from "./TripPlannerChat";
+import PriceAlertPopup from "./PriceAlertPopup";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -97,6 +98,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
+
+      <PriceAlertPopup />
       <StickyCTA />
 
       {/* Cookie Consent Banner */}

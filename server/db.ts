@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert } from "../drizzle/schema";
+import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -147,5 +147,45 @@ export async function updateAlertPrice(id: number, latestPrice: number) {
       .where(eq(flightPriceAlerts.id, id));
   } catch (err) {
     console.error("[Database] Failed to update alert price:", err);
+  }
+}
+
+/**
+ * Save a subscriber email for the (ခ) Two-Flow.
+ * Used when user signs up from a page with no search context.
+ * Upserts to avoid duplicate entries.
+ */
+export async function saveSubscriber(
+  email: string,
+  source: string = "popup"
+): Promise<{ success: boolean; alreadyExists: boolean }> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot save subscriber: database not available");
+    return { success: false, alreadyExists: false };
+  }
+
+  try {
+    const existing = await db
+      .select()
+      .from(subscribers)
+      .where(eq(subscribers.email, email))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return { success: true, alreadyExists: true };
+    }
+
+    await db.insert(subscribers).values({
+      email,
+      source,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    return { success: true, alreadyExists: false };
+  } catch (error) {
+    console.error("[Database] Failed to save subscriber:", error);
+    throw error;
   }
 }

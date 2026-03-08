@@ -7,6 +7,7 @@ import { AIRPORT_MAP, DEFAULT_ORIGIN, CABIN_OPTIONS, type CabinCode } from "./fl
 import { detectOriginAirport } from "./flightWidget.geo";
 import { recentSearches, type RecentSearchRecord } from "./flightWidget.recent";
 import { usePriceHint } from "@/hooks/useFlightData";
+import { persistSearchToSession } from "@/lib/detectRouteFromContext";
 
 const flightSearchSchema = z
     .object({
@@ -191,6 +192,9 @@ export function useFlightWidgetState() {
             priceAtSearch: lowestPrice || calendarCheapestPrice,
             timestamp: Date.now(),
         });
+
+        // Persist search context so PriceAlertPopup can auto-detect route
+        persistSearchToSession(origin, destination, departDate);
 
         if (posthog.__loaded) posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate, flexibility: ctx.flexibility });
 
