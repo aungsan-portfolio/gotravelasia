@@ -1,3 +1,5 @@
+"use client";
+
 import { Loader2 } from "lucide-react";
 
 export default function LoadingState() {
@@ -8,7 +10,7 @@ export default function LoadingState() {
                 className="text-amber-400"
                 style={{ animation: "gt-spin .7s linear infinite" }}
             />
-            <span className="text-white/42 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>Saving your alert...</span>
+            <span className="text-white/42 text-sm font-sans">Saving your alert...</span>
         </div>
     );
 }
