@@ -17,6 +17,13 @@ function setCors(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
+function parseRequest(req: VercelRequest) {
+    const host = req.headers.host || "localhost:3000";
+    const protocol = req.headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
+    const requestUrl = new URL(req.url || "/", `${protocol}://${host}`);
+    return Object.fromEntries(requestUrl.searchParams.entries());
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     setCors(req, res);
     if (req.method === "OPTIONS") return res.status(200).end();
@@ -28,7 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "API token not configured" });
         }
 
-        const { origin, destination, month, currency } = req.query;
+        const query = parseRequest(req);
+        const origin = query.origin || req.query.origin;
+        const destination = query.destination || req.query.destination;
+        const month = query.month || req.query.month;
+        const currency = query.currency || req.query.currency;
+
         if (!origin || !destination || !month) {
             return res.status(400).json({ error: "Missing required params: origin, destination, month" });
         }

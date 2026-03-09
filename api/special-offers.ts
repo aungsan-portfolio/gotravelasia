@@ -3,6 +3,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour for special offers
 
+function parseRequest(req: VercelRequest) {
+    const host = req.headers.host || "localhost:3000";
+    const protocol = req.headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
+    const requestUrl = new URL(req.url || "/", `${protocol}://${host}`);
+    return Object.fromEntries(requestUrl.searchParams.entries());
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Credentials', "true");
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,8 +24,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const token = process.env.TRAVELPAYOUTS_TOKEN;
         if (!token) return res.status(500).json({ error: "Missing token" });
 
-        const origin = String(req.query.origin || "RGN");
-        const currency = String(req.query.currency || "usd");
+        const query = parseRequest(req);
+        const origin = String(query.origin || req.query.origin || "RGN");
+        const currency = String(query.currency || req.query.currency || "usd");
         const cacheKey = `special-offers-${origin}-${currency}`;
 
         const cached = cache.get(cacheKey);

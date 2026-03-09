@@ -15,6 +15,13 @@ function setCache(key: string, data: any) {
     cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
 }
 
+function parseRequest(req: VercelRequest) {
+    const host = req.headers.host || "localhost:3000";
+    const protocol = req.headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
+    const requestUrl = new URL(req.url || "/", `${protocol}://${host}`);
+    return Object.fromEntries(requestUrl.searchParams.entries());
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Enable CORS just in case
     res.setHeader('Access-Control-Allow-Credentials', "true");
@@ -35,8 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "API token not configured" });
         }
 
-        const origin = String(req.query.origin || "RGN");
-        const currency = String(req.query.currency || "usd");
+        const query = parseRequest(req);
+        const origin = String(query.origin || req.query.origin || "RGN");
+        const currency = String(query.currency || req.query.currency || "usd");
         const cacheKey = `cheap-${origin}-${currency}`;
 
         const cached = getCached(cacheKey);
