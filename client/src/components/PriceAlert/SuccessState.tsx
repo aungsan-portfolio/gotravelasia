@@ -32,26 +32,16 @@ export default function SuccessState({
                     <Mail size={28} className="text-amber-400" strokeWidth={1.5} />
                 )}
             </div>
-<<<<<<< HEAD
-            <h2 className="gt-head text-white text-2xl font-extrabold mb-2">You're in!</h2>
-            <p className="text-white/50 text-sm leading-relaxed mb-4">
-                {step === "auto-saved"
-                    ? <>Alert set for <span className="text-amber-400">{detectedRoute?.label || "your route"}</span></>
-                    : <>Check <span className="text-amber-400">{email || "your inbox"}</span> for your login link ✉️</>
-                }
-=======
-            
             <h3 className="gt-head text-white text-[22px] font-bold">
                 {step === "auto-saved" ? "Alert Created!" : "Check Your Email"}
             </h3>
-            
+
             <p className="text-white/60 text-[14px] leading-relaxed max-w-[280px]">
                 {toastMessage}
->>>>>>> 4e7992be9fe40bc47d91962883ac9fd79bea183c
             </p>
-            
+
             <div className="w-full h-px my-4" style={{ background: "rgba(255,255,255,.05)" }} />
-            
+
             <button
                 onClick={onClose}
                 className="w-full rounded-xl py-3 font-medium text-[14px] transition-all hover:bg-white/10 active:scale-[0.98]"
