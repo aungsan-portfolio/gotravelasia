@@ -208,73 +208,101 @@ export default function PriceAlertPopup() {
     };
 
     return (
-        <div
-            className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md"
-            onClick={(e) => e.target === e.currentTarget && close()}
-        >
+        <>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+                .gt-font   { font-family:'DM Sans',sans-serif; }
+                .gt-head   { font-family:'Syne',sans-serif; }
+                @keyframes gt-up     { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:none} }
+                @keyframes gt-fade   { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
+                @keyframes gt-ticker { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+                @keyframes gt-spin   { to{transform:rotate(360deg)} }
+                @keyframes gt-pulse  { 0%,100%{opacity:1} 50%{opacity:.3} }
+                .gt-google:hover { transform:translateY(-1px); }
+                .gt-submit:hover { filter:brightness(1.1); transform:scale(1.03); }
+                .gt-close:hover  { background:rgba(255,255,255,.15)!important; color:#fff!important; }
+            `}</style>
+
+            {/* Overlay — z-[9999] clears StickyCTA (z-50) and any modals */}
             <div
-                className={`
-          relative w-full sm:w-[362px] bg-[#0c051e] rounded-[28px_28px_0_0] sm:rounded-3xl overflow-hidden
-          transition-all duration-[380ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]
-          shadow-[0_40px_90px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.07),inset_0_1px_0_rgba(255,255,255,0.09)]
-          ${mounted ? "translate-y-0 opacity-100 scale-100" : "translate-y-6 opacity-0 scale-[0.97]"}
-        `}
-                style={{
-                    background: "linear-gradient(155deg, #180840 0%, #0c051e 55%, #180c38 100%)",
-                    paddingBottom: "env(safe-area-inset-bottom)",
-                }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Get flight deal alerts"
+                className="gt-font fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
+                style={{ background: "rgba(6,2,16,.74)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }}
+                onClick={(e) => e.target === e.currentTarget && close()}
             >
-                {/* Glow Effects */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[180px] h-[60px] pointer-events-none rounded-full bg-amber-400/10 blur-[26px]" />
-
-                {/* Close */}
-                <button
-                    onClick={close}
-                    className="absolute top-[14px] right-[14px] w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/20 transition-all z-10 text-[14px]"
+                {/* Card */}
+                <div
+                    className="relative w-full sm:w-[362px] rounded-t-[28px] sm:rounded-3xl overflow-hidden"
+                    style={{
+                        background: "linear-gradient(155deg,#180840 0%,#0c051e 55%,#180c38 100%)",
+                        boxShadow: "0 40px 90px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.09)",
+                        animation: mounted ? "gt-up .38s cubic-bezier(.34,1.56,.64,1) both" : "none",
+                        paddingBottom: "env(safe-area-inset-bottom,0px)",
+                    }}
                 >
-                    ✕
-                </button>
+                    {/* Close */}
+                    <button
+                        onClick={close}
+                        aria-label="Close dialog"
+                        className="gt-close absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center text-white/40 transition-all duration-200 z-50"
+                        style={{ background: "rgba(255,255,255,.08)", border: "none", cursor: "pointer" }}
+                    >
+                        <X size={13} strokeWidth={2.5} />
+                    </button>
 
-                <div className="px-6 pt-7 pb-6">
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-1.5 mb-3.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20">
-                        <div className="w-[6px] h-[6px] rounded-full bg-amber-400 animate-pulse" />
-                        <span className="text-[10px] font-bold text-amber-400 tracking-[0.1em] uppercase" style={{ fontFamily: "'Syne', sans-serif" }}>Southeast Asia Deals</span>
+                    <div className="px-6 pt-7 pb-6 relative z-10">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full"
+                            style={{ background: "rgba(251,191,36,.10)", border: "1px solid rgba(251,191,36,.22)" }}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
+                                style={{ animation: "gt-pulse 1.6s infinite" }} />
+                            <span className="gt-head text-amber-400 text-[10px] font-bold tracking-widest uppercase">
+                                Southeast Asia Deals
+                            </span>
+                        </div>
+
+                        {/* ── SUCCESS STATES ─────────────────────────────── */}
+                        {isSuccess ? (
+                            <SuccessState
+                                step={step as "auto-saved" | "email-sent"}
+                                email={email}
+                                toastMessage={toastMessage}
+                                detectedRoute={detectedRoute}
+                                onClose={close}
+                            />
+
+                        ) : step === "error" ? (
+                            /* ── ERROR STATE ──────────────────────────────── */
+                            <ErrorState onRetry={() => setStep("idle")} />
+
+                        ) : step === "loading" ? (
+                            /* ── LOADING STATE ────────────────────────────── */
+                            <LoadingState />
+
+                        ) : (
+                            /* ── MAIN FORM ────────────────────────────────── */
+                            <MainForm
+                                currentDeal={currentDeal}
+                                signupCount={signupCount}
+                                handleGoogleSignIn={handleGoogleSignIn}
+                                handleEmailSubmit={handleEmailSubmit}
+                                email={email}
+                                setEmail={setEmail}
+                                setEmailErr={setEmailErr}
+                                emailErr={emailErr}
+                            />
+                        )}
                     </div>
 
-                    {/* ── SUCCESS STATES ─────────────────────────────── */}
-                    {isSuccess ? (
-                        <SuccessState
-                            step={step as "auto-saved" | "email-sent"}
-                            email={email}
-                            toastMessage={toastMessage}
-                            detectedRoute={detectedRoute}
-                            onClose={close}
-                        />
-
-                    ) : step === "error" ? (
-                        /* ── ERROR STATE ──────────────────────────────── */
-                        <ErrorState onRetry={() => setStep("idle")} />
-
-                    ) : step === "loading" ? (
-                        /* ── LOADING STATE ────────────────────────────── */
-                        <LoadingState />
-
-                    ) : (
-                        /* ── MAIN FORM ────────────────────────────────── */
-                        <MainForm
-                            currentDeal={currentDeal}
-                            signupCount={signupCount}
-                            handleGoogleSignIn={handleGoogleSignIn}
-                            handleEmailSubmit={handleEmailSubmit}
-                            email={email}
-                            setEmail={setEmail}
-                            setEmailErr={setEmailErr}
-                            emailErr={emailErr}
-                        />
-                    )}
+                    {/* Ambient bottom glow */}
+                    <div
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-16 pointer-events-none"
+                        style={{ background: "rgba(251,191,36,.09)", filter: "blur(26px)", borderRadius: "50%" }}
+                    />
                 </div>
             </div>
-        </div>
+        </>
     );
 }

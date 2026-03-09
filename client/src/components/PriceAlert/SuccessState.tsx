@@ -1,4 +1,5 @@
 import type { DetectedRoute } from "@/lib/detectRouteFromContext";
+import { CheckCircle2 } from "lucide-react";
 
 interface SuccessStateProps {
     step: "auto-saved" | "email-sent";
@@ -10,46 +11,41 @@ interface SuccessStateProps {
 
 export default function SuccessState({ step, email, toastMessage, detectedRoute, onClose }: SuccessStateProps) {
     return (
-        <div className="text-center py-5 animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-[0_8px_28px_rgba(74,222,128,0.28)]">
-                {step === "auto-saved" ? <span className="text-[26px]">✓</span> : <span className="text-[26px]">✉️</span>}
+        <div className="text-center py-6" style={{ animation: "gt-fade .4s ease" }}>
+            <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg,#4ade80,#16a34a)", boxShadow: "0 8px 28px rgba(74,222,128,.28)" }}>
+                <CheckCircle2 size={26} className="text-white" strokeWidth={2.5} />
             </div>
-            <h2 className="text-[24px] font-extrabold text-white mb-1.5" style={{ fontFamily: "'Syne', sans-serif" }}>You're in!</h2>
-
-            {/* Subtext differences based on step */}
-            {step === "auto-saved" ? (
-                <div className="text-[13px] text-white/50 leading-[1.6]">
-                    Alert set for <span className="text-amber-400">{detectedRoute?.label || "your route"}</span> ✓
-                </div>
-            ) : (
-                <div className="text-[13px] text-white/50 leading-[1.6]">
-                    Check <span className="text-amber-400">{email || "your inbox"}</span> to pick your routes
-                </div>
-            )}
+            <h2 className="gt-head text-white text-2xl font-extrabold mb-2">You're in!</h2>
+            <p className="text-white/50 text-sm leading-relaxed mb-4">
+                {step === "auto-saved"
+                    ? <><>Alert set for </><span className="text-amber-400">{detectedRoute?.label || "your route"}</span><></></>
+                    : <><>Check </><span className="text-amber-400">{email || "your inbox"}</span><> for your login link ✉️</></>
+                }
+            </p>
 
             {/* Badges */}
             {step === "auto-saved" && detectedRoute && (
-                <div className="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[11px] font-semibold">
+                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 mb-4 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[11px] font-semibold">
                     ✈️ {detectedRoute.origin} → {detectedRoute.destination} · Auto-saved
                 </div>
             )}
 
             {step === "email-sent" && (
-                <div className="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[11px] font-semibold">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-4 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[11px] font-semibold">
                     📬 Welcome email sent
                 </div>
             )}
 
-            {/* Help notes */}
-            {step === "auto-saved" ? (
-                <div className="text-[11px] text-white/30 mt-1.5">We'll email you when price drops 🔔</div>
-            ) : (
-                <div className="text-[11px] text-white/30 mt-1.5">Choose routes from the email → we'll start watching</div>
-            )}
+            <p className="text-white/28 text-xs mb-3">
+                {step === "auto-saved"
+                    ? "We'll email you when price drops 🔔"
+                    : "Choose routes from the email → we'll start watching"}
+            </p>
 
             <button
                 onClick={onClose}
-                className="mt-6 w-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white/90 border border-white/10 font-semibold h-11 rounded-xl transition-all active:scale-[0.98] text-[13px]"
+                className="w-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white/90 border border-white/10 font-semibold h-11 rounded-xl transition-all active:scale-[0.98] text-[13px]"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
                 Got it, thanks!
