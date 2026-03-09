@@ -41,24 +41,7 @@ jobs:
 
       # ✅ Ensure that the JSON files are structurally sound before committing
       - name: Validate output JSON
-        run: |
-          python -c "
-          import json, sys
-          for path in [
-              'client/public/data/flight_data.json',
-              'client/public/data/transport.json',
-          ]:
-              try:
-                  with open(path) as f:
-                      data = json.load(f)
-                  if not isinstance(data, (list, dict)) or len(data) == 0:
-                      print(f'❌ {path} — empty or invalid')
-                      sys.exit(1)
-                  print(f'✅ {path} — {len(data)} records')
-              except Exception as e:
-                  print(f'❌ {path} — {e}')
-                  sys.exit(1)
-          "
+        run: python scripts/validate_json.py
 
       - name: Commit and Push
         run: |
