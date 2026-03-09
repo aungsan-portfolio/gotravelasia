@@ -1,19 +1,26 @@
 /**
  * @file SignInModal.tsx
- * @description Price Alerts modal — email + Google sign-in + route watchlist subscription.
- * Uses /api/price-alerts/subscribe (DB-backed) as the single source of truth.
- * Auto-opens on first visit if `autoOpen` prop is true.
- * Premium Dark Theme Edition.
+ * @description Price Alerts modal — production-safe refactor
+ * Single source of truth: /api/price-alerts/subscribe
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
     Dialog,
     DialogContent,
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Loader2, Mail, ArrowRight, Zap, Target, BadgeDollarSign } from "lucide-react";
+import {
+    CheckCircle2,
+    Loader2,
+    Mail,
+    ArrowRight,
+    Zap,
+    Target,
+    BadgeDollarSign,
+    AlertCircle,
+} from "lucide-react";
 import { useFlightData } from "@/hooks/useFlightData";
 
 // ──────────────────────────────────────────────
@@ -29,15 +36,14 @@ const WATCH_ROUTES = [
     { id: "rgn-cnx", label: "Yangon → Chiang Mai" },
     { id: "mdl-bkk", label: "Mandalay → Bangkok" },
     { id: "other", label: "Other Destinations" },
-];
+] as const;
 
-/** Map routeId → IATA codes for the API */
 const ROUTE_MAP: Record<string, { origin: string; destination: string }> = {
     "rgn-bkk": { origin: "RGN", destination: "BKK" },
     "rgn-sin": { origin: "RGN", destination: "SIN" },
     "rgn-cnx": { origin: "RGN", destination: "CNX" },
     "mdl-bkk": { origin: "MDL", destination: "BKK" },
-    "other": { origin: "", destination: "" },
+    other: { origin: "", destination: "" },
 };
 
 const BENEFITS = [
@@ -47,18 +53,65 @@ const BENEFITS = [
 ];
 
 const AVATARS = ["KH", "MW", "AS", "NT", "PL"];
-
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
+/** Step 1 = Email/Google sign-in, Step 3 = Route selection, Step 4 = Success confirmation.
+ *  Step 2 was intentionally removed (was a standalone email form, now merged into Step 1). */
+type Step = 1 | 3 | 4;
+
+interface SignInModalProps {
+    trigger?: React.ReactNode;
+    className?: string;
+    variant?: "header" | "mobile";
+    autoOpen?: boolean;
+}
+
+// Note: window.google is declared globally in Map.tsx via @types/google.maps
+
 // ──────────────────────────────────────────────
-// Google Identity Services helper
+// Safe browser storage helpers
 // ──────────────────────────────────────────────
+function canUseDOM() {
+    return typeof window !== "undefined" && typeof document !== "undefined";
+}
+
+function getLS(key: string): string | null {
+    if (!canUseDOM()) return null;
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function setLS(key: string, value: string) {
+    if (!canUseDOM()) return;
+    try {
+        window.localStorage.setItem(key, value);
+    } catch {
+        // ignore storage errors
+    }
+}
+
+// ──────────────────────────────────────────────
+// Google helpers
+// ──────────────────────────────────────────────
+let googleScriptPromise: Promise<void> | null = null;
+
 function loadGoogleScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (document.getElementById("google-gsi-script")) {
-            resolve();
+    if (!canUseDOM()) return Promise.reject(new Error("No DOM available"));
+    if ((window as any).google?.accounts?.id) return Promise.resolve();
+    if (googleScriptPromise) return googleScriptPromise;
+
+    googleScriptPromise = new Promise((resolve, reject) => {
+        const existing = document.getElementById("google-gsi-script") as HTMLScriptElement | null;
+
+        if (existing) {
+            existing.addEventListener("load", () => resolve(), { once: true });
+            existing.addEventListener("error", () => reject(new Error("Failed to load Google script")), { once: true });
             return;
         }
+
         const script = document.createElement("script");
         script.id = "google-gsi-script";
         script.src = "https://accounts.google.com/gsi/client";
@@ -68,34 +121,37 @@ function loadGoogleScript(): Promise<void> {
         script.onerror = () => reject(new Error("Failed to load Google script"));
         document.head.appendChild(script);
     });
+
+    return googleScriptPromise;
 }
 
-/** Decode JWT credential from Google to extract email + name */
 function decodeGoogleJwt(token: string): { email: string; name: string } | null {
     try {
         const parts = token.split(".");
         if (parts.length !== 3) return null;
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+
+        const base64 = parts[1]
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+
+        const payload = JSON.parse(atob(base64));
         return {
-            email: payload.email || "",
-            name: payload.name || "",
+            email: typeof payload.email === "string" ? payload.email : "",
+            name: typeof payload.name === "string" ? payload.name : "",
         };
     } catch {
         return null;
     }
 }
 
+function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 // ──────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────
-interface SignInModalProps {
-    trigger?: React.ReactNode;
-    className?: string;
-    variant?: "header" | "mobile";
-    /** If true, auto-opens the modal on first visit (gated by localStorage) */
-    autoOpen?: boolean;
-}
-
 export default function SignInModal({
     trigger,
     className,
@@ -105,143 +161,181 @@ export default function SignInModal({
     const { deals } = useFlightData();
 
     const [isOpen, setIsOpen] = useState(false);
-    // Step 2 (email-only form) is now merged into Step 1 for the premium UI.
-    const [step, setStep] = useState<1 | 3 | 4>(1);
-    const [email, setEmail] = useState("");
+    const [step, setStep] = useState<Step>(1);
+    const [userEmail, setUserEmail] = useState("");
     const [selectedRoute, setSelectedRoute] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState(false);
-    const [savedEmail, setSavedEmail] = useState("");
-    const [googleLoading, setGoogleLoading] = useState(false);
+    const [submitError, setSubmitError] = useState("");
+    const [googleError, setGoogleError] = useState("");
+    const [googleReady, setGoogleReady] = useState(false);
     const [dealIdx, setDealIdx] = useState(0);
 
     const googleBtnRef = useRef<HTMLDivElement>(null);
     const hasAutoOpened = useRef(false);
+    const googleInitialized = useRef(false);
+    // FIX ②: Ref guard to prevent rapid double-click on route selection
+    const submittingRef = useRef(false);
 
-    // ── Preload Google Script ──
+    // ── Initial hydrate from localStorage ──
     useEffect(() => {
-        if (GOOGLE_CLIENT_ID) loadGoogleScript().catch(() => { });
+        const storedSubscribed = getLS(LS_SUBSCRIBED_KEY) === "true";
+        const storedEmail = getLS(LS_EMAIL_KEY) || "";
+
+        setIsSubscribed(storedSubscribed);
+        if (storedEmail) setUserEmail(storedEmail);
     }, []);
 
-    // ── Check localStorage on mount ──
+    // ── Preload Google script ──
     useEffect(() => {
-        const stored = localStorage.getItem(LS_SUBSCRIBED_KEY);
-        const storedEmail = localStorage.getItem(LS_EMAIL_KEY);
-        if (stored === "true" && storedEmail) {
-            setIsSubscribed(true);
-            setSavedEmail(storedEmail);
-        }
+        if (!GOOGLE_CLIENT_ID) return;
+        loadGoogleScript()
+            .then(() => setGoogleReady(true))
+            .catch(() => setGoogleError("Google sign-in is temporarily unavailable."));
     }, []);
 
     // ── Auto-open on first visit ──
     useEffect(() => {
-        if (!autoOpen) return;
-        if (hasAutoOpened.current) return;
+        if (!autoOpen || hasAutoOpened.current) return;
 
-        const alreadyShown = localStorage.getItem(LS_MODAL_SHOWN_KEY);
-        const alreadySubscribed = localStorage.getItem(LS_SUBSCRIBED_KEY);
+        const alreadyShown = getLS(LS_MODAL_SHOWN_KEY) === "true";
+        const alreadySubscribed = getLS(LS_SUBSCRIBED_KEY) === "true";
 
-        if (alreadyShown === "true" || alreadySubscribed === "true") return;
+        if (alreadyShown || alreadySubscribed) return;
 
-        // Small delay so the page has time to render first
-        const timer = setTimeout(() => {
+        const timer = window.setTimeout(() => {
             setIsOpen(true);
+            setLS(LS_MODAL_SHOWN_KEY, "true");
             hasAutoOpened.current = true;
         }, 1500);
 
-        return () => clearTimeout(timer);
+        return () => window.clearTimeout(timer);
     }, [autoOpen]);
 
-    // ── Mark modal as shown when it closes ──
-    const handleOpenChange = useCallback((open: boolean) => {
-        setIsOpen(open);
-        if (!open) {
-            localStorage.setItem(LS_MODAL_SHOWN_KEY, "true");
-        }
-    }, []);
-
-    // ── Reset on open ──
+    // ── Reset UI on open ──
+    // Note: googleError is intentionally preserved across modal reopens
+    //       so users see a persistent notice if Google is unavailable.
     useEffect(() => {
-        if (isOpen) {
-            setStep(isSubscribed ? 4 : 1);
-            setEmail("");
-            setSelectedRoute("");
-        }
+        if (!isOpen) return;
+
+        setSubmitError("");
+        setSelectedRoute("");
+        setStep(isSubscribed ? 4 : 1);
     }, [isOpen, isSubscribed]);
 
     // ── Rotate deals every 3s ──
     useEffect(() => {
-        if (!isOpen || !deals || deals.length === 0) return;
-        const id = setInterval(() => setDealIdx((i) => (i + 1) % deals.length), 3000);
-        return () => clearInterval(id);
+        if (!isOpen || !deals?.length) return;
+
+        const id = window.setInterval(() => {
+            setDealIdx((i) => (i + 1) % deals.length);
+        }, 3000);
+
+        return () => window.clearInterval(id);
     }, [isOpen, deals]);
 
-    const currentDeal = deals?.[dealIdx] || { origin: "RGN", destination: "BKK", price: 38 };
+    // FIX ①: Auto-close after success with proper cleanup
+    useEffect(() => {
+        if (step !== 4 || !isOpen) return;
 
-    // ── Google Sign-In handler ──
-    const handleGoogleSignIn = useCallback(() => {
-        if (!GOOGLE_CLIENT_ID) {
-            console.warn("[SignInModal] VITE_GOOGLE_CLIENT_ID not configured");
-            return;
-        }
+        const timer = window.setTimeout(() => {
+            setIsOpen(false);
+        }, 2500);
 
-        const google = (window as any).google;
-        if (!google) {
-            console.warn("[SignInModal] Google script not loaded yet");
-            return;
-        }
+        return () => window.clearTimeout(timer);
+    }, [step, isOpen]);
 
-        try {
-            const client = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: 'email profile',
-                callback: async (response: any) => {
-                    if (response.access_token) {
-                        setGoogleLoading(true);
-                        try {
-                            const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                                headers: { Authorization: `Bearer ${response.access_token}` }
-                            });
-                            const user = await res.json();
-                            if (user.email) {
-                                localStorage.setItem(LS_EMAIL_KEY, user.email);
-                                setSavedEmail(user.email);
-                                setEmail(user.email);
-                                setStep(3);
-                            }
-                        } catch {
-                            console.error("[SignInModal] userinfo fetch failed");
-                        } finally {
-                            setGoogleLoading(false);
-                        }
-                    } else {
-                        setGoogleLoading(false);
-                    }
-                },
-                error_callback: () => {
-                    setGoogleLoading(false);
-                }
-            });
-            client.requestAccessToken();
-        } catch (error) {
-            console.error("[SignInModal] Google Sign-In failed", error);
-            setGoogleLoading(false);
+    const currentDeal = useMemo(() => {
+        return deals?.[dealIdx] || { origin: "RGN", destination: "BKK", price: 38 };
+    }, [deals, dealIdx]);
+
+    // ── Open/close handler ──
+    const handleOpenChange = useCallback((open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
+            setLS(LS_MODAL_SHOWN_KEY, "true");
+            setSubmitError("");
+            setSelectedRoute("");
         }
     }, []);
 
-    // ── Email Submission (Goes straight to Step 3) ──
+    // ── Google initialize once per page ──
+    const initializeGoogle = useCallback(() => {
+        if (!GOOGLE_CLIENT_ID || !(window as any).google?.accounts?.id || googleInitialized.current) return;
+
+        (window as any).google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response: { credential?: string }) => {
+                const decoded = response?.credential ? decodeGoogleJwt(response.credential) : null;
+
+                if (!decoded?.email) {
+                    setGoogleError("Google sign-in failed. Please use email instead.");
+                    return;
+                }
+
+                setUserEmail(decoded.email);
+                setLS(LS_EMAIL_KEY, decoded.email);
+                setSubmitError("");
+                setGoogleError("");
+                setStep(3);
+            },
+        });
+
+        googleInitialized.current = true;
+    }, []);
+
+    // ── Render Google button when modal is open on step 1 ──
+    useEffect(() => {
+        if (!isOpen || step !== 1 || !googleReady || !GOOGLE_CLIENT_ID) return;
+        if (!(window as any).google?.accounts?.id || !googleBtnRef.current) return;
+
+        initializeGoogle();
+
+        googleBtnRef.current.innerHTML = "";
+
+        (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: "outline",
+            size: "large",
+            width: 314,
+            text: "continue_with",
+            shape: "rectangular",
+            logo_alignment: "left",
+        });
+    }, [isOpen, step, googleReady, initializeGoogle]);
+
+    // ── Email submit ──
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email) return;
-        localStorage.setItem(LS_EMAIL_KEY, email);
-        setSavedEmail(email);
+        const trimmed = userEmail.trim();
+
+        if (!isValidEmail(trimmed)) {
+            setSubmitError("Please enter a valid email address.");
+            return;
+        }
+
+        setUserEmail(trimmed);
+        setLS(LS_EMAIL_KEY, trimmed);
+        setSubmitError("");
         setStep(3);
     };
 
-    // ── Route Selection → API Call ──
+    // ── Route submit to API ──
     const handleRouteSelect = async (routeId: string) => {
+        // FIX ②: Ref guard — prevents duplicate API calls on fast double-click
+        if (submittingRef.current) return;
+
+        const email = userEmail.trim();
+
+        if (!isValidEmail(email)) {
+            setSubmitError("Please enter a valid email before choosing a route.");
+            setStep(1);
+            return;
+        }
+
         setSelectedRoute(routeId);
         setIsSubmitting(true);
+        submittingRef.current = true;
+        setSubmitError("");
 
         const routeCodes = ROUTE_MAP[routeId] || { origin: "", destination: "" };
 
@@ -250,7 +344,7 @@ export default function SignInModal({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    email: email || savedEmail,
+                    email,
                     routeId,
                     origin: routeCodes.origin,
                     destination: routeCodes.destination,
@@ -258,42 +352,55 @@ export default function SignInModal({
                 }),
             });
 
-            await res.json().catch(() => ({}));
-
-            if (res.ok) {
-                localStorage.setItem(LS_SUBSCRIBED_KEY, "true");
-                setIsSubscribed(true);
-                setStep(4);
-                setTimeout(() => setIsOpen(false), 2500);
+            // FIX ④: Typed payload instead of `any`
+            let payload: { message?: string; error?: string } | null = null;
+            try {
+                payload = await res.json();
+            } catch {
+                payload = null;
             }
-        } catch {
-            // Silently fail — still mark as subscribed for UX
-            localStorage.setItem(LS_SUBSCRIBED_KEY, "true");
+
+            if (!res.ok) {
+                const message =
+                    payload?.message ||
+                    payload?.error ||
+                    "Could not save your alert. Please try again.";
+                throw new Error(message);
+            }
+
+            setLS(LS_SUBSCRIBED_KEY, "true");
+            setLS(LS_EMAIL_KEY, email);
             setIsSubscribed(true);
             setStep(4);
-            setTimeout(() => setIsOpen(false), 2500);
+            // FIX ①: Auto-close is now handled by the useEffect above with proper cleanup
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : "Network error. Please try again."
+            );
         } finally {
             setIsSubmitting(false);
+            submittingRef.current = false;
         }
     };
 
-    // ── Trigger button ──
-    const defaultTrigger =
-        variant === "mobile" ? (
-            <Button
-                variant="outline"
-                className={`w-full justify-start text-sm ${className || ""}`}
-            >
-                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Price Alerts"}
-            </Button>
-        ) : (
-            <Button
-                variant="outline"
-                className={`hidden sm:inline-flex text-sm font-medium ${className || ""}`}
-            >
-                {isSubscribed ? `✅ ${savedEmail.split("@")[0]}` : "Price Alerts"}
-            </Button>
-        );
+    const triggerLabel = isSubscribed
+        ? `✅ ${userEmail.split("@")[0] || "Subscribed"}`
+        : "Price Alerts";
+
+    const defaultTrigger = (
+        <Button
+            variant="outline"
+            className={
+                variant === "mobile"
+                    ? `w-full justify-start text-sm ${className || ""}`
+                    : `hidden sm:inline-flex text-sm font-medium ${className || ""}`
+            }
+        >
+            {triggerLabel}
+        </Button>
+    );
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -305,42 +412,49 @@ export default function SignInModal({
                     background: "linear-gradient(155deg,#180840 0%,#0c051e 55%,#180c38 100%)",
                     border: "1px solid rgba(255,255,255,0.08)",
                     boxShadow: "0 30px 80px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif"
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
                 aria-describedby={undefined}
             >
+                {/* FIX ⑦: Ideally move this @import to index.html <head> as a <link> tag
+            for better performance. Kept here for now as modal-scoped fonts. */}
                 <style>{`
-                    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-                    .gt-head   { font-family:'Syne',sans-serif; }
-                    @keyframes gt-fade   { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
-                    @keyframes gt-ticker { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
-                    @keyframes gt-pulse  { 0%,100%{opacity:1} 50%{opacity:.3} }
-                `}</style>
+          @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+          .gt-head { font-family:'Syne',sans-serif; }
+          @keyframes gt-fade { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
+          @keyframes gt-ticker { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+          @keyframes gt-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+        `}</style>
 
-                {/* Fixed Close Button */}
                 <button
                     onClick={() => handleOpenChange(false)}
                     className="absolute top-4 right-4 z-[60] w-7 h-7 rounded-full flex items-center justify-center text-white/50 bg-white/5 hover:bg-white/10 hover:text-white transition-all pointer-events-auto"
                     aria-label="Close"
+                    type="button"
                 >
                     ✕
                 </button>
 
                 <div className="relative px-6 py-7 max-h-[85vh] overflow-y-auto overscroll-contain">
-                    {/* ═══════════ STEP 1: INTRO (Premium UI) ═══════════ */}
                     {step === 1 && (
                         <div className="animate-in fade-in zoom-in-95 duration-500">
-                            <h2 className="gt-head text-[28px] font-extrabold text-white leading-tight mb-4"
-                                style={{ letterSpacing: "-0.025em" }}>
-                                Never Miss a<br />
-                                <span className="text-amber-400" style={{ textShadow: "0 0 26px rgba(251,191,36,.35)" }}>
+                            <h2
+                                className="gt-head text-[28px] font-extrabold text-white leading-tight mb-4"
+                                style={{ letterSpacing: "-0.025em" }}
+                            >
+                                Never Miss a
+                                <br />
+                                <span
+                                    className="text-amber-400"
+                                    style={{ textShadow: "0 0 26px rgba(251,191,36,.35)" }}
+                                >
                                     Cheap Flight
-                                </span>{" "}Again.
+                                </span>{" "}
+                                Again.
                             </h2>
 
-                            {/* Live ticker */}
                             <div
-                                key={`${currentDeal.origin}-${currentDeal.destination}`}
+                                key={`${currentDeal.origin}-${currentDeal.destination}-${dealIdx}`}
                                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-4"
                                 style={{
                                     background: "rgba(255,255,255,.05)",
@@ -348,23 +462,32 @@ export default function SignInModal({
                                     animation: "gt-ticker .32s ease",
                                 }}
                             >
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" style={{ animation: "gt-pulse 1.6s infinite" }} />
+                                <div
+                                    className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"
+                                    style={{ animation: "gt-pulse 1.6s infinite" }}
+                                />
                                 <span className="text-xs text-white/60 leading-none">
                                     <span className="font-semibold text-white/88">
                                         {currentDeal.origin} → {currentDeal.destination}
-                                    </span>{" "}from{" "}
+                                    </span>{" "}
+                                    from{" "}
                                     <span className="text-emerald-400 font-bold">${currentDeal.price}</span>
                                     <span className="text-amber-400"> · saved $47</span>
                                     <span className="text-white/28"> · 2h ago</span>
                                 </span>
                             </div>
 
-                            {/* Benefits list */}
                             <div className="flex flex-col gap-2.5 mb-5 mt-2">
                                 {BENEFITS.map(({ icon: Icon, label }, i) => (
-                                    <div key={i} className="flex items-center gap-3" style={{ animation: `gt-fade .4s ease ${i * 0.07}s both` }}>
-                                        <div className="w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0"
-                                            style={{ background: "rgba(255,255,255,.06)" }}>
+                                    <div
+                                        key={label}
+                                        className="flex items-center gap-3"
+                                        style={{ animation: `gt-fade .4s ease ${i * 0.07}s both` }}
+                                    >
+                                        <div
+                                            className="w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0"
+                                            style={{ background: "rgba(255,255,255,.06)" }}
+                                        >
                                             <Icon size={15} className="text-amber-400" strokeWidth={2} />
                                         </div>
                                         <span className="text-[13px] text-white/70 leading-snug">{label}</span>
@@ -372,12 +495,18 @@ export default function SignInModal({
                                 ))}
                             </div>
 
-                            {/* Social proof */}
                             <div className="flex items-center gap-2.5 mb-5 mt-4">
                                 <div className="flex">
                                     {AVATARS.map((init, i) => (
-                                        <div key={i} className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold text-amber-300"
-                                            style={{ marginLeft: i === 0 ? 0 : -8, background: "rgba(251,191,36,.14)", border: "2px solid #0c051e" }}>
+                                        <div
+                                            key={`${init}-${i}`}
+                                            className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold text-amber-300"
+                                            style={{
+                                                marginLeft: i === 0 ? 0 : -8,
+                                                background: "rgba(251,191,36,.14)",
+                                                border: "2px solid #0c051e",
+                                            }}
+                                        >
                                             {init}
                                         </div>
                                     ))}
@@ -389,24 +518,21 @@ export default function SignInModal({
 
                             <div className="h-px mb-5" style={{ background: "rgba(255,255,255,.07)" }} />
 
-                            {/* Google Sign In */}
-                            <button
-                                onClick={handleGoogleSignIn}
-                                disabled={googleLoading}
-                                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-semibold text-sm text-[#1a0a3e] transition-all duration-200 mb-3"
-                                style={{ background: "#fff", border: "none", cursor: "pointer", boxShadow: "0 4px 18px rgba(0,0,0,.28)", fontFamily: "'DM Sans',sans-serif" }}
-                            >
-                                {googleLoading ? <Loader2 size={18} className="animate-spin text-gray-500" /> : (
-                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 13.875 17.64 11.567 17.64 9.2z" />
-                                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" />
-                                        <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" />
-                                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" />
-                                    </svg>
-                                )}
-                                Continue with Google
-                            </button>
-                            <div ref={googleBtnRef} className="hidden" />
+                            {GOOGLE_CLIENT_ID ? (
+                                <div
+                                    className="w-full flex justify-center mb-3"
+                                    style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,.28))" }}
+                                >
+                                    <div ref={googleBtnRef} className="w-full flex justify-center min-h-[44px]" />
+                                </div>
+                            ) : null}
+
+                            {googleError ? (
+                                <div className="flex items-start gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-200 text-[12px] px-3 py-2 mb-3">
+                                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                                    <span>{googleError}</span>
+                                </div>
+                            ) : null}
 
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,.08)" }} />
@@ -414,39 +540,91 @@ export default function SignInModal({
                                 <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,.08)" }} />
                             </div>
 
-                            {/* Email Submit Form */}
                             <form onSubmit={handleEmailSubmit} className="flex gap-2 mb-2 mt-1">
                                 <div className="relative flex-1">
-                                    <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/28 pointer-events-none" strokeWidth={2} />
+                                    <Mail
+                                        size={14}
+                                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/28 pointer-events-none"
+                                        strokeWidth={2}
+                                    />
+                                    {/* FIX ⑥: Added aria-label for screen reader accessibility */}
                                     <input
-                                        type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)}
-                                        required className="w-full pl-9 pr-3 py-3 rounded-xl text-[13px] text-white outline-none placeholder:text-white/22 transition-colors"
-                                        style={{ background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.10)", fontFamily: "'DM Sans',sans-serif" }}
+                                        type="email"
+                                        placeholder="your@email.com"
+                                        value={userEmail}
+                                        onChange={(e) => setUserEmail(e.target.value)}
+                                        required
+                                        autoComplete="email"
+                                        aria-label="Email address"
+                                        className="w-full pl-9 pr-3 py-3 rounded-xl text-[13px] text-white outline-none placeholder:text-white/22 transition-colors"
+                                        style={{
+                                            background: "rgba(255,255,255,.07)",
+                                            border: "1px solid rgba(255,255,255,.10)",
+                                            fontFamily: "'DM Sans',sans-serif",
+                                        }}
                                     />
                                 </div>
-                                <button type="submit" className="w-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-150 active:scale-95"
-                                    style={{ background: "linear-gradient(135deg,#fbbf24,#f97316)", border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(251,191,36,.28)" }}>
+
+                                <button
+                                    type="submit"
+                                    className="w-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-150 active:scale-95"
+                                    style={{
+                                        background: "linear-gradient(135deg,#fbbf24,#f97316)",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        boxShadow: "0 4px 16px rgba(251,191,36,.28)",
+                                    }}
+                                >
                                     <ArrowRight size={17} className="text-[#1a0a3e]" strokeWidth={2.5} />
                                 </button>
                             </form>
 
+                            {submitError ? (
+                                <div className="flex items-start gap-2 rounded-xl border border-red-400/20 bg-red-400/10 text-red-200 text-[12px] px-3 py-2 mt-3">
+                                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                                    <span>{submitError}</span>
+                                </div>
+                            ) : null}
+
                             <p className="text-white/20 text-[11px] text-center leading-relaxed mt-4">
-                                By continuing you accept our <a href="/terms" className="text-amber-500/55 hover:text-amber-400 underline-offset-2">Terms</a> and <a href="/privacy" className="text-amber-500/55 hover:text-amber-400 underline-offset-2">Privacy</a>.
+                                By continuing you accept our{" "}
+                                <a href="/terms" className="text-amber-500/55 hover:text-amber-400 underline-offset-2">
+                                    Terms
+                                </a>{" "}
+                                and{" "}
+                                <a href="/privacy" className="text-amber-500/55 hover:text-amber-400 underline-offset-2">
+                                    Privacy
+                                </a>
+                                .
                             </p>
                         </div>
                     )}
 
-                    {/* ═══════════ STEP 3: ROUTE SELECTION ═══════════ */}
                     {step === 3 && (
                         <div className="animate-in fade-in zoom-in-95 duration-300 py-3">
                             <h2 className="gt-head text-white text-2xl font-extrabold mb-2">Which route?</h2>
                             <p className="text-white/50 text-[13px] mb-5">
-                                Pick a route and we'll save it for <span className="text-amber-400">{email || savedEmail}</span>.
+                                Pick a route and we'll save it for{" "}
+                                <span className="text-amber-400">{userEmail}</span>.
                             </p>
 
-                            <div className="grid grid-cols-1 gap-2.5 mb-2">
+                            {submitError ? (
+                                <div className="flex items-start gap-2 rounded-xl border border-red-400/20 bg-red-400/10 text-red-200 text-[12px] px-3 py-2 mb-3">
+                                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                                    <span>{submitError}</span>
+                                </div>
+                            ) : null}
+
+                            {/* FIX ⑧: Added role="radiogroup" for screen reader route selection */}
+                            <div className="grid grid-cols-1 gap-2.5 mb-2" role="radiogroup" aria-label="Select a flight route">
                                 {WATCH_ROUTES.map((route) => (
-                                    <button key={route.id} onClick={() => handleRouteSelect(route.id)} disabled={isSubmitting}
+                                    <button
+                                        key={route.id}
+                                        onClick={() => handleRouteSelect(route.id)}
+                                        disabled={isSubmitting}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={selectedRoute === route.id}
                                         className={`w-full min-h-[46px] text-left px-4 tracking-wide rounded-xl border transition-all text-[13px] font-semibold ${selectedRoute === route.id
                                             ? "border-amber-400/50 bg-amber-400/10 text-amber-400"
                                             : "border-white/10 text-white/70 hover:border-white/20 hover:bg-white/5"
@@ -454,26 +632,44 @@ export default function SignInModal({
                                         style={{ fontFamily: "'DM Sans', sans-serif" }}
                                     >
                                         {isSubmitting && selectedRoute === route.id ? (
-                                            <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>
-                                        ) : route.label}
+                                            <span className="flex items-center gap-2">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Saving...
+                                            </span>
+                                        ) : (
+                                            route.label
+                                        )}
                                     </button>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* ═══════════ STEP 4: DONE ═══════════ */}
                     {step === 4 && (
                         <div className="text-center py-6 animate-in fade-in zoom-in-95 duration-300">
-                            <div className="w-14 h-14 rounded-full mx-auto mb-5 flex items-center justify-center"
-                                style={{ background: "linear-gradient(135deg,#4ade80,#16a34a)", boxShadow: "0 8px 28px rgba(74,222,128,.28)" }}>
+                            <div
+                                className="w-14 h-14 rounded-full mx-auto mb-5 flex items-center justify-center"
+                                style={{
+                                    background: "linear-gradient(135deg,#4ade80,#16a34a)",
+                                    boxShadow: "0 8px 28px rgba(74,222,128,.28)",
+                                }}
+                            >
                                 <CheckCircle2 size={26} className="text-white" strokeWidth={2.5} />
                             </div>
+
                             <h2 className="gt-head text-white text-2xl font-extrabold mb-2">You're in!</h2>
                             <p className="text-white/50 text-[13.5px] leading-relaxed mb-6">
-                                We've saved your route. You'll receive<br />deal updates at <span className="text-amber-400">{savedEmail}</span>
+                                We've saved your route. You'll receive
+                                <br />
+                                deal updates at <span className="text-amber-400">{userEmail}</span>
                             </p>
-                            <button onClick={() => handleOpenChange(false)} className="w-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white/90 border border-white/10 font-semibold h-11 rounded-xl transition-all active:scale-[0.98] text-[13px]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+                            <button
+                                onClick={() => handleOpenChange(false)}
+                                type="button"
+                                className="w-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white/90 border border-white/10 font-semibold h-11 rounded-xl transition-all active:scale-[0.98] text-[13px]"
+                                style={{ fontFamily: "'DM Sans', sans-serif" }}
+                            >
                                 Got it, thanks!
                             </button>
                         </div>

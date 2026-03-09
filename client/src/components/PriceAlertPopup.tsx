@@ -1,22 +1,8 @@
 "use client";
 
-/**
- * PriceAlertPopup.tsx — GoTravel Asia
- * ─────────────────────────────────────────────────────────────────
- * Two-Flow Smart Popup:
- *  (က) Search context detected → auto-save alert (no questions asked)
- *  (ခ) No context (homepage)   → save email, welcome email sent later
- *
- * Smart Triggers: 30s delay, Exit Intent (Desktop), Scroll-up (Mobile)
- * Auth: Custom Google GSI + Email (no NextAuth)
- * UI: Tailwind CSS + Syne/DM Sans premium design
- * ─────────────────────────────────────────────────────────────────
- */
-
-import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Radio } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { X } from "lucide-react";
 import { useFlightData } from "@/hooks/useFlightData";
-import { formatTHB } from "@/const";
 import {
     detectRouteFromContext,
     clearSearchContext,
@@ -28,288 +14,610 @@ import SuccessState from "./PriceAlert/SuccessState";
 import ErrorState from "./PriceAlert/ErrorState";
 import LoadingState from "./PriceAlert/LoadingState";
 
-// ── Project Constants (Sync with SignInModal) ────────────────────
+// ──────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────
 const LS_EMAIL_KEY = "gt_user_email";
 const LS_SUBSCRIBED_KEY = "gt_subscribed";
-const LS_MODAL_SHOWN_KEY = "gt_modal_shown";
-const LS_POPUP_DISMISSED = "gt_popup_dismissed";
+const LS_POPUP_SHOWN_KEY = "gt_price_alert_popup_shown";
+const LS_POPUP_DISMISSED_KEY = "gt_price_alert_popup_dismissed";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-// ── Google GSI Helpers ───────────────────────────────────────────
-function loadGoogleScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (document.getElementById("google-gsi-script")) { resolve(); return; }
-        const s = document.createElement("script");
-        s.id = "google-gsi-script";
-        s.src = "https://accounts.google.com/gsi/client";
-        s.async = true;
-        s.defer = true;
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error("Failed to load Google script"));
-        document.head.appendChild(s);
-    });
+type PopupViewState =
+    | "closed"
+    | "form"
+    | "submitting"
+    | "success-auto-saved"
+    | "success-email-sent"
+    | "error";
+
+type SubmitSource = "google_popup" | "email_popup";
+
+type AlertSubmitResponse = {
+    flow: "auto-saved" | "email-sent";
+    message?: string;
+    savedEmail?: string;
+};
+
+type GoogleCredentialResponse = {
+    credential?: string;
+};
+
+type GoogleWindow = Window & {
+    google?: {
+        accounts?: {
+            id?: {
+                initialize: (config: {
+                    client_id: string;
+                    callback: (response: GoogleCredentialResponse) => void;
+                }) => void;
+            };
+        };
+    };
+};
+
+// ──────────────────────────────────────────────
+// Safe storage helpers
+// ──────────────────────────────────────────────
+function canUseDOM() {
+    return typeof window !== "undefined" && typeof document !== "undefined";
+}
+
+function safeGetLS(key: string): string | null {
+    if (!canUseDOM()) return null;
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function safeSetLS(key: string, value: string) {
+    if (!canUseDOM()) return;
+    try {
+        window.localStorage.setItem(key, value);
+    } catch {
+        // no-op
+    }
+}
+
+// ──────────────────────────────────────────────
+// Validation
+// ──────────────────────────────────────────────
+function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+// ──────────────────────────────────────────────
+// Google Helpers
+// ──────────────────────────────────────────────
+let googleScriptPromise: Promise<void> | null = null;
+let googleInitialized = false;
+
+function getGoogleIdApi() {
+    const w = window as GoogleWindow;
+    return w.google?.accounts?.id;
 }
 
 function decodeJwt(token: string): { email: string; name: string } | null {
     try {
-        const p = token.split(".");
-        if (p.length !== 3) return null;
-        const payload = JSON.parse(atob(p[1].replace(/-/g, "+").replace(/_/g, "/")));
-        return { email: payload.email || "", name: payload.name || "" };
-    } catch { return null; }
+        const parts = token.split(".");
+        if (parts.length !== 3) return null;
+
+        const base64 = parts[1]
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+
+        const payload = JSON.parse(atob(base64));
+
+        return {
+            email: typeof payload.email === "string" ? payload.email : "",
+            name: typeof payload.name === "string" ? payload.name : "",
+        };
+    } catch {
+        return null;
+    }
 }
 
-// ── Types ─────────────────────────────────────────────────────────
-type PopupStep = "idle" | "loading" | "auto-saved" | "email-sent" | "error";
+function loadGoogleScript(): Promise<void> {
+    if (!canUseDOM()) return Promise.reject(new Error("No DOM"));
+    if (getGoogleIdApi()) return Promise.resolve();
+    if (googleScriptPromise) return googleScriptPromise;
 
-// ── Main Component ────────────────────────────────────────────────
-export default function PriceAlertPopup() {
-    const { deals } = useFlightData();
+    googleScriptPromise = new Promise((resolve, reject) => {
+        const existing = document.getElementById("google-gsi-script") as HTMLScriptElement | null;
 
-    const [open, setOpen] = useState(false);
-    const [mounted, setMounted] = useState(false);
-    const [dealIdx, setDealIdx] = useState(0);
-    const [email, setEmail] = useState("");
-    const [emailErr, setEmailErr] = useState("");
-    const [step, setStep] = useState<PopupStep>("idle");
-    const [detectedRoute, setDetectedRoute] = useState<DetectedRoute | null>(null);
-    const [toastMessage, setToastMessage] = useState("");
-    const [signupCount] = useState(Math.floor(Math.random() * 30) + 15);
+        if (existing) {
+            const checkReady = () => {
+                if (getGoogleIdApi()) resolve();
+                else reject(new Error("Google GSI unavailable"));
+            };
 
+            if (existing.dataset.loaded === "true") {
+                checkReady();
+                return;
+            }
+
+            existing.addEventListener(
+                "load",
+                () => {
+                    existing.dataset.loaded = "true";
+                    checkReady();
+                },
+                { once: true }
+            );
+
+            existing.addEventListener(
+                "error",
+                () => {
+                    reject(new Error("Failed to load Google script"));
+                },
+                { once: true }
+            );
+
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.id = "google-gsi-script";
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            script.dataset.loaded = "true";
+            resolve();
+        };
+        script.onerror = () => reject(new Error("Failed to load Google script"));
+        document.head.appendChild(script);
+    });
+
+    return googleScriptPromise;
+}
+
+// ──────────────────────────────────────────────
+// Hooks
+// ──────────────────────────────────────────────
+function usePopupPersistence() {
+    const [isSubscribed, setIsSubscribed] = useState(() => safeGetLS(LS_SUBSCRIBED_KEY) === "true");
+    const [isDismissed, setIsDismissed] = useState(() => safeGetLS(LS_POPUP_DISMISSED_KEY) === "true");
+    const [isPopupShown, setIsPopupShown] = useState(() => safeGetLS(LS_POPUP_SHOWN_KEY) === "true");
+    const [savedEmail, setSavedEmail] = useState(() => safeGetLS(LS_EMAIL_KEY) || "");
+
+    const markDismissed = useCallback(() => {
+        safeSetLS(LS_POPUP_DISMISSED_KEY, "true");
+        setIsDismissed(true);
+    }, []);
+
+    const markShown = useCallback(() => {
+        safeSetLS(LS_POPUP_SHOWN_KEY, "true");
+        setIsPopupShown(true);
+    }, []);
+
+    const markSubscribed = useCallback((email: string) => {
+        safeSetLS(LS_EMAIL_KEY, email);
+        safeSetLS(LS_SUBSCRIBED_KEY, "true");
+        setSavedEmail(email);
+        setIsSubscribed(true);
+    }, []);
+
+    return {
+        isSubscribed,
+        isDismissed,
+        isPopupShown,
+        savedEmail,
+        markDismissed,
+        markShown,
+        markSubscribed,
+    };
+}
+
+function usePopupTriggers(onFire: () => void, enabled: boolean) {
     const firedRef = useRef(false);
 
-    // ── Preload Google Script ──────────────────────────────────────
     useEffect(() => {
-        if (GOOGLE_CLIENT_ID) loadGoogleScript().catch(() => { });
-    }, []);
+        if (!enabled || !canUseDOM()) return;
 
-    // ── Smart Trigger Logic ────────────────────────────────────────
-    const firePopup = useCallback(() => {
-        if (firedRef.current) return;
-        const isSubscribed = localStorage.getItem(LS_SUBSCRIBED_KEY) === "true";
-        const isDismissed = localStorage.getItem(LS_POPUP_DISMISSED) === "true";
-        const isModalShown = localStorage.getItem(LS_MODAL_SHOWN_KEY) === "true";
-        if (isSubscribed || isDismissed || isModalShown) return;
+        firedRef.current = false;
 
-        firedRef.current = true;
-        setOpen(true);
-        setTimeout(() => setMounted(true), 10);
-    }, []);
+        const fireOnce = () => {
+            if (firedRef.current) return;
+            firedRef.current = true;
+            onFire();
+        };
 
-    useEffect(() => {
-        const timer = setTimeout(firePopup, 30000);
-        const onLeave = (e: MouseEvent) => { if (e.clientY <= 0) firePopup(); };
-        document.addEventListener("mouseleave", onLeave);
+        const timer = window.setTimeout(fireOnce, 30000);
+        const isDesktop = window.matchMedia("(pointer:fine)").matches;
+
+        const onMouseLeave = (e: MouseEvent) => {
+            if (!isDesktop) return;
+            if (e.clientY <= 0) fireOnce();
+        };
 
         let lastY = window.scrollY;
         const onScroll = () => {
+            if (isDesktop) return;
             const y = window.scrollY;
-            if (y < lastY - 100 && y < 300) firePopup();
+            if (y < lastY - 100 && y < 300) fireOnce();
             lastY = y;
         };
+
+        document.addEventListener("mouseleave", onMouseLeave);
         window.addEventListener("scroll", onScroll, { passive: true });
 
         return () => {
-            clearTimeout(timer);
-            document.removeEventListener("mouseleave", onLeave);
+            window.clearTimeout(timer);
+            document.removeEventListener("mouseleave", onMouseLeave);
             window.removeEventListener("scroll", onScroll);
         };
-    }, [firePopup]);
+    }, [enabled, onFire]);
+}
+
+function useGooglePopupAuth(onEmail: (email: string) => void) {
+    const [googleReady, setGoogleReady] = useState(false);
+    const [googleError, setGoogleError] = useState("");
+    const onEmailRef = useRef(onEmail);
 
     useEffect(() => {
-        if (!open || !deals || deals.length === 0) return;
-        const id = setInterval(() => setDealIdx((i) => (i + 1) % deals.length), 3000);
-        return () => clearInterval(id);
-    }, [open, deals]);
+        onEmailRef.current = onEmail;
+    }, [onEmail]);
 
-    if (!open) return null;
-
-    const currentDeal = deals?.[dealIdx] || { origin: "RGN", destination: "BKK", price: 38 };
-    const isSuccess = step === "auto-saved" || step === "email-sent";
-
-    const close = () => {
-        setMounted(false);
-        localStorage.setItem(LS_POPUP_DISMISSED, "true");
-        setTimeout(() => setOpen(false), 400);
-    };
-
-    // ── Two-Flow Submit Logic ──────────────────────────────────────
-    const submitAlert = async (userEmail: string, source: string) => {
-        setStep("loading");
-
-        // (က) Detect route from current page context
-        const route = detectRouteFromContext();
-        setDetectedRoute(route);
-
-        try {
-            const res = await fetch("/api/alerts/submit", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: userEmail,
-                    source,
-                    origin: route?.origin ?? undefined,
-                    destination: route?.destination ?? undefined,
-                    departDate: route?.date ?? undefined,
-                    currentPrice: 0,
-                    currency: "USD",
-                }),
-            });
-
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-
-            localStorage.setItem(LS_EMAIL_KEY, userEmail);
-            localStorage.setItem(LS_SUBSCRIBED_KEY, "true");
-
-            if (data.flow === "auto-saved" && route) {
-                // (က) Route context found → auto-saved alert
-                setToastMessage(`✓ Alert set for ${route.label}`);
-                setStep("auto-saved");
-                clearSearchContext();
-            } else {
-                // (ခ) No route context → subscriber saved, welcome email sent
-                setToastMessage(data.message || "✓ You're in! We'll email you top deals soon.");
-                setStep("email-sent");
-            }
-        } catch {
-            setStep("error");
-            setToastMessage("Something went wrong. Please try again.");
-        }
-    };
-
-    // ── Auth Handlers ──────────────────────────────────────────────
-    const handleGoogleSignIn = () => {
-        if (!GOOGLE_CLIENT_ID) { setStep("idle"); return; }
-
-        const google = (window as any).google;
-        if (!google) {
-            console.warn("[PriceAlertPopup] Google script not loaded yet");
+    useEffect(() => {
+        if (!GOOGLE_CLIENT_ID) {
+            setGoogleReady(false);
             return;
         }
 
-        try {
-            const client = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: 'email profile',
-                callback: async (response: any) => {
-                    if (response.access_token) {
-                        setStep("loading");
-                        try {
-                            const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                                headers: { Authorization: `Bearer ${response.access_token}` }
-                            });
-                            const user = await res.json();
-                            if (user.email) {
-                                await submitAlert(user.email, "google_popup");
-                            } else {
-                                setStep("error");
+        let cancelled = false;
+
+        loadGoogleScript()
+            .then(() => {
+                if (cancelled) return;
+
+                const googleId = getGoogleIdApi();
+                if (!googleId) throw new Error("Google GSI unavailable");
+
+                if (!googleInitialized) {
+                    googleId.initialize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        callback: (response: GoogleCredentialResponse) => {
+                            const decoded = response?.credential ? decodeJwt(response.credential) : null;
+
+                            if (!decoded?.email) {
+                                setGoogleError("Google sign-in failed. Please use email instead.");
+                                return;
                             }
-                        } catch { setStep("error"); }
-                    } else {
-                        setStep("error");
-                    }
-                },
-                error_callback: () => {
-                    setStep("idle");
+
+                            setGoogleError("");
+                            onEmailRef.current(decoded.email);
+                        },
+                    });
+
+                    googleInitialized = true;
                 }
+
+                setGoogleReady(true);
+                setGoogleError("");
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setGoogleReady(false);
+                setGoogleError("Google sign-in is temporarily unavailable.");
             });
-            client.requestAccessToken();
-        } catch {
-            setStep("error");
-        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    return { googleReady, googleError };
+}
+
+// ──────────────────────────────────────────────
+// API Logic
+// ──────────────────────────────────────────────
+async function submitPriceAlert(params: {
+    email: string;
+    source: SubmitSource;
+    route: DetectedRoute | null;
+}): Promise<AlertSubmitResponse> {
+    const { email, source, route } = params;
+
+    const body = {
+        email,
+        source,
+        origin: route?.origin || undefined,
+        destination: route?.destination || undefined,
+        departDate: route?.date || undefined,
+        currency: "USD",
     };
 
-    const handleEmailSubmit = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
+    const res = await fetch("/api/alerts/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+
+    let data: AlertSubmitResponse | null = null;
+
+    try {
+        data = await res.json();
+    } catch {
+        data = null;
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.message || `Request failed with ${res.status}`);
+    }
+
+    if (!data || (data.flow !== "auto-saved" && data.flow !== "email-sent")) {
+        throw new Error("Invalid server response");
+    }
+
+    return data;
+}
+
+// ──────────────────────────────────────────────
+// Main Component
+// ──────────────────────────────────────────────
+export default function PriceAlertPopup() {
+    const { deals } = useFlightData();
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [isMountedAnim, setIsMountedAnim] = useState(false);
+    const [viewState, setViewState] = useState<PopupViewState>("closed");
+    const [email, setEmail] = useState("");
+    const [emailErr, setEmailErr] = useState("");
+    const [dealIdx, setDealIdx] = useState(0);
+    const [signupCount] = useState(() => Math.floor(Math.random() * 30) + 15);
+    const [detectedRoute, setDetectedRoute] = useState<DetectedRoute | null>(null);
+    const [toastMessage, setToastMessage] = useState("");
+
+    const closeTimerRef = useRef<number | null>(null);
+    const openAnimTimerRef = useRef<number | null>(null);
+
+    const {
+        isSubscribed,
+        isDismissed,
+        isPopupShown,
+        savedEmail,
+        markDismissed,
+        markShown,
+        markSubscribed,
+    } = usePopupPersistence();
+
+    const shouldAllowPopup = !isSubscribed && !isDismissed && !isPopupShown;
+
+    const openPopup = useCallback(() => {
+        if (!shouldAllowPopup) return;
+
+        setIsOpen(true);
+        setViewState("form");
         setEmailErr("");
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setEmailErr("Please enter a valid email");
-            return;
+        setToastMessage("");
+        setDetectedRoute(null);
+        markShown();
+
+        if (openAnimTimerRef.current) {
+            window.clearTimeout(openAnimTimerRef.current);
         }
-        submitAlert(email, "email_popup");
-    };
+
+        openAnimTimerRef.current = window.setTimeout(() => {
+            setIsMountedAnim(true);
+        }, 10);
+    }, [markShown, shouldAllowPopup]);
+
+    usePopupTriggers(openPopup, shouldAllowPopup);
+
+    useEffect(() => {
+        if (savedEmail && !email) {
+            setEmail(savedEmail);
+        }
+    }, [savedEmail, email]);
+
+    useEffect(() => {
+        if (!isOpen || !deals?.length) return;
+
+        const id = window.setInterval(() => {
+            setDealIdx((i) => (i + 1) % deals.length);
+        }, 3000);
+
+        return () => window.clearInterval(id);
+    }, [isOpen, deals]);
+
+    useEffect(() => {
+        return () => {
+            if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+            if (openAnimTimerRef.current) window.clearTimeout(openAnimTimerRef.current);
+        };
+    }, []);
+
+    const currentDeal = useMemo(() => {
+        return deals?.[dealIdx] || { origin: "RGN", destination: "BKK", price: 38 };
+    }, [deals, dealIdx]);
+
+    const scheduleClose = useCallback(
+        (dismiss = false) => {
+            setIsMountedAnim(false);
+
+            if (dismiss) {
+                markDismissed();
+            }
+
+            if (closeTimerRef.current) {
+                window.clearTimeout(closeTimerRef.current);
+            }
+
+            closeTimerRef.current = window.setTimeout(() => {
+                setIsOpen(false);
+                setViewState("closed");
+            }, 400);
+        },
+        [markDismissed]
+    );
+
+    const handleDetectedSubmit = useCallback(
+        async (userEmail: string, source: SubmitSource) => {
+            const normalizedEmail = userEmail.trim();
+
+            if (!isValidEmail(normalizedEmail)) {
+                setEmailErr("Please enter a valid email");
+                setViewState("form");
+                return;
+            }
+
+            setEmail(normalizedEmail);
+            setEmailErr("");
+            setToastMessage("");
+            setDetectedRoute(null);
+            setViewState("submitting");
+
+            const route = detectRouteFromContext();
+            setDetectedRoute(route);
+
+            try {
+                const data = await submitPriceAlert({
+                    email: normalizedEmail,
+                    source,
+                    route,
+                });
+
+                markSubscribed(normalizedEmail);
+
+                if (data.flow === "auto-saved") {
+                    setToastMessage(
+                        data.message || (route ? `✓ Alert set for ${route.label}` : "✓ Alert created.")
+                    );
+                    setViewState("success-auto-saved");
+
+                    if (route) {
+                        clearSearchContext();
+                    }
+                } else {
+                    setToastMessage(data.message || "✓ You're in! We'll email you top deals soon.");
+                    setViewState("success-email-sent");
+                }
+            } catch (error) {
+                setToastMessage(
+                    error instanceof Error ? error.message : "Something went wrong. Please try again."
+                );
+                setViewState("error");
+            }
+        },
+        [markSubscribed]
+    );
+
+    const handleGoogleEmail = useCallback(
+        (googleEmail: string) => {
+            void handleDetectedSubmit(googleEmail, "google_popup");
+        },
+        [handleDetectedSubmit]
+    );
+
+    const { googleReady, googleError } = useGooglePopupAuth(handleGoogleEmail);
+
+    const handleEmailSubmit = useCallback(
+        (e?: React.FormEvent) => {
+            if (e) e.preventDefault();
+            void handleDetectedSubmit(email, "email_popup");
+        },
+        [email, handleDetectedSubmit]
+    );
+
+    const retry = useCallback(() => {
+        setToastMessage("");
+        setEmailErr("");
+        setDetectedRoute(null);
+        setViewState("form");
+    }, []);
+
+    if (!isOpen || viewState === "closed") return null;
 
     return (
         <>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-                .gt-font   { font-family:'DM Sans',sans-serif; }
-                .gt-head   { font-family:'Syne',sans-serif; }
-                @keyframes gt-up     { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:none} }
-                @keyframes gt-fade   { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
-                @keyframes gt-ticker { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
-                @keyframes gt-spin   { to{transform:rotate(360deg)} }
-                @keyframes gt-pulse  { 0%,100%{opacity:1} 50%{opacity:.3} }
-                .gt-google:hover { transform:translateY(-1px); }
-                .gt-submit:hover { filter:brightness(1.1); transform:scale(1.03); }
-                .gt-close:hover  { background:rgba(255,255,255,.15)!important; color:#fff!important; }
-            `}</style>
+        .gt-font { font-family:'DM Sans',sans-serif; }
+        .gt-head { font-family:'Syne',sans-serif; }
+        @keyframes gt-up { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:none} }
+        @keyframes gt-fade { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
+        @keyframes gt-ticker { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+        @keyframes gt-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes gt-spin { to{transform:rotate(360deg)} }
+        .gt-close:hover { background:rgba(255,255,255,.15)!important; color:#fff!important; }
+      `}</style>
 
-            {/* Overlay — z-[9999] clears StickyCTA (z-50) and any modals */}
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-label="Get flight deal alerts"
                 className="gt-font fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
-                style={{ background: "rgba(6,2,16,.74)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }}
-                onClick={(e) => e.target === e.currentTarget && close()}
+                style={{
+                    background: "rgba(6,2,16,.74)",
+                    backdropFilter: "blur(7px)",
+                    WebkitBackdropFilter: "blur(7px)",
+                }}
+                onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                        scheduleClose(true);
+                    }
+                }}
             >
-                {/* Card */}
                 <div
                     className="relative w-full sm:w-[362px] rounded-t-[28px] sm:rounded-3xl overflow-hidden"
                     style={{
                         background: "linear-gradient(155deg,#180840 0%,#0c051e 55%,#180c38 100%)",
-                        boxShadow: "0 40px 90px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.09)",
-                        animation: mounted ? "gt-up .38s cubic-bezier(.34,1.56,.64,1) both" : "none",
+                        boxShadow:
+                            "0 40px 90px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.09)",
+                        animation: isMountedAnim ? "gt-up .38s cubic-bezier(.34,1.56,.64,1) both" : "none",
                         paddingBottom: "env(safe-area-inset-bottom,0px)",
                     }}
                 >
-                    {/* Close */}
                     <button
-                        onClick={close}
+                        onClick={() => scheduleClose(true)}
                         aria-label="Close dialog"
-                        className="gt-close absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center text-white/40 transition-all duration-200 z-50"
+                        type="button"
+                        className="gt-close absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center text-white/40 transition-all duration-200 z-50 pointer-events-auto"
                         style={{ background: "rgba(255,255,255,.08)", border: "none", cursor: "pointer" }}
                     >
                         <X size={13} strokeWidth={2.5} />
                     </button>
 
                     <div className="px-6 pt-7 pb-6 relative z-10">
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full"
-                            style={{ background: "rgba(251,191,36,.10)", border: "1px solid rgba(251,191,36,.22)" }}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
-                                style={{ animation: "gt-pulse 1.6s infinite" }} />
+                        <div
+                            className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full"
+                            style={{
+                                background: "rgba(251,191,36,.10)",
+                                border: "1px solid rgba(251,191,36,.22)",
+                            }}
+                        >
+                            <span
+                                className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
+                                style={{ animation: "gt-pulse 1.6s infinite" }}
+                            />
                             <span className="gt-head text-amber-400 text-[10px] font-bold tracking-widest uppercase">
                                 Southeast Asia Deals
                             </span>
                         </div>
 
-                        {/* ── SUCCESS STATES ─────────────────────────────── */}
-                        {isSuccess ? (
+                        {viewState === "submitting" ? (
+                            <LoadingState />
+                        ) : viewState === "error" ? (
+                            <ErrorState onRetry={retry} />
+                        ) : viewState === "success-auto-saved" || viewState === "success-email-sent" ? (
                             <SuccessState
-                                step={step as "auto-saved" | "email-sent"}
+                                step={viewState === "success-auto-saved" ? "auto-saved" : "email-sent"}
                                 email={email}
                                 toastMessage={toastMessage}
                                 detectedRoute={detectedRoute}
-                                onClose={close}
+                                onClose={() => scheduleClose(false)}
                             />
-
-                        ) : step === "error" ? (
-                            /* ── ERROR STATE ──────────────────────────────── */
-                            <ErrorState onRetry={() => setStep("idle")} />
-
-                        ) : step === "loading" ? (
-                            /* ── LOADING STATE ────────────────────────────── */
-                            <LoadingState />
-
                         ) : (
-                            /* ── MAIN FORM ────────────────────────────────── */
                             <MainForm
                                 currentDeal={currentDeal}
                                 signupCount={signupCount}
-                                handleGoogleSignIn={handleGoogleSignIn}
+                                googleReady={googleReady}
+                                googleError={googleError}
+                                googleClientId={GOOGLE_CLIENT_ID}
                                 handleEmailSubmit={handleEmailSubmit}
                                 email={email}
                                 setEmail={setEmail}
@@ -319,10 +627,13 @@ export default function PriceAlertPopup() {
                         )}
                     </div>
 
-                    {/* Ambient bottom glow */}
                     <div
                         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-16 pointer-events-none"
-                        style={{ background: "rgba(251,191,36,.09)", filter: "blur(26px)", borderRadius: "50%" }}
+                        style={{
+                            background: "rgba(251,191,36,.09)",
+                            filter: "blur(26px)",
+                            borderRadius: "50%",
+                        }}
                     />
                 </div>
             </div>

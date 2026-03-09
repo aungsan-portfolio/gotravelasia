@@ -19,8 +19,8 @@ export default function SuccessState({ step, email, toastMessage, detectedRoute,
             <h2 className="gt-head text-white text-2xl font-extrabold mb-2">You're in!</h2>
             <p className="text-white/50 text-sm leading-relaxed mb-4">
                 {step === "auto-saved"
-                    ? <><>Alert set for </><span className="text-amber-400">{detectedRoute?.label || "your route"}</span><></></>
-                    : <><>Check </><span className="text-amber-400">{email || "your inbox"}</span><> for your login link ✉️</></>
+                    ? <>Alert set for <span className="text-amber-400">{detectedRoute?.label || "your route"}</span></>
+                    : <>Check <span className="text-amber-400">{email || "your inbox"}</span> for your login link ✉️</>
                 }
             </p>
 
