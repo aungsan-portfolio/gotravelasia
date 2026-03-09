@@ -78,6 +78,11 @@ export default function PriceAlertPopup() {
 
     const firedRef = useRef(false);
 
+    // ── Preload Google Script ──────────────────────────────────────
+    useEffect(() => {
+        if (GOOGLE_CLIENT_ID) loadGoogleScript().catch(() => { });
+    }, []);
+
     // ── Smart Trigger Logic ────────────────────────────────────────
     const firePopup = useCallback(() => {
         if (firedRef.current) return;
@@ -176,22 +181,38 @@ export default function PriceAlertPopup() {
     // ── Auth Handlers ──────────────────────────────────────────────
     const handleGoogleSignIn = async () => {
         if (!GOOGLE_CLIENT_ID) { setStep("idle"); return; }
-        setStep("loading");
+
         try {
-            await loadGoogleScript();
-            const google = (window as any).google;
-            google.accounts.id.initialize({
+            let google = (window as any).google;
+            if (!google) {
+                await loadGoogleScript();
+                google = (window as any).google;
+            }
+            if (!google) throw new Error("Google not loaded");
+
+            const client = google.accounts.oauth2.initTokenClient({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: async (response: { credential: string }) => {
-                    const decoded = decodeJwt(response.credential);
-                    if (decoded?.email) {
-                        await submitAlert(decoded.email, "google_popup");
+                scope: 'email profile',
+                callback: async (response: any) => {
+                    if (response.access_token) {
+                        setStep("loading");
+                        try {
+                            const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                                headers: { Authorization: `Bearer ${response.access_token}` }
+                            });
+                            const user = await res.json();
+                            if (user.email) {
+                                await submitAlert(user.email, "google_popup");
+                            } else {
+                                setStep("error");
+                            }
+                        } catch { setStep("error"); }
                     } else {
                         setStep("error");
                     }
                 },
             });
-            google.accounts.id.prompt();
+            client.requestAccessToken();
         } catch {
             setStep("error");
         }

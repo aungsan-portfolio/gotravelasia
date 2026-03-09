@@ -118,6 +118,11 @@ export default function SignInModal({
     const googleBtnRef = useRef<HTMLDivElement>(null);
     const hasAutoOpened = useRef(false);
 
+    // ── Preload Google Script ──
+    useEffect(() => {
+        if (GOOGLE_CLIENT_ID) loadGoogleScript().catch(() => { });
+    }, []);
+
     // ── Check localStorage on mount ──
     useEffect(() => {
         const stored = localStorage.getItem(LS_SUBSCRIBED_KEY);
@@ -180,53 +185,42 @@ export default function SignInModal({
             return;
         }
 
-        setGoogleLoading(true);
         try {
-            await loadGoogleScript();
-
-            // Use the One Tap / popup flow
-            const google = (window as any).google;
-            if (!google?.accounts?.id) {
-                setGoogleLoading(false);
-                return;
+            let google = (window as any).google;
+            if (!google) {
+                await loadGoogleScript();
+                google = (window as any).google;
             }
+            if (!google) throw new Error("Google not loaded");
 
-            google.accounts.id.initialize({
+            const client = google.accounts.oauth2.initTokenClient({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: (response: { credential: string }) => {
-                    const decoded = decodeGoogleJwt(response.credential);
-                    if (decoded?.email) {
-                        // Save email and skip to route selection
-                        localStorage.setItem(LS_EMAIL_KEY, decoded.email);
-                        setSavedEmail(decoded.email);
-                        setEmail(decoded.email);
-                        setStep(3);
-                    }
-                    setGoogleLoading(false);
-                },
-                auto_select: false,
-            });
-
-            google.accounts.id.prompt((notification: any) => {
-                // If One Tap is dismissed or not available, try popup
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // Render the button in a hidden div and click it
-                    if (googleBtnRef.current) {
-                        google.accounts.id.renderButton(googleBtnRef.current, {
-                            type: "standard",
-                            theme: "outline",
-                            size: "large",
-                            width: "100%",
-                        });
-                        // Click the rendered button
-                        const btn = googleBtnRef.current.querySelector("div[role='button']") as HTMLElement;
-                        if (btn) btn.click();
-                        else setGoogleLoading(false);
+                scope: 'email profile',
+                callback: async (response: any) => {
+                    if (response.access_token) {
+                        setGoogleLoading(true);
+                        try {
+                            const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                                headers: { Authorization: `Bearer ${response.access_token}` }
+                            });
+                            const user = await res.json();
+                            if (user.email) {
+                                localStorage.setItem(LS_EMAIL_KEY, user.email);
+                                setSavedEmail(user.email);
+                                setEmail(user.email);
+                                setStep(3);
+                            }
+                        } catch {
+                            console.error("[SignInModal] userinfo fetch failed");
+                        } finally {
+                            setGoogleLoading(false);
+                        }
                     } else {
                         setGoogleLoading(false);
                     }
-                }
+                },
             });
+            client.requestAccessToken();
         } catch (error) {
             console.error("[SignInModal] Google Sign-In failed", error);
             setGoogleLoading(false);
