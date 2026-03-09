@@ -179,20 +179,19 @@ export default function SignInModal({
     const currentDeal = deals?.[dealIdx] || { origin: "RGN", destination: "BKK", price: 38 };
 
     // ── Google Sign-In handler ──
-    const handleGoogleSignIn = useCallback(async () => {
+    const handleGoogleSignIn = useCallback(() => {
         if (!GOOGLE_CLIENT_ID) {
             console.warn("[SignInModal] VITE_GOOGLE_CLIENT_ID not configured");
             return;
         }
 
-        try {
-            let google = (window as any).google;
-            if (!google) {
-                await loadGoogleScript();
-                google = (window as any).google;
-            }
-            if (!google) throw new Error("Google not loaded");
+        const google = (window as any).google;
+        if (!google) {
+            console.warn("[SignInModal] Google script not loaded yet");
+            return;
+        }
 
+        try {
             const client = google.accounts.oauth2.initTokenClient({
                 client_id: GOOGLE_CLIENT_ID,
                 scope: 'email profile',
@@ -219,6 +218,9 @@ export default function SignInModal({
                         setGoogleLoading(false);
                     }
                 },
+                error_callback: () => {
+                    setGoogleLoading(false);
+                }
             });
             client.requestAccessToken();
         } catch (error) {

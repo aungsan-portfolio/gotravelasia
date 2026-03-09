@@ -179,17 +179,16 @@ export default function PriceAlertPopup() {
     };
 
     // ── Auth Handlers ──────────────────────────────────────────────
-    const handleGoogleSignIn = async () => {
+    const handleGoogleSignIn = () => {
         if (!GOOGLE_CLIENT_ID) { setStep("idle"); return; }
 
-        try {
-            let google = (window as any).google;
-            if (!google) {
-                await loadGoogleScript();
-                google = (window as any).google;
-            }
-            if (!google) throw new Error("Google not loaded");
+        const google = (window as any).google;
+        if (!google) {
+            console.warn("[PriceAlertPopup] Google script not loaded yet");
+            return;
+        }
 
+        try {
             const client = google.accounts.oauth2.initTokenClient({
                 client_id: GOOGLE_CLIENT_ID,
                 scope: 'email profile',
@@ -211,6 +210,9 @@ export default function PriceAlertPopup() {
                         setStep("error");
                     }
                 },
+                error_callback: () => {
+                    setStep("idle");
+                }
             });
             client.requestAccessToken();
         } catch {
