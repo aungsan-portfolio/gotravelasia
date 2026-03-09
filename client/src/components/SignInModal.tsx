@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, Mail, ArrowRight, Zap, Target, BadgeDollarSign } from "lucide-react";
+import { useFlightData } from "@/hooks/useFlightData";
 
 // ──────────────────────────────────────────────
 // Config
@@ -101,6 +102,8 @@ export default function SignInModal({
     variant = "header",
     autoOpen = false,
 }: SignInModalProps) {
+    const { deals } = useFlightData();
+
     const [isOpen, setIsOpen] = useState(false);
     // Step 2 (email-only form) is now merged into Step 1 for the premium UI.
     const [step, setStep] = useState<1 | 3 | 4>(1);
@@ -110,6 +113,7 @@ export default function SignInModal({
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [savedEmail, setSavedEmail] = useState("");
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [dealIdx, setDealIdx] = useState(0);
 
     const googleBtnRef = useRef<HTMLDivElement>(null);
     const hasAutoOpened = useRef(false);
@@ -159,6 +163,15 @@ export default function SignInModal({
             setSelectedRoute("");
         }
     }, [isOpen, isSubscribed]);
+
+    // ── Rotate deals every 3s ──
+    useEffect(() => {
+        if (!isOpen || !deals || deals.length === 0) return;
+        const id = setInterval(() => setDealIdx((i) => (i + 1) % deals.length), 3000);
+        return () => clearInterval(id);
+    }, [isOpen, deals]);
+
+    const currentDeal = deals?.[dealIdx] || { origin: "RGN", destination: "BKK", price: 38 };
 
     // ── Google Sign-In handler ──
     const handleGoogleSignIn = useCallback(async () => {
@@ -300,6 +313,14 @@ export default function SignInModal({
                 }}
                 aria-describedby={undefined}
             >
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+                    .gt-head   { font-family:'Syne',sans-serif; }
+                    @keyframes gt-fade   { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:none} }
+                    @keyframes gt-ticker { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+                    @keyframes gt-pulse  { 0%,100%{opacity:1} 50%{opacity:.3} }
+                `}</style>
+
                 {/* Fixed Close Button */}
                 <button
                     onClick={() => handleOpenChange(false)}
@@ -320,6 +341,27 @@ export default function SignInModal({
                                     Cheap Flight
                                 </span>{" "}Again.
                             </h2>
+
+                            {/* Live ticker */}
+                            <div
+                                key={`${currentDeal.origin}-${currentDeal.destination}`}
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-4"
+                                style={{
+                                    background: "rgba(255,255,255,.05)",
+                                    border: "1px solid rgba(255,255,255,.08)",
+                                    animation: "gt-ticker .32s ease",
+                                }}
+                            >
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" style={{ animation: "gt-pulse 1.6s infinite" }} />
+                                <span className="text-xs text-white/60 leading-none">
+                                    <span className="font-semibold text-white/88">
+                                        {currentDeal.origin} → {currentDeal.destination}
+                                    </span>{" "}from{" "}
+                                    <span className="text-emerald-400 font-bold">${currentDeal.price}</span>
+                                    <span className="text-amber-400"> · saved $47</span>
+                                    <span className="text-white/28"> · 2h ago</span>
+                                </span>
+                            </div>
 
                             {/* Benefits list */}
                             <div className="flex flex-col gap-2.5 mb-5 mt-2">

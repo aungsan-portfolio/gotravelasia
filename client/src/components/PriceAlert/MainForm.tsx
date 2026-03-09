@@ -43,6 +43,7 @@ export default function MainForm({
 
             {/* Live ticker */}
             <div
+                key={`${currentDeal.origin}-${currentDeal.destination}`}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-4"
                 style={{
                     background: "rgba(255,255,255,.05)",
@@ -50,7 +51,7 @@ export default function MainForm({
                     animation: "gt-ticker .32s ease",
                 }}
             >
-                <Radio size={12} className="text-red-400 flex-shrink-0" strokeWidth={2.5} />
+                <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" style={{ animation: "gt-pulse 1.6s infinite" }} />
                 <span className="text-xs text-white/60 leading-none">
                     <span className="font-semibold text-white/88">
                         {currentDeal.origin} → {currentDeal.destination}
