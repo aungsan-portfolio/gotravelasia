@@ -33,8 +33,10 @@ jobs:
       - name: Run Flight Bot
         env:
           TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+          AMADEUS_CLIENT_ID: ${{ secrets.AMADEUS_CLIENT_ID }}
+          AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
         run: |
-          python scripts/flight_bot.py
+          python -m scripts.flight_bot
 
       # ✅ Ensure that the JSON files are structurally sound before committing
       - name: Validate output JSON
