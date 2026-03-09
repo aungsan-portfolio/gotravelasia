@@ -39,7 +39,7 @@ export default function FloatingSearchBar() {
     const [adults, setAdults] = useState(ctx.adults ?? 1);
     const [children, setChildren] = useState(ctx.childCount ?? 0);
     const [infants, setInfants] = useState(ctx.infants ?? 0);
-    const [cabin, setCabin] = useState(ctx.cabinClass ?? "Y");
+    const [cabin, setCabin] = useState<string>(ctx.cabinClass ?? "Y");
 
     const barRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +114,7 @@ export default function FloatingSearchBar() {
         ctx.setAdults?.(adults);
         ctx.setChildCount?.(children);
         ctx.setInfants?.(infants);
-        ctx.setCabinClass?.(cabin);
+        ctx.setCabinClass?.(cabin as any);
         setOpen(null);
     };
 
@@ -228,9 +228,7 @@ export default function FloatingSearchBar() {
                     {open === "pax" && (
                         <PaxCabinPanel
                             adults={adults} setAdults={setAdults}
-                            childrenCount={children} setChildren={setChildren} // Note: renamed prop to childrenCount internally but interface expects children. Wait, PaxCabinPanel interface expects `children`. Let me check PaxCabinPanel.tsx
-                            // Let's just use `children` but since it is a reserved prop in React, it's fine as long as we pass it correctly.
-                            children={children} // TypeScript might complain, let's look at PaxCabinPanel interface.
+                            children={children} setChildren={setChildren}
                             infants={infants} setInfants={setInfants}
                             cabin={cabin} setCabin={setCabin}
                             commitPax={commitPax}
