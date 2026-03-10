@@ -55,10 +55,11 @@ function Router() {
 
         {/* Flight Search Results (Travelpayouts White Label) */}
         <Route path="/flights/results" component={FlightResults} />
-        <Route path="/flights/:originCode/:destinationCode" component={FlightDestinationPage} />
 
-        {/* Dedicated Destination Landing Pages */}
+        {/* Dedicated Destination Landing Pages (must be before generic /flights/:o/:d) */}
         <Route path="/flights/to/:destination" component={DestinationLandingPage} />
+
+        <Route path="/flights/:originCode/:destinationCode" component={FlightDestinationPage} />
 
         {/* Blog & Money Pages */}
         <Route path="/blog" component={Blog} />
