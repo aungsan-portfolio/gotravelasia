@@ -88,18 +88,17 @@ class FlightBot:
 
         processed_so_far: list[dict] = []
 
-        # 1. TravelPayouts Loop
+        # 1. TravelPayouts Loop (FAST — bulk processing)
         for i, task in enumerate(tasks_to_run, 1):
-            if i % 50 == 0:
-                logger.info(
-                    "[%d/%d] Checking %s -> %s for %s (%s)",
-                    i, len(tasks_to_run),
-                    task["origin"], task["destination"], task["month"], task["region"],
-                )
+            logger.info(
+                "[TP %d/%d] %s -> %s (%s, %s)",
+                i, len(tasks_to_run),
+                task.origin, task.destination, task.month, task.region,
+            )
                 
             fetch_prices_v3(
-                self.session, self.token or "", task["origin"], task["destination"],
-                task["month"], task["region"], self.new_routes, self.counter,
+                self.session, self.token or "", task.origin, task.destination,
+                task.month, task.region, self.new_routes, self.counter,
             )
 
             processed_so_far.append(task)
@@ -117,13 +116,13 @@ class FlightBot:
             logger.info("Starting Amadeus background tests")
             for i, task in enumerate(amadeus_tasks, 1):
                 logger.info(
-                    "[Amadeus %d/%d] Checking %s -> %s for %s",
+                    "[Amadeus %d/%d] %s -> %s (%s)",
                     i, len(amadeus_tasks),
-                    task["origin"], task["destination"], task["month"],
+                    task.origin, task.destination, task.month,
                 )
                 fetch_amadeus(
-                    self.amadeus_client, task["origin"], task["destination"],
-                    task["month"], task["region"], self.new_routes, self.counter,
+                    self.amadeus_client, task.origin, task.destination,
+                    task.month, task.region, self.new_routes, self.counter,
                 )
                 time.sleep(0.5) # Strict 0.5s throttle for amadeus
 

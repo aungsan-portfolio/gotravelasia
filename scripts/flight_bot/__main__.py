@@ -1,9 +1,17 @@
 """
-Entry point: python -m flight_bot
+Entry point: python -m scripts.flight_bot
 """
-from .main import main
+import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+from .bot import FlightBot
 
 if __name__ == "__main__":
-    import sys
-    sys.exit(main())
-
+    bot = FlightBot()
+    bot.run()
+    sys.exit(0)

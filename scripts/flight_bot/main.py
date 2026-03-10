@@ -11,6 +11,7 @@ from .scheduler import generate_tasks, load_checkpoint, save_checkpoint_file, de
 from .merger import load_existing_data, merge_incremental
 from .fetcher import FetchManager
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def load_runtime_config() -> RuntimeConfig:
@@ -70,6 +71,7 @@ def main() -> int:
         
         for i, task in enumerate(tasks_to_run, 1):
             global_index = start_idx + i
+            logger.info(f"Processing task {i}/{len(tasks_to_run)}: {task.origin} -> {task.destination} ({task.month})")
             
             try:
                 # Fetch from all providers for this route
