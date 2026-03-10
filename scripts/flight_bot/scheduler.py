@@ -8,7 +8,7 @@ from datetime import datetime
 from .config import (
     SEA_AIRPORTS, JAPAN_AIRPORTS, KOREA_AIRPORTS,
     INDIA_AIRPORTS, CHINA_AIRPORTS, TAIWAN_AIRPORTS,
-    MYANMAR_HUBS, POPULAR_ROUTES_SET, MONTHS_TO_SCAN, UAE_AIRPORTS
+    MYANMAR_HUBS, MAJOR_ASIAN_HUBS, POPULAR_ROUTES_SET, MONTHS_TO_SCAN, UAE_AIRPORTS
 )
 from .models import RouteTask, CheckpointState
 
@@ -28,9 +28,16 @@ def generate_tasks(last_fetched_map: Dict[str, str]) -> List[RouteTask]:
             # business key for last_fetched check
             last_fetched = last_fetched_map.get(key, "2000-01-01 00:00")
 
-            # Score logic: Popular routes first, then oldest fetched first
-            priority = 1 if (origin, dest) in POPULAR_ROUTES_SET else 2
-            
+            # Tiered priority logic (0 represents highest priority)
+            if (origin, dest) in POPULAR_ROUTES_SET:
+                priority = 0
+            elif origin in MYANMAR_HUBS or dest in MYANMAR_HUBS:
+                priority = 1  # Tier 1: Myanmar hubs to anywhere
+            elif origin in MAJOR_ASIAN_HUBS or dest in MAJOR_ASIAN_HUBS:
+                priority = 2  # Tier 2: Major SEA hubs to anywhere
+            else:
+                priority = 3  # Tier 3: Rest of SEA intra-region
+
             tasks.append(RouteTask(
                 origin=origin,
                 destination=dest,
@@ -40,31 +47,38 @@ def generate_tasks(last_fetched_map: Dict[str, str]) -> List[RouteTask]:
                 last_fetched_at=last_fetched
             ))
 
-    # 1. SEA Routes
+    # 1. Tier 3 & Intra-SEA Routes (prioritized based on Tier logic during insertion)
     for origin in SEA_AIRPORTS:
         for dest in SEA_AIRPORTS:
             add_task(origin, dest, "SEA")
 
-    # 2. Myanmar Hubs <-> Rest of Asia
-    for hub in MYANMAR_HUBS:
-        for jp in JAPAN_AIRPORTS:
-            add_task(hub, jp, "Japan")
-            add_task(jp, hub, "Japan")
-        for kr in KOREA_AIRPORTS:
-            add_task(hub, kr, "Korea")
-            add_task(kr, hub, "Korea")
-        for ind in INDIA_AIRPORTS:
-            add_task(hub, ind, "India")
-            add_task(ind, hub, "India")
-        for cn in CHINA_AIRPORTS:
-            add_task(hub, cn, "China")
-            add_task(cn, hub, "China")
-        for tw in TAIWAN_AIRPORTS:
-            add_task(hub, tw, "Taiwan")
-            add_task(tw, hub, "Taiwan")
-        for uae in UAE_AIRPORTS:
-            add_task(hub, uae, "UAE")
-            add_task(uae, hub, "UAE")
+    # Helper for adding hub connections to rest of Asia
+    def add_hub_connections(hubs_list):
+        for hub in hubs_list:
+            for jp in JAPAN_AIRPORTS:
+                add_task(hub, jp, "Japan")
+                add_task(jp, hub, "Japan")
+            for kr in KOREA_AIRPORTS:
+                add_task(hub, kr, "Korea")
+                add_task(kr, hub, "Korea")
+            for ind in INDIA_AIRPORTS:
+                add_task(hub, ind, "India")
+                add_task(ind, hub, "India")
+            for cn in CHINA_AIRPORTS:
+                add_task(hub, cn, "China")
+                add_task(cn, hub, "China")
+            for tw in TAIWAN_AIRPORTS:
+                add_task(hub, tw, "Taiwan")
+                add_task(tw, hub, "Taiwan")
+            for uae in UAE_AIRPORTS:
+                add_task(hub, uae, "UAE")
+                add_task(uae, hub, "UAE")
+
+    # 2. Tier 1: Myanmar Hubs <-> Rest of Asia
+    add_hub_connections(MYANMAR_HUBS)
+    
+    # 3. Tier 2: Major Asian Hubs <-> Rest of Asia
+    add_hub_connections(MAJOR_ASIAN_HUBS)
 
     # Sort: Priority first (1 before 2), then last_fetched_at (oldest first)
     tasks.sort(key=lambda x: (x.priority, x.last_fetched_at))

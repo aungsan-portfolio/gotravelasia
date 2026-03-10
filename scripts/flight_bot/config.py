@@ -37,6 +37,7 @@ TAIWAN_AIRPORTS = ["TPE"]
 UAE_AIRPORTS = ["DXB"]
 
 MYANMAR_HUBS = ["RGN", "MDL"]
+MAJOR_ASIAN_HUBS = ["BKK", "SIN", "KUL"]
 
 # ─── Popular Routes (priority boost) ──────────────────────────────────────
 POPULAR_ROUTES = [
