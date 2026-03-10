@@ -502,11 +502,7 @@ export default function Footer() {
                     {EXPLORE_CITIES.map((city) => (
                         <FooterLink
                             key={city.code}
-                            href="/#flights"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                prefillDest(city.code, city.name, city.country);
-                            }}
+                            href={`/flights/to/${toSlug(city.name)}`}
                         >
                             Flights to {city.name}
                         </FooterLink>
@@ -539,32 +535,17 @@ export default function Footer() {
                             Popular destinations
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-1.5">
-                            {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => {
-                                // Use primary airport map for reliable lookup
-                                const primaryCode = COUNTRY_PRIMARY_AIRPORT[country];
-                                const airport = primaryCode
-                                    ? (AIRPORTS as readonly Airport[]).find(a => a.code === primaryCode)
-                                    : (AIRPORTS as readonly Airport[]).find(a => a.country === country);
-                                return (
-                                    <a
-                                        key={country}
-                                        href="/#flights"
-                                        className="text-[13px] font-medium no-underline
+                            {COUNTRIES.filter((c) => c !== "Myanmar").map((country) => (
+                                <a
+                                    key={country}
+                                    href={`/flights/to/${toSlug(country)}`}
+                                    className="text-[13px] font-medium no-underline
                                                    transition-colors hover:text-[#FFD700] truncate"
-                                        style={{ color: "#7b5baa" }}
-                                        onClick={(e: React.MouseEvent) => {
-                                            e.preventDefault();
-                                            if (airport) {
-                                                prefillDest(airport.code, airport.name, airport.country);
-                                            } else {
-                                                goToFlights();
-                                            }
-                                        }}
-                                    >
-                                        Flights to {country}
-                                    </a>
-                                );
-                            })}
+                                    style={{ color: "#7b5baa" }}
+                                >
+                                    Flights to {country}
+                                </a>
+                            ))}
                         </div>
                     </div>
 
@@ -588,18 +569,10 @@ export default function Footer() {
                                     return (
                                         <a
                                             key={airport.code}
-                                            href="/#flights"
+                                            href={`/flights/to/${toSlug(cityName)}`}
                                             className="text-[13px] font-medium no-underline
                                                        transition-colors hover:text-[#FFD700] truncate"
                                             style={{ color: "#7b5baa" }}
-                                            onClick={(e: React.MouseEvent) => {
-                                                e.preventDefault();
-                                                prefillDest(
-                                                    airport.code,
-                                                    airport.name,
-                                                    airport.country
-                                                );
-                                            }}
                                         >
                                             Flights to {cityName}
                                         </a>
