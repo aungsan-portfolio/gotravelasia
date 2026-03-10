@@ -16,16 +16,34 @@ logger = logging.getLogger(__name__)
 
 CHECKPOINT_PATH = Path("scripts/flight_bot/.checkpoint.json")
 
-def generate_tasks(last_fetched_map: Dict[str, str]) -> List[RouteTask]:
-    """Build and sort the full list of fetch tasks, oldest-first."""
+def generate_tasks(last_fetched_map: Dict[str, str], limit: int = None) -> List[RouteTask]:
+    """Build and sort the full list of fetch tasks, oldest-first, with fair scheduling."""
     tasks = []
+    seen_tasks = set()
 
     def add_task(origin, dest, region_tag):
+        # 1. Same origin/destination skip
         if origin == dest:
             return
+            
+        # 2. Invalid airport code check
+        if not origin or len(origin) != 3 or not origin.isalpha():
+            return
+        if not dest or len(dest) != 3 or not dest.isalpha():
+            return
+            
         for month in MONTHS_TO_SCAN:
+            # 3. Month range sanity check
+            if not month or len(month) != 7 or "-" not in month:
+                continue
+                
+            task_key = (origin, dest, month)
+            # 4. Duplicate fetch key check
+            if task_key in seen_tasks:
+                continue
+            seen_tasks.add(task_key)
+            
             key = f"{origin}_{dest}_{month}"
-            # business key for last_fetched check
             last_fetched = last_fetched_map.get(key, "2000-01-01 00:00")
 
             # Tiered priority logic (0 represents highest priority)
@@ -79,6 +97,38 @@ def generate_tasks(last_fetched_map: Dict[str, str]) -> List[RouteTask]:
     
     # 3. Tier 2: Major Asian Hubs <-> Rest of Asia
     add_hub_connections(MAJOR_ASIAN_HUBS)
+
+    # 4. Fair Scheduling & Target Limits
+    if limit is not None:
+        tier0 = [t for t in tasks if t.priority == 0]
+        tier1 = [t for t in tasks if t.priority == 1]
+        tier2 = [t for t in tasks if t.priority == 2]
+        tier3 = [t for t in tasks if t.priority == 3]
+
+        for t_list in [tier0, tier1, tier2, tier3]:
+            t_list.sort(key=lambda x: x.last_fetched_at)
+
+        # Per-tier fetch quota: 25%, 35%, 25%, 15%
+        t0_quota = int(limit * 0.25)
+        t1_quota = int(limit * 0.35)
+        t2_quota = int(limit * 0.25)
+        t3_quota = int(limit * 0.15)
+
+        selected = []
+        selected.extend(tier0[:t0_quota])
+        selected.extend(tier1[:t1_quota])
+        selected.extend(tier2[:t2_quota])
+        selected.extend(tier3[:t3_quota])
+
+        # Fill any remaining slots if some tiers didn't use full quota
+        remaining = limit - len(selected)
+        if remaining > 0:
+            unused = tier0[t0_quota:] + tier1[t1_quota:] + tier2[t2_quota:] + tier3[t3_quota:]
+            unused.sort(key=lambda x: (x.priority, x.last_fetched_at))
+            selected.extend(unused[:remaining])
+
+        logger.info(f"Priority distribution metrics: Tier 0: {len(tier0[:t0_quota])}/{t0_quota}, Tier 1: {len(tier1[:t1_quota])}/{t1_quota}, Tier 2: {len(tier2[:t2_quota])}/{t2_quota}, Tier 3: {len(tier3[:t3_quota])}/{t3_quota}")
+        return selected
 
     # Sort: Priority first (1 before 2), then last_fetched_at (oldest first)
     tasks.sort(key=lambda x: (x.priority, x.last_fetched_at))

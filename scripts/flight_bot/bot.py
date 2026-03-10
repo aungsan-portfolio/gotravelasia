@@ -72,15 +72,15 @@ class FlightBot:
         logger.info("=" * 60)
         logger.info("Flight bot (SEA Expansion + Amadeus) starting")
 
-        all_tasks = generate_tasks(self.last_fetched_map)
-        logger.info("Total SEA combinations: %d", len(all_tasks))
-
         # Each task makes 2 API calls (V1 and V3), so divide max requests by 2
-        tasks_to_run = all_tasks[:MAX_REQUESTS_PER_RUN // 2]
-        logger.info("Running top %d tasks for TravelPayouts", len(tasks_to_run))
+        limit = MAX_REQUESTS_PER_RUN // 2
+        tasks_to_run = generate_tasks(self.last_fetched_map, limit=limit)
+        
+        logger.info("Total scheduled tasks: %d", len(tasks_to_run))
+        logger.info("Running %d tasks for TravelPayouts", len(tasks_to_run))
         
         # Amadeus limit: Free API (~66 daily max, checking 3 days = ~20 limit)
-        amadeus_tasks = all_tasks[:AMADEUS_MAX_REQUESTS_PER_RUN] if self.amadeus_client else []
+        amadeus_tasks = tasks_to_run[:AMADEUS_MAX_REQUESTS_PER_RUN] if self.amadeus_client else []
         if amadeus_tasks:
             logger.info("Running top %d tasks for Amadeus", len(amadeus_tasks))
             
