@@ -16,6 +16,7 @@ const Krabi = lazy(() => import("./pages/destinations/Krabi"));
 const Pai = lazy(() => import("./pages/destinations/Pai"));
 const ChiangRai = lazy(() => import("./pages/destinations/ChiangRai"));
 const FlightResults = lazy(() => import("./pages/FlightResults"));
+const FlightDestinationPage = lazy(() => import("./pages/FlightDestinationPage"));
 const TermsAndPrivacy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -53,6 +54,7 @@ function Router() {
 
         {/* Flight Search Results (Travelpayouts White Label) */}
         <Route path="/flights/results" component={FlightResults} />
+        <Route path="/flights/:originCode/:destinationCode" component={FlightDestinationPage} />
 
         {/* Blog & Money Pages */}
         <Route path="/blog" component={Blog} />
