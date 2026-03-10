@@ -1,4 +1,4 @@
-import { NormalizedDeal } from "@/lib/flightAdapters";
+import type { FlightDeal } from "@/types/flights";
 import { buildSeoTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
 import OptimizedImage from "@/seo/OptimizedImage";
 
@@ -10,7 +10,7 @@ function formatPrice(price: number, currency: string) {
     }).format(price);
 }
 
-function DealCard({ deal, currency }: { deal: NormalizedDeal; currency: string }) {
+function DealCard({ deal, currency }: { deal: FlightDeal; currency: string }) {
     const deepLink = deal.deepLink && deal.deepLink !== "#"
         ? deal.deepLink
         : buildSeoTravelpayoutsResultsUrl(deal.originCode, deal.destinationCode, 14);
@@ -95,7 +95,7 @@ function DealCard({ deal, currency }: { deal: NormalizedDeal; currency: string }
     );
 }
 
-export default function DealsGrid({ deals = [], currency = "USD" }: { deals: NormalizedDeal[]; currency?: string }) {
+export default function DealsGrid({ deals = [], currency = "USD" }: { deals: FlightDeal[]; currency?: string }) {
     return (
         <div id="deals" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {deals.map((deal, idx) => (

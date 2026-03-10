@@ -17,12 +17,12 @@ export default function FlightDestinationPage() {
     const originCode = params?.originCode || "BKK";
     const destinationCode = params?.destinationCode || "SIN";
 
-    const { pageData, loading } = useFlightDestinationData(originCode, destinationCode);
+    const { data, isLoading, error } = useFlightDestinationData(originCode, destinationCode);
 
     const summaryCards = useMemo(() => {
-        if (!pageData) return [];
-        return buildSummaryCards(pageData.deals, pageData.currency);
-    }, [pageData]);
+        if (!data) return [];
+        return buildSummaryCards(data.deals, data.currency);
+    }, [data]);
 
     usePageMeta({
         title: `Cheap flights from ${originCode.toUpperCase()} to ${destinationCode.toUpperCase()} - GoTravel Asia`,
@@ -31,11 +31,11 @@ export default function FlightDestinationPage() {
         keywords: `flights from ${originCode} to ${destinationCode}, cheap flights ${destinationCode}, travel ${destinationCode}, asia travel`,
     });
 
-    if (loading || pageData === undefined) {
+    if (isLoading || data === undefined) {
         return <LoadingState />;
     }
 
-    if (!pageData || !pageData.deals?.length) {
+    if (error || !data || !data.deals?.length) {
         return (
             <EmptyState
                 originCode={originCode.toUpperCase()}
@@ -47,14 +47,14 @@ export default function FlightDestinationPage() {
     return (
         <Layout>
             <DestinationHero
-                originCity={pageData.originCity}
-                originCode={pageData.originCode}
-                destinationCity={pageData.destinationCity}
-                destinationCode={pageData.destinationCode}
-                cheapestPrice={pageData.cheapestPrice}
-                currency={pageData.currency}
-                updatedAt={pageData.updatedAt}
-                dealsCount={pageData.deals.length}
+                originCity={data.originCity}
+                originCode={data.originCode}
+                destinationCity={data.destinationCity}
+                destinationCode={data.destinationCode}
+                cheapestPrice={data.cheapestPrice}
+                currency={data.currency}
+                updatedAt={data.updatedAt}
+                dealsCount={data.deals.length}
             />
 
             <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 w-full">
@@ -73,22 +73,22 @@ export default function FlightDestinationPage() {
                     </div>
                 </div>
 
-                <DealsGrid deals={pageData.deals} currency={pageData.currency} />
+                <DealsGrid deals={data.deals} currency={data.currency} />
             </section>
 
             <section className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-3 lg:px-8 w-full">
                 <div className="lg:col-span-2">
                     <DestinationFAQ
-                        originCity={pageData.originCity}
-                        destinationCity={pageData.destinationCity}
-                        destinationCode={pageData.destinationCode}
+                        originCity={data.originCity}
+                        destinationCity={data.destinationCity}
+                        destinationCode={data.destinationCode}
                     />
                 </div>
 
                 <div className="lg:col-span-1">
                     <RelatedRoutes
-                        originCode={pageData.originCode}
-                        destinationCode={pageData.destinationCode}
+                        originCode={data.originCode}
+                        destinationCode={data.destinationCode}
                     />
                 </div>
             </section>

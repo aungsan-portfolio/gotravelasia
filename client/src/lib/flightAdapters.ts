@@ -1,55 +1,35 @@
-export interface NormalizedDeal {
-    id: string;
-    airline: string;
-    airlineCode: string;
-    flightNum: string;
-    originCode: string;
-    originCity: string;
-    destinationCode: string;
-    destinationCity: string;
-    price: number;
-    currency: string;
-    tripType: string;
-    stops: number;
-    duration: string;
-    departDate: string;
-    returnDate: string | null;
-    provider: string;
-    deepLink: string;
-    region: string;
-    updatedAt: string;
-    foundAt: string;
-}
+import type {
+    FlightDeal,
+    FlightDestinationPageData,
+    RawFlightRoute,
+} from "../types/flights";
 
-export interface DestinationPageData {
-    originCode: string;
-    originCity: string;
-    destinationCode: string;
-    destinationCity: string;
-    currency: string;
-    cheapestPrice: number;
-    updatedAt: string;
-    deals: NormalizedDeal[];
-}
-
-function safeString(value: any, fallback = ""): string {
+function safeString(value: unknown, fallback = ""): string {
     if (value === null || value === undefined) return fallback;
     return String(value).trim();
 }
 
-function safeUpper(value: any, fallback = ""): string {
+function safeUpper(value: unknown, fallback = ""): string {
     return safeString(value, fallback).toUpperCase();
 }
 
-function safeNumber(value: any, fallback = 0): number {
+function safeNumber(value: unknown, fallback = 0): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
 }
 
-function toArray<T>(value: T | T[]): T[] {
-    if (Array.isArray(value)) return value;
-    if (!value) return [];
-    return [value];
+function toRoutesArray(rawData: unknown): RawFlightRoute[] {
+    if (!rawData) return [];
+
+    // Handle if rawData is already an array of routes
+    if (Array.isArray(rawData)) return rawData as RawFlightRoute[];
+
+    // Handle if rawData is an object with a routes property
+    if (typeof rawData === 'object' && 'routes' in rawData && Array.isArray((rawData as any).routes)) {
+        return (rawData as any).routes as RawFlightRoute[];
+    }
+
+    return [];
 }
 
 const AIRPORT_CITY_MAP: Record<string, string> = {
@@ -73,22 +53,21 @@ const AIRPORT_CITY_MAP: Record<string, string> = {
     TPE: "Taipei"
 };
 
-function getCityFromAirport(code: string) {
+function getCityFromAirport(code: string): string {
     const upper = safeUpper(code);
     return AIRPORT_CITY_MAP[upper] || upper;
 }
 
-function normalizeUpdatedAt(raw: any): string {
-    if (raw?.fetchedAt) {
-        const ts = Number(raw.fetchedAt);
+function normalizeUpdatedAt(route: RawFlightRoute): string {
+    if (route.fetchedAt) {
+        const ts = Number(route.fetchedAt);
         if (Number.isFinite(ts)) {
             return new Date(ts).toISOString();
         }
     }
 
-    if (raw?.found_at) {
-        const found = String(raw.found_at).replace(" ", "T");
-        const parsed = new Date(found);
+    if (route.found_at) {
+        const parsed = new Date(route.found_at.replace(" ", "T"));
         if (!Number.isNaN(parsed.getTime())) {
             return parsed.toISOString();
         }
@@ -97,18 +76,18 @@ function normalizeUpdatedAt(raw: any): string {
     return new Date().toISOString();
 }
 
-function normalizeDeal(route: any, index: number): NormalizedDeal {
+function normalizeDeal(route: RawFlightRoute, index: number): FlightDeal {
     const originCode = safeUpper(route.origin);
     const destinationCode = safeUpper(route.destination);
-
-    const price = safeNumber(route.price, 0);
-    const currency = safeString(route.currency, "USD");
+    const airlineCode = safeString(route.airline_code);
+    const flightNum = safeString(route.flight_num);
     const airline = safeString(route.airline, "Unknown Airline");
-    const airlineCode = safeString(route.airline_code, "");
-    const flightNum = safeString(route.flight_num, "");
-    const region = safeString(route.region, "");
+    const currency = safeString(route.currency, "USD");
     const date = safeString(route.date, "N/A");
+    const region = safeString(route.region);
+    const foundAt = safeString(route.found_at);
     const stops = safeNumber(route.transfers, 0);
+    const price = safeNumber(route.price, 0);
 
     return {
         id: `${originCode}-${destinationCode}-${airlineCode}-${flightNum}-${date}-${index}`,
@@ -130,62 +109,71 @@ function normalizeDeal(route: any, index: number): NormalizedDeal {
         deepLink: "#",
         region,
         updatedAt: normalizeUpdatedAt(route),
-        foundAt: safeString(route.found_at, ""),
+        foundAt,
     };
 }
 
-function filterByRoute(deals: NormalizedDeal[], originCode: string, destinationCode: string) {
-    const origin = safeUpper(originCode);
-    const dest = safeUpper(destinationCode);
+function matchesOriginRoute(requestedOrigin: string, actualOrigin: string): boolean {
+    const requested = safeUpper(requestedOrigin);
+    const actual = safeUpper(actualOrigin);
+
+    return actual === requested || (requested === "BKK" && actual === "DMK");
+}
+
+function filterByRoute(
+    deals: FlightDeal[],
+    originCode: string,
+    destinationCode: string
+): FlightDeal[] {
+    const requestedDestination = safeUpper(destinationCode);
 
     return deals.filter((deal) => {
-        const dealOrigin = safeUpper(deal.originCode);
-        const dealDest = safeUpper(deal.destinationCode);
-
-        const originMatch =
-            dealOrigin === origin ||
-            (origin === "BKK" && dealOrigin === "DMK");
-
-        return originMatch && dealDest === dest;
+        return (
+            matchesOriginRoute(originCode, deal.originCode) &&
+            safeUpper(deal.destinationCode) === requestedDestination
+        );
     });
 }
 
-function getLatestUpdatedAt(deals: NormalizedDeal[]) {
+function getLatestUpdatedAt(deals: FlightDeal[]): string {
     if (!deals.length) return new Date().toISOString();
 
-    return [...deals]
-        .sort(
-            (a, b) =>
-                new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        )[0]
-        .updatedAt;
+    return [...deals].sort((a, b) => {
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    })[0].updatedAt;
 }
 
-function getCheapestPrice(deals: NormalizedDeal[]) {
+function getCheapestPrice(deals: FlightDeal[]): number {
     if (!deals.length) return 0;
     return Math.min(...deals.map((deal) => deal.price));
 }
 
-export function adaptFlightDataset(rawData: any, originCode: string, destinationCode: string): DestinationPageData | null {
-    const routes = toArray(rawData?.routes || rawData);
+export function adaptFlightDataset(
+    rawData: unknown,
+    originCode: string,
+    destinationCode: string
+): FlightDestinationPageData | null {
+    const routes = toRoutesArray(rawData);
 
     const normalizedDeals = routes
         .map((route, index) => normalizeDeal(route, index))
-        .filter((deal) => deal.originCode && deal.destinationCode && deal.price > 0);
+        .filter((deal) => {
+            return Boolean(deal.originCode && deal.destinationCode && deal.price > 0);
+        });
 
     const routeDeals = filterByRoute(normalizedDeals, originCode, destinationCode);
 
     if (!routeDeals.length) return null;
 
     const sortedDeals = [...routeDeals].sort((a, b) => a.price - b.price);
+    const first = sortedDeals[0];
 
     return {
         originCode: safeUpper(originCode),
-        originCity: sortedDeals[0]?.originCity || getCityFromAirport(originCode),
+        originCity: first?.originCity || getCityFromAirport(originCode),
         destinationCode: safeUpper(destinationCode),
-        destinationCity:
-            sortedDeals[0]?.destinationCity || getCityFromAirport(destinationCode),
-        currency: sortedDeals[0]?.currency || "USD",
+        destinationCity: first?.destinationCity || getCityFromAirport(destinationCode),
+        currency: first?.currency || "USD",
         cheapestPrice: getCheapestPrice(sortedDeals),
         updatedAt: getLatestUpdatedAt(sortedDeals),
         deals: sortedDeals,
