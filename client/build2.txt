@@ -1,0 +1,6 @@
+﻿src/components/FloatingSearchBar/index.tsx(235,43): error TS2322: Type 'Dispatch<SetStateAction<"Y" | "C" | "W" | "F">>' is not assignable to type 'Dispatch<SetStateAction<string>>'.
+  Type 'SetStateAction<string>' is not assignable to type 'SetStateAction<"Y" | "C" | "W" | "F">'.
+    Type 'string' is not assignable to type 'SetStateAction<"Y" | "C" | "W" | "F">'.
+src/components/Map.tsx(85,5): error TS2717: Subsequent property declarations must have the same type.  Property 'google' must be of type 'any', but here has type 'typeof google | undefined'.
+src/components/Map.tsx(144,18): error TS2345: Argument of type 'Map | null' is not assignable to parameter of type 'Map'.
+  Type 'null' is not assignable to type 'Map'.

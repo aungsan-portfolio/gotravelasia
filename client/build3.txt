@@ -1,0 +1,3 @@
+﻿src/components/FloatingSearchBar/index.tsx(117,29): error TS2345: Argument of type 'string' is not assignable to parameter of type 'CabinCode'.
+src/components/FloatingSearchBar/index.tsx(231,29): error TS2322: Type '{ adults: number; setAdults: Dispatch<SetStateAction<number>>; childrenCount: number; setChildren: Dispatch<SetStateAction<number>>; ... 5 more ...; commitPax: () => void; }' is not assignable to type 'IntrinsicAttributes & PaxCabinPanelProps'.
+  Property 'childrenCount' does not exist on type 'IntrinsicAttributes & PaxCabinPanelProps'.

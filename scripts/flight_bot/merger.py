@@ -68,6 +68,34 @@ def merge_incremental(existing_deals: List[FlightDeal], new_deals: List[FlightDe
     return list(merged_map.values())
 
 
+def _load_static_airlines() -> Dict[str, str]:
+    """Load airline names from local cache."""
+    cache_path = Path(__file__).parent / "cache" / "airlines.json"
+    if not cache_path.exists():
+        return {}
+    
+    try:
+        with cache_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            # Map code -> name
+            return {item["code"]: item["name"] for item in data if "code" in item and "name" in item}
+    except Exception as e:
+        logger.error(f"Failed to load static airlines: {e}")
+        return {}
+
+def resolve_names(routes: List[Dict]):
+    """Enrich routes with full airline names if missing."""
+    airlines = _load_static_airlines()
+    if not airlines:
+        return
+        
+    for r in routes:
+        code = r.get("airline_code")
+        if code and code in airlines:
+            # Only update if current airline is empty or just the code
+            if not r.get("airline") or r.get("airline") == code:
+                r["airline"] = airlines[code]
+
 def merge_and_save(existing_data: Dict, new_routes: list, processed_tasks: list, error_count: int):
     """
     Legacy merge function used by bot.py.
@@ -88,23 +116,30 @@ def merge_and_save(existing_data: Dict, new_routes: list, processed_tasks: list,
     for r in existing_routes:
         if r.get("date", "") < today_str:
             continue
-        key = f"{r['origin']}-{r['destination']}-{r['date']}-{r.get('airline_code', r.get('airline', ''))}"
+        # Ensure we have airline_code for indexing
+        code = r.get("airline_code") or r.get("airline", "")
+        key = f"{r['origin']}-{r['destination']}-{r['date']}-{code}"
         merged_map[key] = r
     
     # Merge new routes (keep cheapest)
     for r in new_routes:
         if r.get("date", "") < today_str:
             continue
-        key = f"{r['origin']}-{r['destination']}-{r['date']}-{r.get('airline_code', r.get('airline', ''))}"
+        code = r.get("airline_code") or r.get("airline", "")
+        key = f"{r['origin']}-{r['destination']}-{r['date']}-{code}"
         existing = merged_map.get(key)
         if not existing or r["price"] < existing["price"]:
             merged_map[key] = r
         elif r["price"] == existing["price"] and r.get("is_amadeus") and not existing.get("is_amadeus"):
             merged_map[key] = r
     
+    # Enrich with names before saving
+    final_routes = list(merged_map.values())
+    resolve_names(final_routes)
+
     # Sort by origin, destination, price
     sorted_routes = sorted(
-        merged_map.values(),
+        final_routes,
         key=lambda x: (x['origin'], x['destination'], x['price'])
     )
 
@@ -136,3 +171,4 @@ def merge_and_save(existing_data: Dict, new_routes: list, processed_tasks: list,
     existing_data["meta"] = output["meta"]
     
     logger.info(f"Saved {len(sorted_routes)} routes to {OUTPUT_PATH}")
+
