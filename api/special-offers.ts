@@ -35,18 +35,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json(cached.data);
         }
 
-        const url = `https://api.travelpayouts.com/aviasales/v3/get_special_offers?` + new URLSearchParams({
-            token,
-            origin,
-            currency,
-            locale: "en"
-        });
+        const fetchOffers = async (orig: string) => {
+            const url = `https://api.travelpayouts.com/aviasales/v3/get_special_offers?` + new URLSearchParams({
+                token,
+                origin: orig,
+                currency,
+                locale: "en"
+            });
+            const res = await fetch(url);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.data || [];
+        };
 
-        const response = await fetch(url);
-        if (!response.ok) return res.status(502).json({ error: "Upstream error" });
+        let offers = await fetchOffers(origin);
 
-        const data = await response.json();
-        const result = { success: true, data: data.data || [] };
+        // Fallback to nearby hubs if not enough special offers
+        if (offers.length < 4) {
+            const fallbacks = ["BKK", "KUL", "SIN", "DMK"];
+            for (const fb of fallbacks) {
+                if (fb === origin) continue;
+                if (offers.length >= 4) break;
+
+                const moreOffers = await fetchOffers(fb);
+                // merge and deduplicate if necessary, though origin is different
+                offers = [...offers, ...moreOffers];
+            }
+        }
+
+        const result = { success: true, data: offers };
 
         cache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL });
 
