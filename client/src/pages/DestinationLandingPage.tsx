@@ -1,8 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRoute } from "wouter";
 import { Helmet } from "react-helmet-async";
 
-// Sections
 import Navbar from "../components/flights/destination/Navbar";
 import HeroSearch from "../components/flights/destination/HeroSearch";
 import FlightDeals from "../components/flights/destination/FlightDeals";
@@ -12,82 +11,121 @@ import AirlinesWeather from "../components/flights/destination/AirlinesWeather";
 import AirlineReviews from "../components/flights/destination/AirlineReviews";
 import FooterSections from "../components/flights/destination/FooterSections";
 
-// Dynamic data registry
 import { getDestinationBySlug, POP_DEST, POP_CITIES } from "../data/destinationRegistry";
+import { parseDestinationLandingResponse } from "../data/destinationSchemas";
+import { buildDestinationPageVM } from "../lib/destination/buildDestinationPageVM";
+import type { DestinationLandingApiResponse } from "../types/destination";
 
 export default function DestinationLandingPage() {
     const [, params] = useRoute("/flights/to/:destination");
     const destinationSlug = params?.destination || "singapore";
 
-    const bundle = getDestinationBySlug(destinationSlug);
+    const staticData = getDestinationBySlug(destinationSlug) || getDestinationBySlug("singapore")!;
+    const [liveData, setLiveData] = useState<DestinationLandingApiResponse | null>(null);
+    const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
+    const [liveFailed, setLiveFailed] = useState(false);
 
-    // Scroll to top when destination changes
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [destinationSlug]);
 
-    // Fallback: if slug not found, try to show Singapore
-    const data = bundle || getDestinationBySlug("singapore")!;
+    useEffect(() => {
+        let active = true;
+
+        async function fetchLive() {
+            try {
+                setIsLiveRefreshing(true);
+                setLiveFailed(false);
+
+                const res = await fetch(
+                    `/api/destination-landing?origin=${staticData.origin.code}&destination=${staticData.dest.code}&currency=thb`,
+                );
+
+                if (!res.ok) {
+                    throw new Error(`Live API failed with status ${res.status}`);
+                }
+
+                const json = await res.json();
+                const parsed = parseDestinationLandingResponse(json);
+
+                if (!parsed.success) {
+                    throw new Error("Live API schema validation failed");
+                }
+
+                if (active) {
+                    setLiveData(parsed.data);
+                }
+            } catch (error) {
+                console.error(error);
+                if (active) {
+                    setLiveFailed(true);
+                }
+            } finally {
+                if (active) {
+                    setIsLiveRefreshing(false);
+                }
+            }
+        }
+
+        fetchLive();
+
+        return () => {
+            active = false;
+        };
+    }, [staticData.origin.code, staticData.dest.code]);
+
+    const data = useMemo(
+        () =>
+            buildDestinationPageVM({
+                staticData,
+                liveData,
+                isLiveRefreshing,
+                liveFailed,
+            }),
+        [staticData, liveData, isLiveRefreshing, liveFailed],
+    );
 
     return (
-        <div className="bg-[#0b0719] min-h-screen text-slate-100 font-sans selection:bg-violet-500/30">
+        <>
             <Helmet>
-                <title>Cheap Flights to {data.dest.city} ({data.dest.code}) | GoTravel Asia</title>
-                <meta name="description" content={`Find the cheapest flights to ${data.dest.city}. Compare prices from 900+ travel sites and book your flight to ${data.dest.country} today.`} />
+                <title>
+                    Live fares to {data.dest.city} ({data.dest.code}) | GoTravel Asia
+                </title>
+                <meta
+                    name="description"
+                    content={`Compare live fares, flexible route options, and timing insights for ${data.dest.city}.`}
+                />
+                <link rel="canonical" href={`https://gotravel-asia.vercel.app/flights/to/${data.slug}`} />
                 <style>{`
-          body { background-color: #0b0719; }
-          #root { background-color: #0b0719; }
-          .light .bg-background { background-color: #0b0719 !important; }
-        `}</style>
+                    body { background-color: #0b0719; }
+                    #root { background-color: #0b0719; }
+                    .light .bg-background { background-color: #0b0719 !important; }
+                `}</style>
             </Helmet>
 
-            {/* §0 Sticky navigation */}
-            <Navbar dest={data.dest.city} destCode={data.dest.code} origin={data.origin.city} />
+            <div className="min-h-screen bg-[#0b0719] text-white font-sans selection:bg-violet-500/30">
+                <Navbar dest={data.dest.city} destCode={data.dest.code} origin={data.origin.city} />
 
-            {/* §1 Hero + search widget */}
-            <div id="hero-search">
-                <HeroSearch dest={data.dest} meta={data.meta} />
+                <div id="hero-search">
+                    <HeroSearch data={data} />
+                </div>
+
+                <div id="flight-deals">
+                    <FlightDeals data={data} />
+                </div>
+
+                <FareFinder data={data} />
+
+                <Insights data={data} />
+
+                <div id="airlines-weather">
+                    <AirlinesWeather data={data} />
+                </div>
+
+                <AirlineReviews data={data} />
+
+                <FooterSections data={data} popDest={POP_DEST} popCities={POP_CITIES} />
             </div>
-
-            {/* §2 5-tab flight deal cards */}
-            <div id="flight-deals">
-                <FlightDeals dest={data.dest} meta={data.meta} deals={data.deals} />
-            </div>
-
-            {/* §3 + §4 Stat cards + Fare Finder table */}
-            <FareFinder meta={data.meta} rows={data.fareTable} />
-
-            {/* §5 + §6 Price trend chart + Insights grid */}
-            <Insights
-                dest={data.dest} meta={data.meta}
-                priceMonth={data.priceMonth}
-                bookLead={data.bookLead}
-                weekly={data.weekly}
-                durations={data.durations}
-                heatmap={data.heatmap}
-            />
-
-            {/* §7 + §8 Airlines + weather charts */}
-            <div id="airlines-weather">
-                <AirlinesWeather
-                    dest={data.dest}
-                    popAirlines={data.popAirlines}
-                    cheapAl={data.cheapAl}
-                    rainfall={data.rainfall}
-                    temperature={data.temperature}
-                />
-            </div>
-
-            {/* §9 Airline reviews */}
-            <AirlineReviews dest={data.dest} meta={data.meta} reviews={data.reviews} />
-
-            {/* §10-§13 FAQ / Browse / Fly with / Footer */}
-            <FooterSections
-                dest={data.dest} meta={data.meta}
-                faqs={data.faqs}
-                popDest={POP_DEST}
-                popCities={POP_CITIES}
-            />
-        </div>
+        </>
     );
 }

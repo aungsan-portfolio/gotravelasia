@@ -1,251 +1,766 @@
-// client/src/data/destinationRegistry.ts
-// Maps URL slugs → full destination page data.
-// Phase 2: swap static data for API calls.
-
 import type {
-    DestinationInfo, OriginInfo, FlightMeta, FlightDealsData, FareTableEntry,
-    CheapAirline, AirlineReview,
-} from "./destinationData";
+  StaticDestinationRecord,
+  Deal,
+  FareTableEntry,
+  AirlineSummary,
+  ReviewDatum,
+  FaqItem,
+  PriceMonthDatum,
+  HeatmapDatum,
+  WeatherMonthDatum,
+  RelatedRoute,
+} from "@/types/destination";
 
-// ── Full bundle type ─────────────────────────────────────────────
-export interface DestinationBundle {
-    dest: DestinationInfo;
-    origin: OriginInfo;
-    meta: FlightMeta;
-    deals: FlightDealsData;
-    fareTable: FareTableEntry[];
-    priceMonth: { m: string; p: number }[];
-    bookLead: { d: string; p: number }[];
-    weekly: { day: string; n: number }[];
-    durations: { c: string; h: number }[];
-    heatmap: { d: string; Morning: number; Midday: number; Afternoon: number; Evening: number; Night: number }[];
-    rainfall: { m: string; mm: number }[];
-    temperature: { m: string; c: number }[];
-    popAirlines: { name: string; emoji: string; from: number }[];
-    cheapAl: CheapAirline[];
-    reviews: AirlineReview[];
-    faqs: { q: string; a: string }[];
-}
+// ── Internal seed models ─────────────────────────────────────────
 
-// ── Helpers ──────────────────────────────────────────────────────
-function slug(name: string): string {
-    return name.toLowerCase().replace(/\s+/g, "-");
-}
+type AirportSeed = {
+  city: string;
+  code: string;
+  airport: string;
+  country: string;
+  flag: string;
+};
 
-/** Scale an array of {m,p} by a ratio, adding slight randomness */
-function scalePrices(base: { m: string; p: number }[], ratio: number): { m: string; p: number }[] {
-    return base.map(d => ({ m: d.m, p: Math.round(d.p * ratio * (0.92 + Math.random() * 0.16)) }));
-}
-function scaleBookLead(ratio: number): { d: string; p: number }[] {
-    return [
-        { d: "90+days", p: Math.round(5200 * ratio) },
-        { d: "60-90d", p: Math.round(5600 * ratio) },
-        { d: "30-60d", p: Math.round(6200 * ratio) },
-        { d: "14-30d", p: Math.round(7100 * ratio) },
-        { d: "7-14d", p: Math.round(8400 * ratio) },
-        { d: "0-7d", p: Math.round(9800 * ratio) },
-    ];
-}
+type RouteMetricsSeed = {
+  priceRatio: number;
+  avgFlightHours: number;
+  avgTempC: number;
+  avgRainMm: number;
+};
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+type DestinationSeed = AirportSeed &
+  RouteMetricsSeed & {
+    slug: string;
+    aliases?: string[];
+    isPopularDestination?: boolean;
+    isPopularCity?: boolean;
+  };
 
-const BASE_PRICE_MONTH = [7800, 7200, 6800, 6400, 6100, 5600, 5900, 6300, 6700, 7100, 8200, 9400];
+type OriginSeed = {
+  city: string;
+  code: string;
+  country: string;
+};
 
-function genPriceMonth(ratio: number) {
-    return MONTHS.map((m, i) => ({ m, p: Math.round(BASE_PRICE_MONTH[i] * ratio) }));
-}
+type RegistryMaps = {
+  byCitySlug: Map<string, StaticDestinationRecord>;
+  byCountrySlug: Map<string, StaticDestinationRecord[]>;
+  byCode: Map<string, StaticDestinationRecord>;
+};
 
-function genWeekly(base = 50) {
-    return DAYS.map(day => ({ day, n: Math.round(base + (Math.random() - 0.3) * 20) }));
-}
+const DEFAULT_ORIGIN: OriginSeed = {
+  city: "Bangkok",
+  code: "BKK",
+  country: "Thailand",
+};
 
-function genHeatmap(ratio: number) {
-    const base = [
-        { d: "Mon", Morning: 7200, Midday: 6100, Afternoon: 6800, Evening: 8200, Night: 7600 },
-        { d: "Tue", Morning: 6900, Midday: 5900, Afternoon: 6500, Evening: 7900, Night: 7200 },
-        { d: "Wed", Morning: 7100, Midday: 6000, Afternoon: 6700, Evening: 8100, Night: 7400 },
-        { d: "Thu", Morning: 6400, Midday: 5400, Afternoon: 6100, Evening: 7600, Night: 6900 },
-        { d: "Fri", Morning: 7800, Midday: 7200, Afternoon: 8100, Evening: 9200, Night: 8500 },
-        { d: "Sat", Morning: 8500, Midday: 8100, Afternoon: 8900, Evening: 10200, Night: 9400 },
-        { d: "Sun", Morning: 7600, Midday: 6800, Afternoon: 7400, Evening: 8600, Night: 7900 },
-    ];
-    return base.map(r => ({
-        d: r.d,
-        Morning: Math.round(r.Morning * ratio), Midday: Math.round(r.Midday * ratio),
-        Afternoon: Math.round(r.Afternoon * ratio), Evening: Math.round(r.Evening * ratio),
-        Night: Math.round(r.Night * ratio),
-    }));
-}
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
-function genFaqs(city: string, code: string, airport: string): { q: string; a: string }[] {
-    return [
-        { q: `What airport do you fly into for flights to ${city}?`, a: `You'll fly into ${airport} (${code}). GoTravel Asia compares prices across all major airlines serving this route.` },
-        { q: `Can I find cheaper flights to ${city} with stopovers?`, a: `Yes. Flights with one stop are often significantly cheaper. Toggle 1-stop in the filters to see budget-friendly options.` },
-        { q: `What is the best airline to fly to ${city}?`, a: `It depends on your priorities. Check the airline review cards above for ratings on comfort, food, crew and boarding.` },
-        { q: `How much is a return flight to ${city}?`, a: `Prices vary by season. Check the price chart above for monthly estimates. Book 60+ days ahead for the best deals.` },
-        { q: `Can GoTravel Asia notify me if prices drop?`, a: `Yes! Use Price Alerts to track your route. We'll email you when prices drop to your target.` },
-        { q: `Does ${airport} have rental cars?`, a: `Most major airports offer car hire. Use GoTravel Asia Car Rental to compare prices.` },
-        { q: `Are there hotels close to ${airport}?`, a: `Yes. Many transit and city hotels within 5km. Use our hotel search to compare options.` },
-        { q: `When is the cheapest time to fly to ${city}?`, a: `Low season varies by destination. Check the "Best time to book" section above for data-driven advice.` },
-    ];
-}
+const BASE_PRICE_MONTH = [7800, 7200, 6800, 6400, 6100, 5600, 5900, 6300, 6700, 7100, 8200, 9400] as const;
 
-function genDeals(city: string, code: string, ratio: number): FlightDealsData {
-    const p = (base: number) => Math.round(base * ratio);
-    return {
-        Cheapest: [
-            { id: 1, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Thu 2/4", t1: "10:40", a1: "13:05", ret: "Tue 7/4", t2: "14:40", a2: "17:20", stops: 0, dur: "2h 25m", price: p(4251), found: "3/3" },
-            { id: 2, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Fri 10/4", t1: "17:15", a1: "19:45", ret: "Wed 15/4", t2: "21:45", a2: "00:15+1", stops: 0, dur: "2h 30m", price: p(4314), found: "5/3" },
-            { id: 3, al: "Scoot", logo: "✈️", from: "BKK", d1: "Thu 23/4", t1: "22:30", a1: "01:00+1", ret: "Sun 26/4", t2: "18:00", a2: "20:35", stops: 0, dur: "2h 30m", price: p(4350), found: "4/3" },
-            { id: 4, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Mon 20/4", t1: "17:30", a1: "22:55", ret: "Fri 24/4", t2: "06:30", a2: "09:05", stops: 1, dur: "5h 25m", price: p(4500), found: "6/3" },
-        ],
-        Best: [
-            { id: 5, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Thu 23/4", t1: "10:40", a1: "13:05", ret: "Sun 26/4", t2: "14:40", a2: "17:20", stops: 0, dur: "2h 25m", price: p(5456), found: "8/3" },
-            { id: 6, al: "Thai Airways", logo: "🐘", from: "BKK", d1: "Mon 20/4", t1: "22:15", a1: "12:45+1", ret: "Wed 22/4", t2: "11:20", a2: "16:55", stops: 0, dur: "2h 45m", price: p(6327), found: "3/3" },
-        ],
-        Direct: [
-            { id: 7, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 2/4", t1: "17:15", a1: "19:45", ret: "Tue 7/4", t2: "21:45", a2: "00:15+1", stops: 0, dur: "2h 30m", price: p(4251), found: "3/3" },
-            { id: 8, al: "Scoot", logo: "✈️", from: "BKK", d1: "Mon 11/5", t1: "20:35", a1: "23:05", ret: "Wed 13/5", t2: "16:15", a2: "18:50", stops: 0, dur: "2h 30m", price: p(4346), found: "8/3" },
-        ],
-        "Last-minute": [
-            { id: 9, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Sun 15/3", t1: "07:55", a1: "10:20", ret: "Mon 23/3", t2: "21:30", a2: "00:00+1", stops: 0, dur: "2h 25m", price: p(4505), found: "5/3" },
-        ],
-        "One-way": [
-            { id: 10, al: "Multiple Airlines", logo: "🛫", from: "DMK", d1: "Tue 2/6", t1: "19:55", a1: "11:45+1", ret: null, stops: 1, dur: "15h 50m", price: p(1776), found: "4/3" },
-            { id: 11, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Sun 15/3", t1: "10:50", a1: "13:30", ret: null, stops: 0, dur: "2h 40m", price: p(1808), found: "4/3" },
-        ],
-    };
-}
-
-function genFareTable(code: string, airport: string, ratio: number): FareTableEntry[] {
-    const p = (base: number) => Math.round(base * ratio);
-    return [
-        { route: `BKK→${code}`, from: "Bangkok Suvarnabhumi", d1: "Mon 20/4 22:15", a1: "Tue 21/4 12:45", s1: 1, dur1: "13h 30m", from2: airport, d2: "Wed 22/4 11:20", a2: "16:55", s2: 1, dur2: "6h 35m", price: p(4949), note: "Cheapest return" },
-        { route: `BKK→${code}`, from: "Bangkok Suvarnabhumi", d1: "Fri 17/4 15:25", a1: "Fri 17/4 23:55", s1: 1, dur1: "7h 30m", from2: airport, d2: "Fri 24/4 18:50", a2: "23:15", s2: 1, dur2: "5h 25m", price: p(5139), note: null },
-        { route: `DMK→${code}`, from: "Bangkok Don Mueang", d1: "Thu 23/4 10:40", a1: "Thu 23/4 14:05", s1: 0, dur1: "2h 25m", from2: airport, d2: "Sun 26/4 14:40", a2: "16:20", s2: 0, dur2: "2h 40m", price: p(5456), note: null },
-        { route: `DMK→${code}`, from: "Bangkok Don Mueang", d1: "Thu 16/4 10:40", a1: "Thu 16/4 14:05", s1: 0, dur1: "2h 25m", from2: airport, d2: "Mon 20/4 20:40", a2: "22:10", s2: 0, dur2: "2h 30m", price: p(5520), note: "Fastest journey" },
-    ];
-}
-
-function genReviews(city: string, code: string): AirlineReview[] {
-    return [
-        { name: "Thai Airways", e: "🐘", r: 7.8, lbl: "Good", cnt: 391, from: 6327, sc: { Entertainment: 7.2, Comfort: 7.5, Food: 7.0, Crew: 7.8, Boarding: 7.6 }, rev: { u: "TravellerTH", dt: "Jan 2026", rt: `BKK-${code}`, s: 7.5, t: `Comfortable flight to ${city}. Friendly crew and decent food.` } },
-        { name: "Thai AirAsia", e: "🔴", r: 7.5, lbl: "Good", cnt: 235, from: 2941, sc: { Entertainment: 6.5, Comfort: 7.0, Food: 6.8, Crew: 7.5, Boarding: 7.8 }, rev: { u: "BudgetFlyer", dt: "Mar 2026", rt: `DMK-${code}`, s: 7.0, t: `Good budget option for ${city}. On time and efficient boarding.` } },
-        { name: "Thai Lion Air", e: "🦁", r: 7.1, lbl: "Good", cnt: 43, from: 3414, sc: { Entertainment: 6.0, Comfort: 6.8, Food: 6.2, Crew: 7.2, Boarding: 7.4 }, rev: { u: "LionFan", dt: "Feb 2026", rt: `DMK-${code}`, s: 7.0, t: `Cheap and cheerful flight to ${city}. Got what I paid for.` } },
-        { name: "Scoot", e: "✈️", r: 6.7, lbl: "Okay", cnt: 319, from: 3175, sc: { Entertainment: 5.8, Comfort: 6.2, Food: 5.5, Crew: 7.0, Boarding: 7.3 }, rev: { u: "ScootUser", dt: "Jan 2026", rt: `BKK-${code}`, s: 6.5, t: `Basic but affordable for ${city}. Price is right.` } },
-    ];
-}
-
-// ── Destination definitions ──────────────────────────────────────
-interface DestDef {
-    city: string; code: string; airport: string; country: string; flag: string;
-    /** Price ratio relative to Singapore baseline */
-    priceRatio: number;
-    flightDur: number;
-    avgTemp: number;
-    avgRain: number;
-}
-
-const DEST_DEFS: DestDef[] = [
-    // Countries (Popular Destinations)
-    { city: "Singapore", code: "SIN", airport: "Changi Airport", country: "Singapore", flag: "🇸🇬", priceRatio: 1.0, flightDur: 2.4, avgTemp: 27, avgRain: 190 },
-    { city: "Brunei", code: "BWN", airport: "Brunei Intl Airport", country: "Brunei", flag: "🇧🇳", priceRatio: 1.3, flightDur: 3.2, avgTemp: 27, avgRain: 230 },
-    { city: "Phnom Penh", code: "PNH", airport: "Phnom Penh Intl Airport", country: "Cambodia", flag: "🇰🇭", priceRatio: 0.85, flightDur: 1.2, avgTemp: 28, avgRain: 150 },
-    { city: "Beijing", code: "PEK", airport: "Beijing Capital Intl", country: "China", flag: "🇨🇳", priceRatio: 1.8, flightDur: 5.0, avgTemp: 13, avgRain: 60 },
-    { city: "Hong Kong", code: "HKG", airport: "Hong Kong Intl Airport", country: "Hong Kong", flag: "🇭🇰", priceRatio: 1.5, flightDur: 2.8, avgTemp: 23, avgRain: 180 },
-    { city: "Mumbai", code: "BOM", airport: "Chhatrapati Shivaji Intl", country: "India", flag: "🇮🇳", priceRatio: 1.6, flightDur: 4.5, avgTemp: 28, avgRain: 200 },
-    { city: "Jakarta", code: "CGK", airport: "Soekarno-Hatta Intl", country: "Indonesia", flag: "🇮🇩", priceRatio: 1.1, flightDur: 3.5, avgTemp: 27, avgRain: 175 },
-    { city: "Tokyo", code: "NRT", airport: "Narita Intl Airport", country: "Japan", flag: "🇯🇵", priceRatio: 2.2, flightDur: 6.0, avgTemp: 16, avgRain: 130 },
-    { city: "Macau", code: "MFM", airport: "Macau Intl Airport", country: "Macau", flag: "🇲🇴", priceRatio: 1.4, flightDur: 2.5, avgTemp: 23, avgRain: 170 },
-    { city: "Kuala Lumpur", code: "KUL", airport: "KLIA", country: "Malaysia", flag: "🇲🇾", priceRatio: 0.7, flightDur: 2.2, avgTemp: 28, avgRain: 210 },
-    { city: "Manila", code: "MNL", airport: "Ninoy Aquino Intl", country: "Philippines", flag: "🇵🇭", priceRatio: 1.2, flightDur: 3.3, avgTemp: 28, avgRain: 190 },
-    { city: "Seoul", code: "ICN", airport: "Incheon Intl Airport", country: "South Korea", flag: "🇰🇷", priceRatio: 2.0, flightDur: 5.5, avgTemp: 12, avgRain: 110 },
-    { city: "Taipei", code: "TPE", airport: "Taoyuan Intl Airport", country: "Taiwan", flag: "🇹🇼", priceRatio: 1.7, flightDur: 3.8, avgTemp: 23, avgRain: 160 },
-    { city: "Bangkok", code: "BKK", airport: "Suvarnabhumi Airport", country: "Thailand", flag: "🇹🇭", priceRatio: 0.3, flightDur: 0.0, avgTemp: 29, avgRain: 150 },
-    { city: "Dubai", code: "DXB", airport: "Dubai Intl Airport", country: "United Arab Emirates", flag: "🇦🇪", priceRatio: 2.5, flightDur: 6.5, avgTemp: 28, avgRain: 10 },
-    { city: "Hanoi", code: "HAN", airport: "Noi Bai Intl Airport", country: "Vietnam", flag: "🇻🇳", priceRatio: 0.9, flightDur: 1.8, avgTemp: 24, avgRain: 150 },
-    // Cities (Popular Cities not already above)
-    { city: "Yangon", code: "RGN", airport: "Yangon Intl Airport", country: "Myanmar", flag: "🇲🇲", priceRatio: 0.8, flightDur: 1.3, avgTemp: 28, avgRain: 240 },
-    { city: "Mandalay", code: "MDL", airport: "Mandalay Intl Airport", country: "Myanmar", flag: "🇲🇲", priceRatio: 0.85, flightDur: 1.5, avgTemp: 27, avgRain: 130 },
+const DESTINATION_SEEDS: DestinationSeed[] = [
+  {
+    slug: "singapore",
+    city: "Singapore",
+    code: "SIN",
+    airport: "Changi Airport",
+    country: "Singapore",
+    flag: "🇸🇬",
+    priceRatio: 1.0,
+    avgFlightHours: 2.4,
+    avgTempC: 27,
+    avgRainMm: 190,
+    aliases: ["sin"],
+    isPopularDestination: true,
+    isPopularCity: true,
+  },
+  {
+    slug: "brunei",
+    city: "Brunei",
+    code: "BWN",
+    airport: "Brunei Intl Airport",
+    country: "Brunei",
+    flag: "🇧🇳",
+    priceRatio: 1.3,
+    avgFlightHours: 3.2,
+    avgTempC: 27,
+    avgRainMm: 230,
+    aliases: ["bandar-seri-begawan", "bwn"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "phnom-penh",
+    city: "Phnom Penh",
+    code: "PNH",
+    airport: "Phnom Penh Intl Airport",
+    country: "Cambodia",
+    flag: "🇰🇭",
+    priceRatio: 0.85,
+    avgFlightHours: 1.2,
+    avgTempC: 28,
+    avgRainMm: 150,
+    aliases: ["cambodia", "pnh"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "beijing",
+    city: "Beijing",
+    code: "PEK",
+    airport: "Beijing Capital Intl",
+    country: "China",
+    flag: "🇨🇳",
+    priceRatio: 1.8,
+    avgFlightHours: 5.0,
+    avgTempC: 13,
+    avgRainMm: 60,
+    aliases: ["china", "pek"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "hong-kong",
+    city: "Hong Kong",
+    code: "HKG",
+    airport: "Hong Kong Intl Airport",
+    country: "Hong Kong",
+    flag: "🇭🇰",
+    priceRatio: 1.5,
+    avgFlightHours: 2.8,
+    avgTempC: 23,
+    avgRainMm: 180,
+    aliases: ["hkg"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "mumbai",
+    city: "Mumbai",
+    code: "BOM",
+    airport: "Chhatrapati Shivaji Intl",
+    country: "India",
+    flag: "🇮🇳",
+    priceRatio: 1.6,
+    avgFlightHours: 4.5,
+    avgTempC: 28,
+    avgRainMm: 200,
+    aliases: ["india", "bom"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "jakarta",
+    city: "Jakarta",
+    code: "CGK",
+    airport: "Soekarno-Hatta Intl",
+    country: "Indonesia",
+    flag: "🇮🇩",
+    priceRatio: 1.1,
+    avgFlightHours: 3.5,
+    avgTempC: 27,
+    avgRainMm: 175,
+    aliases: ["indonesia", "cgk"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "tokyo",
+    city: "Tokyo",
+    code: "NRT",
+    airport: "Narita Intl Airport",
+    country: "Japan",
+    flag: "🇯🇵",
+    priceRatio: 2.2,
+    avgFlightHours: 6.0,
+    avgTempC: 16,
+    avgRainMm: 130,
+    aliases: ["japan", "narita", "nrt"],
+    isPopularDestination: true,
+    isPopularCity: true,
+  },
+  {
+    slug: "macau",
+    city: "Macau",
+    code: "MFM",
+    airport: "Macau Intl Airport",
+    country: "Macau",
+    flag: "🇲🇴",
+    priceRatio: 1.4,
+    avgFlightHours: 2.5,
+    avgTempC: 23,
+    avgRainMm: 170,
+    aliases: ["mfm"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "kuala-lumpur",
+    city: "Kuala Lumpur",
+    code: "KUL",
+    airport: "KLIA",
+    country: "Malaysia",
+    flag: "🇲🇾",
+    priceRatio: 0.7,
+    avgFlightHours: 2.2,
+    avgTempC: 28,
+    avgRainMm: 210,
+    aliases: ["malaysia", "kul"],
+    isPopularDestination: true,
+    isPopularCity: true,
+  },
+  {
+    slug: "manila",
+    city: "Manila",
+    code: "MNL",
+    airport: "Ninoy Aquino Intl",
+    country: "Philippines",
+    flag: "🇵🇭",
+    priceRatio: 1.2,
+    avgFlightHours: 3.3,
+    avgTempC: 28,
+    avgRainMm: 190,
+    aliases: ["philippines", "mnl"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "seoul",
+    city: "Seoul",
+    code: "ICN",
+    airport: "Incheon Intl Airport",
+    country: "South Korea",
+    flag: "🇰🇷",
+    priceRatio: 2.0,
+    avgFlightHours: 5.5,
+    avgTempC: 12,
+    avgRainMm: 110,
+    aliases: ["south-korea", "icn"],
+    isPopularDestination: true,
+    isPopularCity: true,
+  },
+  {
+    slug: "taipei",
+    city: "Taipei",
+    code: "TPE",
+    airport: "Taoyuan Intl Airport",
+    country: "Taiwan",
+    flag: "🇹🇼",
+    priceRatio: 1.7,
+    avgFlightHours: 3.8,
+    avgTempC: 23,
+    avgRainMm: 160,
+    aliases: ["taiwan", "tpe"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "bangkok",
+    city: "Bangkok",
+    code: "BKK",
+    airport: "Suvarnabhumi Airport",
+    country: "Thailand",
+    flag: "🇹🇭",
+    priceRatio: 0.3,
+    avgFlightHours: 1.0,
+    avgTempC: 29,
+    avgRainMm: 150,
+    aliases: ["thailand", "bkk"],
+    isPopularDestination: true,
+    isPopularCity: true,
+  },
+  {
+    slug: "dubai",
+    city: "Dubai",
+    code: "DXB",
+    airport: "Dubai Intl Airport",
+    country: "United Arab Emirates",
+    flag: "🇦🇪",
+    priceRatio: 2.5,
+    avgFlightHours: 6.5,
+    avgTempC: 28,
+    avgRainMm: 10,
+    aliases: ["united-arab-emirates", "uae", "dxb"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "hanoi",
+    city: "Hanoi",
+    code: "HAN",
+    airport: "Noi Bai Intl Airport",
+    country: "Vietnam",
+    flag: "🇻🇳",
+    priceRatio: 0.9,
+    avgFlightHours: 1.8,
+    avgTempC: 24,
+    avgRainMm: 150,
+    aliases: ["vietnam", "han"],
+    isPopularDestination: true,
+  },
+  {
+    slug: "yangon",
+    city: "Yangon",
+    code: "RGN",
+    airport: "Yangon Intl Airport",
+    country: "Myanmar",
+    flag: "🇲🇲",
+    priceRatio: 0.8,
+    avgFlightHours: 1.3,
+    avgTempC: 28,
+    avgRainMm: 240,
+    aliases: ["rgn"],
+    isPopularCity: true,
+  },
+  {
+    slug: "mandalay",
+    city: "Mandalay",
+    code: "MDL",
+    airport: "Mandalay Intl Airport",
+    country: "Myanmar",
+    flag: "🇲🇲",
+    priceRatio: 0.85,
+    avgFlightHours: 1.5,
+    avgTempC: 27,
+    avgRainMm: 130,
+    aliases: ["mdl"],
+    isPopularCity: true,
+  },
 ];
 
-// ── Build the registry map ───────────────────────────────────────
-function buildBundle(def: DestDef): DestinationBundle {
-    const dest: DestinationInfo = { city: def.city, code: def.code, airport: def.airport, country: def.country, flag: def.flag };
-    const origin: OriginInfo = { city: "Bangkok", code: "BKK" };
+// ── Utilities ────────────────────────────────────────────────────
 
-    const cheapest = Math.round(1776 * def.priceRatio);
-    const retFrom = Math.round(4251 * def.priceRatio);
+function toSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
 
-    const meta: FlightMeta = {
-        cheapestOneWay: cheapest, returnFrom: retFrom, oneWayFrom: cheapest,
-        popularIn: "December", cheapestIn: "June", avgPrice: Math.round(6376 * def.priceRatio),
-        searches: Math.round(17341 * (1 / def.priceRatio) * 0.8),
-        updated: "8 Mar 2026", bookAdvance: 64, cheapestDay: "Thursday", cheapestTime: "midday",
-        avoidDay: "Saturday", avoidTime: "evenings",
-    };
+function roundPrice(value: number): number {
+  return Math.max(0, Math.round(value));
+}
 
-    const durations = [
-        { c: "Bangkok", h: def.flightDur },
-        { c: "Chiang Mai", h: +(def.flightDur + 1.4).toFixed(1) },
-        { c: "Phuket", h: +(def.flightDur + 0.3).toFixed(1) },
-        { c: "Hat Yai", h: +(def.flightDur - 0.6 > 0.5 ? def.flightDur - 0.6 : 0.8).toFixed(1) },
-        { c: "Chiang Rai", h: +(def.flightDur + 1.8).toFixed(1) },
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function formatDuration(hoursFloat: number): string {
+  const totalMinutes = Math.max(30, Math.round(hoursFloat * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  return `${hours}h ${mins}m`;
+}
+
+function isoAt(day: number, hour: number, minute: number): string {
+  const dd = String(day).padStart(2, "0");
+  const hh = String(hour).padStart(2, "0");
+  const mm = String(minute).padStart(2, "0");
+  return `2026-04-${dd}T${hh}:${mm}:00+07:00`;
+}
+
+function deriveStopCount(seed: DestinationSeed): number {
+  if (seed.avgFlightHours <= 1.8) return 0;
+  if (seed.avgFlightHours <= 4.5) return 1;
+  return 1;
+}
+
+function buildHeroNote(seed: DestinationSeed): string {
+  return `Live fares and ${seed.flag} ${seed.city} booking options. Compare routes, timing, and value before you book.`;
+}
+
+function airlineMixFor(seed: DestinationSeed): Array<{ airline: string; airlineCode: string; multiplier: number; tag?: string }> {
+  if (seed.code === "SIN") {
+    return [
+      { airline: "Thai AirAsia", airlineCode: "FD", multiplier: 1.0, tag: "Budget" },
+      { airline: "Scoot", airlineCode: "TR", multiplier: 1.04, tag: "Popular" },
+      { airline: "Thai Lion Air", airlineCode: "SL", multiplier: 1.08 },
+      { airline: "Thai Airways", airlineCode: "TG", multiplier: 1.22, tag: "Full-service" },
     ];
+  }
 
-    // Temp & rain – seasonal variation around the destination avg
-    const tempVariation = [0, -0.5, 0, 0.5, 1, 1, 0.5, 0.5, 0, -0.5, -0.5, -1];
-    const rainVariation = [0.9, 0.7, 0.8, 0.85, 0.95, 1.0, 0.85, 0.9, 1.0, 1.1, 1.2, 1.3];
-
-    const temperature = MONTHS.map((m, i) => ({ m, c: Math.round(def.avgTemp + tempVariation[i]) }));
-    const rainfall = MONTHS.map((m, i) => ({ m, mm: Math.round(def.avgRain * rainVariation[i]) }));
-
-    return {
-        dest, origin, meta,
-        deals: genDeals(def.city, def.code, def.priceRatio),
-        fareTable: genFareTable(def.code, def.airport, def.priceRatio),
-        priceMonth: genPriceMonth(def.priceRatio),
-        bookLead: scaleBookLead(def.priceRatio),
-        weekly: genWeekly(),
-        durations,
-        heatmap: genHeatmap(def.priceRatio),
-        rainfall, temperature,
-        popAirlines: [
-            { name: "Scoot", emoji: "✈️", from: Math.round(3175 * def.priceRatio) },
-            { name: "Thai AirAsia", emoji: "🔴", from: Math.round(2941 * def.priceRatio) },
-            { name: "Thai Lion Air", emoji: "🦁", from: Math.round(3414 * def.priceRatio) },
-            { name: "Thai Airways", emoji: "🐘", from: Math.round(6327 * def.priceRatio) },
-        ],
-        cheapAl: [
-            { name: "Thai AirAsia", pct: 95, from: Math.round(2941 * def.priceRatio) },
-            { name: "Thai Lion Air", pct: 82, from: Math.round(3414 * def.priceRatio) },
-            { name: "Scoot", pct: 75, from: Math.round(3175 * def.priceRatio) },
-            { name: "Thai Airways", pct: 42, from: Math.round(6327 * def.priceRatio) },
-        ],
-        reviews: genReviews(def.city, def.code),
-        faqs: genFaqs(def.city, def.code, def.airport),
-    };
+  return [
+    { airline: "Thai AirAsia", airlineCode: "FD", multiplier: 1.0, tag: "Budget" },
+    { airline: "Scoot", airlineCode: "TR", multiplier: 1.05, tag: "Budget" },
+    { airline: "Thai Lion Air", airlineCode: "SL", multiplier: 1.08 },
+    { airline: "Thai Airways", airlineCode: "TG", multiplier: 1.25, tag: "Full-service" },
+  ];
 }
 
-// Pre-build registry keyed by slug
-const REGISTRY = new Map<string, DestinationBundle>();
+// ── Generators ───────────────────────────────────────────────────
 
-for (const def of DEST_DEFS) {
-    REGISTRY.set(slug(def.city), buildBundle(def));
-    // Also map by country name for "Popular Destinations" which use country names
-    if (slug(def.country) !== slug(def.city)) {
-        REGISTRY.set(slug(def.country), buildBundle(def));
+function genPriceMonths(seed: DestinationSeed): PriceMonthDatum[] {
+  return MONTHS.map((month, index) => ({
+    month,
+    value: roundPrice(BASE_PRICE_MONTH[index] * seed.priceRatio),
+  }));
+}
+
+function genWeather(seed: DestinationSeed): WeatherMonthDatum[] {
+  const tempVar = [0, -0.5, 0, 0.5, 1, 1, 0.5, 0.5, 0, -0.5, -0.5, -1];
+  const rainVar = [0.9, 0.7, 0.8, 0.85, 0.95, 1.0, 0.85, 0.9, 1.0, 1.1, 1.2, 1.3];
+
+  return MONTHS.map((month, index) => ({
+    month,
+    avgTempC: roundPrice(seed.avgTempC + tempVar[index]),
+    rainfallMm: roundPrice(seed.avgRainMm * rainVar[index]),
+  }));
+}
+
+function genHeatmap(seed: DestinationSeed): HeatmapDatum[] {
+  const weekdayBase = roundPrice(6100 * seed.priceRatio);
+  const weekendBase = roundPrice(8500 * seed.priceRatio);
+
+  return [
+    {
+      month: "Weekday",
+      values: [
+        { day: "Mon", price: weekdayBase, level: "low" as const },
+        { day: "Tue", price: roundPrice(weekdayBase * 0.97), level: "low" as const },
+        { day: "Wed", price: roundPrice(weekdayBase * 0.99), level: "low" as const },
+        { day: "Thu", price: roundPrice(weekdayBase * 0.92), level: "low" as const },
+        { day: "Fri", price: roundPrice(weekdayBase * 1.18), level: "mid" as const },
+      ],
+    },
+    {
+      month: "Weekend",
+      values: [
+        { day: "Sat AM", price: weekendBase, level: "high" as const },
+        { day: "Sat PM", price: roundPrice(weekendBase * 1.2), level: "high" as const },
+        { day: "Sun AM", price: roundPrice(weekendBase * 0.93), level: "mid" as const },
+        { day: "Sun PM", price: roundPrice(weekendBase * 1.02), level: "high" as const },
+        { day: "Sun Eve", price: roundPrice(weekendBase * 0.96), level: "mid" as const },
+      ],
+    },
+  ];
+}
+
+function genDeals(seed: DestinationSeed, origin: OriginSeed): StaticDestinationRecord["deals"] {
+  const base = roundPrice(4251 * seed.priceRatio);
+  const stops = deriveStopCount(seed);
+  const fastestStops = seed.avgFlightHours <= 2.0 ? 0 : stops;
+
+  const makeDeal = (
+    airline: string,
+    airlineCode: string,
+    departDay: number,
+    departHour: number,
+    price: number,
+    tag?: string,
+    stopCount = stops,
+    flightHours = seed.avgFlightHours
+  ): Deal => ({
+    from: origin.code,
+    to: seed.code,
+    d1: isoAt(departDay, departHour, 30),
+    a1: null,
+    airline,
+    airlineCode,
+    stops: stopCount,
+    duration: formatDuration(flightHours + stopCount * 0.9),
+    price,
+    tag,
+  });
+
+  const mix = airlineMixFor(seed);
+
+  return {
+    cheapest: [
+      makeDeal(mix[0].airline, mix[0].airlineCode, 10, 8, base, "Budget"),
+      makeDeal(mix[1].airline, mix[1].airlineCode, 12, 9, roundPrice(base * mix[1].multiplier), mix[1].tag),
+      makeDeal(mix[2].airline, mix[2].airlineCode, 14, 7, roundPrice(base * mix[2].multiplier), mix[2].tag),
+    ],
+    fastest: [
+      makeDeal(mix[0].airline, mix[0].airlineCode, 9, 6, roundPrice(base * 1.18), "Quick", fastestStops, seed.avgFlightHours),
+      makeDeal(mix[3].airline, mix[3].airlineCode, 11, 7, roundPrice(base * 1.28), mix[3].tag, fastestStops, seed.avgFlightHours * 0.95),
+    ],
+    bestValue: [
+      makeDeal(mix[1].airline, mix[1].airlineCode, 16, 10, roundPrice(base * 0.97), "Best value"),
+      makeDeal(mix[0].airline, mix[0].airlineCode, 18, 12, roundPrice(base * 1.02), "Balanced"),
+    ],
+    weekend: [
+      makeDeal(mix[0].airline, mix[0].airlineCode, 19, 18, roundPrice(base * 1.24), "Weekend"),
+      makeDeal(mix[1].airline, mix[1].airlineCode, 24, 19, roundPrice(base * 1.31), "Weekend"),
+    ],
+    premium: [
+      makeDeal(mix[3].airline, mix[3].airlineCode, 13, 11, roundPrice(base * 1.55), "Premium", fastestStops, seed.avgFlightHours),
+    ],
+  };
+}
+
+function genFareTable(seed: DestinationSeed, origin: OriginSeed): FareTableEntry[] {
+  const base = roundPrice(4949 * seed.priceRatio);
+  const stops = deriveStopCount(seed);
+  const outDur = formatDuration(seed.avgFlightHours + stops * 0.8);
+  const backDur = formatDuration(seed.avgFlightHours + stops * 0.9);
+
+  return [
+    {
+      from1: origin.code,
+      to1: seed.code,
+      d1: isoAt(20, 22, 15),
+      a1: null,
+      s1: stops,
+      dur1: outDur,
+      from2: seed.code,
+      to2: origin.code,
+      d2: isoAt(27, 11, 20),
+      a2: null,
+      s2: stops,
+      dur2: backDur,
+      airline: "Multiple Airlines",
+      price: base,
+    },
+    {
+      from1: origin.code === "BKK" ? "DMK" : origin.code,
+      to1: seed.code,
+      d1: isoAt(23, 10, 40),
+      a1: null,
+      s1: seed.avgFlightHours <= 2.0 ? 0 : stops,
+      dur1: formatDuration(seed.avgFlightHours + (seed.avgFlightHours <= 2.0 ? 0 : 0.6)),
+      from2: seed.code,
+      to2: origin.code === "BKK" ? "DMK" : origin.code,
+      d2: isoAt(26, 14, 40),
+      a2: null,
+      s2: seed.avgFlightHours <= 2.0 ? 0 : stops,
+      dur2: formatDuration(seed.avgFlightHours + (seed.avgFlightHours <= 2.0 ? 0 : 0.7)),
+      airline: "Thai AirAsia",
+      airlineCode: "FD",
+      price: roundPrice(base * 1.1),
+    },
+    {
+      from1: origin.code,
+      to1: seed.code,
+      d1: isoAt(17, 15, 25),
+      a1: null,
+      s1: stops,
+      dur1: formatDuration(seed.avgFlightHours + 1.0),
+      airline: "Scoot",
+      airlineCode: "TR",
+      price: roundPrice(base * 1.04),
+    },
+  ];
+}
+
+function genAirlines(seed: DestinationSeed): AirlineSummary[] {
+  const stops = deriveStopCount(seed);
+  const ratio = clamp(seed.priceRatio, 0.5, 2.5);
+
+  return [
+    {
+      code: "FD",
+      name: "Thai AirAsia",
+      dealCount: Math.max(2, Math.round(10 / ratio)),
+      commonStops: stops,
+      tags: ["Budget", "Popular"],
+      confidenceLabel: "Frequently available",
+    },
+    {
+      code: "TR",
+      name: "Scoot",
+      dealCount: Math.max(2, Math.round(8 / ratio)),
+      commonStops: Math.max(1, stops),
+      tags: ["Budget"],
+    },
+    {
+      code: "SL",
+      name: "Thai Lion Air",
+      dealCount: Math.max(1, Math.round(6 / ratio)),
+      commonStops: stops,
+      tags: ["Budget"],
+    },
+    {
+      code: "TG",
+      name: "Thai Airways",
+      dealCount: Math.max(1, Math.round(3 / ratio)),
+      commonStops: seed.avgFlightHours <= 2.0 ? 0 : 1,
+      tags: ["Premium", "Full-service"],
+      confidenceLabel: "Full-service carrier",
+    },
+  ];
+}
+
+function genReviews(seed: DestinationSeed): ReviewDatum[] {
+  return [
+    {
+      airline: "Singapore Airlines",
+      airlineCode: "SQ",
+      score: 8.2,
+      highlights: [
+        `Excellent in-flight service on routes to ${seed.city}`,
+        "Premium cabin options",
+        "Consistently high ratings",
+      ],
+    },
+    {
+      airline: "Thai Airways",
+      airlineCode: "TG",
+      score: 7.8,
+      highlights: [
+        `Comfortable flights to ${seed.city}`,
+        "Good connectivity via Bangkok",
+        "Decent in-flight meals",
+      ],
+    },
+    {
+      airline: "Thai AirAsia",
+      airlineCode: "FD",
+      score: 7.5,
+      highlights: [
+        "Competitive pricing",
+        `Popular budget option to ${seed.city}`,
+        "Efficient boarding",
+      ],
+    },
+    {
+      airline: "Scoot",
+      airlineCode: "TR",
+      score: 6.7,
+      highlights: [
+        "Affordable fares",
+        `Basic but reliable for ${seed.city}`,
+        "Good for budget travelers",
+      ],
+    },
+  ];
+}
+
+function genFaqs(seed: DestinationSeed): FaqItem[] {
+  return [
+    {
+      q: `What airport do you fly into for flights to ${seed.city}?`,
+      a: `You'll usually fly into ${seed.airport} (${seed.code}). Check terminal and baggage info before your flight.`,
+    },
+    {
+      q: `Can I find cheaper flights to ${seed.city} with stopovers?`,
+      a: `Yes. One-stop options are often cheaper than the fastest itineraries. Use the fare table above to compare value and timing.`,
+    },
+    {
+      q: `When is the best time to fly to ${seed.city}?`,
+      a: `Midweek departures usually offer better value than weekend departures. Seasonal demand still affects final fares.`,
+    },
+    {
+      q: `How far in advance should I book flights to ${seed.city}?`,
+      a: `Booking 4 to 8 weeks ahead often gives you a good balance of price and availability on this route.`,
+    },
+    {
+      q: `What airlines fly to ${seed.city}?`,
+      a: `Thai AirAsia, Scoot, Thai Lion Air, and Thai Airways are common carriers in this fallback dataset. Actual availability can vary.`,
+    },
+    {
+      q: `Does GoTravel Asia track price drops for ${seed.city}?`,
+      a: `Yes. Price alerts can be used to monitor route changes and notify users when fares drop.`,
+    },
+  ];
+}
+
+function genNearbyRoutes(currentSeed: DestinationSeed): RelatedRoute[] {
+  const pool = DESTINATION_SEEDS
+    .filter((seed) => seed.slug !== currentSeed.slug)
+    .filter((seed) => seed.country !== currentSeed.country || seed.code !== currentSeed.code)
+    .slice(0, 6);
+
+  const priority = pool
+    .sort((a, b) => {
+      const aScore = Number(Boolean(a.isPopularDestination)) + Number(Boolean(a.isPopularCity));
+      const bScore = Number(Boolean(b.isPopularDestination)) + Number(Boolean(b.isPopularCity));
+      return bScore - aScore;
+    })
+    .slice(0, 3);
+
+  return priority.map((seed) => ({
+    city: seed.city,
+    code: seed.code,
+    href: `/flights/to/${seed.slug}`,
+    tag: seed.country === currentSeed.country ? "Nearby" : "Popular",
+  }));
+}
+
+// ── Record builder ───────────────────────────────────────────────
+
+function buildRecord(seed: DestinationSeed, origin: OriginSeed = DEFAULT_ORIGIN): StaticDestinationRecord {
+  return {
+    slug: seed.slug,
+    origin: {
+      city: origin.city,
+      code: origin.code,
+      country: origin.country,
+    },
+    dest: {
+      city: seed.city,
+      code: seed.code,
+      country: seed.country,
+    },
+    heroNote: buildHeroNote(seed),
+    deals: genDeals(seed, origin),
+    fareTable: genFareTable(seed, origin),
+    airlines: genAirlines(seed),
+    priceMonths: genPriceMonths(seed),
+    heatmap: genHeatmap(seed),
+    reviews: genReviews(seed),
+    weather: genWeather(seed),
+    faqs: genFaqs(seed),
+    nearbyRoutes: genNearbyRoutes(seed),
+  };
+}
+
+// ── Registry builder ─────────────────────────────────────────────
+
+function addAlias(map: Map<string, StaticDestinationRecord>, key: string, record: StaticDestinationRecord): void {
+  const alias = toSlug(key);
+  if (!alias || map.has(alias)) return;
+  map.set(alias, record);
+}
+
+function buildRegistry(seeds: DestinationSeed[], origin: OriginSeed = DEFAULT_ORIGIN): RegistryMaps {
+  const byCitySlug = new Map<string, StaticDestinationRecord>();
+  const byCountrySlug = new Map<string, StaticDestinationRecord[]>();
+  const byCode = new Map<string, StaticDestinationRecord>();
+
+  for (const seed of seeds) {
+    const record = buildRecord(seed, origin);
+
+    byCitySlug.set(seed.slug, record);
+    byCode.set(seed.code.toUpperCase(), record);
+
+    addAlias(byCitySlug, seed.city, record);
+    addAlias(byCitySlug, seed.code, record);
+
+    for (const alias of seed.aliases ?? []) {
+      addAlias(byCitySlug, alias, record);
     }
+
+    const countrySlug = toSlug(seed.country);
+    const currentCountryRecords = byCountrySlug.get(countrySlug) ?? [];
+    currentCountryRecords.push(record);
+    byCountrySlug.set(countrySlug, currentCountryRecords);
+  }
+
+  return { byCitySlug, byCountrySlug, byCode };
 }
+
+const REGISTRY = buildRegistry(DESTINATION_SEEDS);
 
 // ── Public API ───────────────────────────────────────────────────
-export function getDestinationBySlug(s: string): DestinationBundle | undefined {
-    return REGISTRY.get(s.toLowerCase());
+
+export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined {
+  return REGISTRY.byCitySlug.get(toSlug(slug));
+}
+
+export function getDestinationByCode(code: string): StaticDestinationRecord | undefined {
+  return REGISTRY.byCode.get(code.trim().toUpperCase());
+}
+
+export function getDestinationsByCountrySlug(countrySlug: string): StaticDestinationRecord[] {
+  return REGISTRY.byCountrySlug.get(toSlug(countrySlug)) ?? [];
 }
 
 export function getAllSlugs(): string[] {
-    return Array.from(new Set(DEST_DEFS.map(d => slug(d.city))));
+  return DESTINATION_SEEDS.map((seed) => seed.slug);
 }
 
-export { POP_DEST, POP_CITIES } from "./destinationData";
+export function getAllDestinationRecords(): StaticDestinationRecord[] {
+  return DESTINATION_SEEDS.map((seed) => REGISTRY.byCitySlug.get(seed.slug)!);
+}
+
+export const POP_DEST = DESTINATION_SEEDS
+  .filter((seed) => seed.isPopularDestination)
+  .map((seed) => seed.country)
+  .filter((country, index, arr) => arr.indexOf(country) === index);
+
+export const POP_CITIES = DESTINATION_SEEDS
+  .filter((seed) => seed.isPopularCity)
+  .map((seed) => seed.city);

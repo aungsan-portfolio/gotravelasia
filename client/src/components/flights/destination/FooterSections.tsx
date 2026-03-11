@@ -2,20 +2,25 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Card, GhostBtn, Wrap, SectionTitle, SectionSub } from "./ui";
 import { ChevronDown, Plane } from "lucide-react";
-import type { DestinationInfo, FlightMeta } from "../../../data/destinationData";
+import type { DestinationPageVM } from "@/types/destination";
+
+type Props = {
+    data: DestinationPageVM;
+    popDest: string[];
+    popCities: string[];
+};
 
 function destSlug(name: string): string {
     return name.toLowerCase().replace(/\s+/g, "-");
 }
 
-const BROWSE_TABS = ["Flights to", "By cabin class", "Flights from", "Complete trip", "Popular routes", "Popular destinations"] as const;
-
-// ── §10 FAQ ──────────────────────────────────────────────────────
-function FaqItem({ q, a }: { q: string, a: string }) {
+// ── FAQ Accordion ────────────────────────────────────────────────
+function FaqItem({ q, a }: { q: string; a: string }) {
     const [open, setOpen] = useState(false);
     return (
         <div className="border-b border-white/10 last:border-none">
             <button
+                type="button"
                 onClick={() => setOpen(o => !o)}
                 className="w-full flex justify-between items-center py-4 text-left font-semibold text-sm text-slate-100 cursor-pointer group outline-none"
             >
@@ -24,52 +29,21 @@ function FaqItem({ q, a }: { q: string, a: string }) {
                     <ChevronDown size={20} />
                 </div>
             </button>
-            <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-48 opacity-100 pb-4" : "max-h-0 opacity-0 pb-0"
-                    }`}
-            >
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-48 opacity-100 pb-4" : "max-h-0 opacity-0 pb-0"}`}>
                 <div className="text-[13px] text-slate-400 leading-relaxed font-medium pr-8">{a}</div>
             </div>
         </div>
     );
 }
 
-function FaqSection({ dest, faqs }: { dest: DestinationInfo; faqs: { q: string, a: string }[] }) {
-    const [showAll, setShowAll] = useState(false);
-    const visible = showAll ? faqs : faqs.slice(0, 5);
+// ── Browse Section ───────────────────────────────────────────────
+const BROWSE_TABS = ["Flights to", "By cabin class", "Flights from", "Popular routes", "Popular destinations"] as const;
 
-    return (
-        <Wrap className="py-10">
-            <div id="faq-section">
-                <SectionTitle>FAQs about flying to {dest.city}</SectionTitle>
-            </div>
-
-            <Card className="px-6 py-2">
-                {visible.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
-            </Card>
-
-            {!showAll && faqs.length > 5 && (
-                <div className="flex justify-center mt-6">
-                    <button
-                        onClick={() => setShowAll(true)}
-                        className="px-6 py-2.5 rounded-full border border-violet-500/30 bg-violet-600/10 text-violet-300 text-xs font-bold cursor-pointer hover:bg-violet-600/20 hover:border-violet-500/50 transition-all flex items-center gap-2"
-                    >
-                        <span>See {faqs.length - 5} more FAQs</span>
-                        <ChevronDown size={14} />
-                    </button>
-                </div>
-            )}
-        </Wrap>
-    );
-}
-
-// ── §11 Browse section ───────────────────────────────────────────
-function BrowseSection({ dest }: { dest: DestinationInfo }) {
-    const city = dest.city;
-    const airport = dest.airport;
+function BrowseSection({ data }: { data: DestinationPageVM }) {
+    const city = data.dest.city;
     const [tab, setTab] = useState<typeof BROWSE_TABS[number]>("Flights to");
 
-    const contentMap: Record<string, { h: string, links: string[] }[]> = {
+    const contentMap: Record<string, { h: string; links: string[] }[]> = {
         "Flights to": [
             { h: "Best flight deals", links: [`Phuket to ${city}`, `Ko Samui to ${city}`, `Chiang Mai to ${city}`, `Hat Yai to ${city}`] },
             { h: "Popular routes", links: [`Bangkok BKK to ${city}`, `Bangkok DMK to ${city}`, `Chiang Rai to ${city}`, `Krabi to ${city}`] },
@@ -85,15 +59,10 @@ function BrowseSection({ dest }: { dest: DestinationInfo }) {
             { h: "From nearby", links: [`Kuala Lumpur to ${city}`, `Singapore to ${city}`, `Hong Kong to ${city}`, `Hanoi to ${city}`] },
             { h: "From far", links: [`Tokyo to ${city}`, `Seoul to ${city}`, `Mumbai to ${city}`, `Dubai to ${city}`] },
         ],
-        "Complete trip": [
-            { h: "Hotels", links: [`Hotels near ${airport}`, `${city} city hotels`, `${city} budget hotels`, `${city} luxury hotels`] },
-            { h: "Transport", links: [`Car hire at ${airport}`, `Airport taxi ${city}`, `Private transfer ${city}`, `Public transport ${city}`] },
-            { h: "Activities", links: [`Top things to do in ${city}`, `${city} day tours`, `${city} food tours`, `${city} attractions`] },
-        ],
         "Popular routes": [
             { h: "Direct flights", links: [`Bangkok → ${city} nonstop`, `Chiang Mai → ${city}`, `Phuket → ${city}`, `Krabi → ${city}`] },
-            { h: "Budget routes", links: [`Cheapest to ${city}`, `Low-cost carriers`, `Off-peak deals`, `Student fares`] },
-            { h: "Premium routes", links: [`Business class to ${city}`, `First class to ${city}`, `Thai Airways premium`, `ANA premium`] },
+            { h: "Budget routes", links: [`Cheapest to ${city}`, "Low-cost carriers", "Off-peak deals", "Student fares"] },
+            { h: "Premium routes", links: [`Business class to ${city}`, `First class to ${city}`, "Thai Airways premium", "ANA premium"] },
         ],
         "Popular destinations": [
             { h: "Southeast Asia", links: ["Flights to Singapore", "Flights to Bangkok", "Flights to Kuala Lumpur", "Flights to Manila"] },
@@ -128,10 +97,7 @@ function BrowseSection({ dest }: { dest: DestinationInfo }) {
                         <div className="text-xs font-bold text-slate-100 mb-4">{g.h}</div>
                         <div className="flex flex-col">
                             {g.links.map(l => (
-                                <div
-                                    key={l}
-                                    className="py-2.5 border-b border-white/10 last:border-none text-xs font-medium text-violet-400 cursor-pointer hover:text-fuchsia-400 transition-colors flex items-center gap-2 group"
-                                >
+                                <div key={l} className="py-2.5 border-b border-white/10 last:border-none text-xs font-medium text-violet-400 cursor-pointer hover:text-fuchsia-400 transition-colors flex items-center gap-2 group">
                                     <span className="text-violet-600 group-hover:text-fuchsia-500 transition-colors text-[10px]">▶</span>
                                     <span>{l}</span>
                                 </div>
@@ -144,7 +110,7 @@ function BrowseSection({ dest }: { dest: DestinationInfo }) {
     );
 }
 
-// ── §12 Fly with GoTravel ────────────────────────────────────────
+// ── Fly With GoTravel / Trust badges ─────────────────────────────
 function FlyWithGoTravel() {
     return (
         <Wrap className="py-16">
@@ -173,40 +139,33 @@ function FlyWithGoTravel() {
     );
 }
 
-// ── §13 Footer ───────────────────────────────────────────────────
-function Footer({ meta, popDest, popCities }: { meta: FlightMeta, popDest: string[], popCities: string[] }) {
+// ── Footer ───────────────────────────────────────────────────────
+function Footer({ data, popDest, popCities }: Props) {
     return (
         <div className="bg-[#05030f] border-t border-white/10 pt-16 pb-10 px-6 mt-10">
             <div className="max-w-[1100px] mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
+                    {/* Routes */}
+                    {data.nearbyRoutes.length > 0 && (
+                        <div>
+                            <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-6 border-b border-white/5 pb-3">Routes Worth Comparing</div>
+                            <div className="flex flex-col gap-2.5">
+                                {data.nearbyRoutes.map(r => (
+                                    <Link key={r.href} href={r.href} className="text-xs font-semibold text-violet-400/80 cursor-pointer hover:text-slate-100 transition-colors">
+                                        Flights to {r.city} ({r.code}) {r.tag ? `· ${r.tag}` : ""}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Popular Destinations */}
                     <div>
                         <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-6 border-b border-white/5 pb-3">Popular Destinations</div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                             {popDest.map(d => (
-                                <Link
-                                    key={d}
-                                    href={`/flights/to/${destSlug(d)}`}
-                                    className="text-xs font-semibold text-violet-400/80 cursor-pointer hover:text-slate-100 transition-colors line-clamp-1"
-                                >
+                                <Link key={d} href={`/flights/to/${destSlug(d)}`} className="text-xs font-semibold text-violet-400/80 cursor-pointer hover:text-slate-100 transition-colors line-clamp-1">
                                     Flights to {d}
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Popular Cities */}
-                    <div>
-                        <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-6 border-b border-white/5 pb-3">Popular Cities</div>
-                        <div className="flex flex-col gap-2.5">
-                            {popCities.map(c => (
-                                <Link
-                                    key={c}
-                                    href={`/flights/to/${destSlug(c)}`}
-                                    className="text-xs font-semibold text-violet-400/80 cursor-pointer hover:text-slate-100 transition-colors"
-                                >
-                                    Flights to {c}
                                 </Link>
                             ))}
                         </div>
@@ -228,7 +187,7 @@ function Footer({ meta, popDest, popCities }: { meta: FlightMeta, popDest: strin
                             Southeast Asia's flight comparison platform. Free to use. Real prices from 900+ travel sites.
                         </div>
                         <div className="text-[11px] text-slate-600 font-bold flex items-center gap-1.5">
-                            <span>🔒</span> Prices last updated: {meta.updated}
+                            <span>🔒</span> {data.updatedAt ? `Prices last updated: ${new Date(data.updatedAt).toLocaleString()}` : "Showing saved route data"}
                         </div>
                     </div>
                 </div>
@@ -245,21 +204,22 @@ function Footer({ meta, popDest, popCities }: { meta: FlightMeta, popDest: strin
 }
 
 // ── Combined export ──────────────────────────────────────────────
-export interface FooterSectionsProps {
-    dest: DestinationInfo;
-    meta: FlightMeta;
-    faqs: { q: string, a: string }[];
-    popDest: string[];
-    popCities: string[];
-}
-
-export default function FooterSections({ dest, meta, faqs, popDest, popCities }: FooterSectionsProps) {
+export default function FooterSections({ data, popDest, popCities }: Props) {
     return (
         <>
-            <FaqSection dest={dest} faqs={faqs} />
-            <BrowseSection dest={dest} />
+            {/* FAQ section */}
+            <Wrap className="py-10">
+                <div id="faq-section">
+                    <SectionTitle>FAQs about flying to {data.dest.city}</SectionTitle>
+                </div>
+                <Card className="px-6 py-2">
+                    {data.faqs.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
+                </Card>
+            </Wrap>
+
+            <BrowseSection data={data} />
             <FlyWithGoTravel />
-            <Footer meta={meta} popDest={popDest} popCities={popCities} />
+            <Footer data={data} popDest={popDest} popCities={popCities} />
         </>
     );
 }

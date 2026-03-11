@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Plane } from "lucide-react";
+import * as React from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -12,7 +12,6 @@ export function cn(...inputs: ClassValue[]) {
 export interface WrapProps {
     children: ReactNode;
     className?: string;
-    py?: number;
 }
 
 export const Wrap = ({ children, className = "" }: WrapProps) => (
@@ -60,23 +59,37 @@ export const StopBadge = ({ stops }: { stops: number }) => {
 };
 
 // ── Buttons ──────────────────────────────────────────────────────
+// Legacy button-only props (kept for backward compat with GhostBtn)
 export interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     children?: ReactNode;
-    ch?: ReactNode; // Legacy support from JSX version
+    ch?: ReactNode;
     className?: string;
 }
 
-export const AmberBtn = ({ children, ch, className = "", ...props }: BtnProps) => (
-    <button
-        className={cn(
-            "bg-amber-500 text-[#0b0719] font-black rounded-xl hover:bg-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all active:scale-[0.98]",
-            className
-        )}
-        {...props}
-    >
-        {children || ch}
-    </button>
-);
+// Polymorphic AmberBtn — renders <button> by default, <a> when as="a"
+type AmberBtnBase = { children?: ReactNode; ch?: ReactNode; className?: string };
+type AmberBtnButton = AmberBtnBase & React.ButtonHTMLAttributes<HTMLButtonElement> & { as?: "button" };
+type AmberBtnAnchor = AmberBtnBase & React.AnchorHTMLAttributes<HTMLAnchorElement> & { as: "a" };
+type AmberBtnProps = AmberBtnButton | AmberBtnAnchor;
+
+const amberBtnStyles = "bg-amber-500 text-[#0b0719] font-black rounded-xl hover:bg-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all active:scale-[0.98]";
+
+export function AmberBtn(props: AmberBtnProps) {
+    if (props.as === "a") {
+        const { as: _, children, ch, className = "", ...anchorProps } = props;
+        return (
+            <a className={cn(amberBtnStyles, className)} {...anchorProps}>
+                {children || ch}
+            </a>
+        );
+    }
+    const { as: _, children, ch, className = "", ...buttonProps } = props;
+    return (
+        <button className={cn(amberBtnStyles, className)} {...buttonProps}>
+            {children || ch}
+        </button>
+    );
+}
 
 export interface GhostBtnProps extends BtnProps {
     active?: boolean;

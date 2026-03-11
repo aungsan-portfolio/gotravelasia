@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { AmberBtn } from "./ui";
 import { ArrowLeftRight, Search } from "lucide-react";
-import type { DestinationInfo, FlightMeta } from "../../../data/destinationData";
+import type { DestinationPageVM } from "@/types/destination";
 
-export interface HeroSearchProps {
-    dest: DestinationInfo;
-    meta: FlightMeta;
-}
+type Props = { data: DestinationPageVM };
 
-export default function HeroSearch({ dest, meta }: HeroSearchProps) {
+export default function HeroSearch({ data }: Props) {
     const [tripType, setTripType] = useState("Return");
-    const [from, setFrom] = useState("Bangkok (BKK)");
-    const [to, setTo] = useState(`${dest.city} (${dest.code})`);
+    const [from, setFrom] = useState(`${data.origin.city} (${data.origin.code})`);
+    const [to, setTo] = useState(`${data.dest.city} (${data.dest.code})`);
     const [dep, setDep] = useState("");
     const [ret, setRet] = useState("");
     const [pax, setPax] = useState(1);
@@ -34,9 +31,9 @@ export default function HeroSearch({ dest, meta }: HeroSearchProps) {
                 <div className="flex gap-1.5 text-xs text-slate-500 mb-4 items-center font-medium">
                     <span className="text-violet-400 hover:text-violet-300 cursor-pointer transition-colors">Home</span>
                     <span>›</span>
-                    <span className="text-violet-400 hover:text-violet-300 cursor-pointer transition-colors">{dest.country}</span>
+                    <span className="text-violet-400 hover:text-violet-300 cursor-pointer transition-colors">{data.dest.country ?? "Destination"}</span>
                     <span>›</span>
-                    <span className="text-slate-300">Cheap flights to {dest.airport}</span>
+                    <span className="text-slate-300">Cheap flights to {data.dest.city}</span>
                 </div>
 
                 {/* Headline */}
@@ -44,12 +41,29 @@ export default function HeroSearch({ dest, meta }: HeroSearchProps) {
                     <span className="text-amber-500">✦</span> Cheap Flights
                 </div>
                 <h1 className="text-[42px] font-black tracking-tight leading-tight mb-1.5 text-slate-100">
-                    <span className="text-amber-500 font-mono">฿{meta.cheapestOneWay.toLocaleString()}+</span>{" "}
-                    Cheap flights to {dest.city}
+                    <span className="text-amber-500 font-mono">
+                        ฿{data.lowestFare?.toLocaleString() ?? "—"}+
+                    </span>{" "}
+                    Cheap flights to {data.dest.city}
                 </h1>
                 <p className="text-slate-400 text-xs mb-6 font-medium">
-                    Cheapest one-way found in last 72 hrs. Fares subject to change.
+                    {data.updatedAt
+                        ? `Fares updated ${new Date(data.updatedAt).toLocaleString()}`
+                        : "Showing saved route data"}
+                    . Fares subject to change.
                 </p>
+
+                {data.isLiveRefreshing && (
+                    <div className="mb-4 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2.5 text-xs text-cyan-200 font-medium">
+                        ✨ Refreshing live fares...
+                    </div>
+                )}
+
+                {data.liveFailed && (
+                    <div className="mb-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-2.5 text-xs text-amber-200 font-medium">
+                        Live fares are temporarily unavailable. Showing saved route data.
+                    </div>
+                )}
 
                 {/* Widget */}
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
@@ -58,10 +72,11 @@ export default function HeroSearch({ dest, meta }: HeroSearchProps) {
                         {["Return", "One-way", "Multi-city"].map(t => (
                             <button
                                 key={t}
+                                type="button"
                                 onClick={() => setTripType(t)}
                                 className={`px-3.5 py-1.5 rounded-full border text-xs font-semibold cursor-pointer transition-all ${tripType === t
-                                        ? "border-violet-600 bg-violet-600/20 text-violet-300"
-                                        : "border-white/10 bg-transparent text-slate-400 hover:border-white/20"
+                                    ? "border-violet-600 bg-violet-600/20 text-violet-300"
+                                    : "border-white/10 bg-transparent text-slate-400 hover:border-white/20"
                                     }`}
                             >
                                 {t}
@@ -83,6 +98,7 @@ export default function HeroSearch({ dest, meta }: HeroSearchProps) {
 
                         {/* Swap */}
                         <button
+                            type="button"
                             onClick={swap}
                             className="w-9 h-9 shrink-0 rounded-full bg-violet-600/20 border border-white/10 flex items-center justify-center text-violet-400 cursor-pointer hover:bg-violet-600/30 transition-colors z-10 -my-3 lg:my-0 lg:-mx-4"
                         >
@@ -106,22 +122,19 @@ export default function HeroSearch({ dest, meta }: HeroSearchProps) {
                                 type="date"
                                 value={dep}
                                 onChange={e => setDep(e.target.value)}
-                                className={`bg-transparent border-none outline-none text-xs font-bold w-full [color-scheme:dark] ${dep ? "text-slate-100" : "text-slate-500"
-                                    }`}
+                                className={`bg-transparent border-none outline-none text-xs font-bold w-full [color-scheme:dark] ${dep ? "text-slate-100" : "text-slate-500"}`}
                             />
                         </div>
 
                         {/* Return */}
-                        <div className={`bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 w-full lg:flex-1 transition-all ${tripType === "One-way" ? "opacity-40 grayscale" : "focus-within:border-violet-500/50"
-                            }`}>
+                        <div className={`bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 w-full lg:flex-1 transition-all ${tripType === "One-way" ? "opacity-40 grayscale" : "focus-within:border-violet-500/50"}`}>
                             <div className="text-[9px] text-slate-500 font-semibold uppercase tracking-wider mb-1">Return</div>
                             <input
                                 type="date"
                                 value={ret}
                                 onChange={e => setRet(e.target.value)}
                                 disabled={tripType === "One-way"}
-                                className={`bg-transparent border-none outline-none text-xs font-bold w-full [color-scheme:dark] ${ret ? "text-slate-100" : "text-slate-500"
-                                    } ${tripType === "One-way" ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                className={`bg-transparent border-none outline-none text-xs font-bold w-full [color-scheme:dark] ${ret ? "text-slate-100" : "text-slate-500"} ${tripType === "One-way" ? "cursor-not-allowed" : "cursor-pointer"}`}
                             />
                         </div>
 
@@ -135,15 +148,9 @@ export default function HeroSearch({ dest, meta }: HeroSearchProps) {
                     {/* Pax / cabin */}
                     <div className="flex flex-wrap gap-2 items-center text-xs text-slate-400 mt-4">
                         <div className="flex gap-1.5 items-center bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
-                            <button
-                                onClick={() => setPax(p => Math.max(1, p - 1))}
-                                className="w-[22px] h-[22px] rounded border border-white/10 text-violet-400 flex items-center justify-center hover:bg-white/10 transition-colors"
-                            >-</button>
+                            <button type="button" onClick={() => setPax(p => Math.max(1, p - 1))} className="w-[22px] h-[22px] rounded border border-white/10 text-violet-400 flex items-center justify-center hover:bg-white/10 transition-colors">-</button>
                             <span className="text-slate-100 font-bold min-w-[16px] text-center">{pax}</span>
-                            <button
-                                onClick={() => setPax(p => Math.min(9, p + 1))}
-                                className="w-[22px] h-[22px] rounded border border-white/10 text-violet-400 flex items-center justify-center hover:bg-white/10 transition-colors"
-                            >+</button>
+                            <button type="button" onClick={() => setPax(p => Math.min(9, p + 1))} className="w-[22px] h-[22px] rounded border border-white/10 text-violet-400 flex items-center justify-center hover:bg-white/10 transition-colors">+</button>
                             <span className="ml-1">{pax === 1 ? "adult" : "adults"}</span>
                         </div>
 
