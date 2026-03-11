@@ -42,13 +42,17 @@ export default function DestinationLandingPage() {
             </Helmet>
 
             {/* §0 Sticky navigation */}
-            <Navbar dest={data.dest.city} origin={data.origin.city} />
+            <Navbar dest={data.dest.city} destCode={data.dest.code} origin={data.origin.city} />
 
             {/* §1 Hero + search widget */}
-            <HeroSearch dest={data.dest} meta={data.meta} />
+            <div id="hero-search">
+                <HeroSearch dest={data.dest} meta={data.meta} />
+            </div>
 
             {/* §2 5-tab flight deal cards */}
-            <FlightDeals dest={data.dest} meta={data.meta} deals={data.deals} />
+            <div id="flight-deals">
+                <FlightDeals dest={data.dest} meta={data.meta} deals={data.deals} />
+            </div>
 
             {/* §3 + §4 Stat cards + Fare Finder table */}
             <FareFinder meta={data.meta} rows={data.fareTable} />
@@ -64,13 +68,15 @@ export default function DestinationLandingPage() {
             />
 
             {/* §7 + §8 Airlines + weather charts */}
-            <AirlinesWeather
-                dest={data.dest}
-                popAirlines={data.popAirlines}
-                cheapAl={data.cheapAl}
-                rainfall={data.rainfall}
-                temperature={data.temperature}
-            />
+            <div id="airlines-weather">
+                <AirlinesWeather
+                    dest={data.dest}
+                    popAirlines={data.popAirlines}
+                    cheapAl={data.cheapAl}
+                    rainfall={data.rainfall}
+                    temperature={data.temperature}
+                />
+            </div>
 
             {/* §9 Airline reviews */}
             <AirlineReviews dest={data.dest} meta={data.meta} reviews={data.reviews} />

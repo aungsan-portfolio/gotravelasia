@@ -10,7 +10,7 @@ function destSlug(name: string): string {
 
 const BROWSE_TABS = ["Flights to", "By cabin class", "Flights from", "Complete trip", "Popular routes", "Popular destinations"] as const;
 
-// 10 FAQ 
+// ── §10 FAQ ──────────────────────────────────────────────────────
 function FaqItem({ q, a }: { q: string, a: string }) {
     const [open, setOpen] = useState(false);
     return (
@@ -34,13 +34,15 @@ function FaqItem({ q, a }: { q: string, a: string }) {
     );
 }
 
-function FaqSection({ faqs }: { faqs: { q: string, a: string }[] }) {
+function FaqSection({ dest, faqs }: { dest: DestinationInfo; faqs: { q: string, a: string }[] }) {
     const [showAll, setShowAll] = useState(false);
     const visible = showAll ? faqs : faqs.slice(0, 5);
 
     return (
         <Wrap className="py-10">
-            <SectionTitle>FAQs about flying to Singapore</SectionTitle>
+            <div id="faq-section">
+                <SectionTitle>FAQs about flying to {dest.city}</SectionTitle>
+            </div>
 
             <Card className="px-6 py-2">
                 {visible.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
@@ -61,25 +63,42 @@ function FaqSection({ faqs }: { faqs: { q: string, a: string }[] }) {
     );
 }
 
-// 11 Browse section 
+// ── §11 Browse section ───────────────────────────────────────────
 function BrowseSection({ dest }: { dest: DestinationInfo }) {
+    const city = dest.city;
+    const airport = dest.airport;
     const [tab, setTab] = useState<typeof BROWSE_TABS[number]>("Flights to");
 
     const contentMap: Record<string, { h: string, links: string[] }[]> = {
         "Flights to": [
-            { h: "Best flight deals", links: ["Phuket to Singapore", "Ko Samui to Singapore", "Chiang Mai to Singapore", "Hat Yai to Singapore"] },
-            { h: "Popular routes", links: ["Bangkok BKK to Singapore", "Bangkok DMK to Singapore", "Chiang Rai to Singapore", "Krabi to Singapore"] },
-            { h: "By cabin class", links: ["Economy to Singapore", "Premium Economy to Singapore", "Business Class to Singapore", "First Class to Singapore"] },
+            { h: "Best flight deals", links: [`Phuket to ${city}`, `Ko Samui to ${city}`, `Chiang Mai to ${city}`, `Hat Yai to ${city}`] },
+            { h: "Popular routes", links: [`Bangkok BKK to ${city}`, `Bangkok DMK to ${city}`, `Chiang Rai to ${city}`, `Krabi to ${city}`] },
+            { h: "By cabin class", links: [`Economy to ${city}`, `Premium Economy to ${city}`, `Business Class to ${city}`, `First Class to ${city}`] },
         ],
         "By cabin class": [
             { h: "Economy", links: ["Best economy deals", "Economy from Bangkok", "Economy from Chiang Mai", "Budget carriers"] },
             { h: "Business", links: ["Business class deals", "Lie-flat beds", "Business from BKK", "Thai Airways business"] },
-            { h: "First Class", links: ["First class Singapore Airlines", "Luxury travel", "Private suites", "Award miles"] },
+            { h: "First Class", links: [`First class to ${city}`, "Luxury travel", "Private suites", "Award miles"] },
+        ],
+        "Flights from": [
+            { h: "From Thailand", links: [`Bangkok to ${city}`, `Chiang Mai to ${city}`, `Phuket to ${city}`, `Hat Yai to ${city}`] },
+            { h: "From nearby", links: [`Kuala Lumpur to ${city}`, `Singapore to ${city}`, `Hong Kong to ${city}`, `Hanoi to ${city}`] },
+            { h: "From far", links: [`Tokyo to ${city}`, `Seoul to ${city}`, `Mumbai to ${city}`, `Dubai to ${city}`] },
         ],
         "Complete trip": [
-            { h: "Hotels", links: ["Hotels near Changi", "Singapore city hotels", "Marina Bay hotels", "Budget hotels SIN"] },
-            { h: "Transport", links: ["Car hire at Changi", "MRT from Changi", "Airport taxi", "Private transfer"] },
-            { h: "Activities", links: ["Gardens by the Bay", "Marina Bay Sands", "Sentosa Island", "Singapore Zoo"] },
+            { h: "Hotels", links: [`Hotels near ${airport}`, `${city} city hotels`, `${city} budget hotels`, `${city} luxury hotels`] },
+            { h: "Transport", links: [`Car hire at ${airport}`, `Airport taxi ${city}`, `Private transfer ${city}`, `Public transport ${city}`] },
+            { h: "Activities", links: [`Top things to do in ${city}`, `${city} day tours`, `${city} food tours`, `${city} attractions`] },
+        ],
+        "Popular routes": [
+            { h: "Direct flights", links: [`Bangkok → ${city} nonstop`, `Chiang Mai → ${city}`, `Phuket → ${city}`, `Krabi → ${city}`] },
+            { h: "Budget routes", links: [`Cheapest to ${city}`, `Low-cost carriers`, `Off-peak deals`, `Student fares`] },
+            { h: "Premium routes", links: [`Business class to ${city}`, `First class to ${city}`, `Thai Airways premium`, `ANA premium`] },
+        ],
+        "Popular destinations": [
+            { h: "Southeast Asia", links: ["Flights to Singapore", "Flights to Bangkok", "Flights to Kuala Lumpur", "Flights to Manila"] },
+            { h: "East Asia", links: ["Flights to Tokyo", "Flights to Seoul", "Flights to Hong Kong", "Flights to Taipei"] },
+            { h: "South Asia", links: ["Flights to Mumbai", "Flights to Dubai", "Flights to Yangon", "Flights to Phnom Penh"] },
         ],
     };
 
@@ -125,7 +144,7 @@ function BrowseSection({ dest }: { dest: DestinationInfo }) {
     );
 }
 
-// 12 Fly with GoTravel 
+// ── §12 Fly with GoTravel ────────────────────────────────────────
 function FlyWithGoTravel() {
     return (
         <Wrap className="py-16">
@@ -154,7 +173,7 @@ function FlyWithGoTravel() {
     );
 }
 
-// 13 Footer 
+// ── §13 Footer ───────────────────────────────────────────────────
 function Footer({ meta, popDest, popCities }: { meta: FlightMeta, popDest: string[], popCities: string[] }) {
     return (
         <div className="bg-[#05030f] border-t border-white/10 pt-16 pb-10 px-6 mt-10">
@@ -225,7 +244,7 @@ function Footer({ meta, popDest, popCities }: { meta: FlightMeta, popDest: strin
     );
 }
 
-// Combined export 
+// ── Combined export ──────────────────────────────────────────────
 export interface FooterSectionsProps {
     dest: DestinationInfo;
     meta: FlightMeta;
@@ -237,7 +256,7 @@ export interface FooterSectionsProps {
 export default function FooterSections({ dest, meta, faqs, popDest, popCities }: FooterSectionsProps) {
     return (
         <>
-            <FaqSection faqs={faqs} />
+            <FaqSection dest={dest} faqs={faqs} />
             <BrowseSection dest={dest} />
             <FlyWithGoTravel />
             <Footer meta={meta} popDest={popDest} popCities={popCities} />
