@@ -4,7 +4,7 @@ import StickyCTA from "./StickyCTA";
 import FloatingSearchBar from "./FloatingSearchBar";
 import MobileNav from "./MobileNav";
 import CookieConsent from "./CookieConsent";
-import Footer from "./Footer";
+import Footer from "./footer";
 // Language switcher removed — English-only for international Asia market
 import SignInModal from "./SignInModal";
 import TripPlannerChat from "./TripPlannerChat";
