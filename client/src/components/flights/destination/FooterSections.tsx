@@ -1,6 +1,6 @@
 // client/src/components/flights/destination/FooterSections.tsx
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import type { DestinationPageVM } from "@/types/destination";
 
@@ -12,10 +12,38 @@ export default function FooterSections({ data }: FooterSectionsProps) {
   const { footer, route } = data;
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
 
+  const faqSchemaJson = useMemo(() => {
+    const entities = footer.faqs
+      .filter((faq) => faq.q?.trim() && faq.a?.trim())
+      .map((faq) => ({
+        "@type": "Question",
+        name: faq.q,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.a,
+        },
+      }));
+
+    if (!entities.length) return null;
+
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: entities,
+    });
+  }, [footer.faqs]);
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 pb-16 sm:px-6 lg:px-8">
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+      <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
+        {faqSchemaJson ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: faqSchemaJson }}
+          />
+        ) : null}
+
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5 flex-1 lg:max-w-[55%]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
@@ -79,7 +107,7 @@ export default function FooterSections({ data }: FooterSectionsProps) {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5 flex-1 lg:max-w-[45%]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-white">Frequently asked questions</p>
@@ -92,6 +120,8 @@ export default function FooterSections({ data }: FooterSectionsProps) {
           <div className="mt-5 grid gap-3">
             {footer.faqs.map((faq, index) => {
               const open = openFaqIndex === index;
+              const triggerId = `faq-trigger-${index}`;
+              const panelId = `faq-panel-${index}`;
 
               return (
                 <div
@@ -101,6 +131,9 @@ export default function FooterSections({ data }: FooterSectionsProps) {
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(open ? -1 : index)}
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    id={triggerId}
                     className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left"
                   >
                     <span className="text-sm font-medium text-white">{faq.q}</span>
@@ -110,7 +143,12 @@ export default function FooterSections({ data }: FooterSectionsProps) {
                   </button>
 
                   {open ? (
-                    <div className="border-t border-white/10 px-4 py-4">
+                    <div 
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={triggerId}
+                      className="border-t border-white/10 px-4 py-4"
+                    >
                       <p className="text-sm leading-7 text-white/70">{faq.a}</p>
                     </div>
                   ) : null}

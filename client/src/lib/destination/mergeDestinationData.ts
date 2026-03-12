@@ -1,5 +1,4 @@
 // client/src/lib/destination/mergeDestinationData.ts
-
 import type { StaticDestinationRecord } from "@/types/destination";
 
 type DeepPartial<T> = {
@@ -15,14 +14,6 @@ export type MergeDestinationDataOptions = {
 };
 
 type MergeableRecord = DeepPartial<StaticDestinationRecord> | null | undefined;
-
-const DEAL_TABS: Array<keyof StaticDestinationRecord["deals"]> = [
-  "cheapest",
-  "fastest",
-  "bestValue",
-  "weekend",
-  "premium",
-];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -50,7 +41,7 @@ function pickNumber(staticValue: number, liveValue: unknown): number {
 
 function pickNullableString(
   staticValue: string | null | undefined,
-  liveValue: unknown
+  liveValue: unknown,
 ): string | null | undefined {
   if (liveValue === null) return null;
   if (isNonEmptyString(liveValue)) return liveValue.trim();
@@ -59,7 +50,7 @@ function pickNullableString(
 
 function mergeShallowObject<T extends Record<string, unknown>>(
   staticObj: T,
-  liveObj: DeepPartial<T> | undefined
+  liveObj: DeepPartial<T> | undefined,
 ): T {
   if (!liveObj) return clone(staticObj);
 
@@ -88,8 +79,10 @@ function mergeShallowObject<T extends Record<string, unknown>>(
 }
 
 function mergeDeal(
-  staticDeal: StaticDestinationRecord["deals"][keyof StaticDestinationRecord["deals"]][number] | undefined,
-  liveDeal: DeepPartial<StaticDestinationRecord["deals"][keyof StaticDestinationRecord["deals"]][number]>
+  staticDeal:
+    | StaticDestinationRecord["deals"][string][number]
+    | undefined,
+  liveDeal: DeepPartial<StaticDestinationRecord["deals"][string][number]>,
 ) {
   const base = staticDeal
     ? clone(staticDeal)
@@ -100,9 +93,12 @@ function mergeDeal(
         a1: null,
         airline: "",
         airlineCode: undefined,
+        logoUrl: undefined,
+        bookingUrl: undefined,
         stops: 0,
         duration: "",
         price: 0,
+        badge: undefined,
         tag: undefined,
       };
 
@@ -113,25 +109,22 @@ function mergeDeal(
     d1: pickString(base.d1, liveDeal.d1),
     a1: pickNullableString(base.a1, liveDeal.a1) ?? null,
     airline: pickString(base.airline, liveDeal.airline),
-    airlineCode: pickNullableString(base.airlineCode, liveDeal.airlineCode) ?? undefined,
+    airlineCode:
+      pickNullableString(base.airlineCode, liveDeal.airlineCode) ?? undefined,
+    logoUrl: pickNullableString(base.logoUrl, liveDeal.logoUrl) ?? undefined,
+    bookingUrl:
+      pickNullableString(base.bookingUrl, liveDeal.bookingUrl) ?? undefined,
     stops: pickNumber(base.stops, liveDeal.stops),
     duration: pickString(base.duration, liveDeal.duration),
     price: pickNumber(base.price, liveDeal.price),
+    badge: pickNullableString(base.badge, liveDeal.badge) ?? undefined,
     tag: pickNullableString(base.tag, liveDeal.tag) ?? undefined,
-    logoUrl: pickNullableString(
-      (base as { logoUrl?: string }).logoUrl,
-      (liveDeal as { logoUrl?: string }).logoUrl
-    ) ?? undefined,
-    bookingUrl: pickNullableString(
-      (base as { bookingUrl?: string }).bookingUrl,
-      (liveDeal as { bookingUrl?: string }).bookingUrl
-    ) ?? undefined,
   };
 }
 
 function mergeFareEntry(
   staticEntry: StaticDestinationRecord["fareTable"][number] | undefined,
-  liveEntry: DeepPartial<StaticDestinationRecord["fareTable"][number]>
+  liveEntry: DeepPartial<StaticDestinationRecord["fareTable"][number]>,
 ) {
   const base = staticEntry
     ? clone(staticEntry)
@@ -150,8 +143,9 @@ function mergeFareEntry(
         dur2: undefined,
         airline: "",
         airlineCode: undefined,
-        price: 0,
+        logoUrl: undefined,
         bookingUrl: undefined,
+        price: 0,
       };
 
   return {
@@ -174,24 +168,22 @@ function mergeFareEntry(
           : base.s2 ?? null,
     dur2: pickNullableString(base.dur2, liveEntry.dur2) ?? undefined,
     airline: pickString(base.airline, liveEntry.airline),
-    airlineCode: pickNullableString(base.airlineCode, liveEntry.airlineCode) ?? undefined,
+    airlineCode:
+      pickNullableString(base.airlineCode, liveEntry.airlineCode) ?? undefined,
+    logoUrl: pickNullableString(base.logoUrl, liveEntry.logoUrl) ?? undefined,
+    bookingUrl:
+      pickNullableString(base.bookingUrl, liveEntry.bookingUrl) ?? undefined,
     price: pickNumber(base.price, liveEntry.price),
-    logoUrl: pickNullableString(
-      (base as { logoUrl?: string }).logoUrl,
-      (liveEntry as { logoUrl?: string }).logoUrl
-    ) ?? undefined,
-    bookingUrl: pickNullableString(
-      (base as { bookingUrl?: string }).bookingUrl,
-      (liveEntry as { bookingUrl?: string }).bookingUrl
-    ) ?? undefined,
   };
 }
 
 function mergePriceMonths(
   staticRows: StaticDestinationRecord["priceMonths"],
-  liveRows: DeepPartial<StaticDestinationRecord["priceMonths"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["priceMonths"]> | undefined,
 ): StaticDestinationRecord["priceMonths"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["priceMonths"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["priceMonths"])) {
+    return clone(staticRows);
+  }
 
   return (liveRows as Array<DeepPartial<StaticDestinationRecord["priceMonths"][number]>>)
     .map((row, index) => {
@@ -201,6 +193,7 @@ function mergePriceMonths(
       return {
         month: pickString(fallback.month, row.month),
         value: pickNumber(fallback.value, row.value),
+        label: pickNullableString(fallback.label, row.label) ?? undefined,
       };
     })
     .filter(Boolean) as StaticDestinationRecord["priceMonths"];
@@ -208,18 +201,24 @@ function mergePriceMonths(
 
 function mergeHeatmap(
   staticRows: StaticDestinationRecord["heatmap"],
-  liveRows: DeepPartial<StaticDestinationRecord["heatmap"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["heatmap"]> | undefined,
 ): StaticDestinationRecord["heatmap"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["heatmap"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["heatmap"])) {
+    return clone(staticRows);
+  }
 
   return (liveRows as Array<DeepPartial<StaticDestinationRecord["heatmap"][number]>>)
     .map((row, rowIndex) => {
       const fallback = staticRows[rowIndex];
       if (!fallback) return null;
 
-      const values =
-        hasItems(row.values as typeof fallback.values)
-          ? row.values!.map((cell, cellIndex) => {
+      const values = hasItems(
+        row.values as StaticDestinationRecord["heatmap"][number]["values"],
+      )
+        ? (row.values as Array<
+            DeepPartial<StaticDestinationRecord["heatmap"][number]["values"][number]>
+          >)
+            .map((cell, cellIndex) => {
               const fallbackCell = fallback.values[cellIndex];
               if (!fallbackCell) return null;
 
@@ -227,12 +226,15 @@ function mergeHeatmap(
                 day: pickString(fallbackCell.day, cell.day),
                 price: pickNumber(fallbackCell.price, cell.price),
                 level:
-                  cell.level === "low" || cell.level === "mid" || cell.level === "high"
+                  cell.level === "low" ||
+                  cell.level === "mid" ||
+                  cell.level === "high"
                     ? cell.level
                     : fallbackCell.level,
               };
-            }).filter(Boolean)
-          : fallback.values;
+            })
+            .filter(Boolean)
+        : fallback.values;
 
       return {
         month: pickString(fallback.month, row.month),
@@ -244,9 +246,11 @@ function mergeHeatmap(
 
 function mergeWeather(
   staticRows: StaticDestinationRecord["weather"],
-  liveRows: DeepPartial<StaticDestinationRecord["weather"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["weather"]> | undefined,
 ): StaticDestinationRecord["weather"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["weather"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["weather"])) {
+    return clone(staticRows);
+  }
 
   return (liveRows as Array<DeepPartial<StaticDestinationRecord["weather"][number]>>)
     .map((row, index) => {
@@ -264,9 +268,11 @@ function mergeWeather(
 
 function mergeAirlines(
   staticRows: StaticDestinationRecord["airlines"],
-  liveRows: DeepPartial<StaticDestinationRecord["airlines"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["airlines"]> | undefined,
 ): StaticDestinationRecord["airlines"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["airlines"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["airlines"])) {
+    return clone(staticRows);
+  }
 
   return (liveRows as Array<DeepPartial<StaticDestinationRecord["airlines"][number]>>)
     .map((row, index) => {
@@ -276,6 +282,7 @@ function mergeAirlines(
         name: "",
         dealCount: 0,
         commonStops: 0,
+        avgPrice: 0,
         tags: [],
       };
 
@@ -283,14 +290,16 @@ function mergeAirlines(
         ...base,
         code: pickString(base.code, row.code),
         name: pickString(base.name, row.name),
+        logoUrl: pickNullableString(base.logoUrl, row.logoUrl) ?? undefined,
         dealCount: pickNumber(base.dealCount ?? 0, row.dealCount),
         commonStops: pickNumber(base.commonStops ?? 0, row.commonStops),
-        tags: hasItems(row.tags as string[]) ? [...(row.tags as string[])] : [...(base.tags || [])],
-        logoUrl: pickNullableString(
-          (base as { logoUrl?: string }).logoUrl,
-          (row as { logoUrl?: string }).logoUrl
-        ) ?? undefined,
-        confidenceLabel: pickNullableString(base.confidenceLabel, row.confidenceLabel) ?? undefined,
+        avgPrice: pickNumber(base.avgPrice ?? 0, row.avgPrice),
+        tags: hasItems(row.tags as string[])
+          ? [...(row.tags as string[])]
+          : [...(base.tags || [])],
+        confidenceLabel:
+          pickNullableString(base.confidenceLabel, row.confidenceLabel) ??
+          undefined,
       };
     })
     .filter((row) => isNonEmptyString(row.code) && isNonEmptyString(row.name));
@@ -298,9 +307,11 @@ function mergeAirlines(
 
 function mergeReviews(
   staticRows: StaticDestinationRecord["reviews"],
-  liveRows: DeepPartial<StaticDestinationRecord["reviews"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["reviews"]> | undefined,
 ): StaticDestinationRecord["reviews"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["reviews"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["reviews"])) {
+    return clone(staticRows);
+  }
 
   return (liveRows as Array<DeepPartial<StaticDestinationRecord["reviews"][number]>>)
     .map((row, index) => {
@@ -316,24 +327,25 @@ function mergeReviews(
         ...base,
         airline: pickString(base.airline, row.airline),
         airlineCode: pickString(base.airlineCode ?? "", row.airlineCode),
+        logoUrl: pickNullableString(base.logoUrl, row.logoUrl) ?? undefined,
         score: pickNumber(base.score, row.score),
-        logoUrl: pickNullableString(
-          (base as { logoUrl?: string }).logoUrl,
-          (row as { logoUrl?: string }).logoUrl
-        ) ?? undefined,
         highlights: hasItems(row.highlights as string[])
           ? (row.highlights as string[]).filter(isNonEmptyString)
           : [...base.highlights],
       };
     })
-    .filter((row) => isNonEmptyString(row.airline) && isNonEmptyString(row.airlineCode));
+    .filter(
+      (row) => isNonEmptyString(row.airline) && isNonEmptyString(row.airlineCode),
+    );
 }
 
 function mergeFaqs(
   staticRows: StaticDestinationRecord["faqs"],
-  liveRows: DeepPartial<StaticDestinationRecord["faqs"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["faqs"]> | undefined,
 ): StaticDestinationRecord["faqs"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["faqs"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["faqs"])) {
+    return clone(staticRows);
+  }
 
   return (liveRows as Array<DeepPartial<StaticDestinationRecord["faqs"][number]>>)
     .map((row, index) => {
@@ -350,14 +362,23 @@ function mergeFaqs(
 
 function mergeNearbyRoutes(
   staticRows: StaticDestinationRecord["nearbyRoutes"],
-  liveRows: DeepPartial<StaticDestinationRecord["nearbyRoutes"]> | undefined
+  liveRows: DeepPartial<StaticDestinationRecord["nearbyRoutes"]> | undefined,
 ): StaticDestinationRecord["nearbyRoutes"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["nearbyRoutes"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["nearbyRoutes"])) {
+    return clone(staticRows);
+  }
 
-  return (liveRows as Array<DeepPartial<StaticDestinationRecord["nearbyRoutes"][number]>>)
+  return (liveRows as Array<
+    DeepPartial<StaticDestinationRecord["nearbyRoutes"][number]>
+  >)
     .map((row, index) => {
       const fallback = staticRows[index];
-      const base = fallback ?? { city: "", code: "", href: "", tag: undefined };
+      const base = fallback ?? {
+        city: "",
+        code: "",
+        href: "",
+        tag: undefined,
+      };
 
       return {
         city: pickString(base.city, row.city),
@@ -366,35 +387,54 @@ function mergeNearbyRoutes(
         tag: pickNullableString(base.tag, row.tag) ?? undefined,
       };
     })
-    .filter((row) => isNonEmptyString(row.city) && isNonEmptyString(row.code) && isNonEmptyString(row.href));
+    .filter(
+      (row) =>
+        isNonEmptyString(row.city) &&
+        isNonEmptyString(row.code) &&
+        isNonEmptyString(row.href),
+    );
 }
 
 function mergeDealsSection(
   staticDeals: StaticDestinationRecord["deals"],
   liveDeals: DeepPartial<StaticDestinationRecord["deals"]> | undefined,
-  preferLive: boolean
+  preferLive: boolean,
 ): StaticDestinationRecord["deals"] {
-  const merged = clone(staticDeals);
+  const staticKeys = Object.keys(staticDeals ?? {});
+  const liveKeys = Object.keys((liveDeals as Record<string, unknown>) ?? {});
+  const keys = Array.from(new Set([...staticKeys, ...liveKeys])).sort();
 
-  for (const tab of DEAL_TABS) {
-    const staticTab = staticDeals[tab] ?? [];
-    const liveTab = liveDeals?.[tab];
+  const merged: StaticDestinationRecord["deals"] = {};
 
-    if (!hasItems(liveTab as typeof staticTab)) {
-      merged[tab] = clone(staticTab);
+  for (const key of keys) {
+    const staticTab = staticDeals[key] ?? [];
+    const liveTab = (liveDeals as Record<string, unknown> | undefined)?.[key];
+
+    if (!hasItems(liveTab as Array<unknown>)) {
+      if (hasItems(staticTab)) {
+        merged[key] = clone(staticTab);
+      }
       continue;
     }
 
-    const liveMerged = (liveTab as Array<DeepPartial<typeof staticTab[number]>>)
+    const liveMerged = (liveTab as Array<
+      DeepPartial<StaticDestinationRecord["deals"][string][number]>
+    >)
       .map((liveDeal, index) => mergeDeal(staticTab[index], liveDeal))
-      .filter((deal) => isNonEmptyString(deal.from) && isNonEmptyString(deal.to) && deal.price > 0);
+      .filter(
+        (deal) =>
+          isNonEmptyString(deal.from) &&
+          isNonEmptyString(deal.to) &&
+          deal.price > 0,
+      );
 
-    merged[tab] =
-      preferLive || !hasItems(staticTab)
-        ? liveMerged
-        : liveMerged.length > 0
-          ? liveMerged
-          : clone(staticTab);
+    if (preferLive || !hasItems(staticTab)) {
+      if (liveMerged.length > 0) merged[key] = liveMerged;
+      else if (hasItems(staticTab)) merged[key] = clone(staticTab);
+      continue;
+    }
+
+    merged[key] = liveMerged.length > 0 ? liveMerged : clone(staticTab);
   }
 
   return merged;
@@ -403,13 +443,22 @@ function mergeDealsSection(
 function mergeFareTableSection(
   staticRows: StaticDestinationRecord["fareTable"],
   liveRows: DeepPartial<StaticDestinationRecord["fareTable"]> | undefined,
-  preferLive: boolean
+  preferLive: boolean,
 ): StaticDestinationRecord["fareTable"] {
-  if (!hasItems(liveRows as StaticDestinationRecord["fareTable"])) return clone(staticRows);
+  if (!hasItems(liveRows as StaticDestinationRecord["fareTable"])) {
+    return clone(staticRows);
+  }
 
-  const merged = (liveRows as Array<DeepPartial<StaticDestinationRecord["fareTable"][number]>>)
+  const merged = (liveRows as Array<
+    DeepPartial<StaticDestinationRecord["fareTable"][number]>
+  >)
     .map((row, index) => mergeFareEntry(staticRows[index], row))
-    .filter((row) => isNonEmptyString(row.from1) && isNonEmptyString(row.to1) && row.price > 0);
+    .filter(
+      (row) =>
+        isNonEmptyString(row.from1) &&
+        isNonEmptyString(row.to1) &&
+        row.price > 0,
+    );
 
   if (!merged.length && !preferLive) return clone(staticRows);
   return merged.length ? merged : clone(staticRows);
@@ -418,7 +467,7 @@ function mergeFareTableSection(
 export function mergeDestinationData(
   staticRecord: StaticDestinationRecord,
   liveRecord?: MergeableRecord,
-  options: MergeDestinationDataOptions = {}
+  options: MergeDestinationDataOptions = {},
 ): StaticDestinationRecord {
   const preferLive = options.preferLive ?? true;
 
@@ -427,21 +476,42 @@ export function mergeDestinationData(
   }
 
   return {
-    slug: staticRecord.slug,
-    origin: mergeShallowObject(staticRecord.origin as unknown as Record<string, unknown>, liveRecord.origin) as unknown as typeof staticRecord.origin,
-    dest: mergeShallowObject(staticRecord.dest as unknown as Record<string, unknown>, liveRecord.dest) as unknown as typeof staticRecord.dest,
-    heroNote: pickString(staticRecord.heroNote ?? "", liveRecord.heroNote) || undefined,
-
+    slug: pickString(staticRecord.slug, liveRecord.slug),
+    origin: {
+      city: pickString(staticRecord.origin.city, liveRecord.origin?.city),
+      code: pickString(staticRecord.origin.code, liveRecord.origin?.code),
+      country: pickNullableString(staticRecord.origin.country, liveRecord.origin?.country) ?? undefined,
+      slug: pickNullableString(staticRecord.origin.slug, liveRecord.origin?.slug) ?? undefined,
+    },
+    dest: {
+      city: pickString(staticRecord.dest.city, liveRecord.dest?.city),
+      code: pickString(staticRecord.dest.code, liveRecord.dest?.code),
+      country: pickNullableString(staticRecord.dest.country, liveRecord.dest?.country) ?? undefined,
+      slug: pickNullableString(staticRecord.dest.slug, liveRecord.dest?.slug) ?? undefined,
+    },
+    heroNote:
+      pickNullableString(staticRecord.heroNote, liveRecord.heroNote) ?? undefined,
     deals: mergeDealsSection(staticRecord.deals, liveRecord.deals, preferLive),
-    fareTable: mergeFareTableSection(staticRecord.fareTable, liveRecord.fareTable, preferLive),
-
+    fareTable: mergeFareTableSection(
+      staticRecord.fareTable,
+      liveRecord.fareTable,
+      preferLive,
+    ),
     airlines: mergeAirlines(staticRecord.airlines, liveRecord.airlines),
-    priceMonths: mergePriceMonths(staticRecord.priceMonths, liveRecord.priceMonths),
+    priceMonths: mergePriceMonths(
+      staticRecord.priceMonths,
+      liveRecord.priceMonths,
+    ),
     heatmap: mergeHeatmap(staticRecord.heatmap, liveRecord.heatmap),
+    advanceBooking: staticRecord.advanceBooking,
+    timeOfDay: staticRecord.timeOfDay,
     reviews: mergeReviews(staticRecord.reviews, liveRecord.reviews),
     weather: mergeWeather(staticRecord.weather, liveRecord.weather),
     faqs: mergeFaqs(staticRecord.faqs, liveRecord.faqs),
-    nearbyRoutes: mergeNearbyRoutes(staticRecord.nearbyRoutes, liveRecord.nearbyRoutes),
+    nearbyRoutes: mergeNearbyRoutes(
+      staticRecord.nearbyRoutes,
+      liveRecord.nearbyRoutes,
+    ),
   };
 }
 

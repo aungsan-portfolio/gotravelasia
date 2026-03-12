@@ -1,145 +1,78 @@
 // client/src/components/flights/destination/FlightDeals.tsx
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
-import type {
-  DealTabKey,
-  DestinationPageVM,
-  NormalizedDealVM,
-} from "@/types/destination";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { DestinationPageVM, NormalizedDealVM } from "@/types/destination";
 
-type FlightDealsProps = {
-  data: DestinationPageVM;
-};
+type FlightDealsProps = { data: DestinationPageVM };
 
-const STOP_BADGE_STYLES: Record<
-  NormalizedDealVM["stopBadgeTone"],
-  string
-> = {
+const STOP_BADGE_STYLES: Record<NormalizedDealVM["stopBadgeTone"], string> = {
   green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  amber: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-  red: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+  amber: "border-amber-400/30  bg-amber-400/10  text-amber-200",
+  red:   "border-rose-400/30   bg-rose-400/10   text-rose-200",
 };
 
-function formatArrival(value: string): string {
-  return value?.trim() || "—";
-}
-
-function resolveActiveTab(
-  preferred: string,
-  tabs: DestinationPageVM["deals"]["tabs"]
-): string {
-  const preferredTab = tabs.find((tab) => tab.key === preferred && tab.count > 0);
-  if (preferredTab) return preferredTab.key;
-
-  const firstAvailable = tabs.find((tab) => tab.count > 0);
-  return firstAvailable?.key ?? preferred;
-}
-
-function DealCard({
-  deal,
-  destinationCity,
-}: {
-  deal: NormalizedDealVM;
-  destinationCity: string;
-}) {
+function DealCard({ deal, destinationCity }: { deal: NormalizedDealVM; destinationCity: string }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition hover:border-fuchsia-400/20 hover:bg-white/[0.06]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {deal.logoUrl && (
-              <img
-                src={deal.logoUrl}
-                alt={deal.airline}
-                className="h-5 w-5 rounded object-contain bg-white/10"
-              />
-            )}
-            <p className="truncate text-sm font-semibold text-white">
-              {deal.airline}
-            </p>
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]">
 
-            {deal.badge ? (
-              <span className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-2 py-0.5 text-[11px] font-medium text-fuchsia-200">
-                {deal.badge}
-              </span>
-            ) : null}
-          </div>
-
-          <p className="mt-1 text-xs text-white/55">
-            {deal.from} → {deal.to}
-          </p>
-        </div>
-
-        <div className="shrink-0 text-right">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-            Price
-          </p>
-          <p className="text-lg font-semibold text-amber-200">
-            {deal.priceLabel}
-          </p>
+      {/* Airline logo + name */}
+      <div className="flex shrink-0 items-center gap-3">
+        {deal.logoUrl && (
+          <img src={deal.logoUrl} alt={deal.airline} className="h-8 w-8 rounded-md object-contain" />
+        )}
+        <div>
+          <p className="text-sm font-semibold text-white">{deal.airline}</p>
+          {deal.badge && (
+            <span className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium leading-none ${STOP_BADGE_STYLES[deal.stopBadgeTone]}`}>
+              {deal.badge}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-[#100b21] p-3">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-            Departure
-          </p>
-          <p className="mt-1 text-sm font-medium text-white">
-            {deal.departLabel}
-          </p>
+      {/* Route + times */}
+      <div className="hidden flex-1 gap-4 sm:flex">
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-white/40">Departure</p>
+          <p className="text-sm text-white/80">{deal.departLabel}</p>
         </div>
-
-        <div className="rounded-xl border border-white/10 bg-[#100b21] p-3">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-            Arrival
-          </p>
-          <p className="mt-1 text-sm font-medium text-white">
-            {formatArrival(deal.arrivalLabel)}
-          </p>
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-white/40">Duration</p>
+          <p className="text-sm text-white/80">{deal.duration}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-white/40">Route</p>
+          <p className="text-sm text-white/80">{deal.from} → {deal.to}</p>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span
-          className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STOP_BADGE_STYLES[deal.stopBadgeTone]}`}
-        >
-          {deal.isDirect ? "Direct" : `${deal.stops} stop${deal.stops === 1 ? "" : "s"}`}
-        </span>
-
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70">
-          {deal.duration}
-        </span>
-
-        {deal.airlineCode ? (
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70">
-            {deal.airlineCode}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-white/45">Destination</p>
-          <p className="truncate text-sm text-white/75">{destinationCity}</p>
-        </div>
-
+      {/* Price + CTA */}
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <p className="text-lg font-bold text-amber-400">{deal.priceLabel}</p>
         <a
           href={deal.bookingUrl}
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-slate-900 transition hover:bg-amber-300"
         >
           Book now
         </a>
       </div>
-    </article>
+    </div>
   );
+}
+
+function resolveActiveTab(preferred: string, tabs: DestinationPageVM["deals"]["tabs"]): string {
+  const found = tabs.find((t) => t.key === preferred && t.count > 0);
+  if (found) return found.key;
+  return tabs.find((t) => t.count > 0)?.key ?? preferred;
 }
 
 export default function FlightDeals({ data }: FlightDealsProps) {
   const { deals, route } = data;
 
-  const [activeTab, setActiveTab] = useState<string>(
+  const [activeTab, setActiveTab] = useState(() =>
     resolveActiveTab(deals.activeTab, deals.tabs)
   );
 
@@ -147,140 +80,117 @@ export default function FlightDeals({ data }: FlightDealsProps) {
     setActiveTab(resolveActiveTab(deals.activeTab, deals.tabs));
   }, [deals.activeTab, deals.tabs]);
 
-  const currentTab = useMemo(() => {
-    return (
-      deals.tabs.find((tab) => tab.key === activeTab) ??
-      deals.tabs.find((tab) => tab.count > 0) ??
-      deals.tabs[0]
-    );
-  }, [activeTab, deals.tabs]);
+  const ribbonRef = useRef<HTMLDivElement>(null);
+
+  const currentTab = useMemo(
+    () => deals.tabs.find((t) => t.key === activeTab) ?? deals.tabs.find((t) => t.count > 0) ?? deals.tabs[0],
+    [activeTab, deals.tabs],
+  );
+
+  function scrollRibbon(dir: "left" | "right") {
+    ribbonRef.current?.scrollBy({ left: dir === "left" ? -220 : 220, behavior: "smooth" });
+  }
 
   const summaryItems = [
-    {
-      label: "Average price",
-      value: deals.summary.avgPriceLabel,
-    },
-    {
-      label: "Cheapest carrier",
-      value: deals.summary.cheapestCarrier ?? "—",
-    },
-    {
-      label: "Direct deals",
-      value: String(deals.summary.directCount),
-    },
+    { label: "Average price",    value: deals.summary.avgPriceLabel },
+    { label: "Cheapest carrier", value: deals.summary.cheapestCarrier ?? "—" },
+    { label: "Direct deals",     value: String(deals.summary.directCount) },
   ];
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
-            Deals
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            {deals.title}
-          </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65 sm:text-base">
-            {deals.subtitle}
-          </p>
-        </div>
+    <section className="px-4 py-8">
+      <div className="mx-auto max-w-4xl space-y-5">
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          {summaryItems.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
-            >
-              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-                {item.label}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white">
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        {deals.tabs.map((tab) => {
-          const isActive = tab.key === currentTab?.key;
-
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={[
-                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition",
-                isActive
-                  ? "border-fuchsia-400/30 bg-fuchsia-400/15 text-fuchsia-100"
-                  : "border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08]",
-              ].join(" ")}
-            >
-              <span>{tab.label}</span>
-              <span
-                className={[
-                  "rounded-full px-2 py-0.5 text-[11px]",
-                  isActive
-                    ? "bg-white/10 text-fuchsia-100"
-                    : "bg-white/10 text-white/55",
-                ].join(" ")}
-              >
-                {tab.count}
-              </span>
-              <span className="text-[11px] text-white/50">{tab.bestPriceLabel}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="text-sm font-medium text-white">
-              {route.routeLabel}
-            </p>
-            <p className="mt-1 text-xs text-white/55">
-              {currentTab?.label ?? "Deals"} tab · {currentTab?.bestPriceLabel ?? "—"} best shown
-            </p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-white/30">Deals</p>
+            <h2 className="text-xl font-bold text-white">{deals.title}</h2>
+            <p className="text-sm text-slate-400">{deals.subtitle}</p>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={data.seo.canonicalPath}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/75 transition hover:bg-white/[0.08]"
-            >
-              Refresh route view
-            </Link>
-
-            <a
-              href={route.bookingCtaHref}
-              className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
-            >
-              Search all fares
-            </a>
+          <div className="flex gap-4">
+            {summaryItems.map((item) => (
+              <div key={item.label} className="text-right">
+                <p className="text-[10px] uppercase tracking-wide text-white/40">{item.label}</p>
+                <p className="text-sm font-semibold text-white">{item.value}</p>
+              </div>
+            ))}
           </div>
         </div>
 
+        {/* ── Month ribbon ── */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => scrollRibbon("left")}
+            className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] p-1 text-white/60 transition hover:bg-white/[0.10] hover:text-white"
+            aria-label="Scroll months left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div
+            ref={ribbonRef}
+            className="flex flex-1 gap-2 overflow-x-auto scroll-smooth"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {deals.tabs.map((tab) => {
+              const isActive = tab.key === activeTab;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={[
+                    "flex shrink-0 flex-col items-center rounded-xl border px-4 py-2 text-sm transition",
+                    isActive
+                      ? "border-amber-400 bg-amber-400 text-slate-900"
+                      : "border-white/10 bg-white/[0.04] text-white/70 hover:border-white/20 hover:bg-white/[0.08]",
+                  ].join(" ")}
+                >
+                  <span className="whitespace-nowrap font-semibold">{tab.label}</span>
+                  <span className={`mt-0.5 text-xs ${isActive ? "text-slate-700" : "text-amber-400"}`}>
+                    {tab.bestPriceLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => scrollRibbon("right")}
+            className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] p-1 text-white/60 transition hover:bg-white/[0.10] hover:text-white"
+            aria-label="Scroll months right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Active tab info bar */}
+        {currentTab && (
+          <div className="flex items-center justify-between text-xs text-white/40">
+            <span>
+              {route.routeLabel} · <span className="text-white/60">{currentTab.label}</span>
+              {" "}· best from <span className="text-amber-400 font-semibold">{currentTab.bestPriceLabel}</span>
+            </span>
+            <Link href={route.bookingCtaHref} className="text-fuchsia-400 hover:underline">
+              Search all fares →
+            </Link>
+          </div>
+        )}
+
+        {/* Deal cards */}
         {currentTab && currentTab.items.length > 0 ? (
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3">
             {currentTab.items.map((deal) => (
-              <DealCard
-                key={deal.id}
-                deal={deal}
-                destinationCity={route.destination.city}
-              />
+              <DealCard key={deal.id} deal={deal} destinationCity={route.destination.city} />
             ))}
           </div>
         ) : (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
-            <p className="text-sm font-medium text-white">
-              No deals available in this tab yet.
-            </p>
-            <p className="mt-2 text-sm text-white/60">
-              Try another tab or search the full route for more options.
-            </p>
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center">
+            <p className="text-sm font-medium text-white/60">No deals available for this month.</p>
+            <p className="mt-1 text-xs text-white/30">Try another month or search all fares.</p>
           </div>
         )}
       </div>

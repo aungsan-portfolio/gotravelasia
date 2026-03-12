@@ -1,6 +1,7 @@
 // client/src/components/flights/destination/FareFinder.tsx
 
 import { useEffect, useMemo, useState } from "react";
+import { Slider } from "@/components/ui/slider";
 import type {
   DestinationPageVM,
   NormalizedFareEntryVM,
@@ -11,13 +12,21 @@ type FareFinderProps = {
 };
 
 const STOP_BADGE_STYLES: Record<
-  NonNullable<NormalizedFareEntryVM["outbound"]["stopBadgeTone"]>,
+  NormalizedFareEntryVM["outbound"]["stopBadgeTone"],
   string
 > = {
   green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
   amber: "border-amber-400/30 bg-amber-400/10 text-amber-200",
   red: "border-rose-400/30 bg-rose-400/10 text-rose-200",
 };
+
+function formatBudget(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "THB",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 function FareLegCard({
   title,
@@ -128,7 +137,7 @@ function FareRow({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <FareLegCard title="Outbound" leg={entry.outbound} />
 
         {isReturn && entry.returnLeg ? (
@@ -151,24 +160,45 @@ export default function FareFinder({ data }: FareFinderProps) {
 
   const originValues = useMemo(
     () => fareFinder.originOptions.map((option) => option.value),
-    [fareFinder.originOptions]
+    [fareFinder.originOptions],
   );
 
-  const [selectedOrigin, setSelectedOrigin] = useState<string>(
-    fareFinder.defaultOrigin
-  );
+  const [selectedOrigin, setSelectedOrigin] = useState(fareFinder.defaultOrigin);
+  const [maxBudget, setMaxBudget] = useState(fareFinder.summary.defaultBudget);
 
   useEffect(() => {
     setSelectedOrigin(fareFinder.defaultOrigin);
   }, [fareFinder.defaultOrigin]);
 
-  const filteredEntries = useMemo(() => {
-    if (!selectedOrigin) return fareFinder.entries;
+  useEffect(() => {
+    setMaxBudget(fareFinder.summary.defaultBudget);
+  }, [fareFinder.summary.defaultBudget]);
 
-    return fareFinder.entries.filter(
-      (entry) => entry.from1 === selectedOrigin || entry.from2 === selectedOrigin
-    );
-  }, [fareFinder.entries, selectedOrigin]);
+  const filteredEntries = useMemo(() => {
+    return fareFinder.entries.filter((entry) => {
+      const originMatch =
+        !selectedOrigin ||
+        entry.from1 === selectedOrigin ||
+        entry.from2 === selectedOrigin;
+
+      const budgetMatch =
+        maxBudget <= 0 ? true : entry.price <= maxBudget;
+
+      return originMatch && budgetMatch;
+    });
+  }, [fareFinder.entries, selectedOrigin, maxBudget]);
+
+  const filteredCheapest =
+    filteredEntries.length > 0
+      ? Math.min(...filteredEntries.map((entry) => entry.price))
+      : null;
+
+  const filteredCheapestLabel =
+    filteredCheapest != null ? formatBudget(filteredCheapest) : "—";
+
+  const hasBudgetRange =
+    fareFinder.summary.budgetMax > 0 &&
+    fareFinder.summary.budgetMax > fareFinder.summary.budgetMin;
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -207,37 +237,88 @@ export default function FareFinder({ data }: FareFinderProps) {
       </div>
 
       <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        <div className="flex flex-col gap-4 border-b border-white/10 pb-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+        {/* ── Filters: origin + budget ── */}
+        <div className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex-1">
             <p className="text-sm font-medium text-white">{route.routeLabel}</p>
             <p className="mt-1 text-xs text-white/55">
-              Filter fare combinations by origin airport and compare outbound vs return legs.
+              Filter fare combinations by origin airport and budget.
             </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {fareFinder.originOptions.map((option) => {
+                const active = selectedOrigin === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSelectedOrigin(option.value)}
+                    className={[
+                      "inline-flex items-center rounded-full border px-4 py-2 text-sm transition",
+                      active
+                        ? "border-fuchsia-400/30 bg-fuchsia-400/15 text-fuchsia-100"
+                        : "border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08]",
+                    ].join(" ")}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {fareFinder.originOptions.map((option) => {
-              const active = selectedOrigin === option.value;
+          {/* Budget slider */}
+          {hasBudgetRange && (
+            <div className="w-full rounded-2xl border border-white/10 bg-[#100b21] p-4 lg:w-80">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                    Max budget
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-amber-300">
+                    {formatBudget(maxBudget)}
+                  </p>
+                </div>
 
-              return (
+                <div className="text-right text-[11px] text-white/40">
+                  <p>Range</p>
+                  <p className="mt-1">
+                    {formatBudget(fareFinder.summary.budgetMin)} –{" "}
+                    {formatBudget(fareFinder.summary.budgetMax)}
+                  </p>
+                </div>
+              </div>
+
+              <Slider
+                value={[maxBudget]}
+                min={fareFinder.summary.budgetMin}
+                max={fareFinder.summary.budgetMax}
+                step={fareFinder.summary.budgetStep}
+                onValueChange={(v) =>
+                  setMaxBudget(v[0] ?? fareFinder.summary.defaultBudget)
+                }
+              />
+
+              <div className="mt-3 flex items-center justify-between text-[11px] text-white/40">
+                <span>
+                  Cheapest: {filteredCheapestLabel}
+                </span>
                 <button
-                  key={option.value}
                   type="button"
-                  onClick={() => setSelectedOrigin(option.value)}
-                  className={[
-                    "inline-flex items-center rounded-full border px-4 py-2 text-sm transition",
-                    active
-                      ? "border-fuchsia-400/30 bg-fuchsia-400/15 text-fuchsia-100"
-                      : "border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08]",
-                  ].join(" ")}
+                  onClick={() =>
+                    setMaxBudget(fareFinder.summary.defaultBudget)
+                  }
+                  className="rounded-full border border-white/10 px-2.5 py-1 text-white/60 transition hover:bg-white/[0.06]"
                 >
-                  {option.label}
+                  Reset
                 </button>
-              );
-            })}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* ── Results ── */}
         {filteredEntries.length > 0 ? (
           <div className="mt-5 grid gap-4">
             {filteredEntries.map((entry) => (
@@ -250,10 +331,11 @@ export default function FareFinder({ data }: FareFinderProps) {
         ) : (
           <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
             <p className="text-sm font-medium text-white">
-              No fares found for {selectedOrigin}.
+              No fares found for this combination.
             </p>
             <p className="mt-2 text-sm text-white/60">
-              Try another origin filter to see more combinations.
+              Increase the budget cap or try another origin filter to see more
+              combinations.
             </p>
           </div>
         )}
@@ -261,7 +343,9 @@ export default function FareFinder({ data }: FareFinderProps) {
         {originValues.length > 1 ? (
           <div className="mt-5 rounded-2xl border border-white/10 bg-[#100b21] px-4 py-3">
             <p className="text-xs text-white/55">
-              Available origins: {originValues.join(", ")}
+              Available origins: {originValues.join(", ")} ·{" "}
+              {filteredEntries.length} result
+              {filteredEntries.length === 1 ? "" : "s"} shown
             </p>
           </div>
         ) : null}
