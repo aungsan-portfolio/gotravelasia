@@ -57,6 +57,7 @@ function Router() {
         {/* Flight Search Results (Travelpayouts White Label) */}
         <Route path="/flights/results" component={FlightResults} />
 
+        {/* Query-based redirect entry */}
         <Route path="/flights" component={FlightsQueryRedirect} />
 
         {/* Dedicated Destination Landing Pages (must be before generic /flights/:o/:d) */}

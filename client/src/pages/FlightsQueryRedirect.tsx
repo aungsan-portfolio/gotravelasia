@@ -1,77 +1,41 @@
 // client/src/pages/FlightsQueryRedirect.tsx
+
 import { useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
-import { getDestinationByCode, getDestinationBySlug } from "@/data/destinationRegistry";
+import {
+  getDestinationByCode,
+  getDestinationBySlug,
+} from "@/data/destinationRegistry";
+import { resolveFlightsRedirectPath } from "@/lib/flights/resolveFlightsRedirect";
 
-function clean(value: string | null): string {
-  return (value ?? "").trim();
+function readQuery() {
+  const search = new URLSearchParams(window.location.search);
+
+  return {
+    origin: search.get("origin"),
+    destination: search.get("destination"),
+    depart: search.get("depart"),
+    returnAt: search.get("return"),
+    tripType: search.get("tripType"),
+    adults: search.get("adults"),
+    children: search.get("children"),
+    cabin: search.get("cabin"),
+  };
 }
 
 export default function FlightsQueryRedirect() {
   const [, setLocation] = useLocation();
 
-  const params = useMemo(() => {
-    const search = new URLSearchParams(window.location.search);
-    const origin = clean(search.get("origin")).toUpperCase();
-    const destinationRaw = clean(search.get("destination"));
-    const depart = clean(search.get("depart"));
-    const ret = clean(search.get("return"));
-    const tripType = clean(search.get("tripType"));
-    const adults = clean(search.get("adults"));
-    const children = clean(search.get("children"));
-    const cabin = clean(search.get("cabin"));
-
-    return {
-      origin,
-      destinationRaw,
-      depart,
-      returnAt: ret,
-      tripType,
-      adults,
-      children,
-      cabin,
-    };
-  }, []);
+  const query = useMemo(() => readQuery(), []);
 
   useEffect(() => {
-    const destinationCode = params.destinationRaw.toUpperCase();
+    const nextPath = resolveFlightsRedirectPath(query, {
+      findByCode: getDestinationByCode,
+      findBySlug: getDestinationBySlug,
+    });
 
-    // Check if we have a landing page for this destination
-    const record =
-      getDestinationByCode(destinationCode) ||
-      getDestinationBySlug(params.destinationRaw);
-
-    if (record) {
-      const next = new URLSearchParams();
-
-      if (params.origin) next.set("origin", params.origin);
-      // Canonicalize to IATA code if available
-      if (record.dest.code) next.set("destination", record.dest.code);
-      if (params.depart) next.set("depart", params.depart);
-      if (params.returnAt) next.set("return", params.returnAt);
-      if (params.tripType) next.set("tripType", params.tripType);
-      if (params.adults) next.set("adults", params.adults);
-      if (params.children) next.set("children", params.children);
-      if (params.cabin) next.set("cabin", params.cabin);
-
-      const query = next.toString();
-      setLocation(`/flights/to/${record.slug}${query ? `?${query}` : ""}`, {
-        replace: true,
-      });
-      return;
-    }
-
-    // Fallback to generic search results if not in registry
-    if (params.origin && destinationCode) {
-      setLocation(`/flights/${params.origin.toLowerCase()}/${destinationCode.toLowerCase()}`, {
-        replace: true,
-      });
-      return;
-    }
-
-    // Hard fallback to home
-    setLocation("/", { replace: true });
-  }, [params, setLocation]);
+    setLocation(nextPath, { replace: true });
+  }, [query, setLocation]);
 
   return (
     <main className="min-h-[60vh] bg-[#0b0719] text-white">
@@ -83,7 +47,7 @@ export default function FlightsQueryRedirect() {
           Opening the best route page…
         </h1>
         <p className="mt-3 text-white/65">
-          We’re matching your query to a destination landing page.
+          We’re matching your search to a destination landing page.
         </p>
       </div>
     </main>
