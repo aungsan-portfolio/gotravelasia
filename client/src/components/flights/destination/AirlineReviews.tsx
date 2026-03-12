@@ -1,115 +1,213 @@
-import { useState } from "react";
-import { Card, ScoreBar, Wrap, SectionTitle, SectionSub } from "./ui";
+// client/src/components/flights/destination/AirlineReviews.tsx
+
+import { useEffect, useMemo, useState } from "react";
 import type { DestinationPageVM } from "@/types/destination";
 
-type Props = { data: DestinationPageVM };
+type AirlineReviewsProps = {
+  data: DestinationPageVM;
+};
 
-export default function AirlineReviews({ data }: Props) {
-    const [idx, setIdx] = useState(0);
-    const reviews = data.reviews;
+function scoreTone(score: number): string {
+  if (score >= 8) return "from-emerald-400 to-emerald-300";
+  if (score >= 7) return "from-amber-400 to-amber-300";
+  return "from-rose-400 to-rose-300";
+}
 
-    if (!reviews.length) return null;
+function scoreTextTone(score: number): string {
+  if (score >= 8) return "text-emerald-200";
+  if (score >= 7) return "text-amber-200";
+  return "text-rose-200";
+}
 
-    const al = reviews[idx];
+export default function AirlineReviews({ data }: AirlineReviewsProps) {
+  const { reviews, route } = data;
 
+  const [selectedAirlineCode, setSelectedAirlineCode] = useState<string | null>(
+    reviews.defaultAirlineCode
+  );
+
+  useEffect(() => {
+    setSelectedAirlineCode(reviews.defaultAirlineCode);
+  }, [reviews.defaultAirlineCode]);
+
+  const selectedReview = useMemo(() => {
     return (
-        <Wrap className="py-12">
-            <SectionTitle>Traveler confidence panel</SectionTitle>
-            <SectionSub>
-                Airline performance overview based on route data and traveler feedback.
-            </SectionSub>
+      reviews.items.find((item) => item.airlineCode === selectedAirlineCode) ??
+      reviews.items[0] ??
+      null
+    );
+  }, [reviews.items, selectedAirlineCode]);
 
-            {/* Airline selector tabs */}
-            <div className="flex flex-wrap gap-2 mb-6">
-                {reviews.map((a, i) => (
-                    <button
-                        key={a.airline}
-                        type="button"
-                        onClick={() => setIdx(i)}
-                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold cursor-pointer transition-all ${idx === i
-                            ? "border-violet-600 bg-violet-600/20 text-violet-300"
-                            : "border-white/10 bg-white/[0.035] text-slate-400 hover:bg-white/5 hover:text-slate-300"
-                            }`}
-                    >
-                        <span>{a.airlineCode ?? "—"}</span>
-                        <span>{a.airline}</span>
-                        <span className={`text-[11px] font-extrabold ml-1 ${a.score >= 8 ? "text-emerald-500" : a.score >= 7 ? "text-cyan-400" : "text-amber-500"
-                            }`}>
-                            {a.score.toFixed(1)}
-                        </span>
-                    </button>
-                ))}
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
+            Reviews
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            {reviews.title}
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65 sm:text-base">
+            {reviews.subtitle}
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Top airline
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {reviews.summary.topAirline}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Best score
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {reviews.summary.topScore ?? "—"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Average score
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {reviews.summary.avgScore}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-white">Airlines</p>
+              <p className="mt-1 text-xs text-white/55">
+                Select a carrier to view highlights
+              </p>
             </div>
 
-            <Card className="p-0 overflow-hidden">
-                <div className="flex flex-col lg:grid lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/10">
+            <div className="rounded-xl border border-white/10 bg-[#100b21] px-3 py-2">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                Route
+              </p>
+              <p className="text-sm font-medium text-white">{route.routeLabel}</p>
+            </div>
+          </div>
 
-                    {/* Score + highlights */}
-                    <div className="p-6">
-                        <div className="flex items-center gap-4 mb-5">
-                            <div className="w-12 h-12 rounded-xl bg-white/[0.06] flex items-center justify-center text-sm font-bold text-violet-300 border border-white/[0.05]">
-                                {al.airlineCode ?? "—"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="text-base font-extrabold text-slate-100 truncate">{al.airline}</div>
-                                <div className="text-[11px] text-slate-500 font-medium">Route performance</div>
-                            </div>
-                            <div className="text-center shrink-0">
-                                <div className={`text-[34px] leading-none font-black tracking-tighter ${al.score >= 8 ? "text-emerald-500" : "text-cyan-400"
-                                    }`}>{al.score.toFixed(1)}</div>
-                                <div className={`text-[11px] font-bold ${al.score >= 8 ? "text-emerald-500" : "text-cyan-400"
-                                    }`}>{al.score >= 8 ? "Very good" : al.score >= 7 ? "Good" : "Average"}</div>
-                            </div>
-                        </div>
+          <div className="mt-5 grid gap-3">
+            {reviews.items.map((item) => {
+              const active = item.airlineCode === selectedReview?.airlineCode;
 
-                        {/* Score bar for overall */}
-                        <ScoreBar label="Overall score" score={al.score} />
-
-                        {/* Highlights */}
-                        <div className="mt-4 space-y-2">
-                            {al.highlights.map((h) => (
-                                <div key={h} className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-slate-300 font-medium">
-                                    {h}
-                                </div>
-                            ))}
-                        </div>
+              return (
+                <button
+                  key={item.airlineCode}
+                  type="button"
+                  onClick={() => setSelectedAirlineCode(item.airlineCode ?? null)}
+                  className={[
+                    "rounded-2xl border p-4 text-left transition",
+                    active
+                      ? "border-fuchsia-400/30 bg-fuchsia-400/10"
+                      : "border-white/10 bg-[#100b21] hover:bg-white/[0.05]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.logoUrl && (
+                          <img
+                            src={item.logoUrl}
+                            alt={item.airline}
+                            className="h-5 w-5 rounded object-contain bg-white/10"
+                          />
+                        )}
+                        <span className="truncate text-sm font-semibold text-white">
+                          {item.airline}
+                        </span>
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/60">
+                          {item.airlineCode}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* CTA */}
-                    <div className="p-6 flex flex-col justify-center">
-                        <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 text-center">
-                            <div className="text-xs text-slate-500 mb-1 font-medium">Score overview</div>
-                            <div className="text-[34px] font-black text-violet-400 tracking-tighter leading-tight">
-                                {al.score.toFixed(1)}
-                            </div>
-                            <div className="text-[11px] text-slate-500 mt-1 mb-5 font-medium">
-                                out of 10
-                            </div>
-
-                            <div className="text-xs text-slate-400 leading-relaxed font-medium mb-4">
-                                {al.airline} is a {al.score >= 8 ? "highly rated" : al.score >= 7 ? "well-rated" : "reasonably rated"} option
-                                on the {data.origin.city} → {data.dest.city} route.
-                            </div>
-                        </div>
-
-                        {/* Quick facts */}
-                        <div className="mt-4 divide-y divide-white/[0.06] border-t border-white/[0.06] pt-2">
-                            {[
-                                ["Route", `${data.origin.city} → ${data.dest.city}`],
-                                ["Duration", data.typicalDuration ?? "—"],
-                                ["Stops", data.directAvailability ?? "—"],
-                                ["Airlines on route", `${data.airlines.length} carriers`],
-                            ].map(([k, v]) => (
-                                <div key={k} className="flex justify-between text-[11px] py-2">
-                                    <span className="text-slate-500 font-medium">{k}</span>
-                                    <span className="text-slate-200 font-bold">{v}</span>
-                                </div>
-                            ))}
-                        </div>
+                    <div className={`text-sm font-semibold ${scoreTextTone(item.score)}`}>
+                      {item.score}
                     </div>
+                  </div>
 
+                  <div className="mt-3 h-2 rounded-full bg-white/10">
+                    <div
+                      className={`h-2 rounded-full bg-gradient-to-r ${scoreTone(item.score)}`}
+                      style={{ width: `${Math.min(100, Math.max(0, item.score * 10))}%` }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          {selectedReview ? (
+            <>
+              <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-xl font-semibold text-white">
+                      {selectedReview.airline}
+                    </h3>
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/60">
+                      {selectedReview.airlineCode}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-sm text-white/60">
+                    Review summary for flights to {route.destination.city}
+                  </p>
                 </div>
-            </Card>
-        </Wrap>
-    );
+
+                <div className="rounded-2xl border border-white/10 bg-[#100b21] px-4 py-3 text-right">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                    Score
+                  </p>
+                  <p className={`text-2xl font-semibold ${scoreTextTone(selectedReview.score)}`}>
+                    {selectedReview.score}/10
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                {selectedReview.highlights.map((highlight, index) => (
+                  <div
+                    key={`${selectedReview.airlineCode}-${index}`}
+                    className="rounded-2xl border border-white/10 bg-[#100b21] p-4"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200/70">
+                      Highlight {index + 1}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/80">
+                      {highlight}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
+              <p className="text-sm font-medium text-white">No review data available.</p>
+              <p className="mt-2 text-sm text-white/60">
+                Airline review content will appear here when data is available.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }

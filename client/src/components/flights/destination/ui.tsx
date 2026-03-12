@@ -1,150 +1,376 @@
-import { ReactNode } from "react";
-import * as React from "react";
+// client/src/components/flights/destination/ui.tsx
+
+import type {
+  ComponentPropsWithoutRef,
+  ElementType,
+  HTMLAttributes,
+  ReactNode,
+} from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// Utility for Tailwind class merging
+// ── Utils ────────────────────────────────────────────────────────
+
 export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
-// ── Layout ────────────────────────────────────────────────────────
-export interface WrapProps {
-    children: ReactNode;
-    className?: string;
+type PolymorphicProps<E extends ElementType, P = {}> = P & {
+  as?: E;
+  className?: string;
+} & Omit<ComponentPropsWithoutRef<E>, keyof P | "as" | "className">;
+
+// ── Layout primitives ────────────────────────────────────────────
+
+export function SectionShell({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLElement>) {
+  return (
+    <section
+      className={cn("mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8", className)}
+      {...props}
+    >
+      {children}
+    </section>
+  );
 }
 
-export const Wrap = ({ children, className = "" }: WrapProps) => (
-    <div className={cn("max-w-[1100px] mx-auto px-6", className)}>
-        {children}
-    </div>
-);
-
-export interface CardProps {
-    children: ReactNode;
-    className?: string;
-}
-
-export const Card = ({ children, className = "" }: CardProps) => (
-    <div className={cn(
-        "bg-white/[0.035] border border-white/[0.08] rounded-2xl shadow-lg",
+export function Surface({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        "rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5",
         className
-    )}>
-        {children}
+      )}
+      {...props}
+    >
+      {children}
     </div>
-);
+  );
+}
 
-export const HR = () => (
-    <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
-);
+export function Panel({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("rounded-2xl border border-white/10 bg-[#100b21] p-4", className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
 
-// ── Typography ───────────────────────────────────────────────────
-export const SectionTitle = ({ children }: { children: ReactNode }) => (
-    <h2 className="text-[26px] font-extrabold text-slate-100 tracking-tight leading-tight mb-2">
-        {children}
-    </h2>
-);
-
-export const SectionSub = ({ children }: { children: ReactNode }) => (
-    <p className="text-[13px] text-slate-400 font-medium mb-6 max-w-2xl leading-relaxed">
-        {children}
+export function Kicker({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLParagraphElement>) {
+  return (
+    <p
+      className={cn(
+        "text-sm font-medium uppercase tracking-[0.18em] text-fuchsia-200/75",
+        className
+      )}
+      {...props}
+    >
+      {children}
     </p>
-);
+  );
+}
 
-// ── Badges & Indicators ──────────────────────────────────────────
-export const StopBadge = ({ stops }: { stops: number }) => {
-    if (stops === 0) return <span className="text-[10px] text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block">Direct</span>;
-    if (stops === 1) return <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full inline-block">1 stop</span>;
-    return <span className="text-[10px] text-red-500 font-bold bg-red-500/10 px-2 py-0.5 rounded-full inline-block">{stops} stops</span>;
-};
+export function SectionTitle({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h2
+      className={cn(
+        "mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </h2>
+  );
+}
+
+export function SectionSub({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLParagraphElement>) {
+  return (
+    <p
+      className={cn(
+        "mt-3 max-w-3xl text-sm leading-7 text-white/65 sm:text-base",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </p>
+  );
+}
+
+export function StatCard({
+  label,
+  value,
+  subValue,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  subValue?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3", className)}>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+      {subValue ? <p className="mt-1 text-xs text-white/55">{subValue}</p> : null}
+    </div>
+  );
+}
 
 // ── Buttons ──────────────────────────────────────────────────────
-// Legacy button-only props (kept for backward compat with GhostBtn)
-export interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    children?: ReactNode;
-    ch?: ReactNode;
-    className?: string;
-}
 
-// Polymorphic AmberBtn — renders <button> by default, <a> when as="a"
-type AmberBtnBase = { children?: ReactNode; ch?: ReactNode; className?: string };
-type AmberBtnButton = AmberBtnBase & React.ButtonHTMLAttributes<HTMLButtonElement> & { as?: "button" };
-type AmberBtnAnchor = AmberBtnBase & React.AnchorHTMLAttributes<HTMLAnchorElement> & { as: "a" };
-type AmberBtnProps = AmberBtnButton | AmberBtnAnchor;
-
-const amberBtnStyles = "bg-amber-500 text-[#0b0719] font-black rounded-xl hover:bg-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all active:scale-[0.98]";
-
-export function AmberBtn(props: AmberBtnProps) {
-    if (props.as === "a") {
-        const { as: _, children, ch, className = "", ...anchorProps } = props;
-        return (
-            <a className={cn(amberBtnStyles, className)} {...anchorProps}>
-                {children || ch}
-            </a>
-        );
-    }
-    const { as: _, children, ch, className = "", ...buttonProps } = props;
-    return (
-        <button className={cn(amberBtnStyles, className)} {...buttonProps}>
-            {children || ch}
-        </button>
-    );
-}
-
-export interface GhostBtnProps extends BtnProps {
-    active?: boolean;
-}
-
-export const GhostBtn = ({ children, active, className = "", ...props }: GhostBtnProps) => (
-    <button
-        className={cn(
-            "rounded-full font-bold transition-all border",
-            active
-                ? "bg-violet-600/20 text-violet-300 border-violet-500/50"
-                : "bg-transparent text-slate-400 border-white/10 hover:border-white/20 hover:text-slate-200",
-            className
-        )}
-        {...props}
-    >
-        {children}
-    </button>
-);
-
-// ── Charts & Visuals ─────────────────────────────────────────────
-interface ChartTooltipProps {
-    active?: boolean;
-    payload?: { value: number }[];
-    label?: string;
-    fmt?: (v: number) => string;
-}
-
-export const ChartTooltip = ({ active, payload, label, fmt }: ChartTooltipProps) => {
-    if (active && payload && payload.length) {
-        const v = payload[0].value;
-        return (
-            <div className="bg-[#0b0719]/90 backdrop-blur-md border border-white/10 px-3 py-2 rounded-lg shadow-xl">
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{label}</div>
-                <div className="text-[13px] font-black text-slate-100">{fmt ? fmt(v) : `฿${v.toLocaleString()}`}</div>
-            </div>
-        );
-    }
-    return null;
+type BaseButtonOwnProps = {
+  children: ReactNode;
+  loading?: boolean;
 };
 
-export const ScoreBar = ({ label, score }: { label: string, score: number }) => (
-    <div className="mb-3">
-        <div className="flex justify-between text-[11px] mb-1.5 font-semibold">
-            <span className="text-slate-400">{label}</span>
-            <span className="text-slate-100">{score.toFixed(1)}</span>
-        </div>
-        <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-            <div
-                className={cn(
-                    "h-full rounded-full",
-                    score >= 8 ? "bg-emerald-500" : score >= 7 ? "bg-cyan-400" : "bg-violet-500"
-                )}
-                style={{ width: `${score * 10}%` }}
-            />
-        </div>
+export function AmberBtn<E extends ElementType = "button">({
+  as,
+  className,
+  children,
+  loading,
+  ...props
+}: PolymorphicProps<E, BaseButtonOwnProps>) {
+  const Comp = (as ?? "button") as ElementType;
+  const isButton = Comp === "button";
+
+  return (
+    <Comp
+      className={cn(
+        "inline-flex items-center justify-center rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
+        className
+      )}
+      {...(isButton ? { type: "button" } : {})}
+      {...props}
+    >
+      {loading ? "Loading..." : children}
+    </Comp>
+  );
+}
+
+export function GhostBtn<E extends ElementType = "button">({
+  as,
+  className,
+  children,
+  loading,
+  ...props
+}: PolymorphicProps<E, BaseButtonOwnProps>) {
+  const Comp = (as ?? "button") as ElementType;
+  const isButton = Comp === "button";
+
+  return (
+    <Comp
+      className={cn(
+        "inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60",
+        className
+      )}
+      {...(isButton ? { type: "button" } : {})}
+      {...props}
+    >
+      {loading ? "Loading..." : children}
+    </Comp>
+  );
+}
+
+// ── Status / badges ──────────────────────────────────────────────
+
+export function StopBadge({
+  stops,
+  label,
+  className,
+}: {
+  stops: number;
+  label?: string;
+  className?: string;
+}) {
+  const toneClass =
+    stops <= 0
+      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+      : stops === 1
+        ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
+        : "border-rose-400/30 bg-rose-400/10 text-rose-200";
+
+  const text =
+    label ??
+    (stops <= 0 ? "Direct" : `${stops} stop${stops === 1 ? "" : "s"}`);
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+        toneClass,
+        className
+      )}
+    >
+      {text}
+    </span>
+  );
+}
+
+export function StatusPill({
+  tone = "amber",
+  children,
+  className,
+}: {
+  tone?: "green" | "amber" | "red" | "violet";
+  children: ReactNode;
+  className?: string;
+}) {
+  const toneClass =
+    tone === "green"
+      ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
+      : tone === "red"
+        ? "border-rose-400/25 bg-rose-400/10 text-rose-100"
+        : tone === "violet"
+          ? "border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-100"
+          : "border-amber-400/25 bg-amber-400/10 text-amber-100";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
+        toneClass,
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+// ── Charts / scoring ─────────────────────────────────────────────
+
+export function ScoreBar({
+  value,
+  max = 10,
+  className,
+  label,
+}: {
+  value: number;
+  max?: number;
+  className?: string;
+  label?: ReactNode;
+}) {
+  const normalized = Math.min(100, Math.max(0, (value / max) * 100));
+
+  const fillTone =
+    value >= max * 0.8
+      ? "from-emerald-400 to-emerald-300"
+      : value >= max * 0.7
+        ? "from-amber-400 to-amber-300"
+        : "from-rose-400 to-rose-300";
+
+  return (
+    <div className={cn("w-full", className)}>
+      {label ? <div className="mb-2 text-xs text-white/60">{label}</div> : null}
+      <div className="h-2 rounded-full bg-white/10">
+        <div
+          className={cn("h-2 rounded-full bg-gradient-to-r", fillTone)}
+          style={{ width: `${normalized}%` }}
+        />
+      </div>
     </div>
-);
+  );
+}
+
+export function ChartTooltip({
+  title,
+  rows,
+  className,
+}: {
+  title?: ReactNode;
+  rows: Array<{ label: ReactNode; value: ReactNode; color?: string }>;
+  className?: string;
+}) {
+  if (!rows.length) return null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-white/10 bg-[#120d25]/95 px-3 py-2 text-xs text-white shadow-xl",
+        className
+      )}
+    >
+      {title ? <div className="font-medium text-white">{title}</div> : null}
+      <div className={cn(title ? "mt-2 space-y-1" : "space-y-1")}>
+        {rows.map((row, index) => (
+          <div key={index} className="flex items-center gap-2">
+            {row.color ? (
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: row.color }}
+              />
+            ) : null}
+            <span className="text-white/65">{row.label}</span>
+            <span className="ml-auto text-white">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Empty / helper blocks ────────────────────────────────────────
+
+export function EmptyState({
+  title,
+  description,
+  className,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center",
+        className
+      )}
+    >
+      <p className="text-sm font-medium text-white">{title}</p>
+      {description ? (
+        <p className="mt-2 text-sm text-white/60">{description}</p>
+      ) : null}
+    </div>
+  );
+}
+
+export function Divider({
+  className,
+  ...props
+}: HTMLAttributes<HTMLHRElement>) {
+  return (
+    <hr
+      className={cn("border-0 border-t border-white/10", className)}
+      {...props}
+    />
+  );
+}

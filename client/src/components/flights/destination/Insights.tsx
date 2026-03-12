@@ -1,111 +1,336 @@
-import React from "react";
-import { Wrap, Card, ChartTooltip } from "./ui";
+// client/src/components/flights/destination/Insights.tsx
+
+import { useMemo } from "react";
 import {
-    AreaChart, Area, BarChart, Bar,
-    XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import type { DestinationPageVM } from "@/types/destination";
 
-type Props = { data: DestinationPageVM };
+type InsightsProps = {
+  data: DestinationPageVM;
+};
 
-export default function Insights({ data }: Props) {
-    // Transform priceMonths to recharts format
-    const priceChartData = data.priceMonths.map(d => ({ m: d.month, p: d.value }));
+type HeatmapCellVM = {
+  key: string;
+  group: string;
+  day: string;
+  price: number;
+  priceLabel: string;
+  level: "low" | "mid" | "high";
+};
 
-    return (
-        <>
-            {/* Price trend area chart */}
-            <Wrap className="py-8">
-                <h2 className="text-[22px] font-extrabold text-slate-100 tracking-tight mb-1.5">
-                    Best time to book a flight to {data.dest.city}
-                </h2>
-                <p className="text-[13px] text-slate-400 mb-5 font-medium">
-                    Flexible schedule? Discover the best time to fly with our price data.
-                </p>
+const LEVEL_STYLES: Record<HeatmapCellVM["level"], string> = {
+  low: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
+  mid: "border-amber-400/30 bg-amber-400/10 text-amber-100",
+  high: "border-rose-400/30 bg-rose-400/10 text-rose-100",
+};
 
-                <Card className="p-5">
-                    <div className="text-[11px] text-slate-500 mb-4 font-semibold uppercase tracking-wider">
-                        Estimated return price (฿) · Based on past data
-                    </div>
+const BAR_COLORS = {
+  normal: "#c084fc",
+  cheapest: "#fbbf24",
+  priciest: "#f472b6",
+};
 
-                    {priceChartData.length > 0 ? (
-                        <div className="h-[180px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={priceChartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.35} />
-                                            <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <XAxis dataKey="m" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `฿${(v / 1000).toFixed(0)}k`} />
-                                    <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                                    <Area type="monotone" dataKey="p" name="Est. price" stroke="#a78bfa" strokeWidth={2.5} fill="url(#ag)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    ) : (
-                        <div className="text-sm text-white/50 py-8 text-center">No pricing data available</div>
-                    )}
-
-                    {/* Quick insights */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-                        <InsightCard icon="📅" label="Availability" value={data.directAvailability ?? "—"} />
-                        <InsightCard icon="⏱" label="Typical duration" value={data.typicalDuration ?? "—"} />
-                        <InsightCard icon="💰" label="Lowest found" value={data.lowestFare ? `฿${data.lowestFare.toLocaleString()}` : "—"} />
-                        <InsightCard icon="📊" label="Airlines on route" value={`${data.airlines.length} carriers`} />
-                    </div>
-                </Card>
-            </Wrap>
-
-            {/* Heatmap */}
-            {data.heatmap.length > 0 && (
-                <Wrap className="pb-8">
-                    <h2 className="text-[22px] font-extrabold text-slate-100 tracking-tight mb-1.5">
-                        Fare heatmap
-                    </h2>
-                    <p className="text-[13px] text-slate-400 mb-5 font-medium">
-                        <span className="text-emerald-500 font-bold">Green</span> = cheapest ·
-                        <span className="text-amber-500 font-bold ml-1">Amber</span> = mid ·
-                        <span className="text-rose-400 font-bold ml-1">Red</span> = most expensive
-                    </p>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {data.heatmap.map((block) => (
-                            <Card key={block.month} className="p-5">
-                                <div className="text-sm font-bold text-white/80 mb-3">{block.month}</div>
-                                <div className="grid grid-cols-5 gap-2">
-                                    {block.values.map((cell) => (
-                                        <div
-                                            key={`${block.month}-${cell.day}`}
-                                            className={`rounded-xl px-3 py-3 text-center text-xs ${cell.level === "low"
-                                                ? "bg-emerald-500/20 text-emerald-200"
-                                                : cell.level === "mid"
-                                                    ? "bg-amber-500/20 text-amber-200"
-                                                    : "bg-rose-500/20 text-rose-200"
-                                                }`}
-                                        >
-                                            <div>{cell.day}</div>
-                                            <div className="mt-1 font-semibold">฿{cell.price.toLocaleString()}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </Wrap>
-            )}
-        </>
-    );
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "THB",
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
-function InsightCard({ icon, label, value }: { icon: string; label: string; value: string }) {
-    return (
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-3 hover:bg-white/[0.05] transition-colors">
-            <div className="text-base mb-1">{icon}</div>
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1 font-bold">{label}</div>
-            <div className="text-[11px] font-bold text-slate-100 leading-snug">{value}</div>
+function buildChartRows(data: DestinationPageVM["insights"]["priceMonths"]) {
+  const values = data.map((row) => row.value);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+
+  return data.map((row) => ({
+    ...row,
+    priceLabel: formatMoney(row.value),
+    fill:
+      row.value === minValue
+        ? BAR_COLORS.cheapest
+        : row.value === maxValue
+          ? BAR_COLORS.priciest
+          : BAR_COLORS.normal,
+  }));
+}
+
+function flattenHeatmap(data: DestinationPageVM["insights"]["heatmap"]): HeatmapCellVM[] {
+  return data.flatMap((group) =>
+    group.values.map((cell) => ({
+      key: `${group.month}-${cell.day}`,
+      group: group.month,
+      day: cell.day,
+      price: cell.price,
+      priceLabel: formatMoney(cell.price),
+      level: cell.level,
+    }))
+  );
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number; payload?: { priceLabel?: string } }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const priceLabel = payload[0]?.payload?.priceLabel ?? "—";
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#120d25]/95 px-3 py-2 text-xs text-white shadow-xl">
+      <div className="font-medium text-white">{label}</div>
+      <div className="mt-1 text-white/65">{priceLabel}</div>
+    </div>
+  );
+}
+
+export default function Insights({ data }: InsightsProps) {
+  const { insights, route } = data;
+
+  const priceChartRows = useMemo(
+    () => buildChartRows(insights.priceMonths),
+    [insights.priceMonths]
+  );
+
+  const heatmapCells = useMemo(
+    () => flattenHeatmap(insights.heatmap),
+    [insights.heatmap]
+  );
+
+  const heatmapGroups = useMemo(() => {
+    const map = new Map<string, HeatmapCellVM[]>();
+
+    for (const cell of heatmapCells) {
+      const current = map.get(cell.group) ?? [];
+      current.push(cell);
+      map.set(cell.group, current);
+    }
+
+    return Array.from(map.entries()).map(([group, cells]) => ({
+      group,
+      cells,
+    }));
+  }, [heatmapCells]);
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
+            Insights
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            {insights.title}
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65 sm:text-base">
+            {insights.subtitle}
+          </p>
         </div>
-    );
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Cheapest month
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {insights.summary.cheapestMonth}
+            </p>
+            <p className="mt-1 text-xs text-white/55">
+              {insights.summary.cheapestMonthLabel}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Priciest month
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {insights.summary.priciestMonth}
+            </p>
+            <p className="mt-1 text-xs text-white/55">
+              {insights.summary.priciestMonthLabel}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Lowest demand cell
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {insights.summary.lowestHeatmapCell}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+              Highest demand cell
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {insights.summary.highestHeatmapCell}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-white">Monthly fare trend</p>
+              <p className="mt-1 text-xs text-white/55">
+                {route.origin.city} to {route.destination.city} seasonality view
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-[#100b21] px-3 py-2 text-right">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                Route
+              </p>
+              <p className="text-sm font-medium text-white">{route.routeLabel}</p>
+            </div>
+          </div>
+
+          <div className="mt-5 h-[320px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={priceChartRows} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="priceAreaFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#c084fc" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#c084fc" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+
+                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "rgba(255,255,255,0.65)", fontSize: 12 }}
+                  axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(value) => `${Math.round(value / 1000)}k`}
+                  tick={{ fill: "rgba(255,255,255,0.65)", fontSize: 12 }}
+                  axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
+                  tickLine={false}
+                  width={42}
+                />
+                <Tooltip content={<ChartTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#c084fc"
+                  strokeWidth={2.5}
+                  fill="url(#priceAreaFill)"
+                  activeDot={{ r: 5, fill: "#fbbf24", stroke: "#0b0719", strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="mt-4 h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={priceChartRows} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "rgba(255,255,255,0.65)", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  hide
+                />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {priceChartRows.map((row) => (
+                    <Cell key={row.month} fill={row.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-white">Booking heatmap</p>
+              <p className="mt-1 text-xs text-white/55">
+                Lower colors suggest cheaper timing windows.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-[#100b21] px-3 py-2">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                Cheapest pattern
+              </p>
+              <p className="text-sm font-medium text-white">
+                {insights.summary.lowestHeatmapCell}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            {heatmapGroups.map((group) => (
+              <div key={group.group}>
+                <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-white/45">
+                  {group.group}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {group.cells.map((cell) => (
+                    <div
+                      key={cell.key}
+                      className={`rounded-2xl border p-3 ${LEVEL_STYLES[cell.level]}`}
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.12em] opacity-75">
+                        {cell.day}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold">
+                        {cell.priceLabel}
+                      </p>
+                      <p className="mt-1 text-[11px] opacity-75">
+                        {cell.level === "low"
+                          ? "Lower fare window"
+                          : cell.level === "mid"
+                            ? "Mid-range timing"
+                            : "Higher fare window"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-100">
+              Low
+            </span>
+            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs text-amber-100">
+              Mid
+            </span>
+            <span className="rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs text-rose-100">
+              High
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }

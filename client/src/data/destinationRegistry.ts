@@ -325,7 +325,7 @@ function toSlug(value: string): string {
     .trim()
     .toLowerCase()
     .replace(/&/g, "and")
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
@@ -449,6 +449,7 @@ function genDeals(seed: DestinationSeed, origin: OriginSeed): StaticDestinationR
     a1: null,
     airline,
     airlineCode,
+    logoUrl: `https://pics.avs.io/120/120/${airlineCode}.png`,
     stops: stopCount,
     duration: formatDuration(flightHours + stopCount * 0.9),
     price,
@@ -519,6 +520,7 @@ function genFareTable(seed: DestinationSeed, origin: OriginSeed): FareTableEntry
       dur2: formatDuration(seed.avgFlightHours + (seed.avgFlightHours <= 2.0 ? 0 : 0.7)),
       airline: "Thai AirAsia",
       airlineCode: "FD",
+      logoUrl: `https://pics.avs.io/120/120/FD.png`,
       price: roundPrice(base * 1.1),
     },
     {
@@ -530,6 +532,7 @@ function genFareTable(seed: DestinationSeed, origin: OriginSeed): FareTableEntry
       dur1: formatDuration(seed.avgFlightHours + 1.0),
       airline: "Scoot",
       airlineCode: "TR",
+      logoUrl: `https://pics.avs.io/120/120/TR.png`,
       price: roundPrice(base * 1.04),
     },
   ];
@@ -543,6 +546,7 @@ function genAirlines(seed: DestinationSeed): AirlineSummary[] {
     {
       code: "FD",
       name: "Thai AirAsia",
+      logoUrl: `https://pics.avs.io/120/120/FD.png`,
       dealCount: Math.max(2, Math.round(10 / ratio)),
       commonStops: stops,
       tags: ["Budget", "Popular"],
@@ -551,6 +555,7 @@ function genAirlines(seed: DestinationSeed): AirlineSummary[] {
     {
       code: "TR",
       name: "Scoot",
+      logoUrl: `https://pics.avs.io/120/120/TR.png`,
       dealCount: Math.max(2, Math.round(8 / ratio)),
       commonStops: Math.max(1, stops),
       tags: ["Budget"],
@@ -558,6 +563,7 @@ function genAirlines(seed: DestinationSeed): AirlineSummary[] {
     {
       code: "SL",
       name: "Thai Lion Air",
+      logoUrl: `https://pics.avs.io/120/120/SL.png`,
       dealCount: Math.max(1, Math.round(6 / ratio)),
       commonStops: stops,
       tags: ["Budget"],
@@ -565,6 +571,7 @@ function genAirlines(seed: DestinationSeed): AirlineSummary[] {
     {
       code: "TG",
       name: "Thai Airways",
+      logoUrl: `https://pics.avs.io/120/120/TG.png`,
       dealCount: Math.max(1, Math.round(3 / ratio)),
       commonStops: seed.avgFlightHours <= 2.0 ? 0 : 1,
       tags: ["Premium", "Full-service"],
@@ -578,6 +585,7 @@ function genReviews(seed: DestinationSeed): ReviewDatum[] {
     {
       airline: "Singapore Airlines",
       airlineCode: "SQ",
+      logoUrl: `https://pics.avs.io/120/120/SQ.png`,
       score: 8.2,
       highlights: [
         `Excellent in-flight service on routes to ${seed.city}`,
@@ -588,6 +596,7 @@ function genReviews(seed: DestinationSeed): ReviewDatum[] {
     {
       airline: "Thai Airways",
       airlineCode: "TG",
+      logoUrl: `https://pics.avs.io/120/120/TG.png`,
       score: 7.8,
       highlights: [
         `Comfortable flights to ${seed.city}`,
@@ -598,6 +607,7 @@ function genReviews(seed: DestinationSeed): ReviewDatum[] {
     {
       airline: "Thai AirAsia",
       airlineCode: "FD",
+      logoUrl: `https://pics.avs.io/120/120/FD.png`,
       score: 7.5,
       highlights: [
         "Competitive pricing",
@@ -608,6 +618,7 @@ function genReviews(seed: DestinationSeed): ReviewDatum[] {
     {
       airline: "Scoot",
       airlineCode: "TR",
+      logoUrl: `https://pics.avs.io/120/120/TR.png`,
       score: 6.7,
       highlights: [
         "Affordable fares",
