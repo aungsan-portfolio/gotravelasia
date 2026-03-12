@@ -58,11 +58,17 @@ function getApiMessage(payload: unknown): string | null {
 
 export default function DestinationLandingPage() {
   const [matched, params] = useRoute<{ slug: string }>(ROUTE_PATTERN);
+  const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const slug = useMemo(() => (matched ? params?.slug?.trim().toLowerCase() ?? "" : ""), [matched, params]);
 
   const staticRecord = useMemo(
     () => (slug ? getDestinationBySlug(slug) : undefined),
     [slug]
+  );
+
+  const requestedOrigin = useMemo(
+    () => searchParams.get("origin")?.trim().toUpperCase() ?? null,
+    [searchParams]
   );
 
   const [state, setState] = useState<ControllerState>({

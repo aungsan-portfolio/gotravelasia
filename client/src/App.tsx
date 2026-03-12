@@ -18,6 +18,7 @@ const ChiangRai = lazy(() => import("./pages/destinations/ChiangRai"));
 const FlightResults = lazy(() => import("./pages/FlightResults"));
 const FlightDestinationPage = lazy(() => import("./pages/FlightDestinationPage"));
 const DestinationLandingPage = lazy(() => import("./pages/DestinationLandingPage"));
+const FlightsQueryRedirect = lazy(() => import("./pages/FlightsQueryRedirect"));
 const TermsAndPrivacy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -55,6 +56,8 @@ function Router() {
 
         {/* Flight Search Results (Travelpayouts White Label) */}
         <Route path="/flights/results" component={FlightResults} />
+
+        <Route path="/flights" component={FlightsQueryRedirect} />
 
         {/* Dedicated Destination Landing Pages (must be before generic /flights/:o/:d) */}
         <Route path="/flights/to/:destination" component={DestinationLandingPage} />
