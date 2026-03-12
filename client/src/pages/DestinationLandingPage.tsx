@@ -40,6 +40,82 @@ function buildApiUrl(originCode: string, destCode: string, currency: string = "t
   return `${url.pathname}${url.search}`;
 }
 
+function normalizeOriginCode(value: string | null | undefined): string | null {
+  const code = value?.trim().toUpperCase() ?? "";
+  return /^[A-Z]{3}$/.test(code) ? code : null;
+}
+
+function setQueryParam(href: string, key: string, value: string): string {
+  const url = new URL(href, window.location.origin);
+  url.searchParams.set(key, value);
+  return `${url.pathname}${url.search}`;
+}
+
+function applyRequestedOriginToVm(
+  vm: DestinationPageVM,
+  requestedOrigin: string | null
+): DestinationPageVM {
+  const normalizedOrigin = normalizeOriginCode(requestedOrigin);
+
+  if (!normalizedOrigin) {
+    return vm;
+  }
+
+  const allowedOrigins = new Set(
+    [
+      vm.hero.searchForm.originCode,
+      ...vm.fareFinder.originOptions.map((option) => option.value),
+    ].map((value) => value.trim().toUpperCase())
+  );
+
+  if (!allowedOrigins.has(normalizedOrigin)) {
+    return vm;
+  }
+
+  const nextOriginLabel =
+    normalizedOrigin === vm.hero.searchForm.originCode
+      ? vm.hero.searchForm.originLabel
+      : normalizedOrigin;
+
+  return {
+    ...vm,
+    hero: {
+      ...vm.hero,
+      originLabel: nextOriginLabel,
+      searchForm: {
+        ...vm.hero.searchForm,
+        originCode: normalizedOrigin,
+        originLabel: nextOriginLabel,
+      },
+    },
+    route: {
+      ...vm.route,
+      bookingCtaHref: setQueryParam(vm.route.bookingCtaHref, "origin", normalizedOrigin),
+    },
+    fareFinder: {
+      ...vm.fareFinder,
+      defaultOrigin: normalizedOrigin,
+    },
+    footer: {
+      ...vm.footer,
+      browseLinks: vm.footer.browseLinks.map((link) => {
+        const url = new URL(link.href, window.location.origin);
+
+        if (url.pathname !== "/price-alerts") {
+          return link;
+        }
+
+        url.searchParams.set("origin", normalizedOrigin);
+
+        return {
+          ...link,
+          href: `${url.pathname}${url.search}`,
+        };
+      }),
+    },
+  };
+}
+
 function getApiMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
 
@@ -58,7 +134,8 @@ function getApiMessage(payload: unknown): string | null {
 
 export default function DestinationLandingPage() {
   const [matched, params] = useRoute<{ slug: string }>(ROUTE_PATTERN);
-  const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const locationSearch = typeof window !== "undefined" ? window.location.search : "";
+  const searchParams = useMemo(() => new URLSearchParams(locationSearch), [locationSearch]);
   const slug = useMemo(() => (matched ? params?.slug?.trim().toLowerCase() ?? "" : ""), [matched, params]);
 
   const staticRecord = useMemo(
@@ -94,10 +171,13 @@ export default function DestinationLandingPage() {
         return;
       }
 
-      const staticVm = buildDestinationPageVM(staticRecord, {
-        liveState: "static",
-        sourceLabel: "Static registry",
-      });
+      const staticVm = applyRequestedOriginToVm(
+        buildDestinationPageVM(staticRecord, {
+          liveState: "static",
+          sourceLabel: "Static registry",
+        }),
+        requestedOrigin
+      );
 
       if (!cancelled) {
         setState({
@@ -178,12 +258,15 @@ export default function DestinationLandingPage() {
 
         const liveState: LiveState = hasLiveDeals ? "live" : "partial";
 
-        const vm = buildDestinationPageVM(mergedRecord, {
-          liveState,
-          sourceLabel: liveState === "live" ? "Live API + fallback" : "Partial live data",
-          lastUpdated:
-            typeof parsedData.lastUpdated === "string" ? parsedData.lastUpdated : new Date().toISOString(),
-        });
+        const vm = applyRequestedOriginToVm(
+          buildDestinationPageVM(mergedRecord, {
+            liveState,
+            sourceLabel: liveState === "live" ? "Live API + fallback" : "Partial live data",
+            lastUpdated:
+              typeof parsedData.lastUpdated === "string" ? parsedData.lastUpdated : new Date().toISOString(),
+          }),
+          requestedOrigin
+        );
 
         if (!cancelled) {
           setState({
@@ -213,7 +296,7 @@ export default function DestinationLandingPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, staticRecord]);
+  }, [slug, staticRecord, requestedOrigin]);
 
   if (!matched) {
     return null;
