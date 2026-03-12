@@ -124,4 +124,22 @@ describe("resolveFlightsRedirectPath", () => {
     expect(inner.get("tripType")).toBe("return");
     expect(inner.get("adults")).toBe("2");
   });
+
+  it("extracts clean date from full ISO datetime strings", () => {
+    const result = resolveFlightsRedirectPath(
+      {
+        origin: "BKK",
+        destination: "SIN",
+        depart: "2026-04-10T15:30:00.000Z", // Full ISO
+        returnAt: "2026-04-17T09:00:00.000Z", // Full ISO
+      },
+      mockDeps
+    );
+
+    const url = new URL("https://example.com" + result);
+    const inner = new URLSearchParams(url.searchParams.get("flightSearch") ?? "");
+    
+    expect(inner.get("depart")).toBe("2026-04-10");
+    expect(inner.get("return")).toBe("2026-04-17");
+  });
 });

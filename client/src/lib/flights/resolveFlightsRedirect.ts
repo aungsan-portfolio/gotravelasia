@@ -50,6 +50,35 @@ function clean(value?: string | null): string {
   return (value ?? "").trim();
 }
 
+/**
+ * Robust ISO date extraction - ensures we get just the YYYY-MM-DD part.
+ * Handles cases where a full ISO string (with time) is passed from pickers.
+ */
+export function extractDateFromISO(isoString: string | null | undefined): string {
+  const val = (isoString ?? "").trim();
+  if (!val) return "";
+
+  // Handle ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+  const datePart = val.split("T")[0];
+
+  // Validate it looks like a date (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    return datePart;
+  }
+
+  // Fallback: try to parse and reformat
+  try {
+    const date = new Date(val);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split("T")[0];
+    }
+  } catch (e) {
+    console.warn("Invalid ISO date:", val);
+  }
+
+  return "";
+}
+
 function normalizeSlugLike(value: string): string {
   return value
     .trim()
@@ -114,9 +143,12 @@ export function resolveFlightsRedirectPath(
   const destinationRaw = clean(input.destination);
   const destinationCode = destinationRaw.toUpperCase();
 
+  const depart = extractDateFromISO(input.depart);
+  const returnAt = extractDateFromISO(input.returnAt);
+
   const record = resolveDestinationRecord(destinationRaw, deps);
 
-  const hasSearchIntent = Boolean(clean(input.depart));
+  const hasSearchIntent = Boolean(depart);
 
   // ── Search intent → Travelpayouts results page ────────────────
   if (hasSearchIntent && origin && destinationCode) {
@@ -125,8 +157,8 @@ export function resolveFlightsRedirectPath(
     search.set("origin", origin);
     search.set("destination", destinationCode);
 
-    if (clean(input.depart)) search.set("depart", clean(input.depart));
-    if (clean(input.returnAt)) search.set("return", clean(input.returnAt));
+    if (depart) search.set("depart", depart);
+    if (returnAt) search.set("return", returnAt);
     if (clean(input.tripType)) search.set("tripType", clean(input.tripType));
     if (clean(input.adults)) search.set("adults", clean(input.adults));
     if (clean(input.children)) search.set("children", clean(input.children));
@@ -146,6 +178,8 @@ export function resolveFlightsRedirectPath(
 
     if (origin) next.set("origin", origin);
     if (record.dest.code) next.set("destination", record.dest.code);
+    if (depart) next.set("depart", depart);
+    if (returnAt) next.set("return", returnAt);
     if (clean(input.tripType)) next.set("tripType", clean(input.tripType));
     if (clean(input.adults)) next.set("adults", clean(input.adults));
     if (clean(input.children)) next.set("children", clean(input.children));

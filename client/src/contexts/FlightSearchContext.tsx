@@ -11,6 +11,8 @@ import React, {
     useContext,
     useState,
     useCallback,
+    useMemo,
+    useEffect,
     useRef,
     type ReactNode,
 } from "react";
@@ -27,6 +29,48 @@ export type TripType = "return" | "one-way";
 export type FlexibilityType = "exact" | "3days" | "week" | "month";
 
 import { buildTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
+import { getDestinationByCode } from "@/data/destinationRegistry";
+
+/**
+ * Prevent double decoding of URL parameters (common with affiliate links).
+ */
+export function safeDecodeParam(param: string): string {
+    if (!param) return "";
+    try {
+        // Decode only once - prevents double-decoding issues
+        return decodeURIComponent(param);
+    } catch (e) {
+        console.warn("Failed to decode param:", param);
+        return param; // Return original if decode fails
+    }
+}
+
+/**
+ * Correctly parse trip details to prevent extra return row or date mismatches.
+ */
+export function parseTripDetails(
+    tripType: string,
+    returnDateRaw: string | null
+): { isRoundTrip: boolean; returnDate: string | null } {
+    const type = safeDecodeParam(tripType).toLowerCase();
+    const isRoundTrip = type === "roundtrip" || type === "return";
+
+    let returnDate: string | null = null;
+
+    if (isRoundTrip && returnDateRaw) {
+        returnDate = safeDecodeParam(returnDateRaw);
+
+        // Validate/extract date if needed (handle ISO T separator)
+        if (returnDate && !/^\d{4}-\d{2}-\d{2}$/.test(returnDate)) {
+            const datePart = returnDate.split("T")[0];
+            if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                returnDate = datePart;
+            }
+        }
+    }
+
+    return { isRoundTrip, returnDate };
+}
 
 export interface FlightSearchState {
     // Core
@@ -130,7 +174,74 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
 
     const setReturnDate = useCallback((d: string) => setReturnDateRaw(d), []);
 
-    // ── buildSearchURL ─────────────────────────────
+    // ── Pre-fill logic (URL → State) ──────────────────────────────────────
+    useEffect(() => {
+        const search = new URLSearchParams(window.location.search);
+        const flightSearch = search.get("flightSearch");
+        if (!flightSearch) return;
+
+        // Parse format: {ORIGIN}{DDMM}{DEST}[{DDMM}][class]{adults}{children}{infants}
+        // This is the Travelpayouts native search string, but we also support
+        // raw key-value pairs if the helper redirected with search.toString().
+        
+        // If it looks like a standard query string inside the param:
+        if (flightSearch.includes("origin=") && flightSearch.includes("destination=")) {
+            const inner = new URLSearchParams(flightSearch);
+            const originCode = safeDecodeParam(inner.get("origin") || "");
+            const destCode = safeDecodeParam(inner.get("destination") || "");
+            const departAt = safeDecodeParam(inner.get("depart") || "");
+            const returnAtRaw = inner.get("return");
+            const tripTypeRaw = inner.get("tripType") || "return";
+            const cabinRaw = inner.get("cabin") || "Y";
+            const adultsRaw = inner.get("adults") || "1";
+
+            const originRec = getDestinationByCode(originCode.toUpperCase());
+            const destRec = getDestinationByCode(destCode.toUpperCase());
+
+            if (originRec) setOriginRaw({ code: originRec.dest.code, name: originRec.dest.city, country: "" });
+            if (destRec) setDestinationRaw({ code: destRec.dest.code, name: destRec.dest.city, country: "" });
+
+            if (departAt) {
+                const cleanDate = departAt.split("T")[0];
+                if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) setDepartDate(cleanDate);
+            }
+
+            const { isRoundTrip, returnDate } = parseTripDetails(tripTypeRaw, returnAtRaw);
+            setTripType(isRoundTrip ? "return" : "one-way");
+            if (returnDate) setReturnDateRaw(returnDate);
+
+            // Cabin mapping
+            const cabinMap: Record<string, CabinCode> = { c: "C", w: "W", f: "F", "Y": "Y" };
+            setCabinClass(cabinMap[cabinRaw.toUpperCase()] || "Y");
+            setAdults(parseInt(adultsRaw) || 1);
+            
+            return;
+        }
+
+        // --- Travelpayouts Native Format parsing (Fallback) ---
+        const match = flightSearch.match(/^([A-Z]{3})(\d{4})([A-Z]{3})(\d{4})?([cwf]?)(\d{1,3})$/i);
+        if (!match) return;
+
+        const [, originCode, , destCode, retDdMm, cabinSuffix, paxSuffix] = match;
+
+        const originRec = getDestinationByCode(originCode.toUpperCase());
+        const destRec = getDestinationByCode(destCode.toUpperCase());
+
+        if (originRec) setOriginRaw({ code: originRec.dest.code, name: originRec.dest.city, country: "" });
+        if (destRec) setDestinationRaw({ code: destRec.dest.code, name: destRec.dest.city, country: "" });
+
+        if (retDdMm) setTripType("return");
+        else setTripType("one-way");
+
+        const cabinMap: Record<string, CabinCode> = { c: "C", w: "W", f: "F" };
+        setCabinClass(cabinMap[cabinSuffix.toLowerCase()] || "Y");
+
+        if (paxSuffix.length >= 1) setAdults(parseInt(paxSuffix[0]) || 1);
+        if (paxSuffix.length >= 2) setChildCount(parseInt(paxSuffix[1]) || 0);
+        if (paxSuffix.length >= 3) setInfants(parseInt(paxSuffix[2]) || 0);
+
+    }, []);
+
     const buildSearchURL = useCallback((): { skyscanner: string; travelpayouts: string } | null => {
         if (!origin || !destination || !departDate) return null;
 
