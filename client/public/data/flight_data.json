@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-12 06:47",
-    "count": 6082,
+    "updated_at": "2026-03-12 12:47",
+    "count": 6084,
     "currency": "USD",
     "errors": 67
   },
@@ -52336,6 +52336,20 @@
     {
       "origin": "KUL",
       "destination": "HAN",
+      "price": 57.0,
+      "date": "2026-09-27",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 0,
+      "flight_number": "906",
+      "found_at": "2026-03-12 12:46",
+      "fetchedAt": 1773319619214,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "HAN",
       "price": 58.0,
       "date": "2026-11-26",
       "airline": "VJ",
@@ -53744,6 +53758,20 @@
       "flight_number": "820",
       "found_at": "2026-03-11 06:44",
       "fetchedAt": 1773211467708,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "HKT",
+      "price": 46.0,
+      "date": "2026-09-27",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "826",
+      "found_at": "2026-03-12 12:46",
+      "fetchedAt": 1773319619014,
       "provider": "tp",
       "region": "SEA"
     },
