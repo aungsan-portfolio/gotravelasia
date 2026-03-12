@@ -92,4 +92,36 @@ describe("resolveFlightsRedirectPath", () => {
     );
     expect(result).toBe("/");
   });
+
+  it("redirects to /flights/results when depart is present (search intent)", () => {
+    const result = resolveFlightsRedirectPath(
+      {
+        origin: "BKK",
+        destination: "SIN",
+        depart: "2026-04-10",
+        returnAt: "2026-04-17",
+        tripType: "return",
+        adults: "2",
+      },
+      {
+        findByCode: (code) => (code === "SIN" ? singapore : undefined),
+        findBySlug: () => undefined,
+      }
+    );
+
+    const url = new URL("https://example.com" + result);
+
+    expect(url.pathname).toBe("/flights/results");
+
+    const flightSearch = url.searchParams.get("flightSearch");
+    expect(flightSearch).toBeTruthy();
+
+    const inner = new URLSearchParams(flightSearch ?? "");
+    expect(inner.get("origin")).toBe("BKK");
+    expect(inner.get("destination")).toBe("SIN");
+    expect(inner.get("depart")).toBe("2026-04-10");
+    expect(inner.get("return")).toBe("2026-04-17");
+    expect(inner.get("tripType")).toBe("return");
+    expect(inner.get("adults")).toBe("2");
+  });
 });

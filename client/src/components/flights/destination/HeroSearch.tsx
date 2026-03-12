@@ -4,6 +4,11 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { Plane, Calendar, Users, ArrowRight } from "lucide-react";
 import type { DestinationPageVM } from "@/types/destination";
+import {
+  getDestinationByCode,
+  getDestinationBySlug,
+} from "@/data/destinationRegistry";
+import { resolveFlightsRedirectPath } from "@/lib/flights/resolveFlightsRedirect";
 
 type HeroSearchProps = {
   data: DestinationPageVM;
@@ -76,19 +81,22 @@ export default function HeroSearch({ data }: HeroSearchProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const params = new URLSearchParams({
-      origin: originCode,
-      destination: searchForm.destinationCode,
-      depart: departDate,
-      passengers: String(passengers),
-      type: tripType,
-    });
+    const nextPath = resolveFlightsRedirectPath(
+      {
+        origin: originCode,
+        destination: searchForm.destinationCode,
+        depart: departDate,
+        returnAt: tripType === "return" ? returnDate : "",
+        tripType,
+        adults: String(passengers),
+      },
+      {
+        findByCode: getDestinationByCode,
+        findBySlug: getDestinationBySlug,
+      }
+    );
 
-    if (tripType === "return" && returnDate) {
-      params.set("return", returnDate);
-    }
-
-    window.location.href = `${searchForm.bookingSearchUrl}?${params.toString()}`;
+    window.location.href = nextPath;
   }
 
   return (

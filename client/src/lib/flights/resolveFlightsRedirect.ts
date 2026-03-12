@@ -116,13 +116,36 @@ export function resolveFlightsRedirectPath(
 
   const record = resolveDestinationRecord(destinationRaw, deps);
 
+  const hasSearchIntent = Boolean(clean(input.depart));
+
+  // ── Search intent → Travelpayouts results page ────────────────
+  if (hasSearchIntent && origin && destinationCode) {
+    const search = new URLSearchParams();
+
+    search.set("origin", origin);
+    search.set("destination", destinationCode);
+
+    if (clean(input.depart)) search.set("depart", clean(input.depart));
+    if (clean(input.returnAt)) search.set("return", clean(input.returnAt));
+    if (clean(input.tripType)) search.set("tripType", clean(input.tripType));
+    if (clean(input.adults)) search.set("adults", clean(input.adults));
+    if (clean(input.children)) search.set("children", clean(input.children));
+    if (clean(input.cabin)) search.set("cabin", clean(input.cabin));
+
+    // FlightResults page will parse this and build the actual
+    // Travelpayouts white-label query.
+    const wrapper = new URLSearchParams();
+    wrapper.set("flightSearch", search.toString());
+
+    return `/flights/results?${wrapper.toString()}`;
+  }
+
+  // ── Browse intent → Destination landing page ──────────────────
   if (record) {
     const next = new URLSearchParams();
 
     if (origin) next.set("origin", origin);
     if (record.dest.code) next.set("destination", record.dest.code);
-    if (clean(input.depart)) next.set("depart", clean(input.depart));
-    if (clean(input.returnAt)) next.set("return", clean(input.returnAt));
     if (clean(input.tripType)) next.set("tripType", clean(input.tripType));
     if (clean(input.adults)) next.set("adults", clean(input.adults));
     if (clean(input.children)) next.set("children", clean(input.children));
@@ -133,15 +156,7 @@ export function resolveFlightsRedirectPath(
   }
 
   if (origin && destinationCode) {
-    const slug = `${origin.toLowerCase()}-${destinationCode.toLowerCase()}`;
-    const next = new URLSearchParams();
-    next.set("origin", origin);
-    next.set("destination", destinationCode);
-    if (clean(input.depart)) next.set("depart", clean(input.depart));
-    if (clean(input.returnAt)) next.set("return", clean(input.returnAt));
-    if (clean(input.tripType)) next.set("tripType", clean(input.tripType));
-    
-    return `/flights/to/${slug}?${next.toString()}`;
+    return `/flights/${origin.toLowerCase()}/${destinationCode.toLowerCase()}`;
   }
 
   return "/";
