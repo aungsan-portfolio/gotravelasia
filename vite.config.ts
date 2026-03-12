@@ -13,8 +13,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const PROJECT_ROOT = import.meta.dirname;
 const LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
-const MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024; // 1MB per log file
-const TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6); // Trim to 60% to avoid constant re-trimming
+const MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024;
+const TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6);
 
 type LogSource = "browserConsole" | "networkRequests" | "sessionReplay";
 
@@ -34,8 +34,8 @@ function trimLogFile(logPath: string, maxSize: number) {
     const keptLines: string[] = [];
     let keptBytes = 0;
 
-    // Keep newest lines (from end) that fit within 60% of maxSize
     const targetSize = TRIM_TARGET_BYTES;
+
     for (let i = lines.length - 1; i >= 0; i--) {
       const lineBytes = Buffer.byteLength(`${lines[i]}\n`, "utf-8");
       if (keptBytes + lineBytes > targetSize) break;
@@ -45,7 +45,7 @@ function trimLogFile(logPath: string, maxSize: number) {
 
     fs.writeFileSync(logPath, keptLines.join("\n"), "utf-8");
   } catch {
-    /* ignore trim errors */
+    // ignore trim errors
   }
 }
 
@@ -55,16 +55,12 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
   ensureLogDir();
   const logPath = path.join(LOG_DIR, `${source}.log`);
 
-  // Format entries with timestamps
   const lines = entries.map((entry) => {
     const ts = new Date().toISOString();
     return `[${ts}] ${JSON.stringify(entry)}`;
   });
 
-  // Append to log file
   fs.appendFileSync(logPath, `${lines.join("\n")}\n`, "utf-8");
-
-  // Trim if exceeds max size
   trimLogFile(logPath, MAX_LOG_SIZE_BYTES);
 }
 
@@ -82,6 +78,7 @@ function vitePluginManusDebugCollector(): Plugin {
       if (process.env.NODE_ENV === "production") {
         return html;
       }
+
       return {
         html,
         tags: [
@@ -98,14 +95,12 @@ function vitePluginManusDebugCollector(): Plugin {
     },
 
     configureServer(server: ViteDevServer) {
-      // POST /__manus__/logs: Browser sends logs (written directly to files)
       server.middlewares.use("/__manus__/logs", (req, res, next) => {
         if (req.method !== "POST") {
           return next();
         }
 
         const handlePayload = (payload: any) => {
-          // Write logs directly to files
           if (payload.consoleLogs?.length > 0) {
             writeToLogFile("browserConsole", payload.consoleLogs);
           }
@@ -120,10 +115,10 @@ function vitePluginManusDebugCollector(): Plugin {
           res.end(JSON.stringify({ success: true }));
         };
 
-        const reqBody = (req as { body?: unknown }).body;
-        if (reqBody && typeof reqBody === "object") {
+        const reqBody = req as { body?: unknown };
+        if (reqBody.body && typeof reqBody.body === "object") {
           try {
-            handlePayload(reqBody);
+            handlePayload(reqBody.body);
           } catch (e) {
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ success: false, error: String(e) }));
@@ -160,22 +155,42 @@ const plugins = [
   VitePWA({
     registerType: "autoUpdate",
     workbox: {
+      cleanupOutdatedCaches: true,
+      maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,json}"],
+      globIgnores: ["**/data/flight_data.json"],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/api\.travelpayouts\.com\/.*/i,
           handler: "NetworkFirst",
           options: {
             cacheName: "flight-api-cache",
-            expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 }, // 1 hour
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60,
+            },
           },
         },
         {
-          urlPattern: /\/data\/transport\.json/,
+          urlPattern: /\/data\/transport\.json$/,
           handler: "CacheFirst",
           options: {
             cacheName: "transport-data",
-            expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 }, // 24 hours
+            expiration: {
+              maxEntries: 5,
+              maxAgeSeconds: 60 * 60 * 24,
+            },
+          },
+        },
+        {
+          urlPattern: /\/data\/flight_data\.json$/,
+          handler: "StaleWhileRevalidate",
+          options: {
+            cacheName: "flight-data-cache",
+            expiration: {
+              maxEntries: 2,
+              maxAgeSeconds: 60 * 60 * 24,
+            },
           },
         },
       ],
@@ -225,8 +240,17 @@ export default defineConfig({
           vendor: ["react", "react-dom"],
           router: ["wouter"],
           query: ["@tanstack/react-query", "@trpc/client", "@trpc/react-query"],
-          ui: ["@radix-ui/react-dialog", "@radix-ui/react-popover", "@radix-ui/react-tooltip"],
-          i18n: ["i18next", "react-i18next", "i18next-browser-languagedetector", "i18next-http-backend"],
+          ui: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-tooltip",
+          ],
+          i18n: [
+            "i18next",
+            "react-i18next",
+            "i18next-browser-languagedetector",
+            "i18next-http-backend",
+          ],
         },
       },
     },
