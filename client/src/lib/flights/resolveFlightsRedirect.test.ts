@@ -8,67 +8,88 @@ const singapore = {
   dest: { code: "SIN" },
 };
 
+const hcmc = {
+  slug: "ho-chi-minh-city",
+  dest: { code: "SGN" },
+};
+
+const mockDeps = {
+  findByCode: (code: string) => {
+    if (code === "SIN") return singapore;
+    if (code === "SGN") return hcmc;
+    return undefined;
+  },
+  findBySlug: (slug: string) => {
+    if (slug === "singapore") return singapore;
+    if (slug === "ho-chi-minh-city") return hcmc;
+    return undefined;
+  },
+};
+
 describe("resolveFlightsRedirectPath", () => {
   it("redirects known destination code to destination landing page", () => {
     const result = resolveFlightsRedirectPath(
-      {
-        origin: "BKK",
-        destination: "SIN",
-      },
-      {
-        findByCode: (code) => (code === "SIN" ? singapore : undefined),
-        findBySlug: () => undefined,
-      }
+      { origin: "BKK", destination: "SIN" },
+      mockDeps
     );
-
     expect(result).toBe("/flights/to/singapore?origin=BKK&destination=SIN");
   });
 
   it("redirects known destination slug to destination landing page", () => {
     const result = resolveFlightsRedirectPath(
-      {
-        origin: "CNX",
-        destination: "singapore",
-        adults: "2",
-      },
-      {
-        findByCode: () => undefined,
-        findBySlug: (slug) => (slug === "singapore" ? singapore : undefined),
-      }
+      { origin: "CNX", destination: "singapore", adults: "2" },
+      mockDeps
     );
-
-    expect(result).toBe(
-      "/flights/to/singapore?origin=CNX&destination=SIN&adults=2"
-    );
+    expect(result).toBe("/flights/to/singapore?origin=CNX&destination=SIN&adults=2");
   });
+
+  // --- NEW ALIAS TESTS ---
+  it("resolves dashed permutations (ho-chi-minh)", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "BKK", destination: "ho-chi-minh" },
+      mockDeps
+    );
+    expect(result).toBe("/flights/to/ho-chi-minh-city?origin=BKK&destination=SGN");
+  });
+
+  it("resolves spaced permutations (ho chi minh)", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "BKK", destination: "ho chi minh" },
+      mockDeps
+    );
+    expect(result).toBe("/flights/to/ho-chi-minh-city?origin=BKK&destination=SGN");
+  });
+
+  it("resolves mapped aliases (saigon)", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "BKK", destination: "saigon" },
+      mockDeps
+    );
+    expect(result).toBe("/flights/to/ho-chi-minh-city?origin=BKK&destination=SGN");
+  });
+
+  it("resolves exact string aliases (sin city)", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "BKK", destination: "sin city" },
+      mockDeps
+    );
+    expect(result).toBe("/flights/to/singapore?origin=BKK&destination=SIN");
+  });
+  // -------------------------
 
   it("falls back to generic flight route for unknown destination codes", () => {
     const result = resolveFlightsRedirectPath(
-      {
-        origin: "BKK",
-        destination: "XYZ",
-      },
-      {
-        findByCode: () => undefined,
-        findBySlug: () => undefined,
-      }
+      { origin: "BKK", destination: "XYZ" },
+      mockDeps
     );
-
     expect(result).toBe("/flights/bkk/xyz");
   });
 
   it("falls back to home when query is incomplete", () => {
     const result = resolveFlightsRedirectPath(
-      {
-        origin: "",
-        destination: "",
-      },
-      {
-        findByCode: () => undefined,
-        findBySlug: () => undefined,
-      }
+      { origin: "", destination: "" },
+      mockDeps
     );
-
     expect(result).toBe("/");
   });
 });
