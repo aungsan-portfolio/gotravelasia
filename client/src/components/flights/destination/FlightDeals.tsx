@@ -6,13 +6,49 @@ import type { DestinationPageVM, NormalizedDealVM } from "@/types/destination";
 
 type FlightDealsProps = { data: DestinationPageVM };
 
+// Cheapflights-style deal classification tabs
+type DealClass = "all" | "cheapest" | "best" | "direct" | "oneway";
+const DEAL_CLASSES: { key: DealClass; label: string }[] = [
+  { key: "all",      label: "All" },
+  { key: "cheapest", label: "Cheapest" },
+  { key: "best",     label: "Best" },
+  { key: "direct",   label: "Direct" },
+  { key: "oneway",   label: "One-way" },
+];
+
 const STOP_BADGE_STYLES: Record<NormalizedDealVM["stopBadgeTone"], string> = {
   green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
   amber: "border-amber-400/30  bg-amber-400/10  text-amber-200",
   red:   "border-rose-400/30   bg-rose-400/10   text-rose-200",
 };
 
-function DealCard({ deal, destinationCity }: { deal: NormalizedDealVM; destinationCity: string }) {
+function classifyDeals(items: NormalizedDealVM[], cls: DealClass): NormalizedDealVM[] {
+  switch (cls) {
+    case "cheapest":
+      return [...items].sort((a, b) => a.price - b.price).slice(0, 5);
+    case "best": {
+      // "Best" = good balance of price + direct preference
+      const sorted = [...items].sort((a, b) => {
+        const aScore = a.price * (a.stops === 0 ? 0.85 : 1);
+        const bScore = b.price * (b.stops === 0 ? 0.85 : 1);
+        return aScore - bScore;
+      });
+      return sorted.slice(0, 5);
+    }
+    case "direct":
+      return items.filter((d) => d.isDirect);
+    case "oneway":
+      // "One-way" = 40% cheapest of the results as representative
+      return [...items]
+        .sort((a, b) => a.price - b.price)
+        .slice(0, 3)
+        .map((d) => ({ ...d, tag: "One-way" }));
+    default:
+      return items;
+  }
+}
+
+function DealCard({ deal }: { deal: NormalizedDealVM }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]">
 
@@ -23,11 +59,18 @@ function DealCard({ deal, destinationCity }: { deal: NormalizedDealVM; destinati
         )}
         <div>
           <p className="text-sm font-semibold text-white">{deal.airline}</p>
-          {deal.badge && (
-            <span className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium leading-none ${STOP_BADGE_STYLES[deal.stopBadgeTone]}`}>
-              {deal.badge}
-            </span>
-          )}
+          <div className="flex gap-1 mt-0.5 flex-wrap">
+            {deal.badge && (
+              <span className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium leading-none ${STOP_BADGE_STYLES[deal.stopBadgeTone]}`}>
+                {deal.badge}
+              </span>
+            )}
+            {deal.tag && (
+              <span className="inline-block rounded border border-fuchsia-400/30 bg-fuchsia-400/10 px-1.5 py-0.5 text-[10px] font-medium leading-none text-fuchsia-300">
+                {deal.tag}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -58,6 +101,11 @@ function DealCard({ deal, destinationCity }: { deal: NormalizedDealVM; destinati
         >
           Book now
         </a>
+        {deal.found && (
+          <p className="mt-0.5 text-right text-[10px] text-white/40">
+            Found {deal.found}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -75,6 +123,8 @@ export default function FlightDeals({ data }: FlightDealsProps) {
   const [activeTab, setActiveTab] = useState(() =>
     resolveActiveTab(deals.activeTab, deals.tabs)
   );
+  const [dealClass, setDealClass] = useState<DealClass>("all");
+  const [directOnly, setDirectOnly] = useState(false);
 
   useEffect(() => {
     setActiveTab(resolveActiveTab(deals.activeTab, deals.tabs));
@@ -87,6 +137,13 @@ export default function FlightDeals({ data }: FlightDealsProps) {
     [activeTab, deals.tabs],
   );
 
+  // Apply direct-only filter then deal classification
+  const visibleDeals = useMemo(() => {
+    let items = currentTab?.items ?? [];
+    if (directOnly) items = items.filter((d) => d.isDirect);
+    return classifyDeals(items, dealClass);
+  }, [currentTab, dealClass, directOnly]);
+
   function scrollRibbon(dir: "left" | "right") {
     ribbonRef.current?.scrollBy({ left: dir === "left" ? -220 : 220, behavior: "smooth" });
   }
@@ -96,6 +153,8 @@ export default function FlightDeals({ data }: FlightDealsProps) {
     { label: "Cheapest carrier", value: deals.summary.cheapestCarrier ?? "—" },
     { label: "Direct deals",     value: String(deals.summary.directCount) },
   ];
+
+  const directCount = currentTab?.items.filter((d) => d.isDirect).length ?? 0;
 
   return (
     <section className="px-4 py-8">
@@ -167,12 +226,67 @@ export default function FlightDeals({ data }: FlightDealsProps) {
           </button>
         </div>
 
+        {/* ── Deal Classification Tabs (Cheapest / Best / Direct / One-way) ── */}
+        <div className="flex flex-wrap items-center gap-2">
+          {DEAL_CLASSES.map((cls) => {
+            const isActive = dealClass === cls.key;
+            const isEmpty = cls.key === "direct" && directCount === 0;
+            return (
+              <button
+                key={cls.key}
+                type="button"
+                disabled={isEmpty}
+                onClick={() => setDealClass(cls.key)}
+                className={[
+                  "rounded-full border px-3 py-1 text-xs font-semibold transition",
+                  isEmpty
+                    ? "cursor-not-allowed border-white/5 text-white/20"
+                    : isActive
+                    ? "border-fuchsia-400 bg-fuchsia-400/20 text-fuchsia-300"
+                    : "border-white/10 bg-white/[0.03] text-white/60 hover:border-white/20 hover:bg-white/[0.07] hover:text-white",
+                ].join(" ")}
+              >
+                {cls.label}
+                {cls.key === "direct" && directCount > 0 && (
+                  <span className="ml-1 opacity-60">({directCount})</span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Direct-only toggle */}
+          <button
+            type="button"
+            onClick={() => setDirectOnly((v) => !v)}
+            className={[
+              "ml-auto flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition",
+              directOnly
+                ? "border-emerald-400 bg-emerald-400/20 text-emerald-300"
+                : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/20 hover:bg-white/[0.07] hover:text-white",
+            ].join(" ")}
+            aria-pressed={directOnly}
+          >
+            <span
+              className={[
+                "inline-block h-2 w-2 rounded-full transition",
+                directOnly ? "bg-emerald-400" : "bg-white/20",
+              ].join(" ")}
+            />
+            Direct only
+          </button>
+        </div>
+
         {/* Active tab info bar */}
         {currentTab && (
           <div className="flex items-center justify-between text-xs text-white/40">
             <span>
               {route.routeLabel} · <span className="text-white/60">{currentTab.label}</span>
               {" "}· best from <span className="text-amber-400 font-semibold">{currentTab.bestPriceLabel}</span>
+              {dealClass !== "all" && (
+                <span className="ml-2 rounded bg-fuchsia-400/10 px-1.5 text-fuchsia-300">
+                  {DEAL_CLASSES.find((c) => c.key === dealClass)?.label}
+                </span>
+              )}
             </span>
             <Link href={route.bookingCtaHref} className="text-fuchsia-400 hover:underline">
               Search all fares →
@@ -181,16 +295,20 @@ export default function FlightDeals({ data }: FlightDealsProps) {
         )}
 
         {/* Deal cards */}
-        {currentTab && currentTab.items.length > 0 ? (
+        {visibleDeals.length > 0 ? (
           <div className="space-y-3">
-            {currentTab.items.map((deal) => (
-              <DealCard key={deal.id} deal={deal} destinationCity={route.destination.city} />
+            {visibleDeals.map((deal) => (
+              <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
         ) : (
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center">
-            <p className="text-sm font-medium text-white/60">No deals available for this month.</p>
-            <p className="mt-1 text-xs text-white/30">Try another month or search all fares.</p>
+            <p className="text-sm font-medium text-white/60">
+              {directOnly ? "No direct flights available for this month." : "No deals available for this month."}
+            </p>
+            <p className="mt-1 text-xs text-white/30">
+              {directOnly ? "Try disabling 'Direct only' or select another month." : "Try another month or search all fares."}
+            </p>
           </div>
         )}
       </div>

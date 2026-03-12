@@ -1,6 +1,6 @@
 // client/src/components/flights/destination/FareFinder.tsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import type {
   DestinationPageVM,
@@ -200,6 +200,24 @@ export default function FareFinder({ data }: FareFinderProps) {
     fareFinder.summary.budgetMax > 0 &&
     fareFinder.summary.budgetMax > fareFinder.summary.budgetMin;
 
+  // ── Pagination ───────────────────────────────────────────────
+  const PAGE_SIZE = 3;
+  const [page, setPage] = useState(0);
+
+  // Reset to first page when filters change
+  const filteredKey = filteredEntries.map((e) => e.id).join(",");
+  const prevFilteredKey = useRef(filteredKey);
+  if (prevFilteredKey.current !== filteredKey) {
+    prevFilteredKey.current = filteredKey;
+    if (page !== 0) setPage(0);
+  }
+
+  const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
+  const pagedEntries = useMemo(
+    () => filteredEntries.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredEntries, page],
+  );
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -319,16 +337,16 @@ export default function FareFinder({ data }: FareFinderProps) {
         </div>
 
         {/* ── Results ── */}
-        {filteredEntries.length > 0 ? (
+        {pagedEntries.length > 0 ? (
           <div className="mt-5 grid gap-4">
-            {filteredEntries.map((entry) => (
+            {pagedEntries.map((entry) => (
               <FareRow
                 key={String(entry.id)}
                 entry={entry}
               />
             ))}
           </div>
-        ) : (
+        ) : filteredEntries.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
             <p className="text-sm font-medium text-white">
               No fares found for this combination.
@@ -337,6 +355,46 @@ export default function FareFinder({ data }: FareFinderProps) {
               Increase the budget cap or try another origin filter to see more
               combinations.
             </p>
+          </div>
+        ) : null}
+
+        {/* ── Pagination ── */}
+        {totalPages > 1 && (
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              ← Prev
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalPages }).map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setPage(idx)}
+                  className={[
+                    "h-2.5 w-2.5 rounded-full transition",
+                    idx === page
+                      ? "bg-amber-400"
+                      : "bg-white/20 hover:bg-white/40",
+                  ].join(" ")}
+                  aria-label={`Go to page ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              Next →
+            </button>
           </div>
         )}
 

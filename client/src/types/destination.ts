@@ -21,6 +21,7 @@ export interface Deal {
   price: number;
   badge?: string | null;
   tag?: string;
+  found?: string;
 }
 
 export interface FareTableEntry {
@@ -82,12 +83,18 @@ export interface TimeOfDayDatum {
   avgPrice: number;
 }
 
+export interface ReviewSubScore {
+  label: string;
+  score: number; // 0–10
+}
+
 export interface ReviewDatum {
   airline: string;
   airlineCode?: string;
   logoUrl?: string;
   score: number;
   highlights: string[];
+  subScores?: ReviewSubScore[];
 }
 
 export interface WeatherMonthDatum {
@@ -172,6 +179,7 @@ export interface NormalizedDealVM extends Deal {
   priceLabel: string;
   isDirect: boolean;
   isOneStop: boolean;
+  found?: string;
 }
 
 export interface FareLegVM {

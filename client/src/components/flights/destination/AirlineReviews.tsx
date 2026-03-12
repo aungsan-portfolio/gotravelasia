@@ -159,6 +159,13 @@ export default function AirlineReviews({ data }: AirlineReviewsProps) {
               <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {selectedReview.logoUrl && (
+                      <img
+                        src={selectedReview.logoUrl}
+                        alt={selectedReview.airline}
+                        className="h-7 w-7 rounded bg-white/10 object-contain"
+                      />
+                    )}
                     <h3 className="text-xl font-semibold text-white">
                       {selectedReview.airline}
                     </h3>
@@ -174,7 +181,7 @@ export default function AirlineReviews({ data }: AirlineReviewsProps) {
 
                 <div className="rounded-2xl border border-white/10 bg-[#100b21] px-4 py-3 text-right">
                   <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-                    Score
+                    Overall score
                   </p>
                   <p className={`text-2xl font-semibold ${scoreTextTone(selectedReview.score)}`}>
                     {selectedReview.score}/10
@@ -182,7 +189,27 @@ export default function AirlineReviews({ data }: AirlineReviewsProps) {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+              {/* Sub-score metrics */}
+              {selectedReview.subScores && selectedReview.subScores.length > 0 && (
+                <div className="mt-4 grid gap-3 border-b border-white/10 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {selectedReview.subScores.map((sub) => (
+                    <div key={sub.label}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] uppercase tracking-[0.10em] text-white/50">{sub.label}</p>
+                        <p className={`text-xs font-semibold ${scoreTextTone(sub.score)}`}>{sub.score}</p>
+                      </div>
+                      <div className="mt-1.5 h-1.5 rounded-full bg-white/10">
+                        <div
+                          className={`h-1.5 rounded-full bg-gradient-to-r ${scoreTone(sub.score)} transition-all duration-500`}
+                          style={{ width: `${Math.min(100, Math.max(0, sub.score * 10))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 {selectedReview.highlights.map((highlight, index) => (
                   <div
                     key={`${selectedReview.airlineCode}-${index}`}

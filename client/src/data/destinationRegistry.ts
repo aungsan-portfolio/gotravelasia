@@ -282,10 +282,50 @@ function genAirlines(seed: DestinationSeed): AirlineSummary[] {
 
 function genReviews(seed: DestinationSeed): ReviewDatum[] {
   return [
-    { airline:"Singapore Airlines", airlineCode:"SQ", logoUrl:"https://pics.avs.io/120/120/SQ.png", score:8.2, highlights:[`Excellent in-flight service on routes to ${seed.city}`,"Premium cabin options","Consistently high ratings"] },
-    { airline:"Thai Airways",       airlineCode:"TG", logoUrl:"https://pics.avs.io/120/120/TG.png", score:7.8, highlights:[`Comfortable flights to ${seed.city}`,"Good connectivity via Bangkok","Decent in-flight meals"] },
-    { airline:"Thai AirAsia",       airlineCode:"FD", logoUrl:"https://pics.avs.io/120/120/FD.png", score:7.5, highlights:["Competitive pricing",`Popular budget option to ${seed.city}`,"Efficient boarding"] },
-    { airline:"Scoot",              airlineCode:"TR", logoUrl:"https://pics.avs.io/120/120/TR.png", score:6.7, highlights:["Affordable fares",`Basic but reliable for ${seed.city}`,"Good for budget travelers"] },
+    {
+      airline: "Singapore Airlines", airlineCode: "SQ", logoUrl: "https://pics.avs.io/120/120/SQ.png", score: 8.2,
+      highlights: [`Excellent in-flight service on routes to ${seed.city}`, "Premium cabin options", "Consistently high ratings"],
+      subScores: [
+        { label: "Comfort",       score: 8.8 },
+        { label: "Food",          score: 8.5 },
+        { label: "Service",       score: 8.9 },
+        { label: "Boarding",      score: 8.0 },
+        { label: "Entertainment", score: 8.4 },
+      ],
+    },
+    {
+      airline: "Thai Airways", airlineCode: "TG", logoUrl: "https://pics.avs.io/120/120/TG.png", score: 7.8,
+      highlights: [`Comfortable flights to ${seed.city}`, "Good connectivity via Bangkok", "Decent in-flight meals"],
+      subScores: [
+        { label: "Comfort",       score: 7.9 },
+        { label: "Food",          score: 7.7 },
+        { label: "Service",       score: 7.8 },
+        { label: "Boarding",      score: 7.5 },
+        { label: "Entertainment", score: 7.2 },
+      ],
+    },
+    {
+      airline: "Thai AirAsia", airlineCode: "FD", logoUrl: "https://pics.avs.io/120/120/FD.png", score: 7.5,
+      highlights: ["Competitive pricing", `Popular budget option to ${seed.city}`, "Efficient boarding"],
+      subScores: [
+        { label: "Comfort",       score: 7.0 },
+        { label: "Food",          score: 6.5 },
+        { label: "Service",       score: 7.6 },
+        { label: "Boarding",      score: 8.2 },
+        { label: "Entertainment", score: 6.0 },
+      ],
+    },
+    {
+      airline: "Scoot", airlineCode: "TR", logoUrl: "https://pics.avs.io/120/120/TR.png", score: 6.7,
+      highlights: ["Affordable fares", `Basic but reliable for ${seed.city}`, "Good for budget travelers"],
+      subScores: [
+        { label: "Comfort",       score: 6.5 },
+        { label: "Food",          score: 5.8 },
+        { label: "Service",       score: 6.9 },
+        { label: "Boarding",      score: 7.0 },
+        { label: "Entertainment", score: 5.5 },
+      ],
+    },
   ];
 }
 
@@ -385,6 +425,64 @@ function buildRegistry(seeds: DestinationSeed[], origin: OriginSeed = DEFAULT_OR
 const REGISTRY = buildRegistry(DESTINATION_SEEDS);
 
 // ── Public API ──────────────────────────────────────────────────────
+const AIRPORT_CITY_MAP: Record<string, string> = {
+  BKK: "Bangkok",
+  DMK: "Bangkok",
+  CNX: "Chiang Mai",
+  HKT: "Phuket",
+  SIN: "Singapore",
+  KUL: "Kuala Lumpur",
+  ICN: "Seoul",
+  NRT: "Tokyo",
+  HND: "Tokyo",
+  HKG: "Hong Kong",
+  RGN: "Yangon",
+  MDL: "Mandalay",
+  DPS: "Bali",
+  SGN: "Ho Chi Minh City",
+  HAN: "Hanoi",
+  MNL: "Manila",
+  KIX: "Osaka",
+  TPE: "Taipei",
+  SYD: "Sydney",
+  MEL: "Melbourne",
+  LHR: "London",
+  CDG: "Paris",
+  DXB: "Dubai",
+  DAD: "Da Nang",
+  USM: "Koh Samui",
+  KBV: "Krabi",
+};
+
+export function generateDynamicDestination(
+  originCode: string,
+  destCode: string
+): StaticDestinationRecord {
+  const code = destCode.toUpperCase();
+  const city = AIRPORT_CITY_MAP[code] || code;
+
+  const seed: DestinationSeed = {
+    slug: `${originCode.toLowerCase()}-${destCode.toLowerCase()}`,
+    city,
+    code,
+    airport: `${city} Airport`,
+    country: "Destination",
+    flag: "✈️",
+    priceRatio: 1.2,
+    avgFlightHours: 3.5,
+    avgTempC: 25,
+    avgRainMm: 120,
+  };
+
+  const originSeed: OriginSeed = {
+    city: AIRPORT_CITY_MAP[originCode.toUpperCase()] || originCode.toUpperCase(),
+    code: originCode.toUpperCase(),
+    country: "Origin",
+  };
+
+  return buildRecord(seed, originSeed);
+}
+
 export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined { return REGISTRY.byCitySlug.get(toSlug(slug)); }
 export function getDestinationByCode(code: string): StaticDestinationRecord | undefined { return REGISTRY.byCode.get(code.trim().toUpperCase()); }
 export function getDestinationsByCountrySlug(countrySlug: string): StaticDestinationRecord[] { return REGISTRY.byCountrySlug.get(toSlug(countrySlug)) ?? []; }

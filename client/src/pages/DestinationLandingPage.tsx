@@ -5,7 +5,7 @@ import { useRoute } from "wouter";
 import { Helmet } from "react-helmet-async";
 
 import type { DestinationPageVM } from "@/types/destination";
-import { getDestinationBySlug } from "@/data/destinationRegistry";
+import { getDestinationBySlug, generateDynamicDestination } from "@/data/destinationRegistry";
 import { DestinationLandingApiEnvelopeSchema } from "@/data/destinationSchemas";
 import { normalizeLiveData } from "@/lib/destination/normalizeLiveData";
 import { mergeDestinationData } from "@/lib/destination/mergeDestinationData";
@@ -18,6 +18,7 @@ import FareFinder from "@/components/flights/destination/FareFinder";
 import Insights from "@/components/flights/destination/Insights";
 import AirlinesWeather from "@/components/flights/destination/AirlinesWeather";
 import AirlineReviews from "@/components/flights/destination/AirlineReviews";
+import TrustBenchmarks from "@/components/flights/destination/TrustBenchmarks";
 import FooterSections from "@/components/flights/destination/FooterSections";
 
 type LiveState = "static" | "live" | "partial" | "error";
@@ -138,15 +139,31 @@ export default function DestinationLandingPage() {
   const searchParams = useMemo(() => new URLSearchParams(locationSearch), [locationSearch]);
   const slug = useMemo(() => (matched ? params?.slug?.trim().toLowerCase() ?? "" : ""), [matched, params]);
 
-  const staticRecord = useMemo(
-    () => (slug ? getDestinationBySlug(slug) : undefined),
-    [slug]
-  );
+  const staticRecord = useMemo(() => {
+    if (!slug) return undefined;
+    const existing = getDestinationBySlug(slug);
+    if (existing) return existing;
 
-  const requestedOrigin = useMemo(
-    () => searchParams.get("origin")?.trim().toUpperCase() ?? null,
-    [searchParams]
-  );
+    // Handle dynamic AAA-BBB slugs
+    const match = slug.match(/^([a-z]{3})-([a-z]{3})$/i);
+    if (match) {
+      return generateDynamicDestination(match[1], match[2]);
+    }
+
+    return undefined;
+  }, [slug]);
+
+  const requestedOrigin = useMemo(() => {
+    const fromQuery = searchParams.get("origin")?.trim().toUpperCase() ?? null;
+    if (fromQuery && /^[A-Z]{3}$/.test(fromQuery)) return fromQuery;
+
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user_home_airport")?.trim().toUpperCase() ?? null;
+      if (stored && /^[A-Z]{3}$/.test(stored)) return stored;
+    }
+
+    return null;
+  }, [searchParams]);
 
   const [state, setState] = useState<ControllerState>({
     vm: null,
@@ -369,6 +386,8 @@ export default function DestinationLandingPage() {
         <div id="airlines-weather">
           <AirlinesWeather data={vm} />
         </div>
+
+        <TrustBenchmarks />
 
         <AirlineReviews data={vm} />
 
