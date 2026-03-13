@@ -31,7 +31,7 @@ export default function DestinationHero({
     updatedAt,
     dealsCount,
 }: DestinationHeroProps) {
-    const isCountry = routeVm.destination.country && !routeVm.destination.code;
+    const isCountry = routeVm.type === "country";
     const toLabel = isCountry 
         ? routeVm.destination.city 
         : `${routeVm.destination.city} (${routeVm.destination.code})`;

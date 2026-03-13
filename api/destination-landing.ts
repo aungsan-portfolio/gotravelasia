@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { getDestinationBySlugOrCode } from "../server/db";
 
 // ── In-memory cache ─────────────────────────────────────────────
 type CacheEntry = {
@@ -97,6 +98,9 @@ export default async function handler(
     return res.status(200).json(cached.payload);
   }
 
+  // ── Database Resolution (Phase 8) ───────────────────────────
+  const dbRecord = await getDestinationBySlugOrCode(destination);
+
   // ── Fetch from Travelpayouts ────────────────────────────────
   try {
     const token = process.env.TRAVELPAYOUTS_TOKEN;
@@ -180,6 +184,11 @@ export default async function handler(
         destination,
         currency,
         updatedAt: new Date().toISOString(),
+        // Phase 8 additions
+        type: dbRecord?.type,
+        climate: dbRecord?.climate,
+        highlights: dbRecord?.highlights,
+        priceRatio: dbRecord?.priceRatio,
       },
       deals: {
         cheapest: fareTable.slice(0, 3).map((row) => ({
@@ -226,6 +235,11 @@ export default async function handler(
         destination,
         currency,
         updatedAt: new Date().toISOString(),
+        // Phase 8 additions
+        type: dbRecord?.type,
+        climate: dbRecord?.climate,
+        highlights: dbRecord?.highlights,
+        priceRatio: dbRecord?.priceRatio,
       },
       deals: {
         cheapest: [],

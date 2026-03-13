@@ -282,6 +282,7 @@ export interface RouteVM {
   climate?: string;
   highlights?: string[];
   priceRatio?: number;
+  type?: "country" | "city" | "airport";
 }
 
 

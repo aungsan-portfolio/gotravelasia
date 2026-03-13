@@ -714,6 +714,12 @@ export function normalizeLiveData(
   const faqs = normalizeFaqs(payload);
   const nearbyRoutes = normalizeNearbyRoutes(payload);
 
+  const type = (payload.type ?? getNested(input, ["meta", "type"])) as "country" | "city" | "airport" | undefined;
+  const climate = pickFirstString(payload.climate, getNested(input, ["meta", "climate"]));
+  const highlightsRaw = payload.highlights ?? getNested(input, ["meta", "highlights"]);
+  const highlights = Array.isArray(highlightsRaw) ? highlightsRaw.filter(isNonEmptyString) : undefined;
+  const priceRatio = pickFirstNumber(payload.priceRatio, getNested(input, ["meta", "priceRatio"]));
+
   const normalized: NormalizedLiveDestinationData = {
     ...(slug ? { slug } : {}),
     ...(origin ? { origin } : {}),
@@ -728,6 +734,10 @@ export function normalizeLiveData(
     ...(weather ? { weather } : {}),
     ...(faqs ? { faqs } : {}),
     ...(nearbyRoutes ? { nearbyRoutes } : {}),
+    ...(type ? { type } : {}),
+    ...(climate ? { climate } : {}),
+    ...(highlights ? { highlights } : {}),
+    ...(priceRatio !== undefined ? { priceRatio } : {}),
   };
 
   return Object.keys(normalized).length > 0 ? normalized : null;

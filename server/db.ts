@@ -1,6 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers } from "../drizzle/schema";
+import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers, destinations } from "../drizzle/schema";
+import { or } from "drizzle-orm";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -187,5 +188,24 @@ export async function saveSubscriber(
   } catch (error) {
     console.error("[Database] Failed to save subscriber:", error);
     throw error;
+  }
+}
+
+export async function getDestinationBySlugOrCode(key: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  try {
+    const results = await db.select().from(destinations)
+      .where(
+        or(
+          eq(destinations.slug, key.toLowerCase()),
+          eq(destinations.iataCode, key.toUpperCase())
+        )
+      )
+      .limit(1);
+    return results.length > 0 ? results[0] : undefined;
+  } catch (err) {
+    console.error(`[Database] Failed to get destination for ${key}:`, err);
+    return undefined;
   }
 }

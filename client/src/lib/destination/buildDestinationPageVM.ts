@@ -393,6 +393,7 @@ export function buildDestinationPageVM(
       climate:         record.climate,
       highlights:      normalizedHighlights,
       priceRatio:      record.priceRatio,
+      type:            record.type,
     },
 
     hero: {
