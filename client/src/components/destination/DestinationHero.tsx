@@ -65,7 +65,7 @@ export default function DestinationHero({
 
                     {routeVm.highlights && (
                          <p className="mt-4 text-sm text-indigo-100 font-medium italic">
-                            Top attractions: {routeVm.highlights}
+                            Top attractions: {routeVm.highlights.join(", ")}
                          </p>
                     )}
 

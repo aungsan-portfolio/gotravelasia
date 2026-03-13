@@ -1,0 +1,3 @@
+﻿client/src/pages/DestinationLandingPage.tsx(385,12): error TS2304: Cannot find name 'DestinationHero'.
+client/src/pages/FlightDestinationPage.tsx(50,17): error TS2322: Type '{ originCity: string; originCode: string; destinationCity: string; destinationCode: string; cheapestPrice: number; currency: string; updatedAt: string; dealsCount: number; }' is not assignable to type 'IntrinsicAttributes & DestinationHeroProps'.
+  Property 'originCity' does not exist on type 'IntrinsicAttributes & DestinationHeroProps'.

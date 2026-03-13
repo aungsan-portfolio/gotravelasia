@@ -265,37 +265,36 @@ export default function AirlineReviews({ data }: AirlineReviewsProps) {
               </div>
             </>
           ) : (
-             <div className="mt-2">
-               {reviews.highlights && reviews.highlights.length > 0 ? (
-                 <>
-                   <div className="mb-6">
-                     <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
-                        Top Attractions
-                     </p>
-                     <h3 className="mt-2 text-xl font-semibold tracking-tight text-white">
-                        Destination Highlights
-                     </h3>
-                     <p className="mt-2 text-sm text-white/60">
-                        Iconic spots and must-see locations recommended for your trip.
-                     </p>
-                   </div>
-                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                     {reviews.highlights.map((highlight, idx) => (
-                       <AttractionCard key={idx} highlight={highlight} />
-                     ))}
-                   </div>
-                 </>
-               ) : (
-                 <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
-                   <p className="text-sm font-medium text-white">No review data available.</p>
-                   <p className="mt-2 text-sm text-white/60">
-                     Airline review content will appear here when data is available.
-                   </p>
-                 </div>
-               )}
+            <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
+              <p className="text-sm font-medium text-white">No review data available.</p>
+              <p className="mt-2 text-sm text-white/60">
+                Airline review content will appear here when data is available.
+              </p>
             </div>
           )}
         </div>
+
+        {/* ── Destination Highlights (Attraction Cards) ── */}
+        {reviews.highlights && reviews.highlights.length > 0 && (
+          <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+            <div className="mb-6">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
+                Top Attractions
+              </p>
+              <h3 className="text-xl font-semibold tracking-tight text-white">
+                Destination Highlights
+              </h3>
+              <p className="mt-2 text-sm text-white/60">
+                Iconic spots and must-see locations recommended for your trip.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {reviews.highlights.map((highlight, idx) => (
+                <AttractionCard key={idx} highlight={highlight} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
