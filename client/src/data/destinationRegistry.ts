@@ -440,11 +440,21 @@ function genTimeOfDay(seed: DestinationSeed): StaticDestinationRecord["timeOfDay
 }
 
 function genNearbyRoutes(currentSeed: DestinationSeed): RelatedRoute[] {
+  // If this is a country page (e.g., China), show major cities WITHIN that country
+  if (currentSeed.type === "country") {
+    return DESTINATION_SEEDS
+      .filter((s) => s.country === currentSeed.country && s.slug !== currentSeed.slug)
+      .sort((a, b) => (Number(b.isPopularDestination) + Number(b.isPopularCity)) - (Number(a.isPopularDestination) + Number(a.isPopularCity)))
+      .slice(0, 3)
+      .map((s) => ({ city: s.city, code: s.code, href: `/flights/to/${s.slug}`, tag: "Popular City" }));
+  }
+
+  // Otherwise (city/airport page), show popular destinations from OTHER countries
   return DESTINATION_SEEDS
     .filter((s) => s.slug !== currentSeed.slug && s.country !== currentSeed.country)
     .sort((a, b) => (Number(b.isPopularDestination) + Number(b.isPopularCity)) - (Number(a.isPopularDestination) + Number(a.isPopularCity)))
     .slice(0, 3)
-    .map((s) => ({ city:s.city, code:s.code, href:`/flights/to/${s.slug}`, tag:"Popular" }));
+    .map((s) => ({ city: s.city, code: s.code, href: `/flights/to/${s.slug}`, tag: "Popular" }));
 }
 
 // ── Record builder ──────────────────────────────────────────────────

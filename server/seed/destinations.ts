@@ -160,23 +160,11 @@ async function seedCountryDestinations() {
   }
 
   let inserted = 0;
-  let skipped = 0;
+  let updated = 0;
 
   for (const seed of COUNTRY_SEEDS) {
     try {
-      const existing = await db
-        .select()
-        .from(destinations)
-        .where(eq(destinations.slug, seed.slug))
-        .limit(1);
-
-      if (existing.length > 0) {
-        console.log(`  ⏭️  ${seed.name} (${seed.slug}) — already exists, skipping`);
-        skipped++;
-        continue;
-      }
-
-      await db.insert(destinations).values({
+      const values = {
         slug: seed.slug,
         type: seed.type,
         name: seed.name,
@@ -189,16 +177,20 @@ async function seedCountryDestinations() {
         highlights: seed.highlights,
         weatherData: seed.weatherData,
         priceRatio: seed.priceRatio,
-      });
+      };
 
-      console.log(`  ✅ ${seed.name} (${seed.countryCode}) — inserted with ${seed.primaryAirports.length} airports, ${seed.cities.length} cities`);
+      await db.insert(destinations)
+        .values(values)
+        .onDuplicateKeyUpdate({ set: values });
+
+      console.log(`  ✅ ${seed.name} (${seed.countryCode}) — upserted with ${seed.primaryAirports.length} airports, ${seed.cities.length} cities`);
       inserted++;
     } catch (error) {
       console.error(`  ❌ Failed to seed ${seed.slug}:`, error);
     }
   }
 
-  console.log(`\n📊 Summary: ${inserted} inserted, ${skipped} skipped`);
+  console.log(`\n📊 Summary: ${inserted} records upserted`);
   console.log("   Verify at /flights/to/china — hero should read 'China', not 'Beijing'.");
   process.exit(0);
 }

@@ -512,6 +512,19 @@ export function mergeDestinationData(
       staticRecord.nearbyRoutes,
       liveRecord.nearbyRoutes,
     ),
+    // Phase 8 additions
+    type: staticRecord.type,
+    climate: pickNullableString(staticRecord.climate, liveRecord.climate) ?? undefined,
+    highlights: Array.isArray(liveRecord.highlights)
+      ? liveRecord.highlights
+      : Array.isArray(staticRecord.highlights)
+        ? staticRecord.highlights
+        : isNonEmptyString(liveRecord.highlights)
+          ? liveRecord.highlights
+          : isNonEmptyString(staticRecord.highlights)
+            ? staticRecord.highlights
+            : undefined,
+    priceRatio: pickNumber(staticRecord.priceRatio ?? 1.0, liveRecord.priceRatio),
   };
 }
 
