@@ -18,6 +18,43 @@ type BuildDestinationPageVMOptions = {
   bookingBaseUrl?: string;
 };
 
+// ── Airport name lookup (for FareFinder origin dropdown) ────────────
+const AIRPORT_NAMES: Record<string, string> = {
+  BKK: "Suvarnabhumi (BKK)",
+  DMK: "Don Mueang (DMK)",
+  CNX: "Chiang Mai (CNX)",
+  HKT: "Phuket (HKT)",
+  USM: "Koh Samui (USM)",
+  UTP: "U-Tapao Pattaya (UTP)",
+  SIN: "Singapore Changi (SIN)",
+  KUL: "Kuala Lumpur (KUL)",
+  ICN: "Seoul Incheon (ICN)",
+  NRT: "Tokyo Narita (NRT)",
+  HND: "Tokyo Haneda (HND)",
+  HKG: "Hong Kong Intl (HKG)",
+  PEK: "Beijing Capital (PEK)",
+  PVG: "Shanghai Pudong (PVG)",
+  CAN: "Guangzhou (CAN)",
+  CTU: "Chengdu (CTU)",
+  KMG: "Kunming (KMG)",
+  RGN: "Yangon (RGN)",
+  MDL: "Mandalay (MDL)",
+  DPS: "Bali Ngurah Rai (DPS)",
+  SGN: "Ho Chi Minh (SGN)",
+  HAN: "Hanoi Noi Bai (HAN)",
+  DAD: "Da Nang (DAD)",
+  MNL: "Manila Ninoy Aquino (MNL)",
+  KIX: "Osaka Kansai (KIX)",
+  TPE: "Taipei Taoyuan (TPE)",
+  DXB: "Dubai Intl (DXB)",
+  KBV: "Krabi (KBV)",
+  HKT_CHECK: "Phuket (HKT)",
+};
+
+function airportLabel(code: string): string {
+  return AIRPORT_NAMES[code.toUpperCase()] ?? code;
+}
+
 // ── Formatters ──────────────────────────────────────────────────────
 function formatMoney(value: number, currency = "THB"): string {
   try {
@@ -392,7 +429,7 @@ export function buildDestinationPageVM(
       subtitle: `Compare outbound and return fare combinations for ${routeLabel}.`,
       originOptions: Array.from(
         new Set(fareEntries.flatMap((e) => [e.from1, e.from2].filter(Boolean) as string[]))
-      ).map((code) => ({ label:code, value:code })),
+      ).map((code) => ({ label: airportLabel(code), value: code })),
       defaultOrigin: fareEntries[0]?.from1 ?? record.origin.code,
       entries: formattedEntries,
       summary: {
@@ -408,7 +445,9 @@ export function buildDestinationPageVM(
       },
     },
     insights: {
-      title:    `${record.dest.city} price insights`,
+      title:    isCountry
+        ? `${record.dest.city} travel & price insights`
+        : `${record.dest.city} price insights`,
       subtitle: `Seasonality, demand timing, and booking patterns for ${routeLabel}.`,
       priceMonths: record.priceMonths,
       heatmap:     record.heatmap,
@@ -424,8 +463,12 @@ export function buildDestinationPageVM(
       },
     },
     airlinesWeather: {
-      title:    `Airlines and weather for ${record.dest.city}`,
-      subtitle: `Common carriers plus monthly weather context for trip planning.`,
+      title:    isCountry
+        ? `Airlines flying to ${record.dest.city} — weather guide`
+        : `Airlines and weather for ${record.dest.city}`,
+      subtitle: isCountry
+        ? `Common airlines serving major airports in ${record.dest.city}, plus monthly weather context.`
+        : `Common carriers plus monthly weather context for trip planning.`,
       airlines: record.airlines,
       weather:  record.weather,
       climate:  record.climate,
@@ -437,7 +480,9 @@ export function buildDestinationPageVM(
       },
     },
     reviews: {
-      title:    `Reviews of airlines flying to ${record.dest.city}`,
+      title:    isCountry
+        ? `Airline reviews for flights to ${record.dest.city}`
+        : `Reviews of airlines flying to ${record.dest.city}`,
       subtitle: `Quick score summary and standout highlights from commonly seen carriers.`,
       items:              record.reviews,
       defaultAirlineCode: record.reviews[0]?.airlineCode ?? null,
@@ -459,7 +504,9 @@ export function buildDestinationPageVM(
       ],
     },
     seo: {
-      title:         `Cheap flights from ${record.origin.city} to ${record.dest.city}`,
+      title: isCountry
+        ? `Cheap flights to ${record.dest.city} from ${record.origin.city}`
+        : `Cheap flights from ${record.origin.city} to ${record.dest.city}`,
       description:   record.heroNote,
       canonicalPath,
     },

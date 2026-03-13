@@ -35,6 +35,8 @@ type DestinationSeed = AirportSeed &
     isPopularCity?: boolean;
     climate?: string;
     highlights?: string[];
+    /** 'country' pages show a multi-airport layout instead of a city IATA page */
+    type?: "country" | "city" | "airport";
   };
 
 type OriginSeed = { city: string; code: string; country: string };
@@ -54,7 +56,15 @@ const DESTINATION_SEEDS: DestinationSeed[] = [
   { slug:"singapore", city:"Singapore", code:"SIN", airport:"Changi Airport", country:"Singapore", flag:"🇸🇬", priceRatio:1.0, avgFlightHours:2.4, avgTempC:27, avgRainMm:190, aliases:["sin"], isPopularDestination:true, isPopularCity:true },
   { slug:"brunei", city:"Brunei", code:"BWN", airport:"Brunei Intl Airport", country:"Brunei", flag:"🇧🇳", priceRatio:1.3, avgFlightHours:3.2, avgTempC:27, avgRainMm:230, aliases:["bandar-seri-begawan","bwn"], isPopularDestination:true },
   { slug:"phnom-penh", city:"Phnom Penh", code:"PNH", airport:"Phnom Penh Intl Airport", country:"Cambodia", flag:"🇰🇭", priceRatio:0.85, avgFlightHours:1.2, avgTempC:28, avgRainMm:150, aliases:["cambodia","pnh"], isPopularDestination:true },
-  { slug:"beijing", city:"Beijing", code:"PEK", airport:"Beijing Capital Intl", country:"China", flag:"🇨🇳", priceRatio:1.8, avgFlightHours:5.0, avgTempC:13, avgRainMm:60, aliases:["china","pek"], isPopularDestination:true },
+  // China — country-level page (shows all major airports: PEK, PVG, CAN, KMG, CTU)
+  {
+    slug: "china", city: "China", code: "PEK", airport: "Beijing Capital Intl",
+    country: "China", flag: "🇨🇳", priceRatio: 1.8, avgFlightHours: 5.0, avgTempC: 13, avgRainMm: 60,
+    aliases: ["cn"], isPopularDestination: true, type: "country" as const,
+    climate: "Diverse — from subtropical south to cold-temperate north. Best travel window: spring (Apr–May) or autumn (Sep–Oct).",
+    highlights: ["Great Wall of China", "Forbidden City Beijing", "West Lake Hangzhou", "Li River Guilin", "Giant Panda Base Chengdu"],
+  },
+  { slug:"beijing", city:"Beijing", code:"PEK", airport:"Beijing Capital Intl", country:"China", flag:"🇨🇳", priceRatio:1.8, avgFlightHours:5.0, avgTempC:13, avgRainMm:60, aliases:["pek"], isPopularDestination:true },
   { slug:"hong-kong", city:"Hong Kong", code:"HKG", airport:"Hong Kong Intl Airport", country:"Hong Kong", flag:"🇭🇰", priceRatio:1.5, avgFlightHours:2.8, avgTempC:23, avgRainMm:180, aliases:["hkg"], isPopularDestination:true },
   { slug:"mumbai", city:"Mumbai", code:"BOM", airport:"Chhatrapati Shivaji Intl", country:"India", flag:"🇮🇳", priceRatio:1.6, avgFlightHours:4.5, avgTempC:28, avgRainMm:200, aliases:["india","bom"], isPopularDestination:true },
   { slug:"jakarta", city:"Jakarta", code:"CGK", airport:"Soekarno-Hatta Intl", country:"Indonesia", flag:"🇮🇩", priceRatio:1.1, avgFlightHours:3.5, avgTempC:27, avgRainMm:175, aliases:["indonesia","cgk"], isPopularDestination:true },
@@ -457,6 +467,8 @@ function buildRecord(seed: DestinationSeed, origin: OriginSeed = DEFAULT_ORIGIN)
     nearbyRoutes:genNearbyRoutes(seed),
     climate:     seed.climate,
     highlights:  seed.highlights,
+    priceRatio:  seed.priceRatio,
+    type:        seed.type,          // ← propagate country/city/airport flag
   };
 }
 
