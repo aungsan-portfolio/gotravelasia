@@ -10,8 +10,11 @@ import { DestinationLandingApiEnvelopeSchema } from "@/data/destinationSchemas";
 import { normalizeLiveData } from "@/lib/destination/normalizeLiveData";
 import { mergeDestinationData } from "@/lib/destination/mergeDestinationData";
 import { buildDestinationPageVM } from "@/lib/destination/buildDestinationPageVM";
+import { trpc } from "@/lib/trpc";
+
 
 import Navbar from "@/components/flights/destination/Navbar";
+import DestinationHero from "@/components/destination/DestinationHero";
 import HeroSearch from "@/components/flights/destination/HeroSearch";
 import FlightDeals from "@/components/flights/destination/FlightDeals";
 import FareFinder from "@/components/flights/destination/FareFinder";
@@ -172,12 +175,18 @@ export default function DestinationLandingPage() {
     errorMessage: null,
   });
 
+  const { data: dynamicRecord, isLoading: isResolving } = trpc.destination.resolveDestination.useQuery(slug, {
+    enabled: !!slug && !staticRecord,
+  });
+
+  const recordToUse = staticRecord || dynamicRecord;
+
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      if (!slug || !staticRecord) {
-        if (!cancelled) {
+      if (!slug || (!staticRecord && !isResolving && !dynamicRecord)) {
+        if (!cancelled && !isResolving) {
           setState({
             vm: null,
             liveState: "error",
@@ -188,10 +197,17 @@ export default function DestinationLandingPage() {
         return;
       }
 
+      if (isResolving) {
+        if (!cancelled) {
+          setState((prev) => ({ ...prev, isLoading: true }));
+        }
+        return;
+      }
+
       const staticVm = applyRequestedOriginToVm(
-        buildDestinationPageVM(staticRecord, {
+        buildDestinationPageVM(recordToUse as any, {
           liveState: "static",
-          sourceLabel: "Static registry",
+          sourceLabel: staticRecord ? "Static registry" : "Dynamic resolver",
         }),
         requestedOrigin
       );
@@ -206,7 +222,8 @@ export default function DestinationLandingPage() {
       }
 
       try {
-        const response = await fetch(buildApiUrl(staticRecord.origin.code, staticRecord.dest.code), {
+        const response = await fetch(buildApiUrl((recordToUse as any).origin.code, (recordToUse as any).dest.code), {
+
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -263,9 +280,10 @@ export default function DestinationLandingPage() {
           return;
         }
 
-        const mergedRecord = mergeDestinationData(staticRecord, normalized, {
+        const mergedRecord = mergeDestinationData(recordToUse as any, normalized, {
           preferLive: true,
         });
+
 
         const hasLiveDeals =
           Object.values(mergedRecord.deals).some((items) => items.length > 0) &&
@@ -313,13 +331,14 @@ export default function DestinationLandingPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, staticRecord, requestedOrigin]);
+  }, [slug, staticRecord, recordToUse, isResolving, requestedOrigin]);
 
   if (!matched) {
     return null;
   }
 
-  if (!staticRecord && !state.isLoading) {
+  if (!recordToUse && !state.isLoading && !isResolving) {
+
     return (
       <main className="min-h-screen bg-[#0b0719] px-4 py-12 text-white">
         <div className="mx-auto max-w-5xl rounded-2xl border border-white/10 bg-white/5 p-8">
@@ -364,10 +383,21 @@ export default function DestinationLandingPage() {
         <Navbar dest={vm.route.destination.city} destCode={vm.route.destination.code} origin={vm.route.origin.city} />
 
         <div id="hero-search">
+          <DestinationHero
+              routeVm={vm.route}
+              cheapestPrice={vm.deals.summary.cheapestPrice ?? 0}
+              currency="THB"
+              updatedAt={vm.status.lastUpdatedLabel ?? new Date().toISOString()}
+              dealsCount={vm.deals.summary.totalDeals}
+          />
+        </div>
+        
+        <div id="search-form" className="relative -mt-8 sm:-mt-12 z-20">
           <HeroSearch data={vm} />
         </div>
 
         {state.errorMessage ? (
+
           <div className="mx-auto max-w-7xl px-4 pt-4">
             <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
               {state.errorMessage}

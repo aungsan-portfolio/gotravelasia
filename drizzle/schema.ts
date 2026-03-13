@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -72,3 +72,27 @@ export const subscribers = mysqlTable("subscribers", {
 
 export type Subscriber = typeof subscribers.$inferSelect;
 export type InsertSubscriber = typeof subscribers.$inferInsert;
+
+/**
+ * Destinations table for curated and dynamic (API-cached) content.
+ */
+export const destinations = mysqlTable("destinations", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  type: mysqlEnum("type", ["country", "city", "airport"]).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  iataCode: varchar("iataCode", { length: 5 }),
+  countryCode: varchar("countryCode", { length: 2 }),
+  primaryAirports: json("primaryAirports").$type<string[]>(),
+  cities: json("cities").$type<Array<{ name: string; code: string }>>(),
+  capital: varchar("capital", { length: 255 }),
+  weatherData: json("weatherData").$type<Record<string, any>>(),
+  priceRatio: json("priceRatio").$type<number>(),
+  highlights: text("highlights"),
+  climate: text("climate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Destination = typeof destinations.$inferSelect;
+export type InsertDestination = typeof destinations.$inferInsert;

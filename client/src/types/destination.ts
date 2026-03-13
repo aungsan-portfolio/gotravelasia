@@ -135,6 +135,8 @@ export interface StaticDestinationRecord {
   nearbyRoutes: RelatedRoute[];
   climate?: string;
   highlights?: string[];
+  priceRatio?: number;
+  type?: "country" | "city" | "airport";
 }
 
 /** Dynamic string key — e.g. "2026-04" */
@@ -277,7 +279,11 @@ export interface RouteVM {
   heroNote?: string;
   bookingCtaHref: string;
   bookingCtaLabel: string;
+  climate?: string;
+  highlights?: string;
+  priceRatio?: number;
 }
+
 
 export interface HeroVM {
   title: string;
@@ -322,7 +328,9 @@ export interface AirlinesWeatherVM {
   airlines: AirlineSummary[];
   weather: WeatherMonthDatum[];
   summary: AirlinesWeatherSummaryVM;
+  climate?: string;
 }
+
 
 export interface ReviewsVM {
   title: string;
@@ -330,7 +338,9 @@ export interface ReviewsVM {
   items: ReviewDatum[];
   defaultAirlineCode: string | null;
   summary: ReviewsSummaryVM;
+  highlights?: string;
 }
+
 
 export interface FooterVM {
   title: string;

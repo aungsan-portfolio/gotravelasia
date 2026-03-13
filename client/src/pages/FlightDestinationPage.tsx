@@ -47,10 +47,19 @@ export default function FlightDestinationPage() {
     return (
         <Layout>
             <DestinationHero
-                originCity={data.originCity}
-                originCode={data.originCode}
-                destinationCity={data.destinationCity}
-                destinationCode={data.destinationCode}
+                routeVm={{
+                    origin: {
+                        city: data.originCity,
+                        code: data.originCode,
+                    },
+                    destination: {
+                        city: data.destinationCity,
+                        code: data.destinationCode,
+                    },
+                    routeLabel: `${data.originCity} to ${data.destinationCity}`,
+                    bookingCtaHref: `https://gotravel-asia.vercel.app/flights/${data.originCode.toLowerCase()}/${data.destinationCode.toLowerCase()}`,
+                    bookingCtaLabel: `Search flights to ${data.destinationCity}`,
+                }}
                 cheapestPrice={data.cheapestPrice}
                 currency={data.currency}
                 updatedAt={data.updatedAt}

@@ -325,10 +325,19 @@ export function buildDestinationPageVM(
   const formattedEntries = fareEntries.map((e) => ({ ...e, tripType: e.tripType as "oneway" | "return" }));
   const fareBudget = deriveFareBudget(fareEntries);
 
-  const routeLabel   = `${record.origin.city} → ${record.dest.city}`;
+  const isCountry = record.type === "country";
+
+  const routeLabel = isCountry
+    ? `${record.origin.city} (${record.origin.code}) TO ${record.dest.city}`
+    : `${record.origin.city} (${record.origin.code}) TO ${record.dest.city} (${record.dest.code})`;
+
   const canonicalPath = `/flights/to/${record.slug}`;
 
   const { defaultDepartDate, defaultReturnDate } = deriveDefaultSearchDates(record.deals);
+
+  const normalizedHighlights = Array.isArray(record.highlights) 
+    ? record.highlights.join(' • ') 
+    : record.highlights || undefined;
 
   return {
     slug: record.slug,
@@ -337,17 +346,23 @@ export function buildDestinationPageVM(
     route: {
       origin:          record.origin,
       destination:     record.dest,
-      routeLabel,
+      routeLabel:      routeLabel.replace(" TO ", " → "),
       heroNote:        record.heroNote,
       bookingCtaHref:  buildBookingUrl(bookingBaseUrl, record.origin.code, record.dest.code),
       bookingCtaLabel: `Search flights to ${record.dest.city}`,
+      climate:         record.climate,
+      highlights:      normalizedHighlights,
+      priceRatio:      record.priceRatio,
     },
+
     hero: {
-      title:            `Cheap flights to ${record.dest.city}`,
-      subtitle:         record.heroNote,
+      title:            isCountry ? `Find the best flights to ${record.dest.city}` : `Cheap flights to ${record.dest.city}`,
+      subtitle:         record.heroNote || (isCountry ? `Explore top destinations across ${record.dest.city}.` : undefined),
       originLabel:      `${record.origin.city} (${record.origin.code})`,
-      destinationLabel: `${record.dest.city} (${record.dest.code})`,
+      destinationLabel: isCountry ? record.dest.city : `${record.dest.city} (${record.dest.code})`,
+
       badge:            status.label,
+
       summaryChips: [
         { label:"Cheapest month",  value:priceSummary.cheapestMonth,     subValue:priceSummary.cheapestMonthLabel },
         { label:"Top carrier",     value:airlineSummary.topCarrier,      subValue:`${airlineSummary.topCarrierDealCount} deals` },
@@ -413,6 +428,7 @@ export function buildDestinationPageVM(
       subtitle: `Common carriers plus monthly weather context for trip planning.`,
       airlines: record.airlines,
       weather:  record.weather,
+      climate:  record.climate,
       summary: {
         airlineCount: airlineSummary.airlineCount,
         topCarrier:   airlineSummary.topCarrier,
@@ -425,6 +441,7 @@ export function buildDestinationPageVM(
       subtitle: `Quick score summary and standout highlights from commonly seen carriers.`,
       items:              record.reviews,
       defaultAirlineCode: record.reviews[0]?.airlineCode ?? null,
+      highlights:         normalizedHighlights,
       summary: {
         topAirline: reviewSummary.topAirline,
         topScore:   reviewSummary.topScore,

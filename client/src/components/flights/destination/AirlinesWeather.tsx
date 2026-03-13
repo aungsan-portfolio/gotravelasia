@@ -144,6 +144,16 @@ export default function AirlinesWeather({ data }: AirlinesWeatherProps) {
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
               {airlinesWeather.subtitle}
             </p>
+            {airlinesWeather.climate && (
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 max-w-2xl">
+                <p className="text-[11px] uppercase tracking-[0.15em] text-white/50 mb-1">
+                  General Climate
+                </p>
+                <p className="text-sm font-medium text-white/90">
+                  {airlinesWeather.climate}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

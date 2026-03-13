@@ -226,11 +226,22 @@ export default function AirlineReviews({ data }: AirlineReviewsProps) {
               </div>
             </>
           ) : (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
-              <p className="text-sm font-medium text-white">No review data available.</p>
-              <p className="mt-2 text-sm text-white/60">
-                Airline review content will appear here when data is available.
-              </p>
+             <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
+               {reviews.highlights ? (
+                 <>
+                   <p className="text-sm font-medium text-white">Destination Highlights</p>
+                   <p className="mt-2 text-sm text-white/60 italic">
+                     {reviews.highlights}
+                   </p>
+                 </>
+               ) : (
+                 <>
+                   <p className="text-sm font-medium text-white">No review data available.</p>
+                   <p className="mt-2 text-sm text-white/60">
+                     Airline review content will appear here when data is available.
+                   </p>
+                 </>
+               )}
             </div>
           )}
         </div>

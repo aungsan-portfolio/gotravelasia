@@ -1,3 +1,5 @@
+import type { RouteVM } from "@/types/destination";
+
 export function formatPrice(price: number, currency: string) {
     return new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -15,10 +17,7 @@ export function formatUpdatedAt(value: string) {
 }
 
 interface DestinationHeroProps {
-    originCity: string;
-    originCode: string;
-    destinationCity: string;
-    destinationCode: string;
+    routeVm: RouteVM;
     cheapestPrice: number;
     currency: string;
     updatedAt: string;
@@ -26,15 +25,17 @@ interface DestinationHeroProps {
 }
 
 export default function DestinationHero({
-    originCity,
-    originCode,
-    destinationCity,
-    destinationCode,
+    routeVm,
     cheapestPrice,
     currency,
     updatedAt,
     dealsCount,
 }: DestinationHeroProps) {
+    const isCountry = routeVm.destination.country && !routeVm.destination.code;
+    const toLabel = isCountry 
+        ? routeVm.destination.city 
+        : `${routeVm.destination.city} (${routeVm.destination.code})`;
+
     return (
         <section className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900 to-fuchsia-800 text-white">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_30%)]" />
@@ -49,12 +50,24 @@ export default function DestinationHero({
                     </p>
 
                     <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                        Current one-way fares from {originCity} to {destinationCity}
+                        Current one-way fares to {toLabel}
                     </h1>
 
                     <p className="mt-4 max-w-2xl text-base leading-7 text-indigo-100 sm:text-lg">
-                        Based on the latest fetched route data. Prices from {originCity} ({originCode}) to {destinationCity} ({destinationCode}) may change as availability updates.
+                        Based on the latest fetched route data. Prices for {routeVm.routeLabel} may change as availability updates.
                     </p>
+
+                    {routeVm.climate && (
+                         <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm text-indigo-50 border border-white/10">
+                            🌤️ <span className="font-medium">{routeVm.climate}</span>
+                         </div>
+                    )}
+
+                    {routeVm.highlights && (
+                         <p className="mt-4 text-sm text-indigo-100 font-medium italic">
+                            Top attractions: {routeVm.highlights}
+                         </p>
+                    )}
 
                     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
