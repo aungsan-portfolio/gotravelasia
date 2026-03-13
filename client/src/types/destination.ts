@@ -349,6 +349,15 @@ export interface FooterVM {
   browseLinks: BrowseLinkVM[];
 }
 
+/** A city card displayed in the CountryNavigator for country-level pages. */
+export interface CountryCityVM {
+  name: string;
+  code: string;
+  slug: string;
+  startingFrom: string | null;
+  href: string;
+}
+
 export interface DestinationPageVM {
   slug: string;
   canonicalPath: string;
@@ -363,6 +372,10 @@ export interface DestinationPageVM {
   footer: FooterVM;
   seo: SeoVM;
   raw: StaticDestinationRecord;
+  /** True when the page is a country-level destination (e.g. China, Japan). */
+  isCountry: boolean;
+  /** Major cities within the country, used by CountryNavigator. Empty for city pages. */
+  countryCities: CountryCityVM[];
 }
 
 export type NormalizedDeal = NormalizedDealVM;

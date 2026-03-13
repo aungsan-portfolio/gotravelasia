@@ -23,6 +23,7 @@ import AirlinesWeather from "@/components/flights/destination/AirlinesWeather";
 import AirlineReviews from "@/components/flights/destination/AirlineReviews";
 import TrustBenchmarks from "@/components/flights/destination/TrustBenchmarks";
 import FooterSections from "@/components/flights/destination/FooterSections";
+import CountryNavigator from "@/components/destination/CountryNavigator";
 
 type LiveState = "static" | "live" | "partial" | "error";
 
@@ -404,6 +405,13 @@ export default function DestinationLandingPage() {
             </div>
           </div>
         ) : null}
+
+        {vm.isCountry && vm.countryCities.length > 0 && (
+          <CountryNavigator
+            countryName={vm.route.destination.city}
+            cities={vm.countryCities}
+          />
+        )}
 
         <div id="flight-deals">
           <FlightDeals data={vm} />

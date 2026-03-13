@@ -1,4 +1,5 @@
 // client/src/lib/destination/buildDestinationPageVM.ts
+import { getDestinationsByCountrySlug } from "@/data/destinationRegistry";
 import type {
   Deal,
   FareTableEntry,
@@ -511,5 +512,23 @@ export function buildDestinationPageVM(
       canonicalPath,
     },
     raw: record,
+    isCountry,
+    countryCities: isCountry
+      ? getDestinationsByCountrySlug(record.dest.country ?? "")
+          .filter((r) => r.slug !== record.slug)   // exclude self
+          .map((cityRec) => {
+            const allDeals = Object.values(cityRec.deals).flat();
+            const cheapest = allDeals.length > 0
+              ? Math.min(...allDeals.map((d) => d.price))
+              : null;
+            return {
+              name: cityRec.dest.city,
+              code: cityRec.dest.code,
+              slug: cityRec.slug,
+              startingFrom: cheapest ? formatMoney(cheapest, currency) : null,
+              href: `/flights/to/${cityRec.slug}`,
+            };
+          })
+      : [],
   };
 }
