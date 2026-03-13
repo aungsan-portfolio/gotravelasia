@@ -373,9 +373,11 @@ export function buildDestinationPageVM(
 
   const { defaultDepartDate, defaultReturnDate } = deriveDefaultSearchDates(record.deals);
 
-  const normalizedHighlights = Array.isArray(record.highlights) 
-    ? record.highlights.join(' • ') 
-    : record.highlights || undefined;
+  const normalizedHighlights = Array.isArray(record.highlights)
+    ? record.highlights
+    : record.highlights
+      ? record.highlights.split(',').map((s) => s.trim()).filter(Boolean)
+      : undefined;
 
   return {
     slug: record.slug,

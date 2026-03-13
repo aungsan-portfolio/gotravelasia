@@ -134,7 +134,7 @@ export interface StaticDestinationRecord {
   faqs: FaqItem[];
   nearbyRoutes: RelatedRoute[];
   climate?: string;
-  highlights?: string[];
+  highlights?: string[] | string;
   priceRatio?: number;
   type?: "country" | "city" | "airport";
 }
@@ -280,7 +280,7 @@ export interface RouteVM {
   bookingCtaHref: string;
   bookingCtaLabel: string;
   climate?: string;
-  highlights?: string;
+  highlights?: string[];
   priceRatio?: number;
 }
 
@@ -338,7 +338,7 @@ export interface ReviewsVM {
   items: ReviewDatum[];
   defaultAirlineCode: string | null;
   summary: ReviewsSummaryVM;
-  highlights?: string;
+  highlights?: string[];
 }
 
 

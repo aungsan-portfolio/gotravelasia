@@ -19,6 +19,45 @@ function scoreTextTone(score: number): string {
   return "text-rose-200";
 }
 
+function AttractionCard({ highlight }: { highlight: string }) {
+  // Use a deterministic pseudo-random gradient based on string length
+  const gradientHash = highlight.length % 5;
+  const gradients = [
+    "from-fuchsia-500/80 to-purple-600/80",
+    "from-blue-500/80 to-cyan-400/80",
+    "from-emerald-500/80 to-teal-400/80",
+    "from-amber-500/80 to-orange-400/80",
+    "from-rose-500/80 to-pink-500/80",
+  ];
+  const gradient = gradients[gradientHash];
+
+  return (
+    <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#100b21] transition-all hover:border-fuchsia-400/30 hover:bg-white/[0.04] aspect-[4/3]">
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20 mix-blend-overlay transition-opacity duration-500 group-hover:opacity-40`} />
+      <div className="absolute inset-0 bg-[#0b0719]/40" />
+
+      {/* Premium UI image placeholder icon */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+        <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0719] via-[#0b0719]/80 to-transparent p-5 pt-12">
+        <h3 className="text-base font-semibold text-white transition-colors group-hover:text-fuchsia-100">
+          {highlight}
+        </h3>
+        <span className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-fuchsia-300/80 opacity-0 transform translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+          Discover
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+             <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function AirlineReviews({ data }: AirlineReviewsProps) {
   const { reviews, route } = data;
 
@@ -226,21 +265,33 @@ export default function AirlineReviews({ data }: AirlineReviewsProps) {
               </div>
             </>
           ) : (
-             <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
-               {reviews.highlights ? (
+             <div className="mt-2">
+               {reviews.highlights && reviews.highlights.length > 0 ? (
                  <>
-                   <p className="text-sm font-medium text-white">Destination Highlights</p>
-                   <p className="mt-2 text-sm text-white/60 italic">
-                     {reviews.highlights}
-                   </p>
+                   <div className="mb-6">
+                     <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-fuchsia-200/75">
+                        Top Attractions
+                     </p>
+                     <h3 className="mt-2 text-xl font-semibold tracking-tight text-white">
+                        Destination Highlights
+                     </h3>
+                     <p className="mt-2 text-sm text-white/60">
+                        Iconic spots and must-see locations recommended for your trip.
+                     </p>
+                   </div>
+                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                     {reviews.highlights.map((highlight, idx) => (
+                       <AttractionCard key={idx} highlight={highlight} />
+                     ))}
+                   </div>
                  </>
                ) : (
-                 <>
+                 <div className="rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
                    <p className="text-sm font-medium text-white">No review data available.</p>
                    <p className="mt-2 text-sm text-white/60">
                      Airline review content will appear here when data is available.
                    </p>
-                 </>
+                 </div>
                )}
             </div>
           )}
