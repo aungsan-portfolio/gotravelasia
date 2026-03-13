@@ -33,6 +33,8 @@ type DestinationSeed = AirportSeed &
     aliases?: string[];
     isPopularDestination?: boolean;
     isPopularCity?: boolean;
+    climate?: string;
+    highlights?: string[];
   };
 
 type OriginSeed = { city: string; code: string; country: string };
@@ -67,6 +69,68 @@ const DESTINATION_SEEDS: DestinationSeed[] = [
   { slug:"hanoi", city:"Hanoi", code:"HAN", airport:"Noi Bai Intl Airport", country:"Vietnam", flag:"🇻🇳", priceRatio:0.9, avgFlightHours:1.8, avgTempC:24, avgRainMm:150, aliases:["vietnam","han"], isPopularDestination:true },
   { slug:"yangon", city:"Yangon", code:"RGN", airport:"Yangon Intl Airport", country:"Myanmar", flag:"🇲🇲", priceRatio:0.8, avgFlightHours:1.3, avgTempC:28, avgRainMm:240, aliases:["rgn"], isPopularCity:true },
   { slug:"mandalay", city:"Mandalay", code:"MDL", airport:"Mandalay Intl Airport", country:"Myanmar", flag:"🇲🇲", priceRatio:0.85, avgFlightHours:1.5, avgTempC:27, avgRainMm:130, aliases:["mdl"], isPopularCity:true },
+
+  // ── NEW EXPANSION (Phase 6) ─────────────────────────────────────────
+  { 
+    slug: "chiang-mai", city: "Chiang Mai", code: "CNX", airport: "Chiang Mai Intl", country: "Thailand", flag: "🇹🇭", 
+    priceRatio: 0.82, avgFlightHours: 1.5, avgTempC: 26, avgRainMm: 120, isPopularCity: true,
+    climate: "Tropical savanna with a cool, dry season (Nov–Feb).",
+    highlights: ["Doi Suthep Temple", "Sunday Walking Street", "Elephant Nature Park"]
+  },
+  { 
+    slug: "phuket", city: "Phuket", code: "HKT", airport: "Phuket Intl Airport", country: "Thailand", flag: "🇹🇭", 
+    priceRatio: 0.95, avgFlightHours: 2.0, avgTempC: 28, avgRainMm: 180, isPopularCity: true,
+    climate: "Tropical with a distinct dry season (Nov–Apr).",
+    highlights: ["Patong Beach", "Phi Phi Islands day trip", "Big Buddha"]
+  },
+  { 
+    slug: "bali", city: "Bali", code: "DPS", airport: "Ngurah Rai Intl", country: "Indonesia", flag: "🇮🇩", 
+    priceRatio: 0.98, avgFlightHours: 4.5, avgTempC: 27, avgRainMm: 170, isPopularCity: true,
+    climate: "Tropical; dry season (Apr–Oct) is peak tourist season.",
+    highlights: ["Tanah Lot Temple", "Ubud Rice Terraces", "Seminyak Beach"]
+  },
+  { 
+    slug: "da-nang", city: "Da Nang", code: "DAD", airport: "Da Nang Intl Airport", country: "Vietnam", flag: "🇻🇳", 
+    priceRatio: 0.78, avgFlightHours: 2.5, avgTempC: 25, avgRainMm: 140, isPopularCity: true,
+    climate: "Hot and dry Feb–Aug; ideal for beach holidays.",
+    highlights: ["My Khe Beach", "Marble Mountains", "Hoi An Ancient Town"]
+  },
+  { 
+    slug: "ho-chi-minh-city", city: "Ho Chi Minh City", code: "SGN", airport: "Tan Son Nhat Intl", country: "Vietnam", flag: "🇻🇳", 
+    priceRatio: 0.80, avgFlightHours: 2.0, avgTempC: 28, avgRainMm: 160, isPopularCity: true,
+    climate: "Tropical wet-and-dry; warm year-round.",
+    highlights: ["War Remnants Museum", "Ben Thanh Market", "Cu Chi Tunnels"]
+  },
+  { 
+    slug: "siem-reap", city: "Siem Reap", code: "SAI", airport: "Siem Reap–Angkor Intl", country: "Cambodia", flag: "🇰🇭", 
+    priceRatio: 0.85, avgFlightHours: 2.0, avgTempC: 27, avgRainMm: 150, isPopularCity: true,
+    climate: "Tropical monsoon; cool dry season (Nov–Feb) is best.",
+    highlights: ["Angkor Wat", "Bayon Temple", "Tonlé Sap Lake"]
+  },
+  { 
+    slug: "osaka", city: "Osaka", code: "OSA", airport: "Kansai Intl Airport", country: "Japan", flag: "🇯🇵", 
+    priceRatio: 1.15, avgFlightHours: 6.5, avgTempC: 16, avgRainMm: 110, isPopularCity: true,
+    climate: "Humid subtropical; mild winters and hot summers.",
+    highlights: ["Dotonbori", "Osaka Castle", "Universal Studios Japan"]
+  },
+  { 
+    slug: "krabi", city: "Krabi", code: "KBV", airport: "Krabi Intl Airport", country: "Thailand", flag: "🇹🇭", 
+    priceRatio: 0.90, avgFlightHours: 2.2, avgTempC: 28, avgRainMm: 170,
+    climate: "Dry high season (Nov–Apr) with calm seas.",
+    highlights: ["Railay Beach", "Tiger Cave Temple", "Four Islands tour"]
+  },
+  { 
+    slug: "penang", city: "Penang", code: "PEN", airport: "Penang Intl Airport", country: "Malaysia", flag: "🇲🇾", 
+    priceRatio: 0.75, avgFlightHours: 1.8, avgTempC: 27, avgRainMm: 190,
+    climate: "Equatorial; warm and humid year-round.",
+    highlights: ["Georgetown Street Art", "Penang Hill", "Gurney Drive Food"]
+  },
+  { 
+    slug: "luang-prabang", city: "Luang Prabang", code: "LPQ", airport: "Luang Prabang Intl", country: "Laos", flag: "🇱🇦", 
+    priceRatio: 0.88, avgFlightHours: 1.5, avgTempC: 25, avgRainMm: 140,
+    climate: "Tropical highland; pleasant and dry Oct–Feb.",
+    highlights: ["Kuang Si Waterfalls", "Alms-giving ceremony", "Royal Palace"]
+  },
 ];
 
 // ── Utilities ──────────────────────────────────────────────────────
@@ -391,6 +455,8 @@ function buildRecord(seed: DestinationSeed, origin: OriginSeed = DEFAULT_ORIGIN)
     weather:     genWeather(seed),
     faqs:        genFaqs(seed),
     nearbyRoutes:genNearbyRoutes(seed),
+    climate:     seed.climate,
+    highlights:  seed.highlights,
   };
 }
 

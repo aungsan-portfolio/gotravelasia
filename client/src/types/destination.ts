@@ -133,6 +133,8 @@ export interface StaticDestinationRecord {
   weather: WeatherMonthDatum[];
   faqs: FaqItem[];
   nearbyRoutes: RelatedRoute[];
+  climate?: string;
+  highlights?: string[];
 }
 
 /** Dynamic string key — e.g. "2026-04" */

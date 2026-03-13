@@ -38,8 +38,8 @@ import React from "react";
 
 export const AIRPORTS = [
     // 🇲🇲 HOME (Myanmar)
-    { code: "RGN", name: "Yangon (ရန်ကုန်)", country: "Myanmar" },
-    { code: "MDL", name: "Mandalay (မန္တလေး)", country: "Myanmar" },
+    { code: "RGN", name: "Yangon (ရန်ကုန်)", country: "Myanmar", isPopular: true },
+    { code: "MDL", name: "Mandalay (မန္တလေး)", country: "Myanmar", isPopular: true },
 
     // 🔥 POPULAR (Southeast Asia & East Asia Hubs)
     { code: "BKK", name: "Bangkok (All Airports)", country: "Thailand", isPopular: true },
@@ -47,20 +47,25 @@ export const AIRPORTS = [
     { code: "KUL", name: "Kuala Lumpur", country: "Malaysia", isPopular: true },
     { code: "TYO", name: "Tokyo (All Airports)", country: "Japan", isPopular: true },
     { code: "SEL", name: "Seoul (All Airports)", country: "South Korea", isPopular: true },
+    { code: "CNX", name: "Chiang Mai", country: "Thailand", isPopular: true },
+    { code: "HKT", name: "Phuket", country: "Thailand", isPopular: true },
+    { code: "DPS", name: "Bali (Ngurah Rai)", country: "Indonesia", isPopular: true },
+    { code: "DAD", name: "Da Nang", country: "Vietnam", isPopular: true },
+    { code: "SGN", name: "Ho Chi Minh", country: "Vietnam", isPopular: true },
+    { code: "HKG", name: "Hong Kong", country: "Hong Kong", isPopular: true },
+    { code: "TPE", name: "Taipei (Taoyuan)", country: "Taiwan", isPopular: true },
+    { code: "OSA", name: "Osaka (All Airports)", country: "Japan", isPopular: true },
+    { code: "SAI", name: "Siem Reap", country: "Cambodia", isPopular: true },
 
     // 🇹🇭 Thailand (Others)
     { code: "DMK", name: "Bangkok (Don Mueang)", country: "Thailand" },
-    { code: "CNX", name: "Chiang Mai", country: "Thailand" },
-    { code: "HKT", name: "Phuket", country: "Thailand" },
+    { code: "KBV", name: "Krabi", country: "Thailand" },
 
     // 🇻🇳 Vietnam
-    { code: "SGN", name: "Ho Chi Minh", country: "Vietnam" },
     { code: "HAN", name: "Hanoi", country: "Vietnam" },
-    { code: "DAD", name: "Da Nang", country: "Vietnam" },
 
     // 🇮🇩 Indonesia
     { code: "JKT", name: "Jakarta (All Airports)", country: "Indonesia" },
-    { code: "DPS", name: "Bali (Ngurah Rai)", country: "Indonesia" },
 
     // 🇵🇭 Philippines
     { code: "MNL", name: "Manila (Ninoy Aquino)", country: "Philippines" },
@@ -68,16 +73,17 @@ export const AIRPORTS = [
 
     // 🇲🇾 Malaysia (Others)
     { code: "BKI", name: "Kota Kinabalu", country: "Malaysia" },
+    { code: "PEN", name: "Penang", country: "Malaysia" },
 
     // 🇹🇼 Taiwan
-    { code: "TPE", name: "Taipei (Taoyuan)", country: "Taiwan" },
+    { code: "TPE-OLD", name: "Taipei (Internal)", country: "Taiwan" }, // Kept TPE code at top popular
 
     // 🇰🇷 South Korea (Others)
     { code: "PUS", name: "Busan (Gimhae)", country: "South Korea" },
     { code: "CJU", name: "Jeju", country: "South Korea" },
 
     // 🇯🇵 Japan (Others)
-    { code: "OSA", name: "Osaka (All Airports)", country: "Japan" },
+    { code: "OSA-OLD", name: "Osaka (Internal)", country: "Japan" }, // Kept OSA code at top popular
 
     // 🇨🇳 China
     { code: "BJS", name: "Beijing (All Airports)", country: "China" },
@@ -89,7 +95,6 @@ export const AIRPORTS = [
     { code: "CTU", name: "Chengdu", country: "China" },
 
     // 🇭🇰 / 🇲🇴 Hong Kong & Macau
-    { code: "HKG", name: "Hong Kong", country: "Hong Kong" },
     { code: "MFM", name: "Macau", country: "Macau" },
 
     // 🇮🇳 India
@@ -100,6 +105,7 @@ export const AIRPORTS = [
 
     // 🇰🇭 Cambodia
     { code: "PNH", name: "Phnom Penh", country: "Cambodia" },
+    { code: "LPQ", name: "Luang Prabang", country: "Laos" },
 
     // 🇦🇪 UAE
     { code: "DXB", name: "Dubai", country: "United Arab Emirates" },
