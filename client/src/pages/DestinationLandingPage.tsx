@@ -235,7 +235,22 @@ export default function DestinationLandingPage() {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
-        const apiJson: unknown = await response.json();
+        const apiJson: any = await response.json();
+
+        // ── NEW: Check if response is already a fully-built VM ──────
+        if (apiJson && apiJson.hero && apiJson.status && apiJson.route) {
+          if (!cancelled) {
+            setState({
+              vm: applyRequestedOriginToVm(apiJson as DestinationPageVM, requestedOrigin),
+              liveState: apiJson.status.state as LiveState,
+              isLoading: false,
+              errorMessage: null,
+            });
+          }
+          return;
+        }
+
+        // ── Legacy / Fallback: Handle raw data if API is old ───────
         const parsed = DestinationLandingApiEnvelopeSchema.safeParse(apiJson);
 
         if (!parsed.success) {
@@ -284,7 +299,6 @@ export default function DestinationLandingPage() {
         const mergedRecord = mergeDestinationData(recordToUse as any, normalized, {
           preferLive: true,
         });
-
 
         const hasLiveDeals =
           Object.values(mergedRecord.deals).some((items) => items.length > 0) &&
