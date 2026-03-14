@@ -9,10 +9,6 @@
         },
         "api/newsletter.ts": {
             "maxDuration": 10
-        },
-        "api/destination-landing.ts": {
-            "memory": 1024,
-            "maxDuration": 15
         }
     },
     "rewrites": [
