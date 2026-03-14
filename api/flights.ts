@@ -1,9 +1,9 @@
 // api/flights.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { setCors, parseRequest } from "./_lib/http.js";
-import { handleCalendarPrices } from "./_lib/calendarPrices.js";
-import { handleCheapPrices }    from "./_lib/cheapPrices.js";
-import { handleSpecialOffers }  from "./_lib/specialOffers.js";
+import { setCors, parseRequest } from "./_lib/http";
+import { handleCalendarPrices } from "./_lib/calendarPrices";
+import { handleCheapPrices }    from "./_lib/cheapPrices";
+import { handleSpecialOffers }  from "./_lib/specialOffers";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (setCors(req, res)) return;
