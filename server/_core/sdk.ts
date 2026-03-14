@@ -133,7 +133,7 @@ class SDKServer {
   async getUserInfo(accessToken: string): Promise<GetUserInfoResponse> {
     const data = await this.oauthService.getUserInfoByToken({
       accessToken,
-    } as ExchangeTokenResponse);
+    } as any);
     const loginMethod = this.deriveLoginMethod(
       (data as any)?.platforms,
       (data as any)?.platform ?? data.platform ?? null
@@ -262,8 +262,8 @@ class SDKServer {
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
 
-    if (!session) {
-      throw ForbiddenError("Invalid session cookie");
+    if (!session || !session.openId) {
+      throw ForbiddenError("Invalid session cookie or missing openId");
     }
 
     const sessionUserId = session.openId;
