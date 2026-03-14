@@ -1,8 +1,8 @@
 // api/auth.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { setCors, parseRequest } from "./_lib/http";
-import { handleMe }     from "./_lib/authMe";
-import { handleLogout } from "./_lib/authLogout";
+import { setCors, parseRequest } from "./_lib/http.js";
+import { handleMe }     from "./_lib/authMe.js";
+import { handleLogout } from "./_lib/authLogout.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (setCors(req, res)) return;
