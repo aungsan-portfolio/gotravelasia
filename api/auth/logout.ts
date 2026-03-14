@@ -2,27 +2,26 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { COOKIE_NAME } from "../../shared/const";
 import { getSessionCookieOptions } from "../../server/_core/cookies";
 
-// Local interface to ensure properties are recognized by Vercel's TS compiler
-interface CookieOptions {
-    path?: string;
-    sameSite?: "none" | "lax" | "strict";
-    secure?: boolean;
-    httpOnly?: boolean;
-    domain?: string;
-}
-
 export default function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const cookieOptions = getSessionCookieOptions(req as any) as CookieOptions;
+    // Use a local plain object cast to ensure property access works in all environments
+    const c = getSessionCookieOptions(req as any) as {
+        domain?: string;
+        path?: string;
+        sameSite?: "none" | "lax" | "strict" | boolean;
+        secure?: boolean;
+        httpOnly?: boolean;
+    };
 
-    let cookieStr = `${COOKIE_NAME}=; Max-Age=0; Path=${cookieOptions.path || "/"}`;
-    if (cookieOptions.sameSite) cookieStr += `; SameSite=${cookieOptions.sameSite}`;
-    if (cookieOptions.secure) cookieStr += `; Secure`;
-    if (cookieOptions.httpOnly) cookieStr += `; HttpOnly`;
+    let cookieStr = `${COOKIE_NAME}=; Max-Age=0; Path=${c.path ?? "/"}`;
+    if (c.sameSite) cookieStr += `; SameSite=${c.sameSite}`;
+    if (c.secure)   cookieStr += `; Secure`;
+    if (c.httpOnly) cookieStr += `; HttpOnly`;
+    if (c.domain)   cookieStr += `; Domain=${c.domain}`;
 
-    res.setHeader("Set-Cookie", cookieStr);
+    res.setHeader("Set-Cookie", [cookieStr]);
     return res.status(200).json({ success: true });
 }
