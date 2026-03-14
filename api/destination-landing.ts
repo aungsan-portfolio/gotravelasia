@@ -1,10 +1,31 @@
+import path from "path";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getDestinationBySlug, getDestinationByCode } from "../client/src/data/destinationRegistry";
-import { buildDestinationPageVM } from "../client/src/lib/destination/buildDestinationPageVM";
-import { fetchFlightDeals, fetchMonthlyPriceTrend } from "../client/src/lib/api/flightDataFetcher";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    const cwd = process.cwd();
+    // In Vercel Node runtime, cwd is usually `/var/task`
+    // The client code is typically at `/var/task/client/src/...` if not tree-shaken by esbuild
+    
+    let destinationRegistry;
+    let buildDestinationPageVMMod;
+    let flightDataFetcher;
+
+    try {
+      destinationRegistry = await import(path.join(cwd, "client/src/data/destinationRegistry.ts"));
+      buildDestinationPageVMMod = await import(path.join(cwd, "client/src/lib/destination/buildDestinationPageVM.ts"));
+      flightDataFetcher = await import(path.join(cwd, "client/src/lib/api/flightDataFetcher.ts"));
+    } catch (err) {
+      // Fallback: maybe it's compiled to .js?
+      destinationRegistry = await import(path.join(cwd, "client/src/data/destinationRegistry.js"));
+      buildDestinationPageVMMod = await import(path.join(cwd, "client/src/lib/destination/buildDestinationPageVM.js"));
+      flightDataFetcher = await import(path.join(cwd, "client/src/lib/api/flightDataFetcher.js"));
+    }
+
+    const { getDestinationBySlug, getDestinationByCode } = destinationRegistry;
+    const { buildDestinationPageVM } = buildDestinationPageVMMod;
+    const { fetchFlightDeals, fetchMonthlyPriceTrend } = flightDataFetcher;
+
     const slug        = String(req.query.slug        || "");
     const destination = String(req.query.destination || "").toUpperCase();
 
@@ -55,8 +76,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error) {
     return res.status(500).json({
-      error: "Runtime module error",
-      details: error instanceof Error ? error.message : String(error)
+      error: "Runtime module resolution error",
+      details: error instanceof Error ? error.message : String(error),
+      cwd: process.cwd()
     });
   }
 }
