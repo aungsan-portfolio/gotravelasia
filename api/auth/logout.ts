@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { COOKIE_NAME } from "../../shared/const";
-import { getSessionCookieOptions } from "../../server/_core/cookies";
+import { COOKIE_NAME } from "../../shared/const.js";
+import { getSessionCookieOptions } from "../../server/_core/cookies.js";
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== "POST") {

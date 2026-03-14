@@ -10,7 +10,7 @@ import type {
   HeatmapDatum,
   WeatherMonthDatum,
   RelatedRoute,
-} from "./destination";
+} from "./destination.js";
 
 type AirportSeed = {
   city: string;

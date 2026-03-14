@@ -12,15 +12,15 @@ import {
   type TpMonthlyEntry,
   type TpLatestPrice,
   type TpCalendarEntry,
-} from "./travelpayoutsService";
+} from "./travelpayoutsService.js";
 
 import {
   searchFlightOffers,
   isAmadeusConfigured,
   type AmFlightOffer,
-} from "./amadeusService";
+} from "./amadeusService.js";
 
-import type { Deal, PriceMonthDatum } from "./destination";
+import type { Deal, PriceMonthDatum } from "./destination.js";
 
 
 // ── Types ───────────────────────────────────────────────────────────

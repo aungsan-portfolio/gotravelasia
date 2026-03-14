@@ -1,5 +1,5 @@
 // api/lib/buildDestinationPageVM.ts
-import { getDestinationsByCountrySlug } from "./destinationRegistry";
+import { getDestinationsByCountrySlug } from "./destinationRegistry.js";
 import type {
   Deal,
   FareTableEntry,
@@ -10,7 +10,7 @@ import type {
   WeatherMonthDatum,
   AirlineSummary,
   ReviewDatum,
-} from "./destination";
+} from "./destination.js";
 
 type BuildDestinationPageVMOptions = {
   liveState?: "static" | "live" | "partial" | "error";
