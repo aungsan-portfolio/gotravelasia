@@ -5,7 +5,7 @@ import { useRoute } from "wouter";
 import { Helmet } from "react-helmet-async";
 
 import type { DestinationPageVM } from "@/types/destination";
-import { getDestinationBySlug, generateDynamicDestination } from "@/data/destinationRegistry";
+import { getDestinationBySlug, generateDynamicDestination, getDestinationsByCountrySlug } from "@/data/destinationRegistry";
 import { DestinationLandingApiEnvelopeSchema } from "@/data/destinationSchemas";
 import { normalizeLiveData } from "@/lib/destination/normalizeLiveData";
 import { mergeDestinationData } from "@/lib/destination/mergeDestinationData";
@@ -145,10 +145,19 @@ export default function DestinationLandingPage() {
 
   const staticRecord = useMemo(() => {
     if (!slug) return undefined;
+    
+    // 1. Try city/airport slug (existing)
     const existing = getDestinationBySlug(slug);
     if (existing) return existing;
 
-    // Handle dynamic AAA-BBB slugs
+    // 2. Try country slug (new refinement)
+    const countryMatches = getDestinationsByCountrySlug(slug);
+    if (countryMatches?.length > 0) {
+      // Pick the first featured/popular city for this country
+      return countryMatches[0];
+    }
+
+    // 3. Handle dynamic AAA-BBB slugs
     const match = slug.match(/^([a-z]{3})-([a-z]{3})$/i);
     if (match) {
       return generateDynamicDestination(match[1], match[2]);

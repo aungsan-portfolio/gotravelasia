@@ -14,7 +14,7 @@ import { useFlightSearch } from "@/contexts/FlightSearchContext";
 import posthog from "posthog-js";
 import { persistSearchToSession } from "@/lib/detectRouteFromContext";
 
-import { AIRPORTS } from "./airports";
+import { AIRPORTS, type Airport } from "./airports";
 import { CABIN_LABELS, DropPanel as DropPanelType } from "./constants";
 import { Pill, PillX, Sep } from "./Primitives";
 import { AirportDropdown } from "./AirportDropdown";
@@ -91,11 +91,11 @@ export default function FloatingSearchBar() {
     };
 
     // ── Airport select ─────────────────────────────────────────────
-    const pickOrigin = (a: typeof AIRPORTS[0]) => {
+    const pickOrigin = (a: Airport) => {
         ctx.setOrigin({ code: a.code, name: `${a.city} (${a.code})` } as any);
         setOriginQ(""); setOpen(null);
     };
-    const pickDest = (a: typeof AIRPORTS[0]) => {
+    const pickDest = (a: Airport) => {
         ctx.setDestination({ code: a.code, name: `${a.city} (${a.code})` } as any);
         setDestQ(""); setOpen(null);
     };
