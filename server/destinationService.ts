@@ -15,46 +15,36 @@ export async function getDestinationWithLiveData(slug: string): Promise<Destinat
   const originCode = staticRecord.origin.code;
   const destCode = staticRecord.dest.code;
 
+  // Origin === Destination guard (Bangkok BKK→BKK bug fix)
+  const safeOriginCode = originCode === destCode ? "CNX" : originCode;
+
   // Fetch live data in parallel
   const [dealsResult, monthlyResult] = await Promise.all([
-    fetchFlightDeals(originCode, destCode),
-    fetchMonthlyPriceTrend(originCode, destCode),
+    fetchFlightDeals(safeOriginCode, destCode),
+    fetchMonthlyPriceTrend(safeOriginCode, destCode),
   ]);
 
-  // Merge live deals into static record if available
-  let mergedRecord = { ...staticRecord };
-
-  if (dealsResult.data) {
-    mergedRecord = { ...mergedRecord, deals: dealsResult.data };
-  }
-
-  if (monthlyResult.data) {
-    mergedRecord = { ...mergedRecord, priceMonths: monthlyResult.data };
-  }
+  // Merge live data into static record
+  const mergedRecord = {
+    ...staticRecord,
+    origin: { ...staticRecord.origin, code: safeOriginCode },
+    ...(dealsResult.data ? { deals: dealsResult.data } : {}),
+    ...(monthlyResult.data ? { priceMonths: monthlyResult.data } : {}),
+  };
 
   // Determine live state
-  // "live" if we got actual flight deals from an API
-  // "partial" if we only got monthly trends
-  // "static" if both failed
-  const liveState = (dealsResult.source === "travelpayouts" || dealsResult.source === "amadeus")
-    ? "live"
-    : monthlyResult.source === "travelpayouts"
-      ? "partial"
+  // "live" if we got actual flight deals (or trends) from travelpayouts or amadeus
+  const liveState =
+    dealsResult.source === "travelpayouts" ||
+    dealsResult.source === "amadeus" ||
+    monthlyResult.source === "travelpayouts"
+      ? "live"
       : "static";
-
-  const sourceLabels = [];
-  if (dealsResult.source !== "static") sourceLabels.push(dealsResult.source);
-  if (monthlyResult.source !== "static" && monthlyResult.source !== dealsResult.source) {
-    sourceLabels.push(monthlyResult.source);
-  }
-  const sourceLabel = sourceLabels.length > 0 
-    ? sourceLabels.join(" + ") 
-    : "Static registry";
 
   const vm = buildDestinationPageVM(mergedRecord, {
     liveState,
     lastUpdated: new Date().toISOString(),
-    sourceLabel,
+    sourceLabel: liveState === "live" ? "Travelpayouts API" : "Static registry",
   });
 
   return vm;
