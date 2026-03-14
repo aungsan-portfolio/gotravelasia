@@ -4,6 +4,12 @@
   "outputDirectory": "dist/public",
   "framework": null,
   "functions": {
+    "api/cron/check-price-alerts.ts": {
+      "maxDuration": 60
+    },
+    "api/cron/send-alerts.ts": {
+      "maxDuration": 60
+    },
     "api/price-alerts/subscribe.ts": {
       "maxDuration": 10
     },
@@ -24,11 +30,11 @@
   "crons": [
     {
       "path": "/api/cron/check-price-alerts",
-      "schedule": "0 8 * * *"
+      "schedule": "0 */6 * * *"
     },
     {
       "path": "/api/cron/send-alerts",
-      "schedule": "5 8 * * *"
+      "schedule": "30 */6 * * *"
     }
   ]
 }
