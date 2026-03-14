@@ -47,7 +47,7 @@ type RegistryMaps = {
   byCode: Map<string, StaticDestinationRecord>;
 };
 
-const DEFAULT_ORIGIN: OriginSeed = { city: "Bangkok", code: "BKK", country: "Thailand" };
+const DEFAULT_ORIGIN: OriginSeed = { city: "Chiang Mai", code: "CNX", country: "Thailand" };
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] as const;
 const BASE_PRICE_MONTH = [7800,7200,6800,6400,6100,5600,5900,6300,6700,7100,8200,9400] as const;
