@@ -20,7 +20,7 @@ import {
   type AmFlightOffer,
 } from "./amadeusService";
 
-import type { Deal, PriceMonthDatum } from "@/types/destination";
+import type { Deal, PriceMonthDatum } from "../../types/destination";
 
 
 // ── Types ───────────────────────────────────────────────────────────
