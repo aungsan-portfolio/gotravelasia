@@ -157,7 +157,7 @@ export async function fetchFlightDeals(
             duration: "—",
             price: lp.value,
             bookingUrl: buildAffiliateLink(lp.origin, lp.destination, lp.depart_date, lp.return_date),
-            found: lp.found_at,
+            found_at: lp.found_at,
           });
         }
       }
