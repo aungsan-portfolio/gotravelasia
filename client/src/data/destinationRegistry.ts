@@ -10,7 +10,7 @@ import type {
   HeatmapDatum,
   WeatherMonthDatum,
   RelatedRoute,
-} from "@/types/destination";
+} from "../types/destination";
 
 type AirportSeed = {
   city: string;
