@@ -1,57 +1,46 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getDestinationBySlug, getDestinationByCode } from "./lib/destinationRegistry";
-import { buildDestinationPageVM } from "./lib/buildDestinationPageVM";
-import { fetchFlightDeals, fetchMonthlyPriceTrend } from "./lib/flightDataFetcher";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const slug        = String(req.query.slug        || "");
   const destination = String(req.query.destination || "").toUpperCase();
 
-  console.log("[DL start]", {
-    slug,
-    destination,
-    envToken: !!(process.env.VITE_TRAVELPAYOUTS_API_TOKEN || process.env.TRAVELPAYOUTS_API_TOKEN || process.env.TRAVELPAYOUTS_TOKEN),
-    envMarker: !!(process.env.VITE_TRAVELPAYOUTS_MARKER || process.env.TRAVELPAYOUTS_MARKER),
-    envAmadeusId: !!(process.env.VITE_AMADEUS_CLIENT_ID || process.env.AMADEUS_CLIENT_ID),
-  });
-
-  let targetSlug = slug;
-  if (!targetSlug && destination) {
-    const record = getDestinationByCode(destination);
-    if (record) targetSlug = record.slug;
-  }
-  if (!targetSlug) {
-    return res.status(400).json({ error: "slug or destination code is required" });
-  }
-
-  const staticRecord = getDestinationBySlug(targetSlug);
-  if (!staticRecord) {
-    console.error("[DL error] Static record not found for slug:", targetSlug);
-    return res.status(404).json({ error: `Destination not found: ${targetSlug}` });
-  }
+  console.log("[DL start dynamic]", { slug, destination });
 
   try {
+    console.log("[DL Loading registry...]");
+    const { getDestinationBySlug, getDestinationByCode } = await import("./lib/destinationRegistry.js");
+    
+    console.log("[DL Loading VM builder...]");
+    const { buildDestinationPageVM } = await import("./lib/buildDestinationPageVM.js");
+    
+    console.log("[DL Loading fetcher...]");
+    const { fetchFlightDeals, fetchMonthlyPriceTrend } = await import("./lib/flightDataFetcher.js");
+
+    let targetSlug = slug;
+    if (!targetSlug && destination) {
+      const record = getDestinationByCode(destination);
+      if (record) targetSlug = record.slug;
+    }
+    if (!targetSlug) {
+      return res.status(400).json({ error: "slug or destination code is required" });
+    }
+
+    const staticRecord = getDestinationBySlug(targetSlug);
+    if (!staticRecord) {
+      return res.status(404).json({ error: `Destination not found: ${targetSlug}` });
+    }
+
     // BKK→BKK guard
     const originCode = staticRecord.origin.code;
     const destCode   = staticRecord.dest.code;
-    
-    console.log("[DL processing]", { originCode, destCode });
-
     const safeOrigin = originCode === destCode
       ? { city: "Chiang Mai", code: "CNX", country: "Thailand" }
       : staticRecord.origin;
-
-    console.log("[DL fetching live data]", { safeOriginCode: safeOrigin.code });
 
     const [dealsResult, monthlyResult] = await Promise.all([
       fetchFlightDeals(safeOrigin.code, destCode),
       fetchMonthlyPriceTrend(safeOrigin.code, destCode),
     ]);
-
-    console.log("[DL fetch results]", { 
-      dealsSource: dealsResult.source, 
-      monthlySource: monthlyResult.source 
-    });
 
     const mergedRecord = {
       ...staticRecord,
@@ -75,9 +64,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(vm);
 
   } catch (error) {
-    console.error("[DL fatal error]:", error);
+    console.error("[DL dynamic fatal error]:", error);
     return res.status(500).json({
-      error: "Internal server error",
+      error: "Runtime import error",
       details: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     });

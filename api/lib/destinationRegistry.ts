@@ -585,5 +585,5 @@ export function getDestinationsByCountrySlug(countrySlug: string): StaticDestina
 export function getAllSlugs(): string[] { return DESTINATION_SEEDS.map((s) => s.slug); }
 export function getAllDestinationRecords(): StaticDestinationRecord[] { return DESTINATION_SEEDS.map((s) => getRegistry().byCitySlug.get(s.slug)!); }
 
-export const POP_DEST   = DESTINATION_SEEDS.filter((s) => s.isPopularDestination).map((s) => s.country).filter((c, i, a) => a.indexOf(c) === i);
-export const POP_CITIES = DESTINATION_SEEDS.filter((s) => s.isPopularCity).map((s) => s.city);
+export const POP_DEST: string[] = [];
+export const POP_CITIES: string[] = [];
