@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("[DL start]", {
     slug,
     destination,
-    envToken: !!(process.env.VITE_TRAVELPAYOUTS_API_TOKEN || process.env.TRAVELPAYOUTS_API_TOKEN),
+    envToken: !!(process.env.VITE_TRAVELPAYOUTS_API_TOKEN || process.env.TRAVELPAYOUTS_API_TOKEN || process.env.TRAVELPAYOUTS_TOKEN),
     envMarker: !!(process.env.VITE_TRAVELPAYOUTS_MARKER || process.env.TRAVELPAYOUTS_MARKER),
     envAmadeusId: !!(process.env.VITE_AMADEUS_CLIENT_ID || process.env.AMADEUS_CLIENT_ID),
   });
