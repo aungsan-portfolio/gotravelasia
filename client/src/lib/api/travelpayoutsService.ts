@@ -5,14 +5,16 @@
 const BASE = "https://api.travelpayouts.com";
 
 function getToken(): string {
-  const token = import.meta.env.VITE_TRAVELPAYOUTS_API_TOKEN
+  const token = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TRAVELPAYOUTS_API_TOKEN)
+    ?? process.env.VITE_TRAVELPAYOUTS_API_TOKEN
     ?? process.env.TRAVELPAYOUTS_API_TOKEN;
-  if (!token) throw new Error("[Travelpayouts] Missing API token — set VITE_TRAVELPAYOUTS_API_TOKEN");
+  if (!token) throw new Error("[Travelpayouts] Missing API token");
   return token;
 }
 
 function getMarker(): string {
-  return import.meta.env.VITE_TRAVELPAYOUTS_MARKER
+  return (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TRAVELPAYOUTS_MARKER)
+    ?? process.env.VITE_TRAVELPAYOUTS_MARKER
     ?? process.env.TRAVELPAYOUTS_MARKER
     ?? "gotravelasia";
 }

@@ -8,9 +8,11 @@ const AMADEUS_AUTH = "https://api.amadeus.com/v1/security/oauth2/token";
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 function getCredentials() {
-  const clientId = import.meta.env.VITE_AMADEUS_CLIENT_ID
+  const clientId = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AMADEUS_CLIENT_ID)
+    ?? process.env.VITE_AMADEUS_CLIENT_ID
     ?? process.env.AMADEUS_CLIENT_ID;
-  const clientSecret = import.meta.env.VITE_AMADEUS_CLIENT_SECRET
+  const clientSecret = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AMADEUS_CLIENT_SECRET)
+    ?? process.env.VITE_AMADEUS_CLIENT_SECRET
     ?? process.env.AMADEUS_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret };
