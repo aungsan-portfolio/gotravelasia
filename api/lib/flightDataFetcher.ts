@@ -1,4 +1,4 @@
-// client/src/lib/api/flightDataFetcher.ts
+// api/lib/flightDataFetcher.ts
 // Unified fetcher: Travelpayouts (primary) → Amadeus (fallback) → static (last resort)
 // Feeds into existing normalizeLiveData → mergeDestinationData → buildDestinationPageVM pipeline
 

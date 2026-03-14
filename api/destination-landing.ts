@@ -1,4 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { getDestinationBySlug, getDestinationByCode } from "./lib/destinationRegistry";
+import { buildDestinationPageVM } from "./lib/buildDestinationPageVM";
+import { fetchFlightDeals, fetchMonthlyPriceTrend } from "./lib/flightDataFetcher";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const slug        = String(req.query.slug        || "");
@@ -7,15 +10,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("[DL start dynamic]", { slug, destination });
 
   try {
-    console.log("[DL Loading registry...]");
-    const { getDestinationBySlug, getDestinationByCode } = await import("./lib/destinationRegistry.js");
-    
-    console.log("[DL Loading VM builder...]");
-    const { buildDestinationPageVM } = await import("./lib/buildDestinationPageVM.js");
-    
-    console.log("[DL Loading fetcher...]");
-    const { fetchFlightDeals, fetchMonthlyPriceTrend } = await import("./lib/flightDataFetcher.js");
-
     let targetSlug = slug;
     if (!targetSlug && destination) {
       const record = getDestinationByCode(destination);

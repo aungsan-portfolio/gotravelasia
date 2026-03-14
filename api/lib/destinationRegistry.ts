@@ -1,4 +1,4 @@
-// client/src/data/destinationRegistry.ts
+// api/lib/destinationRegistry.ts
 import type {
   StaticDestinationRecord,
   Deal,

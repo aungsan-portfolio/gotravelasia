@@ -1,4 +1,4 @@
-// client/src/lib/api/amadeusService.ts
+// api/lib/amadeusService.ts
 // Amadeus Self-Service API — fallback provider for GoTravel Asia
 // Docs: https://developers.amadeus.com/self-service
 

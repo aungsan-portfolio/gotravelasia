@@ -1,4 +1,4 @@
-// client/src/lib/api/travelpayoutsService.ts
+// api/lib/travelpayoutsService.ts
 // Travelpayouts Data API — targeted integration for GoTravel Asia
 // Docs: https://travelpayouts.github.io/slate/
 

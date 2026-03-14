@@ -1,4 +1,4 @@
-// client/src/types/destination.ts
+// api/lib/destination.ts
 
 export interface DestinationRef {
   city: string;

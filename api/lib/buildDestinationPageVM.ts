@@ -1,4 +1,4 @@
-// client/src/lib/destination/buildDestinationPageVM.ts
+// api/lib/buildDestinationPageVM.ts
 import { getDestinationsByCountrySlug } from "./destinationRegistry";
 import type {
   Deal,
