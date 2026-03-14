@@ -115,7 +115,7 @@ export function usePriceHint(origin: string, destination: string, _hasReturn?: b
     setFetched(key);
 
     let cancelled = false;
-    fetch(`/api/cheap-prices?origin=${origin}&currency=usd`)
+    fetch(`/api/flights?type=cheap&origin=${origin}&currency=usd`)
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (cancelled || !json?.data) return;
@@ -158,7 +158,7 @@ export function useLivePriceMap(routes: { origin: string; destination: string; m
       uniqueRoutes.map(async route => {
         // Default to current month if none provided
         const month = route.month || new Date().toISOString().substring(0, 7);
-        const url = `/api/calendar-prices?origin=${route.origin}&destination=${route.destination}&month=${month}&currency=usd`;
+        const url = `/api/flights?type=calendar&origin=${route.origin}&destination=${route.destination}&month=${month}&currency=usd`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("API failed");
         const json = await res.json();
@@ -216,7 +216,7 @@ export function useMultiCheapDeals(origins: string[]) {
 
     Promise.allSettled(
       origins.map(async (origin) => {
-        const res = await fetch(`/api/cheap-prices?origin=${origin}&currency=usd`);
+        const res = await fetch(`/api/flights?type=cheap&origin=${origin}&currency=usd`);
         if (!res.ok) throw new Error(`API failed for ${origin}`);
         const json = await res.json();
         return { origin, data: json?.data || {} };

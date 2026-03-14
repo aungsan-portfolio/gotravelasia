@@ -15,7 +15,7 @@ export function useAuth(options?: UseAuthOptions) {
   const meQuery = useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth?action=me");
       if (!res.ok) return null;
       return res.json();
     },
@@ -25,7 +25,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth?action=logout", { method: "POST" });
       if (!res.ok) throw new Error("Logout failed");
       return res.json();
     },

@@ -10,7 +10,7 @@ export default function SpecialOffers() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/special-offers?origin=RGN&currency=usd")
+        fetch("/api/flights?type=special-offers&origin=RGN&currency=usd")
             .then(res => res.json())
             .then(data => {
                 if (data.success && Array.isArray(data.data)) {

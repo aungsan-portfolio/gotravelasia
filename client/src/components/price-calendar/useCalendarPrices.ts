@@ -38,8 +38,8 @@ export function useCalendarPrices({
         async (mo: string) => {
             if (origin === destination) return {};
             try {
-                const params = new URLSearchParams({ origin, destination, month: mo, currency: "usd" });
-                const res = await fetch(`/api/calendar-prices?${params}`);
+                const params = new URLSearchParams({ type: "calendar", origin, destination, month: mo, currency: "usd" });
+                const res = await fetch(`/api/flights?${params}`);
                 if (!res.ok) return {};
                 const data = await res.json();
                 if (!data.data) return {};
