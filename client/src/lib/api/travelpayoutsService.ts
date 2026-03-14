@@ -29,7 +29,6 @@ async function tpFetch<T>(path: string, params: Record<string, string>): Promise
   try {
     const res = await fetch(url.toString(), {
       headers: { "X-Access-Token": getToken() },
-      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) {
       console.warn(`[Travelpayouts] ${path} → ${res.status}`);

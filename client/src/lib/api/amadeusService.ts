@@ -35,7 +35,6 @@ async function getAccessToken(): Promise<string | null> {
         client_id: creds.clientId,
         client_secret: creds.clientSecret,
       }),
-      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -59,7 +58,6 @@ async function amFetch<T>(path: string, params: Record<string, string>): Promise
   try {
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       console.warn(`[Amadeus] ${path} → ${res.status}`);
