@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { formatTimeAgo } from "@/lib/timeAgo";
 import type { DestinationPageVM, NormalizedDealVM } from "@/types/destination";
 
 type FlightDealsProps = { data: DestinationPageVM };
@@ -101,9 +102,9 @@ function DealCard({ deal }: { deal: NormalizedDealVM }) {
         >
           Book now
         </a>
-        {deal.found && (
+        {deal.found_at && (
           <p className="mt-0.5 text-right text-[10px] text-white/40">
-            Found {deal.found}
+            {formatTimeAgo(deal.found_at)}
           </p>
         )}
       </div>

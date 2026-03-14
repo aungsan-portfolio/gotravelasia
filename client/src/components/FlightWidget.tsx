@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useFlightSearch } from "@/contexts/FlightSearchContext";
+import { AirportAutocomplete } from "@/components/AirportAutocomplete";
 
 type Props = {
     marker: string;          // TravelPayouts wl_id / affiliate id
@@ -12,9 +13,18 @@ export default function FlightWidget({
     const [blocked, setBlocked] = useState(false);
 
     // Read search parameters from context
-    const { origin, destination, departDate, returnDate, adults, childCount, infants, tripType } = useFlightSearch();
+    const { 
+        origin, setOrigin, 
+        destination, setDestination, 
+        registerClearOriginCallback, 
+        registerClearDestCallback,
+        departDate, returnDate, 
+        adults, childCount, infants, 
+        tripType 
+    } = useFlightSearch();
 
     useEffect(() => {
+        // ... (existing useEffect script loading logic remains unchanged)
         // Prevent double-run in React Strict Mode (dev) & rerenders
         if (mountedRef.current) return;
         mountedRef.current = true;
@@ -122,6 +132,9 @@ export default function FlightWidget({
                         border: "1px solid rgba(229,231,235,0.6)",
                         padding: "0.75rem 1.25rem",
                         marginTop: "1rem",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "1rem"
                     }}
                 >
                     {blocked && (
@@ -143,6 +156,30 @@ export default function FlightWidget({
                             </div>
                         </div>
                     )}
+
+                    {/* Custom Airport Search Form */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1">
+                            <AirportAutocomplete
+                                label="From"
+                                value={origin}
+                                onChange={setOrigin}
+                                onClear={() => {
+                                    registerClearOriginCallback(() => setOrigin(null as any));
+                                }}
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <AirportAutocomplete
+                                label="To"
+                                value={destination}
+                                onChange={setDestination}
+                                onClear={() => {
+                                    registerClearDestCallback(() => setDestination(null as any));
+                                }}
+                            />
+                        </div>
+                    </div>
 
                     {/* Must be stable IDs that the widget expects */}
                     <div id="tpwl-search" style={{ width: "100%" }} />

@@ -1,26 +1,38 @@
 // client/src/components/flights/destination/FareFinder.tsx
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Slider } from "@/components/ui/slider";
 import type {
   DestinationPageVM,
   NormalizedFareEntryVM,
 } from "@/types/destination";
+import {
+  FilterSidebar,
+  FilterState,
+  buildDefaultFilters,
+  applyFilters,
+} from "./FilterSidebar";
 
 type FareFinderProps = {
   data: DestinationPageVM;
 };
 
-const STOP_BADGE_STYLES: Record<
-  NormalizedFareEntryVM["outbound"]["stopBadgeTone"],
-  string
-> = {
+interface FareLegVM {
+  route: string;
+  departLabel: string;
+  arrivalLabel: string;
+  stopsLabel: string;
+  durationLabel: string;
+  stopBadgeTone: "green" | "amber" | "red";
+}
+
+const STOP_BADGE_STYLES: Record<FareLegVM["stopBadgeTone"], string> = {
   green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
   amber: "border-amber-400/30 bg-amber-400/10 text-amber-200",
   red: "border-rose-400/30 bg-rose-400/10 text-rose-200",
 };
 
-function formatBudget(value: number): string {
+function formatBudget(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "THB",
@@ -113,8 +125,8 @@ function FareRow({
           </div>
 
           <p className="mt-2 text-sm text-white/60">
-            {entry.from1} → {entry.to1}
-            {isReturn ? ` · ${entry.from2} → ${entry.to2}` : ""}
+            {entry.from1} \u2192 {entry.to1}
+            {isReturn ? ` \u00b7 ${entry.from2} \u2192 ${entry.to2}` : ""}
           </p>
         </div>
 
@@ -158,65 +170,54 @@ function FareRow({
 export default function FareFinder({ data }: FareFinderProps) {
   const { fareFinder, route } = data;
 
-  const originValues = useMemo(
-    () => fareFinder.originOptions.map((option) => option.value),
-    [fareFinder.originOptions],
+  const [filters, setFilters] = useState<FilterState>(() =>
+    buildDefaultFilters(
+      fareFinder.entries,
+      fareFinder.defaultOrigin,
+      fareFinder.summary.defaultBudget,
+    )
   );
 
-  const [selectedOrigin, setSelectedOrigin] = useState(fareFinder.defaultOrigin);
-  const [maxBudget, setMaxBudget] = useState(fareFinder.summary.defaultBudget);
-
   useEffect(() => {
-    setSelectedOrigin(fareFinder.defaultOrigin);
-  }, [fareFinder.defaultOrigin]);
+    setFilters(
+      buildDefaultFilters(
+        fareFinder.entries,
+        fareFinder.defaultOrigin,
+        fareFinder.summary.defaultBudget,
+      )
+    );
+  }, [fareFinder.defaultOrigin, fareFinder.summary.defaultBudget, fareFinder.entries]);
 
-  useEffect(() => {
-    setMaxBudget(fareFinder.summary.defaultBudget);
-  }, [fareFinder.summary.defaultBudget]);
-
-  const filteredEntries = useMemo(() => {
-    return fareFinder.entries.filter((entry) => {
-      const originMatch =
-        !selectedOrigin ||
-        entry.from1 === selectedOrigin ||
-        entry.from2 === selectedOrigin;
-
-      const budgetMatch =
-        maxBudget <= 0 ? true : entry.price <= maxBudget;
-
-      return originMatch && budgetMatch;
-    });
-  }, [fareFinder.entries, selectedOrigin, maxBudget]);
-
-  const filteredCheapest =
-    filteredEntries.length > 0
-      ? Math.min(...filteredEntries.map((entry) => entry.price))
-      : null;
-
-  const filteredCheapestLabel =
-    filteredCheapest != null ? formatBudget(filteredCheapest) : "—";
-
-  const hasBudgetRange =
-    fareFinder.summary.budgetMax > 0 &&
-    fareFinder.summary.budgetMax > fareFinder.summary.budgetMin;
+  const filteredEntries = useMemo(
+    () => applyFilters(fareFinder.entries, filters),
+    [fareFinder.entries, filters]
+  );
 
   // ── Pagination ───────────────────────────────────────────────
-  const PAGE_SIZE = 3;
-  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 7;
+  const [page, setPage] = useState(1);
 
   // Reset to first page when filters change
-  const filteredKey = filteredEntries.map((e) => e.id).join(",");
-  const prevFilteredKey = useRef(filteredKey);
-  if (prevFilteredKey.current !== filteredKey) {
-    prevFilteredKey.current = filteredKey;
-    if (page !== 0) setPage(0);
-  }
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
   const pagedEntries = useMemo(
-    () => filteredEntries.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    () => filteredEntries.slice((page - 1) * PAGE_SIZE, (page - 1) * PAGE_SIZE + PAGE_SIZE),
     [filteredEntries, page],
   );
+
+  const handleReset = () => {
+    setFilters(
+      buildDefaultFilters(
+        fareFinder.entries,
+        fareFinder.defaultOrigin,
+        fareFinder.summary.defaultBudget,
+      )
+    );
+    setPage(1);
+  };
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -254,159 +255,92 @@ export default function FareFinder({ data }: FareFinderProps) {
         </div>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        {/* ── Filters: origin + budget ── */}
-        <div className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">{route.routeLabel}</p>
-            <p className="mt-1 text-xs text-white/55">
-              Filter fare combinations by origin airport and budget.
+      <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
+        {/* Sidebar */}
+        <FilterSidebar
+          entries={fareFinder.entries}
+          filters={filters}
+          onChange={setFilters}
+          onReset={handleReset}
+          budgetMin={fareFinder.summary.budgetMin}
+          budgetMax={fareFinder.summary.budgetMax}
+          budgetStep={fareFinder.summary.budgetStep}
+          originOptions={fareFinder.originOptions}
+          resultCount={filteredEntries.length}
+        />
+
+        {/* Results */}
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          {/* Showing X–Y of Z label */}
+          {filteredEntries.length > 0 && (
+            <p className="mb-3 text-sm text-white/40">
+              Showing{" "}
+              <span className="font-medium text-white/70">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredEntries.length)}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-white/70">{filteredEntries.length}</span>{" "}
+              fares
             </p>
+          )}
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {fareFinder.originOptions.map((option) => {
-                const active = selectedOrigin === option.value;
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSelectedOrigin(option.value)}
-                    className={[
-                      "inline-flex items-center rounded-full border px-4 py-2 text-sm transition",
-                      active
-                        ? "border-fuchsia-400/30 bg-fuchsia-400/15 text-fuchsia-100"
-                        : "border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08]",
-                    ].join(" ")}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
+          {pagedEntries.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {pagedEntries.map((entry) => (
+                <FareRow key={String(entry.id)} entry={entry} />
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <span className="text-4xl">✈️</span>
+              <p className="text-white/50">No fares match your filters.</p>
+              <button
+                onClick={handleReset}
+                className="mt-1 rounded-full border border-white/10 px-4 py-1.5 text-sm text-white/60 transition hover:border-white/30 hover:text-white/90"
+              >
+                Reset filters
+              </button>
+            </div>
+          )}
 
-          {/* Budget slider */}
-          {hasBudgetRange && (
-            <div className="w-full rounded-2xl border border-white/10 bg-[#100b21] p-4 lg:w-80">
-              <div className="mb-4 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-                    Max budget
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-amber-300">
-                    {formatBudget(maxBudget)}
-                  </p>
-                </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                disabled={page === 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                \u2190 Prev
+              </button>
 
-                <div className="text-right text-[11px] text-white/40">
-                  <p>Range</p>
-                  <p className="mt-1">
-                    {formatBudget(fareFinder.summary.budgetMin)} –{" "}
-                    {formatBudget(fareFinder.summary.budgetMax)}
-                  </p>
-                </div>
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalPages }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setPage(idx + 1)}
+                    className={[
+                      "h-2.5 w-2.5 rounded-full transition",
+                      idx + 1 === page ? "bg-amber-400" : "bg-white/20 hover:bg-white/40",
+                    ].join(" ")}
+                    aria-label={`Go to page ${idx + 1}`}
+                  />
+                ))}
               </div>
 
-              <Slider
-                value={[maxBudget]}
-                min={fareFinder.summary.budgetMin}
-                max={fareFinder.summary.budgetMax}
-                step={fareFinder.summary.budgetStep}
-                onValueChange={(v) =>
-                  setMaxBudget(v[0] ?? fareFinder.summary.defaultBudget)
-                }
-              />
-
-              <div className="mt-3 flex items-center justify-between text-[11px] text-white/40">
-                <span>
-                  Cheapest: {filteredCheapestLabel}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMaxBudget(fareFinder.summary.defaultBudget)
-                  }
-                  className="rounded-full border border-white/10 px-2.5 py-1 text-white/60 transition hover:bg-white/[0.06]"
-                >
-                  Reset
-                </button>
-              </div>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Next \u2192
+              </button>
             </div>
           )}
         </div>
-
-        {/* ── Results ── */}
-        {pagedEntries.length > 0 ? (
-          <div className="mt-5 grid gap-4">
-            {pagedEntries.map((entry) => (
-              <FareRow
-                key={String(entry.id)}
-                entry={entry}
-              />
-            ))}
-          </div>
-        ) : filteredEntries.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-[#100b21] p-6 text-center">
-            <p className="text-sm font-medium text-white">
-              No fares found for this combination.
-            </p>
-            <p className="mt-2 text-sm text-white/60">
-              Increase the budget cap or try another origin filter to see more
-              combinations.
-            </p>
-          </div>
-        ) : null}
-
-        {/* ── Pagination ── */}
-        {totalPages > 1 && (
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              ← Prev
-            </button>
-
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: totalPages }).map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setPage(idx)}
-                  className={[
-                    "h-2.5 w-2.5 rounded-full transition",
-                    idx === page
-                      ? "bg-amber-400"
-                      : "bg-white/20 hover:bg-white/40",
-                  ].join(" ")}
-                  aria-label={`Go to page ${idx + 1}`}
-                />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              Next →
-            </button>
-          </div>
-        )}
-
-        {originValues.length > 1 ? (
-          <div className="mt-5 rounded-2xl border border-white/10 bg-[#100b21] px-4 py-3">
-            <p className="text-xs text-white/55">
-              Available origins: {originValues.join(", ")} ·{" "}
-              {filteredEntries.length} result
-              {filteredEntries.length === 1 ? "" : "s"} shown
-            </p>
-          </div>
-        ) : null}
       </div>
     </section>
   );

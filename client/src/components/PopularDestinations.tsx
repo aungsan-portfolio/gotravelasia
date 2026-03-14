@@ -1,7 +1,7 @@
 import { useState, memo, useMemo } from "react";
 import OptimizedImage from "@/seo/OptimizedImage";
 import { useLivePriceMap } from "@/hooks/useFlightData";
-import { buildFlightSearchUrl } from "@/lib/flightUrl";
+import { buildFlightSearchUrl, buildPopularRouteUrl } from "@/lib/flightUrl";
 import { useGeoOrigin } from "@/hooks/useGeoOrigin";
 
 // ── Brand tokens ──────────────────────────────────────────────────
@@ -206,7 +206,7 @@ export default memo(function PopularDestinations() {
                     return (
                         <a
                             key={dest.code}
-                            href={buildFlightSearchUrl(dest.routes[0].fromCode, dest.code)}
+                            href={buildPopularRouteUrl(dest.routes[0].fromCode, dest.code)}
                             className="group block rounded-2xl overflow-hidden border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                         >
                             {/* Image */}
@@ -253,7 +253,7 @@ export default memo(function PopularDestinations() {
                                                 onClick={e => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    window.location.href = buildFlightSearchUrl(route.fromCode, dest.code);
+                                                    window.location.href = buildPopularRouteUrl(route.fromCode, dest.code);
                                                 }}
                                                 className="flex items-center justify-between text-sm font-medium cursor-pointer transition-colors hover:underline"
                                                 style={{ color: B.purple }}
@@ -287,7 +287,7 @@ export default memo(function PopularDestinations() {
                         return (
                             <a
                                 key={i}
-                                href={buildFlightSearchUrl(route.fromCode, route.toCode)}
+                                href={buildPopularRouteUrl(route.fromCode, route.toCode)}
                                 className="flex justify-between items-center px-4 py-3 bg-white rounded-xl border border-gray-100 transition-all hover:border-purple-300 hover:shadow-md group"
                             >
                                 <span className="text-sm text-gray-700 group-hover:text-gray-900">
@@ -323,7 +323,7 @@ export default memo(function PopularDestinations() {
                         ].map(({ city, code }) => (
                             <a
                                 key={city}
-                                href={buildFlightSearchUrl(origin.code || "RGN", code)}
+                                href={buildPopularRouteUrl(origin.code || "RGN", code)}
                                 className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-600 transition-all hover:text-white hover:border-transparent"
                                 style={{ ["--hover-bg" as string]: B.purple }}
                                 onMouseEnter={e => { e.currentTarget.style.background = B.purple; e.currentTarget.style.color = B.white; }}

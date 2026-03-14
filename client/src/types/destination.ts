@@ -21,7 +21,7 @@ export interface Deal {
   price: number;
   badge?: string | null;
   tag?: string;
-  found?: string;
+  found_at?: string;
 }
 
 export interface FareTableEntry {
@@ -182,8 +182,7 @@ export interface NormalizedDealVM extends Deal {
   arrivalLabel: string;
   priceLabel: string;
   isDirect: boolean;
-  isOneStop: boolean;
-  found?: string;
+  found_at?: string;
 }
 
 export interface FareLegVM {

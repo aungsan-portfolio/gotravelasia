@@ -55,7 +55,7 @@ function tpCheapToDeal(
       ticket.departure_at.split("T")[0],
       ticket.return_at?.split("T")[0],
     ),
-    found: new Date().toISOString(),
+    found_at: new Date().toISOString(),
   };
 }
 
@@ -88,7 +88,7 @@ function amOfferToDeal(offer: AmFlightOffer, origin: string, destination: string
     stops: totalStops,
     duration: offer.itineraries[0]?.duration?.replace("PT", "").toLowerCase() ?? "—",
     price: Math.round(parseFloat(offer.price.grandTotal)),
-    found: new Date().toISOString(),
+    found_at: new Date().toISOString(),
   };
 }
 

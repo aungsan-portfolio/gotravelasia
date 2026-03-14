@@ -21,7 +21,7 @@ export interface Deal {
   price: number;
   badge?: string | null;
   tag?: string;
-  found?: string;
+  found_at?: string;
 }
 
 export interface FareTableEntry {

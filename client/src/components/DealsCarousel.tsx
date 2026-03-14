@@ -1,56 +1,7 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import type { Deal } from "@/hooks/useFlightData";
 import { USD_TO_THB_RATE } from "@/const";
-
-const AIRLINE_NAMES: Record<string, string> = {
-  FD: "Thai AirAsia",
-  "8M": "Myanmar Airways International",
-  DD: "Nok Air",
-  PG: "Bangkok Airways",
-  TG: "Thai Airways",
-  VZ: "VietJet Air",
-};
-
-const DEST_NAMES: Record<string, string> = {
-  BKK: "Bangkok",
-  DMK: "Bangkok",
-  CNX: "Chiang Mai",
-  HKT: "Phuket",
-  SIN: "Singapore",
-  KUL: "Kuala Lumpur",
-  HAN: "Hanoi",
-  SGN: "Ho Chi Minh",
-  PNH: "Phnom Penh",
-  MDL: "Mandalay",
-  RGN: "Yangon",
-};
-
-const getRouteImage = (dest: string) => {
-  const images: Record<string, string> = {
-    BKK: "/images/bangkok.webp",
-    DMK: "/images/bangkok.webp",
-    CNX: "/images/chiang-mai.webp",
-    HKT: "/images/phuket.webp",
-    SIN: "/images/destinations/singapore.webp",
-    KUL: "/images/destinations/kuala-lumpur.webp",
-    HAN: "/images/destinations/hanoi.webp",
-    SGN: "/images/destinations/ho-chi-minh.webp",
-    PNH: "/images/destinations/phnom-penh.webp",
-    RGN: "/images/destinations/yangon.webp",
-    MDL: "/images/destinations/mandalay.webp",
-  };
-  return images[dest] || "/images/hero-travel.webp";
-};
-
-
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr + "T00:00:00");
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-};
+import { FlightCard } from "@/components/FlightCard";
 
 const THB_THRESHOLD = 15000;
 const USD_THRESHOLD = THB_THRESHOLD / USD_TO_THB_RATE;
@@ -63,7 +14,8 @@ type DealsCarouselProps = {
 export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselProps) {
   const cheapDeals = deals
     .filter((d) => d.price <= USD_THRESHOLD && d.price > 0)
-    .sort((a, b) => a.price - b.price);
+    .sort((a, b) => a.price - b.price)
+    .slice(0, 12); // Limit to 12 best deals for the carousel
 
   if (cheapDeals.length === 0) return null;
 
@@ -75,8 +27,9 @@ export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselPro
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
               Best Flight Deals
             </h2>
-            <p className="text-gray-500 font-medium text-base mt-1">
-              Live prices from Myanmar — updated daily.
+            <p className="text-gray-500 font-medium text-base mt-1 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-amber-400" />
+              Live prices · updated daily
             </p>
           </div>
           <a
@@ -88,65 +41,15 @@ export default function DealsCarousel({ deals, buildRouteUrl }: DealsCarouselPro
         </div>
 
         <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar">
-          {cheapDeals.map((deal, i) => {
-            const dest = deal.destination;
-            const origin = deal.origin;
-            const destName = DEST_NAMES[dest] || dest;
-            const originName = DEST_NAMES[origin] || origin;
-            const airlineName = AIRLINE_NAMES[deal.airline] || deal.airline;
-            const thbPrice = Math.round(deal.price * USD_TO_THB_RATE);
-            const isDirect = deal.transfers === undefined || deal.transfers === 0;
-
-            return (
-              <a
-                key={`${origin}-${dest}-${i}`}
-                href={buildRouteUrl(origin, dest, deal.date)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block min-w-[280px] md:min-w-[300px] bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgb(0,0,0,0.06)] hover:shadow-md transition-all hover:-translate-y-0.5 snap-start flex flex-col border border-gray-200"
-              >
-                <div className="relative h-40 overflow-hidden bg-gray-100">
-                  <img
-                    src={getRouteImage(dest)}
-                    alt={destName}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-
-                <div className="p-4 flex flex-col flex-grow">
-                  <h3 className="text-lg font-bold text-gray-900 mb-0.5">{destName}</h3>
-
-                  <div className="text-sm text-gray-500 mb-1 flex items-center gap-1.5 flex-wrap">
-                    <span>{airlineName}</span>
-                    {isDirect && (
-                      <>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-emerald-600 font-semibold">direct</span>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="text-sm text-gray-500 mb-3">
-                    {originName} <ArrowRight className="w-3 h-3 inline mx-0.5 text-gray-400" /> {formatDate(deal.date)}
-                  </div>
-
-                  <div className="mt-auto">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-xs text-gray-400 font-medium">from</span>
-                      <span className="text-xl font-bold text-gray-900">
-                        ฿{thbPrice.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-400 font-medium">
-                      ${deal.price.toFixed(0)} USD
-                    </div>
-                  </div>
-                </div>
-              </a>
-            );
-          })}
+          {cheapDeals.map((deal, i) => (
+            <FlightCard 
+              key={`${deal.origin}-${deal.destination}-${i}`} 
+              deal={deal} 
+              index={i} 
+              href={buildRouteUrl(deal.origin, deal.destination, deal.date)}
+              variant="carousel"
+            />
+          ))}
         </div>
       </div>
     </section>

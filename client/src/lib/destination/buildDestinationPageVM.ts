@@ -136,7 +136,7 @@ function normalizeDeal(deal: Deal, originCode: string, destCode: string, booking
     priceLabel: formatMoney(deal.price, currency),
     isDirect: deal.stops === 0,
     isOneStop: deal.stops === 1,
-    found: deal.found,
+    found_at: deal.found_at,
   };
 }
 

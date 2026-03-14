@@ -284,6 +284,7 @@ function genDeals(seed: DestinationSeed, origin: OriginSeed): Record<string, Dea
       duration: formatDuration(flightHours + stopCount * 0.9),
       price,
       tag,
+      found_at: new Date().toISOString(),
     });
 
     result[monthKey] = [

@@ -45,7 +45,7 @@ export interface Deal {
     stops: number;
     dur: string;
     price: number;
-    found: string;
+    found_at: string;
 }
 
 export interface FlightDealsData {
@@ -62,32 +62,32 @@ export const META: FlightMeta = { cheapestOneWay: 1776, returnFrom: 4251, oneWay
 
 export const DEALS: FlightDealsData = {
     Cheapest: [
-        { id: 1, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 2/4", t1: "17:15", a1: "19:45", ret: "Tue 7/4", t2: "21:45", a2: "00:15+1", stops: 0, dur: "2h 30m", price: 4251, found: "3/3" },
-        { id: 2, al: "Scoot", logo: "✈️", from: "BKK", d1: "Thu 23/4", t1: "22:30", a1: "01:00+1", ret: "Sun 26/4", t2: "18:00", a2: "20:35", stops: 0, dur: "2h 30m", price: 4251, found: "3/3" },
-        { id: 3, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Tue 21/4", t1: "10:40", a1: "13:05", ret: "Thu 23/4", t2: "20:40", a2: "23:10", stops: 0, dur: "2h 25m", price: 4283, found: "4/3" },
-        { id: 4, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Fri 10/7", t1: "17:15", a1: "19:45", ret: "Wed 29/7", t2: "12:10", a2: "14:40", stops: 0, dur: "2h 30m", price: 4314, found: "7/3" },
-        { id: 5, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Thu 23/4", t1: "17:30", a1: "22:55", ret: "Mon 27/4", t2: "06:30", a2: "09:05", stops: 1, dur: "5h 25m", price: 4346, found: "4/3" },
+        { id: 1, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 2/4", t1: "17:15", a1: "19:45", ret: "Tue 7/4", t2: "21:45", a2: "00:15+1", stops: 0, dur: "2h 30m", price: 4251, found_at: "3/3" },
+        { id: 2, al: "Scoot", logo: "✈️", from: "BKK", d1: "Thu 23/4", t1: "22:30", a1: "01:00+1", ret: "Sun 26/4", t2: "18:00", a2: "20:35", stops: 0, dur: "2h 30m", price: 4251, found_at: "3/3" },
+        { id: 3, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Tue 21/4", t1: "10:40", a1: "13:05", ret: "Thu 23/4", t2: "20:40", a2: "23:10", stops: 0, dur: "2h 25m", price: 4283, found_at: "4/3" },
+        { id: 4, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Fri 10/7", t1: "17:15", a1: "19:45", ret: "Wed 29/7", t2: "12:10", a2: "14:40", stops: 0, dur: "2h 30m", price: 4314, found_at: "7/3" },
+        { id: 5, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Thu 23/4", t1: "17:30", a1: "22:55", ret: "Mon 27/4", t2: "06:30", a2: "09:05", stops: 1, dur: "5h 25m", price: 4346, found_at: "4/3" },
     ],
     Best: [
-        { id: 6, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Thu 23/4", t1: "10:40", a1: "13:05", ret: "Sun 26/4", t2: "14:40", a2: "17:20", stops: 0, dur: "2h 25m", price: 5456, found: "8/3" },
-        { id: 7, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Mon 20/4", t1: "22:15", a1: "12:45+1", ret: "Wed 22/4", t2: "11:20", a2: "16:55", stops: 1, dur: "13h 30m", price: 4949, found: "3/3" },
-        { id: 8, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Thu 16/4", t1: "10:40", a1: "13:05", ret: "Mon 20/4", t2: "20:40", a2: "23:10", stops: 0, dur: "2h 25m", price: 5520, found: "5/3" },
-        { id: 9, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Fri 17/4", t1: "15:25", a1: "23:55", ret: "Fri 24/4", t2: "18:50", a2: "23:15", stops: 1, dur: "7h 30m", price: 5139, found: "3/3" },
+        { id: 6, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Thu 23/4", t1: "10:40", a1: "13:05", ret: "Sun 26/4", t2: "14:40", a2: "17:20", stops: 0, dur: "2h 25m", price: 5456, found_at: "8/3" },
+        { id: 7, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Mon 20/4", t1: "22:15", a1: "12:45+1", ret: "Wed 22/4", t2: "11:20", a2: "16:55", stops: 1, dur: "13h 30m", price: 4949, found_at: "3/3" },
+        { id: 8, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Thu 16/4", t1: "10:40", a1: "13:05", ret: "Mon 20/4", t2: "20:40", a2: "23:10", stops: 0, dur: "2h 25m", price: 5520, found_at: "5/3" },
+        { id: 9, al: "Multiple Airlines", logo: "🛫", from: "BKK", d1: "Fri 17/4", t1: "15:25", a1: "23:55", ret: "Fri 24/4", t2: "18:50", a2: "23:15", stops: 1, dur: "7h 30m", price: 5139, found_at: "3/3" },
     ],
     Direct: [
-        { id: 10, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 2/4", t1: "17:15", a1: "19:45", ret: "Tue 7/4", t2: "21:45", a2: "00:15+1", stops: 0, dur: "2h 30m", price: 4251, found: "3/3" },
-        { id: 11, al: "Scoot", logo: "✈️", from: "BKK", d1: "Mon 11/5", t1: "20:35", a1: "23:05", ret: "Wed 13/5", t2: "16:15", a2: "18:50", stops: 0, dur: "2h 30m", price: 4346, found: "8/3" },
-        { id: 12, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Wed 8/4", t1: "10:40", a1: "13:05", ret: "Mon 13/4", t2: "14:40", a2: "17:20", stops: 0, dur: "2h 25m", price: 4441, found: "8/3" },
+        { id: 10, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 2/4", t1: "17:15", a1: "19:45", ret: "Tue 7/4", t2: "21:45", a2: "00:15+1", stops: 0, dur: "2h 30m", price: 4251, found_at: "3/3" },
+        { id: 11, al: "Scoot", logo: "✈️", from: "BKK", d1: "Mon 11/5", t1: "20:35", a1: "23:05", ret: "Wed 13/5", t2: "16:15", a2: "18:50", stops: 0, dur: "2h 30m", price: 4346, found_at: "8/3" },
+        { id: 12, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Wed 8/4", t1: "10:40", a1: "13:05", ret: "Mon 13/4", t2: "14:40", a2: "17:20", stops: 0, dur: "2h 25m", price: 4441, found_at: "8/3" },
     ],
     "Last-minute": [
-        { id: 13, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Sun 15/3", t1: "07:55", a1: "10:20", ret: "Mon 23/3", t2: "21:30", a2: "00:00+1", stops: 0, dur: "2h 25m", price: 4505, found: "5/3" },
-        { id: 14, al: "Scoot", logo: "✈️", from: "BKK", d1: "Wed 1/4", t1: "22:30", a1: "01:00+1", ret: "Sun 5/4", t2: "18:00", a2: "20:35", stops: 0, dur: "2h 30m", price: 4314, found: "5/3" },
+        { id: 13, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Sun 15/3", t1: "07:55", a1: "10:20", ret: "Mon 23/3", t2: "21:30", a2: "00:00+1", stops: 0, dur: "2h 25m", price: 4505, found_at: "5/3" },
+        { id: 14, al: "Scoot", logo: "✈️", from: "BKK", d1: "Wed 1/4", t1: "22:30", a1: "01:00+1", ret: "Sun 5/4", t2: "18:00", a2: "20:35", stops: 0, dur: "2h 30m", price: 4314, found_at: "5/3" },
     ],
     "One-way": [
-        { id: 15, al: "Multiple Airlines", logo: "🛫", from: "DMK", d1: "Tue 2/6", t1: "19:55", a1: "11:45+1", ret: null, stops: 1, dur: "15h 50m", price: 1776, found: "4/3" },
-        { id: 16, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Sun 15/3", t1: "10:50", a1: "13:30", ret: null, stops: 0, dur: "2h 40m", price: 1808, found: "4/3" },
-        { id: 17, al: "Scoot", logo: "✈️", from: "BKK", d1: "Wed 22/4", t1: "20:35", a1: "23:05", ret: null, stops: 0, dur: "2h 30m", price: 1808, found: "7/3" },
-        { id: 18, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 12/3", t1: "07:55", a1: "10:20", ret: null, stops: 0, dur: "2h 25m", price: 1903, found: "3/3" },
+        { id: 15, al: "Multiple Airlines", logo: "🛫", from: "DMK", d1: "Tue 2/6", t1: "19:55", a1: "11:45+1", ret: null, stops: 1, dur: "15h 50m", price: 1776, found_at: "4/3" },
+        { id: 16, al: "Thai AirAsia", logo: "🔴", from: "DMK", d1: "Sun 15/3", t1: "10:50", a1: "13:30", ret: null, stops: 0, dur: "2h 40m", price: 1808, found_at: "4/3" },
+        { id: 17, al: "Scoot", logo: "✈️", from: "BKK", d1: "Wed 22/4", t1: "20:35", a1: "23:05", ret: null, stops: 0, dur: "2h 30m", price: 1808, found_at: "7/3" },
+        { id: 18, al: "Thai Lion Air", logo: "🦁", from: "DMK", d1: "Thu 12/3", t1: "07:55", a1: "10:20", ret: null, stops: 0, dur: "2h 25m", price: 1903, found_at: "3/3" },
     ],
 };
 

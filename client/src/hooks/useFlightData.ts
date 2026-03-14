@@ -1,19 +1,22 @@
 import { useState, useEffect, useMemo } from "react";
 
-type Deal = {
-  origin: string;
-  destination: string;
-  date: string;
-  price: number;
-  airline: string;
-  flight_num?: string;
-  transfers?: number;
-  airline_code?: string;
-  currency?: string;
-  found_at?: string;
+export type Deal = {
+  origin:         string;
+  destination:    string;
+  date:           string;
+  price:          number;
+  airline:        string;
+  flight_num?:    string;
+  flight_number?: string;
+  transfers?:     number;
+  airline_code?:  string;
+  currency?:      string;
+  found_at?:      string;
+  fetchedAt?:     number;
+  provider?:      string;
 };
 
-type Meta = {
+export type Meta = {
   updated?: string;
   updated_at?: string;
   overall_cheapest?: Deal;
@@ -131,8 +134,6 @@ export function usePriceHint(origin: string, destination: string, _hasReturn?: b
 
   return staticPrice ?? livePrice;
 }
-
-export type { Deal, Meta };
 
 /**
  * useLivePriceMap — fetches live prices for specific routes.

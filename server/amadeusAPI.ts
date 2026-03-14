@@ -91,3 +91,91 @@ export const amadeusAPI = {
     }
   },
 };
+
+export interface AirportResult {
+  code:    string;
+  name:    string;
+  city:    string;
+  country: string;
+  type:    "airport" | "city";
+}
+
+/**
+ * Maps the API result to the structure expected by the FlightSearchContext.
+ */
+export function toContextAirport(r: AirportResult) {
+  return {
+    code:    r.code,
+    name:    `${r.city} (${r.name})`,  // e.g., "Bangkok (Suvarnabhumi)"
+    country: r.country,
+  };
+}
+
+/**
+ * Searches for airports and cities using the Amadeus Location API.
+ * Includes a local fallback if the API is unavailable.
+ */
+export async function searchAmadeusLocations(keyword: string): Promise<AirportResult[]> {
+  try {
+    const token = await getAmadeusToken();
+    if (!token) return getFallbackAirports(keyword);
+
+    const res = await fetch(
+      `https://test.api.amadeus.com/v1/reference-data/locations?` +
+      `subType=AIRPORT,CITY&keyword=${encodeURIComponent(keyword)}&page[limit]=8`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (!res.ok) {
+      console.warn("[Amadeus] Search failed, status:", res.status);
+      return getFallbackAirports(keyword);
+    }
+
+    const data = await res.json();
+    
+    return (data.data ?? []).map((loc: any) => ({
+      code:    loc.iataCode,
+      name:    loc.name,
+      city:    loc.address?.cityName ?? loc.name,
+      country: loc.address?.countryName ?? "",
+      type:    loc.subType === "AIRPORT" ? "airport" : "city",
+    }));
+  } catch (error) {
+    console.error("[Amadeus] Search catch error:", error);
+    return getFallbackAirports(keyword);
+  }
+}
+
+/**
+ * Local fallback for common regional airports to maintain functionality 
+ * even if the external API is unreachable.
+ */
+function getFallbackAirports(q: string): AirportResult[] {
+  const LOCAL: AirportResult[] = [
+    { code: "RGN", name: "Yangon Intl",        city: "Yangon",           country: "Myanmar",      type: "airport" },
+    { code: "MDL", name: "Mandalay Intl",      city: "Mandalay",         country: "Myanmar",      type: "airport" },
+    { code: "BKK", name: "Suvarnabhumi",       city: "Bangkok",          country: "Thailand",     type: "airport" },
+    { code: "DMK", name: "Don Mueang",         city: "Bangkok",          country: "Thailand",     type: "airport" },
+    { code: "CNX", name: "Chiang Mai Intl",    city: "Chiang Mai",       country: "Thailand",     type: "airport" },
+    { code: "HKT", name: "Phuket Intl",        city: "Phuket",           country: "Thailand",     type: "airport" },
+    { code: "SIN", name: "Changi Airport",     city: "Singapore",        country: "Singapore",    type: "airport" },
+    { code: "KUL", name: "KLIA",               city: "Kuala Lumpur",     country: "Malaysia",     type: "airport" },
+    { code: "SGN", name: "Tan Son Nhat",       city: "Ho Chi Minh City", country: "Vietnam",      type: "airport" },
+    { code: "HAN", name: "Noi Bai Intl",       city: "Hanoi",            country: "Vietnam",      type: "airport" },
+    { code: "DAD", name: "Da Nang Intl",       city: "Da Nang",          country: "Vietnam",      type: "airport" },
+    { code: "REP", name: "Siem Reap Intl",     city: "Siem Reap",        country: "Cambodia",     type: "airport" },
+    { code: "HKG", name: "Hong Kong Intl",     city: "Hong Kong",        country: "Hong Kong",    type: "airport" },
+    { code: "TYO", name: "Narita Intl",        city: "Tokyo",            country: "Japan",        type: "airport" },
+    { code: "OSA", name: "Kansai Intl",        city: "Osaka",            country: "Japan",        type: "airport" },
+    { code: "ICN", name: "Incheon Intl",       city: "Seoul",            country: "South Korea",  type: "airport" },
+    { code: "DPS", name: "Ngurah Rai Intl",    city: "Bali",             country: "Indonesia",    type: "airport" },
+    { code: "DXB", name: "Dubai Intl",         city: "Dubai",            country: "UAE",          type: "airport" },
+  ];
+  const lq = q.toLowerCase();
+  return LOCAL.filter(a =>
+    a.code.toLowerCase().includes(lq) ||
+    a.city.toLowerCase().includes(lq) ||
+    a.name.toLowerCase().includes(lq) ||
+    a.country.toLowerCase().includes(lq)
+  ).slice(0, 6);
+}
