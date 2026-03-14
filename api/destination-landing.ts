@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getDestinationBySlug, getDestinationByCode } from "../client/src/data/destinationRegistry";
-import { buildDestinationPageVM } from "../client/src/lib/destination/buildDestinationPageVM";
-import { fetchFlightDeals, fetchMonthlyPriceTrend } from "../client/src/lib/api/flightDataFetcher";
+// import { getDestinationBySlug, getDestinationByCode } from "../client/src/data/destinationRegistry";
+// import { buildDestinationPageVM } from "../client/src/lib/destination/buildDestinationPageVM";
+// import { fetchFlightDeals, fetchMonthlyPriceTrend } from "../client/src/lib/api/flightDataFetcher";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const slug = String(req.query.slug || "");
