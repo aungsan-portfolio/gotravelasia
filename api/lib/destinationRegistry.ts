@@ -514,7 +514,11 @@ function buildRegistry(seeds: DestinationSeed[], origin: OriginSeed = DEFAULT_OR
   return { byCitySlug, byCountrySlug, byCode };
 }
 
-const REGISTRY = buildRegistry(DESTINATION_SEEDS);
+let _registry: RegistryMaps | null = null;
+function getRegistry(): RegistryMaps {
+  if (!_registry) _registry = buildRegistry(DESTINATION_SEEDS);
+  return _registry;
+}
 
 // ── Public API ──────────────────────────────────────────────────────
 const AIRPORT_CITY_MAP: Record<string, string> = {
@@ -575,11 +579,11 @@ export function generateDynamicDestination(
   return buildRecord(seed, originSeed);
 }
 
-export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined { return REGISTRY.byCitySlug.get(toSlug(slug)); }
-export function getDestinationByCode(code: string): StaticDestinationRecord | undefined { return REGISTRY.byCode.get(code.trim().toUpperCase()); }
-export function getDestinationsByCountrySlug(countrySlug: string): StaticDestinationRecord[] { return REGISTRY.byCountrySlug.get(toSlug(countrySlug)) ?? []; }
+export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined { return getRegistry().byCitySlug.get(toSlug(slug)); }
+export function getDestinationByCode(code: string): StaticDestinationRecord | undefined { return getRegistry().byCode.get(code.trim().toUpperCase()); }
+export function getDestinationsByCountrySlug(countrySlug: string): StaticDestinationRecord[] { return getRegistry().byCountrySlug.get(toSlug(countrySlug)) ?? []; }
 export function getAllSlugs(): string[] { return DESTINATION_SEEDS.map((s) => s.slug); }
-export function getAllDestinationRecords(): StaticDestinationRecord[] { return DESTINATION_SEEDS.map((s) => REGISTRY.byCitySlug.get(s.slug)!); }
+export function getAllDestinationRecords(): StaticDestinationRecord[] { return DESTINATION_SEEDS.map((s) => getRegistry().byCitySlug.get(s.slug)!); }
 
 export const POP_DEST   = DESTINATION_SEEDS.filter((s) => s.isPopularDestination).map((s) => s.country).filter((c, i, a) => a.indexOf(c) === i);
 export const POP_CITIES = DESTINATION_SEEDS.filter((s) => s.isPopularCity).map((s) => s.city);
