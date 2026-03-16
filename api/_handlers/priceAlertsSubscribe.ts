@@ -229,7 +229,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error("[price-alerts] error", error?.code, error?.message, error);
-    return res.status(500).json({ error: "Something went wrong. Please try again." });
+    return res.status(500).json({ 
+      error: "Subscription failed", 
+      message: error?.message || "Internal server error",
+      code: error?.code
+    });
   } finally {
     if (connection) {
       await connection.end().catch(() => {});
