@@ -1,18 +1,18 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 // ── Middleware / shared utils ────────────────────────────────────────────────
-import { rateLimitMiddleware } from "./_lib/rateLimit";
-import { logRequest } from "./_lib/logger";
+import { rateLimitMiddleware } from "./_lib/rateLimit.js";
+import { logRequest } from "./_lib/logger.js";
 
 // ── Route handlers ───────────────────────────────────────────────────────────
-import handleFlights from "./_handlers/flights";
-import handleAuth from "./_handlers/auth";
-import handleDestinationLanding from "./_handlers/destination-landing";
-import handleGeo from "./_handlers/geo";
-import handleNewsletter from "./_handlers/newsletter";
-import handlePriceAlertsSub from "./_handlers/priceAlertsSubscribe";
-import handleCronCheckAlerts from "./_handlers/cronCheckPriceAlerts";
-import handleCronSendAlerts from "./_handlers/cronSendAlerts";
+import handleFlights from "./_handlers/flights.js";
+import handleAuth from "./_handlers/auth.js";
+import handleDestinationLanding from "./_handlers/destination-landing.js";
+import handleGeo from "./_handlers/geo.js";
+import handleNewsletter from "./_handlers/newsletter.js";
+import handlePriceAlertsSub from "./_handlers/priceAlertsSubscribe.js";
+import handleCronCheckAlerts from "./_handlers/cronCheckPriceAlerts.js";
+import handleCronSendAlerts from "./_handlers/cronSendAlerts.js";
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
