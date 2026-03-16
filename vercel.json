@@ -4,27 +4,28 @@
   "outputDirectory": "dist/public",
   "framework": null,
   "functions": {
-    "api/cron/check-price-alerts.ts": {
-      "maxDuration": 60
-    },
-    "api/cron/send-alerts.ts": {
-      "maxDuration": 60
-    },
-    "api/price-alerts/subscribe.ts": {
-      "maxDuration": 10
-    },
-    "api/newsletter.ts": {
-      "maxDuration": 10
+    "api/index.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "destination": "/api/index.ts"
     },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
     }
   ],
   "crons": [
