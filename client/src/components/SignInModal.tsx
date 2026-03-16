@@ -90,37 +90,22 @@ let googleScriptPromise: Promise<void> | null = null;
 function loadGoogleScript(): Promise<void> {
   if (!canUseDOM()) return Promise.reject(new Error("No DOM available"));
 
-  if (window.google?.accounts?.id) {
-    return Promise.resolve();
-  }
+  if (window.google?.accounts?.id) return Promise.resolve();
 
-  if (googleScriptPromise) {
-    return googleScriptPromise;
-  }
+  if (googleScriptPromise) return googleScriptPromise;
 
   googleScriptPromise = new Promise((resolve, reject) => {
     const existing = document.getElementById("google-gsi-script") as HTMLScriptElement | null;
 
+    const finish = () => {
+      if (window.google?.accounts?.id) resolve();
+      else reject(new Error("Google API unavailable after script load"));
+    };
+
     if (existing) {
-      const checkReady = () => {
-        if (window.google?.accounts?.id) {
-          resolve();
-        } else {
-          reject(new Error("Google script loaded but API unavailable"));
-        }
-      };
-
-      existing.addEventListener("load", checkReady, { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("Failed to load Google script")),
-        { once: true }
-      );
-
-      window.setTimeout(() => {
-        if (window.google?.accounts?.id) resolve();
-      }, 0);
-
+      existing.addEventListener("load", finish, { once: true });
+      existing.addEventListener("error", () => reject(new Error("Failed to load Google script")), { once: true });
+      window.setTimeout(finish, 50);
       return;
     }
 
@@ -129,10 +114,7 @@ function loadGoogleScript(): Promise<void> {
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    script.onload = () => {
-      if (window.google?.accounts?.id) resolve();
-      else reject(new Error("Google script loaded but API unavailable"));
-    };
+    script.onload = finish;
     script.onerror = () => reject(new Error("Failed to load Google script"));
     document.head.appendChild(script);
   });
@@ -202,20 +184,22 @@ export default function SignInModal({
 
     if (!GOOGLE_CLIENT_ID) {
       setGoogleReady(false);
-      setGoogleError("Google sign-in is unavailable right now.");
+      setGoogleError("Google Client ID is missing.");
       return;
     }
 
     loadGoogleScript()
       .then(() => {
-        if (cancelled) return;
-        setGoogleReady(true);
-        setGoogleError("");
+        if (!cancelled) {
+          setGoogleReady(true);
+          setGoogleError("");
+        }
       })
       .catch(() => {
-        if (cancelled) return;
-        setGoogleReady(false);
-        setGoogleError("Google sign-in is temporarily unavailable.");
+        if (!cancelled) {
+          setGoogleReady(false);
+          setGoogleError("Google sign-in is temporarily unavailable.");
+        }
       });
 
     return () => {
@@ -281,6 +265,54 @@ export default function SignInModal({
     }
   }, []);
 
+  // Diagnostic Logs
+  useEffect(() => {
+    if (isOpen) {
+      console.log("GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID);
+      console.log("googleReady", googleReady);
+      console.log("window.google", !!window.google);
+      console.log("google.accounts.id", !!window.google?.accounts?.id);
+    }
+  }, [isOpen, googleReady]);
+
+  const renderGoogleButton = useCallback(() => {
+    if (!window.google?.accounts?.id) {
+      setGoogleError("Google API not ready.");
+      return;
+    }
+
+    if (!googleBtnRef.current) {
+      setGoogleError("Google button container missing.");
+      return;
+    }
+
+    console.log("googleBtnRef", googleBtnRef.current);
+    googleBtnRef.current.innerHTML = "";
+
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: "outline",
+      size: "large",
+      width: 314,
+      text: "continue_with",
+      shape: "rectangular",
+      logo_alignment: "left",
+    });
+
+    window.setTimeout(() => {
+      console.log("children after render", googleBtnRef.current?.childElementCount);
+      const hasButton =
+        !!googleBtnRef.current &&
+        (googleBtnRef.current.childElementCount > 0 ||
+          googleBtnRef.current.querySelector("iframe, div[role='button']"));
+
+      if (!hasButton) {
+        setGoogleError("Google button could not be displayed on this browser.");
+      } else {
+        setGoogleError("");
+      }
+    }, 300);
+  }, []);
+
   const initializeGoogle = useCallback(() => {
     if (!GOOGLE_CLIENT_ID) return;
     if (!window.google?.accounts?.id) return;
@@ -308,30 +340,59 @@ export default function SignInModal({
   }, []);
 
   useEffect(() => {
-    if (!isOpen || step !== 1) return;
-    if (!googleReady || !GOOGLE_CLIENT_ID) return;
-    if (!window.google?.accounts?.id) return;
-    if (!googleBtnRef.current) return;
-
-    try {
-      initializeGoogle();
-
-      googleBtnRef.current.innerHTML = "";
-
-      window.google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: "outline",
-        size: "large",
-        width: 314,
-        text: "continue_with",
-        shape: "rectangular",
-        logo_alignment: "left",
-      });
-
-      setGoogleError("");
-    } catch {
-      setGoogleError("Google sign-in is temporarily unavailable.");
+    if (!isOpen || step !== 1 || !googleReady) return;
+    if (!GOOGLE_CLIENT_ID) {
+      setGoogleError("Google Client ID is missing.");
+      return;
     }
-  }, [isOpen, step, googleReady, initializeGoogle]);
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        await loadGoogleScript();
+        if (cancelled) return;
+
+        if (!googleInitialized.current) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response: { credential?: string }) => {
+              const decoded = response?.credential ? decodeGoogleJwt(response.credential) : null;
+
+              if (!decoded?.email) {
+                setGoogleError("Google sign-in failed. Please use email instead.");
+                return;
+              }
+
+              setUserEmail(decoded.email.trim());
+              setLS(LS_EMAIL_KEY, decoded.email.trim());
+              setSubmitError("");
+              setGoogleError("");
+              setStep(3);
+            },
+          });
+
+          googleInitialized.current = true;
+        }
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!cancelled) renderGoogleButton();
+          });
+        });
+      } catch {
+        if (!cancelled) {
+          setGoogleError("Google sign-in is temporarily unavailable.");
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, step, googleReady, renderGoogleButton]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
