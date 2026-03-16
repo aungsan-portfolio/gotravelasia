@@ -83,6 +83,12 @@ async function runMigrations() {
     } catch (e: any) {
       console.warn("[migration] MODIFY destination nullable:", e?.code, e?.message);
     }
+
+    try {
+      await conn.execute(`ALTER TABLE flightPriceAlerts MODIFY departDate VARCHAR(10) NULL`);
+    } catch (e: any) {
+      console.warn("[migration] MODIFY departDate nullable:", e?.code, e?.message);
+    }
   } finally {
     await conn.end().catch(() => {});
   }
