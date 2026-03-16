@@ -1,33 +1,20 @@
-/**
- * api/index.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * SINGLE Vercel Serverless Function entry point.
- * All /api/* traffic is rewritten here by vercel.json.
- *
- * Handlers live in api/_handlers/ (underscore prefix = Vercel ignores them).
- * Helper modules live in api/_lib/  (underscore prefix = also ignored).
- *
- * This keeps GoTravel at exactly 1 Serverless Function on the Hobby plan.
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// ── Middleware ────────────────────────────────────────────────────────────────
-import { rateLimitMiddleware } from "../server/middleware/rateLimit";
-import { logRequest }          from "../server/middleware/logger";
+// ── Middleware / shared utils ────────────────────────────────────────────────
+import { rateLimitMiddleware } from "./_lib/rateLimit";
+import { logRequest } from "./_lib/logger";
 
-// ── Route handlers (in _handlers/ — Vercel never counts them) ────────────────
-import handleFlights            from "./_handlers/flights";
-import handleAuth               from "./_handlers/auth";
+// ── Route handlers ───────────────────────────────────────────────────────────
+import handleFlights from "./_handlers/flights";
+import handleAuth from "./_handlers/auth";
 import handleDestinationLanding from "./_handlers/destination-landing";
-import handleGeo                from "./_handlers/geo";
-import handleNewsletter         from "./_handlers/newsletter";
-import handlePriceAlertsSub     from "./_handlers/priceAlertsSubscribe";
-import handleCronCheckAlerts    from "./_handlers/cronCheckPriceAlerts";
-import handleCronSendAlerts     from "./_handlers/cronSendAlerts";
+import handleGeo from "./_handlers/geo";
+import handleNewsletter from "./_handlers/newsletter";
+import handlePriceAlertsSub from "./_handlers/priceAlertsSubscribe";
+import handleCronCheckAlerts from "./_handlers/cronCheckPriceAlerts";
+import handleCronSendAlerts from "./_handlers/cronSendAlerts";
 
-// ── CORS helper (shared across all routes) ───────────────────────────────────
+// ── CORS ─────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   "https://gotravel-asia.vercel.app",
   "https://gotravelasia.com",
@@ -38,10 +25,12 @@ const ALLOWED_ORIGINS = [
 
 function setCors(req: VercelRequest, res: VercelResponse): boolean {
   const origin = req.headers.origin ?? "";
-  if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+
+  if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
   }
+
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -51,67 +40,92 @@ function setCors(req: VercelRequest, res: VercelResponse): boolean {
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
-    return true; // caller should stop
+    return true;
   }
+
   return false;
 }
 
-// ── Route table ──────────────────────────────────────────────────────────────
-// Each entry maps a URL prefix to a handler function.
-// The router matches the FIRST prefix that fits, so order matters
-// (longer/more-specific prefixes first).
+// ── Types ────────────────────────────────────────────────────────────────────
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<void> | void;
 
-const routes: Array<{ prefix: string; handler: Handler }> = [
-  // Cron jobs (checked first so /api/cron/* resolves quickly)
+type Route = {
+  prefix: string;
+  handler: Handler;
+};
+
+// ── Route table ──────────────────────────────────────────────────────────────
+const routes: Route[] = [
+  // Cron first
   { prefix: "/api/cron/check-price-alerts", handler: handleCronCheckAlerts },
-  { prefix: "/api/cron/send-alerts",        handler: handleCronSendAlerts  },
+  { prefix: "/api/cron/send-alerts", handler: handleCronSendAlerts },
 
   // Feature routes
-  { prefix: "/api/flights",              handler: handleFlights            },
-  { prefix: "/api/auth",                 handler: handleAuth               },
-  { prefix: "/api/destination-landing",  handler: handleDestinationLanding },
-  { prefix: "/api/geo",                  handler: handleGeo                },
-  { prefix: "/api/newsletter",           handler: handleNewsletter         },
-  { prefix: "/api/price-alerts",         handler: handlePriceAlertsSub     },
+  { prefix: "/api/flights", handler: handleFlights },
+  { prefix: "/api/auth", handler: handleAuth },
+  { prefix: "/api/destination-landing", handler: handleDestinationLanding },
+  { prefix: "/api/geo", handler: handleGeo },
+  { prefix: "/api/newsletter", handler: handleNewsletter },
+  { prefix: "/api/price-alerts", handler: handlePriceAlertsSub },
 ];
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // 1) Log every request
-  logRequest(req);
+  const startedAt = Date.now();
+  const pathname = (req.url ?? "/").split("?")[0];
 
-  // 2) CORS preflight — handle globally so individual handlers don't need to
-  if (setCors(req, res)) return;
+  try {
+    // 1) log
+    logRequest(req);
 
-  // 3) Rate limiting — stop abusive clients early
-  if (rateLimitMiddleware(req, res)) return;
+    // 2) CORS
+    if (setCors(req, res)) {
+      return;
+    }
 
-  // 4) Route dispatching
-  const url = req.url ?? "/";
-  const pathname = url.split("?")[0]; // strip query string for matching
+    // 3) rate limit
+    if (rateLimitMiddleware(req, res)) {
+      return;
+    }
 
-  for (const route of routes) {
-    if (pathname.startsWith(route.prefix)) {
-      try {
-        return await route.handler(req, res);
-      } catch (err) {
-        console.error(`[api/index] Error in ${route.prefix}:`, err);
+    // 4) route dispatch
+    for (const route of routes) {
+      if (pathname === route.prefix || pathname.startsWith(`${route.prefix}/`)) {
+        await route.handler(req, res);
+
         if (!res.headersSent) {
-          return res.status(500).json({
-            error: "Internal server error",
-            path: pathname,
-          });
+          res.status(204).end();
         }
+
         return;
       }
     }
-  }
 
-  // 5) No route matched → 404
-  res.status(404).json({
-    error: "Not Found",
-    message: `No handler for ${pathname}`,
-    availableRoutes: routes.map(r => r.prefix),
-  });
+    // 5) 404
+    res.status(404).json({
+      error: "Not Found",
+      message: `No handler for ${pathname}`,
+      availableRoutes: routes.map((r) => r.prefix),
+    });
+  } catch (error) {
+    console.error("[api/index] Unhandled error:", error);
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Internal server error",
+        path: pathname,
+      });
+    }
+  } finally {
+    const durationMs = Date.now() - startedAt;
+    console.log(
+      JSON.stringify({
+        scope: "api.index",
+        path: pathname,
+        method: req.method,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  }
 }
