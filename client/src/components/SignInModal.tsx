@@ -606,6 +606,20 @@ export default function SignInModal({
                             <p className="text-white/50 text-[13px] mb-5">
                                 Pick a route and we'll save it for{" "}
                                 <span className="text-amber-400">{userEmail}</span>.
+                                <br />
+                                <button
+                                    onClick={() => {
+                                        setLS(LS_EMAIL_KEY, "");
+                                        setLS(LS_SUBSCRIBED_KEY, "");
+                                        setUserEmail("");
+                                        setIsSubscribed(false);
+                                        setStep(1);
+                                    }}
+                                    className="mt-1 text-[11px] text-white/40 hover:text-white/80 underline"
+                                    type="button"
+                                >
+                                    Not you? Change email
+                                </button>
                             </p>
 
                             {submitError ? (
@@ -662,6 +676,20 @@ export default function SignInModal({
                                 We've saved your route. You'll receive
                                 <br />
                                 deal updates at <span className="text-amber-400">{userEmail}</span>
+                                <br />
+                                <button
+                                    onClick={() => {
+                                        setLS(LS_EMAIL_KEY, "");
+                                        setLS(LS_SUBSCRIBED_KEY, "");
+                                        setUserEmail("");
+                                        setIsSubscribed(false);
+                                        setStep(1);
+                                    }}
+                                    className="mt-2 text-[11px] text-white/40 hover:text-white/80 underline"
+                                    type="button"
+                                >
+                                    Change email account
+                                </button>
                             </p>
 
                             <button
