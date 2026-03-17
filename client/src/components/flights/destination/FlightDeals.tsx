@@ -5,7 +5,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatTimeAgo } from "@/lib/timeAgo";
 import type { DestinationPageVM, NormalizedDealVM } from "@/types/destination";
 
-type FlightDealsProps = { data: DestinationPageVM };
+type FlightDealsProps = {
+  data: DestinationPageVM;
+  filteredTabItems?: Partial<Record<string, NormalizedDealVM[]>>;
+};
 
 // Cheapflights-style deal classification tabs
 type DealClass = "all" | "cheapest" | "best" | "direct" | "oneway";
@@ -118,7 +121,10 @@ function resolveActiveTab(preferred: string, tabs: DestinationPageVM["deals"]["t
   return tabs.find((t) => t.count > 0)?.key ?? preferred;
 }
 
-export default function FlightDeals({ data }: FlightDealsProps) {
+export default function FlightDeals({
+  data,
+  filteredTabItems,
+}: FlightDealsProps) {
   const { deals, route } = data;
 
   const [activeTab, setActiveTab] = useState(() =>
@@ -134,16 +140,24 @@ export default function FlightDeals({ data }: FlightDealsProps) {
   const ribbonRef = useRef<HTMLDivElement>(null);
 
   const currentTab = useMemo(
-    () => deals.tabs.find((t) => t.key === activeTab) ?? deals.tabs.find((t) => t.count > 0) ?? deals.tabs[0],
-    [activeTab, deals.tabs],
+    () =>
+      deals.tabs.find(t => t.key === activeTab) ??
+      deals.tabs.find(t => t.count > 0) ??
+      deals.tabs[0],
+    [activeTab, deals.tabs]
   );
+
+  const currentTabItems = useMemo(() => {
+    if (!currentTab) return [];
+    return filteredTabItems?.[currentTab.key] ?? currentTab.items;
+  }, [currentTab, filteredTabItems]);
 
   // Apply direct-only filter then deal classification
   const visibleDeals = useMemo(() => {
-    let items = currentTab?.items ?? [];
-    if (directOnly) items = items.filter((d) => d.isDirect);
+    let items = currentTabItems;
+    if (directOnly) items = items.filter(d => d.isDirect);
     return classifyDeals(items, dealClass);
-  }, [currentTab, dealClass, directOnly]);
+  }, [currentTabItems, dealClass, directOnly]);
 
   function scrollRibbon(dir: "left" | "right") {
     ribbonRef.current?.scrollBy({ left: dir === "left" ? -220 : 220, behavior: "smooth" });
@@ -155,7 +169,7 @@ export default function FlightDeals({ data }: FlightDealsProps) {
     { label: "Direct deals",     value: String(deals.summary.directCount) },
   ];
 
-  const directCount = currentTab?.items.filter((d) => d.isDirect).length ?? 0;
+  const directCount = currentTabItems.filter(d => d.isDirect).length;
 
   return (
     <section className="px-4 py-8">
@@ -209,8 +223,11 @@ export default function FlightDeals({ data }: FlightDealsProps) {
                   ].join(" ")}
                 >
                   <span className="whitespace-nowrap font-semibold">{tab.label}</span>
-                  <span className={`mt-0.5 text-xs ${isActive ? "text-slate-700" : "text-amber-400"}`}>
-                    {tab.bestPriceLabel}
+                  <span
+                    className={`mt-0.5 text-xs ${isActive ? "text-slate-700" : "text-amber-400"}`}
+                  >
+                    {filteredTabItems?.[tab.key]?.[0]?.priceLabel ??
+                      tab.bestPriceLabel}
                   </span>
                 </button>
               );
@@ -281,11 +298,15 @@ export default function FlightDeals({ data }: FlightDealsProps) {
         {currentTab && (
           <div className="flex items-center justify-between text-xs text-white/40">
             <span>
-              {route.routeLabel} · <span className="text-white/60">{currentTab.label}</span>
-              {" "}· best from <span className="text-amber-400 font-semibold">{currentTab.bestPriceLabel}</span>
+              {route.routeLabel} ·{" "}
+              <span className="text-white/60">{currentTab.label}</span> · best
+              from{" "}
+              <span className="text-amber-400 font-semibold">
+                {visibleDeals[0]?.priceLabel ?? currentTab.bestPriceLabel}
+              </span>
               {dealClass !== "all" && (
                 <span className="ml-2 rounded bg-fuchsia-400/10 px-1.5 text-fuchsia-300">
-                  {DEAL_CLASSES.find((c) => c.key === dealClass)?.label}
+                  {DEAL_CLASSES.find(c => c.key === dealClass)?.label}
                 </span>
               )}
             </span>
@@ -305,10 +326,14 @@ export default function FlightDeals({ data }: FlightDealsProps) {
         ) : (
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center">
             <p className="text-sm font-medium text-white/60">
-              {directOnly ? "No direct flights available for this month." : "No deals available for this month."}
+              {directOnly
+                ? "No direct flights available for this month."
+                : "No deals match your filters for this month."}
             </p>
             <p className="mt-1 text-xs text-white/30">
-              {directOnly ? "Try disabling 'Direct only' or select another month." : "Try another month or search all fares."}
+              {directOnly
+                ? "Try disabling 'Direct only' or select another month."
+                : "Try another month or search all fares."}
             </p>
           </div>
         )}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRoute } from "wouter";
 import { Helmet } from "react-helmet-async";
 
-import type { DestinationPageVM } from "@/types/destination";
+import type { DestinationPageVM, NormalizedDealVM } from "@/types/destination";
 import { getDestinationBySlug, generateDynamicDestination, getDestinationsByCountrySlug } from "@/data/destinationRegistry";
 import { DestinationLandingApiEnvelopeSchema } from "@/data/destinationSchemas";
 import { normalizeLiveData } from "@/lib/destination/normalizeLiveData";
@@ -19,6 +19,12 @@ import DestinationHero from "@/components/destination/DestinationHero";
 import HeroSearch from "@/components/flights/destination/HeroSearch";
 import FlightDeals from "@/components/flights/destination/FlightDeals";
 import FareFinder from "@/components/flights/destination/FareFinder";
+import {
+  FilterSidebar,
+  FilterState,
+  applyFilters,
+  buildDefaultFilters,
+} from "@/components/flights/destination/FilterSidebar";
 import Insights from "@/components/flights/destination/Insights";
 import AirlinesWeather from "@/components/flights/destination/AirlinesWeather";
 import AirlineReviews from "@/components/flights/destination/AirlineReviews";
@@ -359,6 +365,75 @@ export default function DestinationLandingPage() {
     };
   }, [slug, staticRecord, recordToUse, isResolving, requestedOrigin]);
 
+  const vm = state.vm;
+  const fareEntries = vm?.fareFinder.entries ?? [];
+  const [filters, setFilters] = useState<FilterState>(() =>
+    buildDefaultFilters(
+      fareEntries,
+      vm?.fareFinder.defaultOrigin ?? "",
+      vm?.fareFinder.summary.defaultBudget ?? 0
+    )
+  );
+
+  useEffect(() => {
+    if (!vm) return;
+    setFilters(
+      buildDefaultFilters(
+        vm.fareFinder.entries,
+        vm.fareFinder.defaultOrigin,
+        vm.fareFinder.summary.defaultBudget
+      )
+    );
+  }, [vm]);
+
+  const filteredFareEntries = useMemo(
+    () => applyFilters(fareEntries, filters),
+    [fareEntries, filters]
+  );
+
+  const filteredDealTabItems = useMemo(() => {
+    if (!vm) return {} as Partial<Record<string, NormalizedDealVM[]>>;
+
+    const toTimeSlot = (d1: string): FilterState["timeSlot"] => {
+      const match = d1.match(/T(\d{2}):/);
+      if (!match) return "any";
+      const hour = parseInt(match[1], 10);
+      if (hour >= 5 && hour < 12) return "morning";
+      if (hour >= 12 && hour < 17) return "afternoon";
+      if (hour >= 17 && hour < 21) return "evening";
+      return "night";
+    };
+
+    const matches = (deal: NormalizedDealVM) => {
+      if (filters.origin && deal.from !== filters.origin) return false;
+      if (filters.maxBudget > 0 && deal.price > filters.maxBudget) return false;
+      if (
+        filters.airlines.length > 0 &&
+        deal.airlineCode &&
+        !filters.airlines.includes(deal.airlineCode)
+      )
+        return false;
+      if (filters.stops === "direct" && deal.stops !== 0) return false;
+      if (filters.stops === "1stop" && deal.stops !== 1) return false;
+      if (filters.stops === "2plus" && deal.stops < 2) return false;
+      if (
+        filters.timeSlot !== "any" &&
+        deal.d1 &&
+        toTimeSlot(deal.d1) !== filters.timeSlot
+      )
+        return false;
+      return true;
+    };
+
+    return vm.deals.tabs.reduce<Partial<Record<string, NormalizedDealVM[]>>>(
+      (acc, tab) => {
+        acc[tab.key] = tab.items.filter(matches);
+        return acc;
+      },
+      {}
+    );
+  }, [vm, filters]);
+
   if (!matched) {
     return null;
   }
@@ -377,7 +452,7 @@ export default function DestinationLandingPage() {
     );
   }
 
-  if (!state.vm) {
+  if (!vm) {
     return (
       <main className="min-h-screen bg-[#0b0719] px-4 py-12 text-white">
         <div className="mx-auto max-w-5xl rounded-2xl border border-white/10 bg-white/5 p-8">
@@ -389,8 +464,6 @@ export default function DestinationLandingPage() {
       </main>
     );
   }
-
-  const { vm } = state;
 
   return (
     <>
@@ -440,53 +513,100 @@ export default function DestinationLandingPage() {
         ) : null}
 
         <div className="mx-auto max-w-7xl px-4 py-8 lg:py-12">
-          <div className="flex flex-col gap-8 lg:flex-row">
-            {/* Sidebar */}
-            <aside className="w-full space-y-6 lg:w-80 shrink-0">
-               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">Quick Stats</h3>
-                  <div className="mt-4 space-y-4">
+          <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+            <aside className="order-1 space-y-6 lg:sticky lg:top-24">
+              <FilterSidebar
+                entries={vm.fareFinder.entries}
+                filters={filters}
+                onChange={setFilters}
+                onReset={() =>
+                  setFilters(
+                    buildDefaultFilters(
+                      vm.fareFinder.entries,
+                      vm.fareFinder.defaultOrigin,
+                      vm.fareFinder.summary.defaultBudget
+                    )
+                  )
+                }
+                budgetMin={vm.fareFinder.summary.budgetMin}
+                budgetMax={vm.fareFinder.summary.budgetMax}
+                budgetStep={vm.fareFinder.summary.budgetStep}
+                originOptions={vm.fareFinder.originOptions}
+                resultCount={filteredFareEntries.length}
+              />
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">
+                  Quick Stats
+                </h3>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-[10px] uppercase text-white/40">
+                      Airports in {vm.route.destination.city}
+                    </p>
+                    <p className="text-sm font-semibold text-white/90">
+                      {vm.isCountry
+                        ? "Multiple"
+                        : `${vm.route.destination.city} Airport`}
+                    </p>
+                  </div>
+                  {vm.raw.fareTable?.[0]?.dur1 && (
                     <div>
-                      <p className="text-[10px] uppercase text-white/40">Airports in {vm.route.destination.city}</p>
-                      <p className="text-sm font-semibold text-white/90">{vm.isCountry ? "Multiple" : `${vm.route.destination.city} Airport`}</p>
+                      <p className="text-[10px] uppercase text-white/40">
+                        Avg Flight Time
+                      </p>
+                      <p className="text-sm font-semibold text-white/90">
+                        {vm.raw.fareTable[0].dur1}
+                      </p>
                     </div>
-                    {vm.raw.fareTable?.[0]?.dur1 && (
-                      <div>
-                        <p className="text-[10px] uppercase text-white/40">Avg Flight Time</p>
-                        <p className="text-sm font-semibold text-white/90">{vm.raw.fareTable[0].dur1}</p>
+                  )}
+                  <div>
+                    <p className="text-[10px] uppercase text-white/40">
+                      Starting from
+                    </p>
+                    <p className="text-lg font-bold text-amber-400">
+                      {vm.deals.summary.cheapestPriceLabel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">
+                  Weather Guide
+                </h3>
+                <div className="mt-4">
+                  <p className="text-sm leading-relaxed text-white/80">
+                    {vm.route.climate}
+                  </p>
+                </div>
+              </div>
+
+              {vm.isCountry && vm.countryCities.length > 0 && (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">
+                    Major Airports
+                  </h3>
+                  <div className="mt-4 space-y-3">
+                    {vm.countryCities.slice(0, 5).map(city => (
+                      <div
+                        key={city.code}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-white/70">
+                          {city.name} ({city.code})
+                        </span>
+                        <span className="font-medium text-fuchsia-300">
+                          {city.startingFrom}
+                        </span>
                       </div>
-                    )}
-                    <div>
-                      <p className="text-[10px] uppercase text-white/40">Starting from</p>
-                      <p className="text-lg font-bold text-amber-400">{vm.deals.summary.cheapestPriceLabel}</p>
-                    </div>
+                    ))}
                   </div>
-               </div>
-
-               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">Weather Guide</h3>
-                  <div className="mt-4">
-                      <p className="text-sm text-white/80 leading-relaxed">{vm.route.climate}</p>
-                  </div>
-               </div>
-
-               {vm.isCountry && vm.countryCities.length > 0 && (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">Major Airports</h3>
-                    <div className="mt-4 space-y-3">
-                      {vm.countryCities.slice(0, 5).map((city) => (
-                        <div key={city.code} className="flex items-center justify-between text-sm">
-                          <span className="text-white/70">{city.name} ({city.code})</span>
-                          <span className="text-fuchsia-300 font-medium">{city.startingFrom}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-               )}
+                </div>
+              )}
             </aside>
 
-            {/* Main Content */}
-            <div className="flex-1 space-y-12">
+            <div className="order-2 space-y-12">
               {vm.isCountry && vm.countryCities.length > 0 && (
                 <CountryNavigator
                   countryName={vm.route.destination.city}
@@ -495,10 +615,13 @@ export default function DestinationLandingPage() {
               )}
 
               <div id="flight-deals">
-                <FlightDeals data={vm} />
+                <FlightDeals
+                  data={vm}
+                  filteredTabItems={filteredDealTabItems}
+                />
               </div>
 
-              <FareFinder data={vm} />
+              <FareFinder data={vm} entriesOverride={filteredFareEntries} />
 
               <Insights data={vm} />
 

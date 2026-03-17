@@ -1,20 +1,14 @@
 // client/src/components/flights/destination/FareFinder.tsx
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Slider } from "@/components/ui/slider";
+import { useMemo, useState } from "react";
 import type {
   DestinationPageVM,
   NormalizedFareEntryVM,
 } from "@/types/destination";
-import {
-  FilterSidebar,
-  FilterState,
-  buildDefaultFilters,
-  applyFilters,
-} from "./FilterSidebar";
 
 type FareFinderProps = {
   data: DestinationPageVM;
+  entriesOverride?: NormalizedFareEntryVM[];
 };
 
 interface FareLegVM {
@@ -32,13 +26,7 @@ const STOP_BADGE_STYLES: Record<FareLegVM["stopBadgeTone"], string> = {
   red: "border-rose-400/30 bg-rose-400/10 text-rose-200",
 };
 
-function formatBudget(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "THB",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+
 
 function FareLegCard({
   title,
@@ -90,11 +78,7 @@ function FareLegCard({
   );
 }
 
-function FareRow({
-  entry,
-}: {
-  entry: NormalizedFareEntryVM;
-}) {
+function FareRow({ entry }: { entry: NormalizedFareEntryVM }) {
   const isReturn = entry.tripType === "return" && entry.returnLeg;
 
   return (
@@ -167,57 +151,26 @@ function FareRow({
   );
 }
 
-export default function FareFinder({ data }: FareFinderProps) {
-  const { fareFinder, route } = data;
-
-  const [filters, setFilters] = useState<FilterState>(() =>
-    buildDefaultFilters(
-      fareFinder.entries,
-      fareFinder.defaultOrigin,
-      fareFinder.summary.defaultBudget,
-    )
-  );
-
-  useEffect(() => {
-    setFilters(
-      buildDefaultFilters(
-        fareFinder.entries,
-        fareFinder.defaultOrigin,
-        fareFinder.summary.defaultBudget,
-      )
-    );
-  }, [fareFinder.defaultOrigin, fareFinder.summary.defaultBudget, fareFinder.entries]);
-
+export default function FareFinder({ data, entriesOverride }: FareFinderProps) {
+  const { fareFinder } = data;
   const filteredEntries = useMemo(
-    () => applyFilters(fareFinder.entries, filters),
-    [fareFinder.entries, filters]
+    () => entriesOverride ?? fareFinder.entries,
+    [entriesOverride, fareFinder.entries]
   );
 
   // ── Pagination ───────────────────────────────────────────────
   const PAGE_SIZE = 7;
   const [page, setPage] = useState(1);
 
-  // Reset to first page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
   const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
   const pagedEntries = useMemo(
-    () => filteredEntries.slice((page - 1) * PAGE_SIZE, (page - 1) * PAGE_SIZE + PAGE_SIZE),
-    [filteredEntries, page],
+    () =>
+      filteredEntries.slice(
+        (page - 1) * PAGE_SIZE,
+        (page - 1) * PAGE_SIZE + PAGE_SIZE
+      ),
+    [filteredEntries, page]
   );
-
-  const handleReset = () => {
-    setFilters(
-      buildDefaultFilters(
-        fareFinder.entries,
-        fareFinder.defaultOrigin,
-        fareFinder.summary.defaultBudget,
-      )
-    );
-    setPage(1);
-  };
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -255,31 +208,20 @@ export default function FareFinder({ data }: FareFinderProps) {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Sidebar */}
-        <FilterSidebar
-          entries={fareFinder.entries}
-          filters={filters}
-          onChange={setFilters}
-          onReset={handleReset}
-          budgetMin={fareFinder.summary.budgetMin}
-          budgetMax={fareFinder.summary.budgetMax}
-          budgetStep={fareFinder.summary.budgetStep}
-          originOptions={fareFinder.originOptions}
-          resultCount={filteredEntries.length}
-        />
-
-        {/* Results */}
+      <div className="mt-6">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
           {/* Showing X–Y of Z label */}
           {filteredEntries.length > 0 && (
             <p className="mb-3 text-sm text-white/40">
               Showing{" "}
               <span className="font-medium text-white/70">
-                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredEntries.length)}
+                {(page - 1) * PAGE_SIZE + 1}–
+                {Math.min(page * PAGE_SIZE, filteredEntries.length)}
               </span>{" "}
               of{" "}
-              <span className="font-medium text-white/70">{filteredEntries.length}</span>{" "}
+              <span className="font-medium text-white/70">
+                {filteredEntries.length}
+              </span>{" "}
               fares
             </p>
           )}
@@ -294,12 +236,6 @@ export default function FareFinder({ data }: FareFinderProps) {
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <span className="text-4xl">✈️</span>
               <p className="text-white/50">No fares match your filters.</p>
-              <button
-                onClick={handleReset}
-                className="mt-1 rounded-full border border-white/10 px-4 py-1.5 text-sm text-white/60 transition hover:border-white/30 hover:text-white/90"
-              >
-                Reset filters
-              </button>
             </div>
           )}
 
