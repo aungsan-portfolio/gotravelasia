@@ -21,6 +21,8 @@ export type ResolveFlightsRedirectInput = {
 export type ResolveFlightsRedirectDeps = {
   findByCode: (code: string) => RedirectLookupRecord | undefined;
   findBySlug: (slug: string) => RedirectLookupRecord | undefined;
+  findByCountrySlug?: (countrySlug: string) => RedirectLookupRecord[];
+  listRecords?: () => RedirectLookupRecord[];
 };
 
 const DESTINATION_ALIASES: Record<string, string> = {
@@ -125,11 +127,57 @@ function resolveDestinationRecord(
     if (byCode) return byCode;
   }
 
+  const normalizedSlug = normalizeSlugLike(destinationRaw);
   const candidates = buildSlugCandidates(destinationRaw);
+  const records = deps.listRecords?.() ?? [];
 
-  for (const candidate of candidates) {
+  // 1) Exact slug match first
+  if (records.length > 0) {
+    const exact = records.find((record) => normalizeSlugLike(record.slug) === normalizedSlug);
+    if (exact) return exact;
+  } else {
+    const exact = deps.findBySlug(normalizedSlug);
+    if (exact && normalizeSlugLike(exact.slug) === normalizedSlug) {
+      return exact;
+    }
+  }
+
+  // 2) Alias candidates
+  const aliasCandidates = candidates.filter((candidate) => candidate !== normalizedSlug);
+
+  for (const candidate of aliasCandidates) {
+    if (records.length > 0) {
+      const aliasExact = records.find(
+        (record) => normalizeSlugLike(record.slug) === normalizeSlugLike(candidate)
+      );
+      if (aliasExact) return aliasExact;
+      continue;
+    }
+
     const record = deps.findBySlug(candidate);
     if (record) return record;
+  }
+
+  // 3) Country slug group match
+  if (deps.findByCountrySlug) {
+    const countryMatches = deps.findByCountrySlug(normalizedSlug);
+    if (countryMatches.length === 1) return countryMatches[0];
+
+    const countryExact = countryMatches.find(
+      (record) => normalizeSlugLike(record.slug) === normalizedSlug
+    );
+    if (countryExact) return countryExact;
+  }
+
+  // 4) Safe prefix matching for partial slugs (avoid ambiguous guesses)
+  if (normalizedSlug.length >= 6 && records.length > 0) {
+    const prefixMatches = records.filter((record) =>
+      normalizeSlugLike(record.slug).startsWith(normalizedSlug)
+    );
+
+    if (prefixMatches.length === 1) {
+      return prefixMatches[0];
+    }
   }
 
   return undefined;

@@ -5,6 +5,8 @@ import { useLocation } from "wouter";
 import {
   getDestinationByCode,
   getDestinationBySlug,
+  getDestinationsByCountrySlug,
+  getAllDestinationRecords,
 } from "@/data/destinationRegistry";
 import { resolveFlightsRedirectPath } from "@/lib/flights/resolveFlightsRedirect";
 
@@ -32,6 +34,8 @@ export default function FlightsQueryRedirect() {
     const nextPath = resolveFlightsRedirectPath(query, {
       findByCode: getDestinationByCode,
       findBySlug: getDestinationBySlug,
+      findByCountrySlug: getDestinationsByCountrySlug,
+      listRecords: getAllDestinationRecords,
     });
 
     setLocation(nextPath, { replace: true });

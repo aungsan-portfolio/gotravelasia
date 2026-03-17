@@ -13,17 +13,29 @@ const hcmc = {
   dest: { code: "SGN" },
 };
 
+const thailand = {
+  slug: "thailand",
+  dest: { code: "BKK" },
+};
+
 const mockDeps = {
   findByCode: (code: string) => {
     if (code === "SIN") return singapore;
     if (code === "SGN") return hcmc;
+    if (code === "BKK") return thailand;
     return undefined;
   },
   findBySlug: (slug: string) => {
     if (slug === "singapore") return singapore;
     if (slug === "ho-chi-minh-city") return hcmc;
+    if (slug === "thailand") return thailand;
     return undefined;
   },
+  findByCountrySlug: (countrySlug: string) => {
+    if (countrySlug === "thailand") return [thailand];
+    return [];
+  },
+  listRecords: () => [singapore, hcmc, thailand],
 };
 
 describe("resolveFlightsRedirectPath", () => {
@@ -43,7 +55,6 @@ describe("resolveFlightsRedirectPath", () => {
     expect(result).toBe("/flights/to/singapore?origin=CNX&destination=SIN&adults=2");
   });
 
-  // --- NEW ALIAS TESTS ---
   it("resolves dashed permutations (ho-chi-minh)", () => {
     const result = resolveFlightsRedirectPath(
       { origin: "BKK", destination: "ho-chi-minh" },
@@ -75,7 +86,37 @@ describe("resolveFlightsRedirectPath", () => {
     );
     expect(result).toBe("/flights/to/singapore?origin=BKK&destination=SIN");
   });
-  // -------------------------
+
+  it("resolves safe prefix matching for common partials", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "BKK", destination: "singapo" },
+      mockDeps
+    );
+    expect(result).toBe("/flights/to/singapore?origin=BKK&destination=SIN");
+  });
+
+  it("resolves country slug group when a single country route exists", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "CNX", destination: "thailand" },
+      mockDeps
+    );
+    expect(result).toBe("/flights/to/thailand?origin=CNX&destination=BKK");
+  });
+
+  it("does not guess when prefix is ambiguous", () => {
+    const result = resolveFlightsRedirectPath(
+      { origin: "BKK", destination: "thai" },
+      {
+        findByCode: () => undefined,
+        findBySlug: () => undefined,
+        listRecords: () => [
+          { slug: "thailand", dest: { code: "BKK" } },
+          { slug: "thaila", dest: { code: "XYZ" } },
+        ],
+      }
+    );
+    expect(result).toBe("/flights/bkk/thai");
+  });
 
   it("falls back to generic flight route for unknown destination codes", () => {
     const result = resolveFlightsRedirectPath(
@@ -130,15 +171,15 @@ describe("resolveFlightsRedirectPath", () => {
       {
         origin: "BKK",
         destination: "SIN",
-        depart: "2026-04-10T15:30:00.000Z", // Full ISO
-        returnAt: "2026-04-17T09:00:00.000Z", // Full ISO
+        depart: "2026-04-10T15:30:00.000Z",
+        returnAt: "2026-04-17T09:00:00.000Z",
       },
       mockDeps
     );
 
     const url = new URL("https://example.com" + result);
     const inner = new URLSearchParams(url.searchParams.get("flightSearch") ?? "");
-    
+
     expect(inner.get("depart")).toBe("2026-04-10");
     expect(inner.get("return")).toBe("2026-04-17");
   });

@@ -43,6 +43,8 @@ type OriginSeed = { city: string; code: string; country: string };
 
 type RegistryMaps = {
   byCitySlug: Map<string, StaticDestinationRecord>;
+  byExactSlug: Map<string, StaticDestinationRecord>;
+  byAliasSlug: Map<string, StaticDestinationRecord[]>;
   byCountrySlug: Map<string, StaticDestinationRecord[]>;
   byCode: Map<string, StaticDestinationRecord>;
 };
@@ -443,34 +445,52 @@ function buildRecord(seed: DestinationSeed, origin: OriginSeed = DEFAULT_ORIGIN)
 }
 
 // ── Registry builder ────────────────────────────────────────────────
-function addAlias(map: Map<string, StaticDestinationRecord>, key: string, record: StaticDestinationRecord): void {
+function pushAlias(map: Map<string, StaticDestinationRecord[]>, key: string, record: StaticDestinationRecord): void {
   const alias = toSlug(key);
-  if (!alias || map.has(alias)) return;
-  map.set(alias, record);
+  if (!alias) return;
+
+  const existing = map.get(alias) ?? [];
+  if (existing.some((item) => item.slug === record.slug)) return;
+  existing.push(record);
+  map.set(alias, existing);
 }
 
 function buildRegistry(seeds: DestinationSeed[], origin: OriginSeed = DEFAULT_ORIGIN): RegistryMaps {
-  const byCitySlug    = new Map<string, StaticDestinationRecord>();
+  const byCitySlug = new Map<string, StaticDestinationRecord>();
+  const byExactSlug = new Map<string, StaticDestinationRecord>();
+  const byAliasSlug = new Map<string, StaticDestinationRecord[]>();
   const byCountrySlug = new Map<string, StaticDestinationRecord[]>();
-  const byCode        = new Map<string, StaticDestinationRecord>();
+  const byCode = new Map<string, StaticDestinationRecord>();
 
   for (const seed of seeds) {
     const record = buildRecord(seed, origin);
-    byCitySlug.set(seed.slug, record);
+    const exactSlug = toSlug(seed.slug);
+
+    byExactSlug.set(exactSlug, record);
+    byCitySlug.set(exactSlug, record);
     byCode.set(seed.code.toUpperCase(), record);
-    addAlias(byCitySlug, seed.city, record);
-    addAlias(byCitySlug, seed.code, record);
-    for (const alias of seed.aliases ?? []) addAlias(byCitySlug, alias, record);
+
+    pushAlias(byAliasSlug, seed.city, record);
+    pushAlias(byAliasSlug, seed.code, record);
+    for (const alias of seed.aliases ?? []) pushAlias(byAliasSlug, alias, record);
 
     const countrySlug = toSlug(seed.country);
     const existing = byCountrySlug.get(countrySlug) ?? [];
     existing.push(record);
     byCountrySlug.set(countrySlug, existing);
   }
-  return { byCitySlug, byCountrySlug, byCode };
+
+  for (const [alias, records] of byAliasSlug.entries()) {
+    if (records.length === 1) {
+      byCitySlug.set(alias, records[0]);
+    }
+  }
+
+  return { byCitySlug, byExactSlug, byAliasSlug, byCountrySlug, byCode };
 }
 
 const REGISTRY = buildRegistry(DESTINATION_SEEDS);
+const SAFE_PREFIX_MIN_LENGTH = 6;
 
 // ── Public API ──────────────────────────────────────────────────────
 const AIRPORT_CITY_MAP: Record<string, string> = {
@@ -531,22 +551,51 @@ export function generateDynamicDestination(
   return buildRecord(seed, originSeed);
 }
 
-export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined { 
+function findSingleSafePrefixMatch(normalizedSlug: string): StaticDestinationRecord | undefined {
+  if (normalizedSlug.length < SAFE_PREFIX_MIN_LENGTH) return undefined;
+
+  const matches = new Map<string, StaticDestinationRecord>();
+
+  for (const [slug, record] of REGISTRY.byExactSlug.entries()) {
+    if (slug.startsWith(normalizedSlug)) {
+      matches.set(record.slug, record);
+    }
+  }
+
+  for (const [alias, records] of REGISTRY.byAliasSlug.entries()) {
+    if (!alias.startsWith(normalizedSlug)) continue;
+    for (const record of records) {
+      matches.set(record.slug, record);
+    }
+  }
+
+  if (matches.size !== 1) return undefined;
+  return Array.from(matches.values())[0];
+}
+
+export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined {
   const normalized = toSlug(slug);
-  const exact = REGISTRY.byCitySlug.get(normalized);
+  if (!normalized) return undefined;
+
+  // 1) Exact slug match only
+  const exact = REGISTRY.byExactSlug.get(normalized);
   if (exact) return exact;
 
-  // Fuzzy match aliases (length >= 5 to prevent false matches on short codes)
-  if (normalized.length >= 5) {
-     let match: StaticDestinationRecord | undefined;
-     REGISTRY.byCitySlug.forEach((record, key) => {
-       if (!match && key.startsWith(normalized)) {
-         match = record;
-       }
-     });
-     if (match) return match;
+  // 2) Alias match only when unambiguous
+  const aliasMatches = REGISTRY.byAliasSlug.get(normalized);
+  if (aliasMatches?.length === 1) return aliasMatches[0];
+
+  // 3) Country slug group match (prefer explicit country record)
+  const countryMatches = REGISTRY.byCountrySlug.get(normalized) ?? [];
+  if (countryMatches.length > 0) {
+    const countryRecord = countryMatches.find((record) => record.type === "country");
+    if (countryRecord) return countryRecord;
+    if (countryMatches.length === 1) return countryMatches[0];
+    return undefined;
   }
-  return undefined; 
+
+  // 4) Safe fuzzy prefix match (unique match only)
+  return findSingleSafePrefixMatch(normalized);
 }
 export function getDestinationByCode(code: string): StaticDestinationRecord | undefined { return REGISTRY.byCode.get(code.trim().toUpperCase()); }
 export function getDestinationsByCountrySlug(countrySlug: string): StaticDestinationRecord[] { return REGISTRY.byCountrySlug.get(toSlug(countrySlug)) ?? []; }
