@@ -13,6 +13,7 @@ import { buildDestinationPageVM } from "@/lib/destination/buildDestinationPageVM
 import { trpc } from "@/lib/trpc";
 
 
+import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import Navbar from "@/components/flights/destination/Navbar";
 import DestinationHero from "@/components/destination/DestinationHero";
 import HeroSearch from "@/components/flights/destination/HeroSearch";
@@ -24,6 +25,7 @@ import AirlineReviews from "@/components/flights/destination/AirlineReviews";
 import TrustBenchmarks from "@/components/flights/destination/TrustBenchmarks";
 import FooterSections from "@/components/flights/destination/FooterSections";
 import CountryNavigator from "@/components/destination/CountryNavigator";
+import DestinationSEOContent from "@/components/flights/destination/DestinationSEOContent";
 
 type LiveState = "static" | "live" | "partial" | "error";
 
@@ -406,6 +408,15 @@ export default function DestinationLandingPage() {
       <div className="min-h-screen bg-[#0b0719] text-white font-sans selection:bg-violet-500/30">
         <Navbar dest={vm.route.destination.city} destCode={vm.route.destination.code} origin={vm.route.origin.city} />
 
+        <div className="mx-auto max-w-7xl">
+          <Breadcrumbs
+            items={[
+              { label: "Flights", href: "/flights" },
+              { label: vm.isCountry ? vm.route.destination.city : `${vm.route.destination.city} (${vm.route.destination.code})` }
+            ]}
+          />
+        </div>
+
         <div id="hero-search">
           <DestinationHero
               routeVm={vm.route}
@@ -421,7 +432,6 @@ export default function DestinationLandingPage() {
         </div>
 
         {state.errorMessage ? (
-
           <div className="mx-auto max-w-7xl px-4 pt-4">
             <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
               {state.errorMessage}
@@ -429,28 +439,81 @@ export default function DestinationLandingPage() {
           </div>
         ) : null}
 
-        {vm.isCountry && vm.countryCities.length > 0 && (
-          <CountryNavigator
-            countryName={vm.route.destination.city}
-            cities={vm.countryCities}
-          />
-        )}
+        <div className="mx-auto max-w-7xl px-4 py-8 lg:py-12">
+          <div className="flex flex-col gap-8 lg:flex-row">
+            {/* Sidebar */}
+            <aside className="w-full space-y-6 lg:w-80 shrink-0">
+               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">Quick Stats</h3>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <p className="text-[10px] uppercase text-white/40">Airports in {vm.route.destination.city}</p>
+                      <p className="text-sm font-semibold text-white/90">{vm.isCountry ? "Multiple" : `${vm.route.destination.city} Airport`}</p>
+                    </div>
+                    {vm.raw.fareTable?.[0]?.dur1 && (
+                      <div>
+                        <p className="text-[10px] uppercase text-white/40">Avg Flight Time</p>
+                        <p className="text-sm font-semibold text-white/90">{vm.raw.fareTable[0].dur1}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-[10px] uppercase text-white/40">Starting from</p>
+                      <p className="text-lg font-bold text-amber-400">{vm.deals.summary.cheapestPriceLabel}</p>
+                    </div>
+                  </div>
+               </div>
 
-        <div id="flight-deals">
-          <FlightDeals data={vm} />
-        </div>
+               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">Weather Guide</h3>
+                  <div className="mt-4">
+                      <p className="text-sm text-white/80 leading-relaxed">{vm.route.climate}</p>
+                  </div>
+               </div>
 
-        <FareFinder data={vm} />
+               {vm.isCountry && vm.countryCities.length > 0 && (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-fuchsia-400">Major Airports</h3>
+                    <div className="mt-4 space-y-3">
+                      {vm.countryCities.slice(0, 5).map((city) => (
+                        <div key={city.code} className="flex items-center justify-between text-sm">
+                          <span className="text-white/70">{city.name} ({city.code})</span>
+                          <span className="text-fuchsia-300 font-medium">{city.startingFrom}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+               )}
+            </aside>
 
-        <Insights data={vm} />
+            {/* Main Content */}
+            <div className="flex-1 space-y-12">
+              {vm.isCountry && vm.countryCities.length > 0 && (
+                <CountryNavigator
+                  countryName={vm.route.destination.city}
+                  cities={vm.countryCities}
+                />
+              )}
 
-        <div id="airlines-weather">
-          <AirlinesWeather data={vm} />
+              <div id="flight-deals">
+                <FlightDeals data={vm} />
+              </div>
+
+              <FareFinder data={vm} />
+
+              <Insights data={vm} />
+
+              <div id="airlines-weather">
+                < AirlinesWeather data={vm} />
+              </div>
+            </div>
+          </div>
         </div>
 
         <TrustBenchmarks />
 
         <AirlineReviews data={vm} />
+
+        <DestinationSEOContent data={vm} />
 
         <FooterSections data={vm} />
       </div>

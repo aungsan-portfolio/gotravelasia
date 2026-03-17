@@ -53,98 +53,52 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 const BASE_PRICE_MONTH = [7800,7200,6800,6400,6100,5600,5900,6300,6700,7100,8200,9400] as const;
 
 const DESTINATION_SEEDS: DestinationSeed[] = [
-  { slug:"singapore", city:"Singapore", code:"SIN", airport:"Changi Airport", country:"Singapore", flag:"🇸🇬", priceRatio:1.0, avgFlightHours:2.4, avgTempC:27, avgRainMm:190, aliases:["sin"], isPopularDestination:true, isPopularCity:true },
-  { slug:"brunei", city:"Brunei", code:"BWN", airport:"Brunei Intl Airport", country:"Brunei", flag:"🇧🇳", priceRatio:1.3, avgFlightHours:3.2, avgTempC:27, avgRainMm:230, aliases:["bandar-seri-begawan","bwn"], isPopularDestination:true },
-  { slug:"phnom-penh", city:"Phnom Penh", code:"PNH", airport:"Phnom Penh Intl Airport", country:"Cambodia", flag:"🇰🇭", priceRatio:0.85, avgFlightHours:1.2, avgTempC:28, avgRainMm:150, aliases:["cambodia","pnh"], isPopularDestination:true },
-  // China — country-level page (shows all major airports: PEK, PVG, CAN, KMG, CTU)
-  {
-    slug: "china", city: "China", code: "PEK", airport: "Beijing Capital Intl",
-    country: "China", flag: "🇨🇳", priceRatio: 1.8, avgFlightHours: 5.0, avgTempC: 13, avgRainMm: 60,
-    aliases: ["cn"], isPopularDestination: true, type: "country" as const,
-    climate: "Diverse — from subtropical south to cold-temperate north. Best travel window: spring (Apr–May) or autumn (Sep–Oct).",
-    highlights: ["Great Wall of China", "Forbidden City Beijing", "West Lake Hangzhou", "Li River Guilin", "Giant Panda Base Chengdu"],
-  },
-  { slug:"beijing", city:"Beijing", code:"PEK", airport:"Beijing Capital Intl", country:"China", flag:"🇨🇳", priceRatio:1.8, avgFlightHours:5.0, avgTempC:13, avgRainMm:60, aliases:["pek"], isPopularDestination:true },
-  { slug:"shanghai", city:"Shanghai", code:"PVG", airport:"Pudong Intl", country:"China", flag:"🇨🇳", priceRatio:1.7, avgFlightHours:4.5, avgTempC:16, avgRainMm:110, aliases:["sha","pvg"], isPopularDestination:true, isPopularCity:true },
-  { slug:"guangzhou", city:"Guangzhou", code:"CAN", airport:"Baiyun Intl", country:"China", flag:"🇨🇳", priceRatio:1.5, avgFlightHours:4.0, avgTempC:22, avgRainMm:170, aliases:["can"], isPopularDestination:true, isPopularCity:true },
-  { slug:"chengdu", city:"Chengdu", code:"CTU", airport:"Shuangliu Intl", country:"China", flag:"🇨🇳", priceRatio:1.3, avgFlightHours:5.0, avgTempC:16, avgRainMm:90, aliases:["ctu"], isPopularCity:true },
-  { slug:"shenzhen", city:"Shenzhen", code:"SZX", airport:"Bao'an Intl", country:"China", flag:"🇨🇳", priceRatio:1.6, avgFlightHours:4.0, avgTempC:23, avgRainMm:190, aliases:["szx"], isPopularCity:true },
-  { slug:"hong-kong", city:"Hong Kong", code:"HKG", airport:"Hong Kong Intl Airport", country:"Hong Kong", flag:"🇭🇰", priceRatio:1.5, avgFlightHours:2.8, avgTempC:23, avgRainMm:180, aliases:["hkg"], isPopularDestination:true },
-  { slug:"mumbai", city:"Mumbai", code:"BOM", airport:"Chhatrapati Shivaji Intl", country:"India", flag:"🇮🇳", priceRatio:1.6, avgFlightHours:4.5, avgTempC:28, avgRainMm:200, aliases:["india","bom"], isPopularDestination:true },
-  { slug:"jakarta", city:"Jakarta", code:"CGK", airport:"Soekarno-Hatta Intl", country:"Indonesia", flag:"🇮🇩", priceRatio:1.1, avgFlightHours:3.5, avgTempC:27, avgRainMm:175, aliases:["indonesia","cgk"], isPopularDestination:true, type: "country" as const },
-  { slug:"tokyo", city:"Tokyo", code:"NRT", airport:"Narita Intl Airport", country:"Japan", flag:"🇯🇵", priceRatio:2.2, avgFlightHours:6.0, avgTempC:16, avgRainMm:130, aliases:["japan","narita","nrt"], isPopularDestination:true, isPopularCity:true, type: "country" as const },
-  { slug:"macau", city:"Macau", code:"MFM", airport:"Macau Intl Airport", country:"Macau", flag:"🇲🇴", priceRatio:1.4, avgFlightHours:2.5, avgTempC:23, avgRainMm:170, aliases:["mfm"], isPopularDestination:true },
-  { slug:"kuala-lumpur", city:"Kuala Lumpur", code:"KUL", airport:"KLIA", country:"Malaysia", flag:"🇲🇾", priceRatio:0.7, avgFlightHours:2.2, avgTempC:28, avgRainMm:210, aliases:["malaysia","kul"], isPopularDestination:true, isPopularCity:true },
-  { slug:"manila", city:"Manila", code:"MNL", airport:"Ninoy Aquino Intl", country:"Philippines", flag:"🇵🇭", priceRatio:1.2, avgFlightHours:3.3, avgTempC:28, avgRainMm:190, aliases:["philippines","mnl"], isPopularDestination:true },
-  { slug:"seoul", city:"Seoul", code:"ICN", airport:"Incheon Intl Airport", country:"South Korea", flag:"🇰🇷", priceRatio:2.0, avgFlightHours:5.5, avgTempC:12, avgRainMm:110, aliases:["south-korea","icn"], isPopularDestination:true, isPopularCity:true },
-  { slug:"taipei", city:"Taipei", code:"TPE", airport:"Taoyuan Intl Airport", country:"Taiwan", flag:"🇹🇼", priceRatio:1.7, avgFlightHours:3.8, avgTempC:23, avgRainMm:160, aliases:["taiwan","tpe"], isPopularDestination:true },
-  { slug:"bangkok", city:"Bangkok", code:"BKK", airport:"Suvarnabhumi Airport", country:"Thailand", flag:"🇹🇭", priceRatio:0.3, avgFlightHours:1.0, avgTempC:29, avgRainMm:150, aliases:["thailand","bkk"], isPopularDestination:true, isPopularCity:true },
-  { slug:"dubai", city:"Dubai", code:"DXB", airport:"Dubai Intl Airport", country:"United Arab Emirates", flag:"🇦🇪", priceRatio:2.5, avgFlightHours:6.5, avgTempC:28, avgRainMm:10, aliases:["united-arab-emirates","uae","dxb"], isPopularDestination:true },
-  { slug:"hanoi", city:"Hanoi", code:"HAN", airport:"Noi Bai Intl Airport", country:"Vietnam", flag:"🇻🇳", priceRatio:0.9, avgFlightHours:1.8, avgTempC:24, avgRainMm:150, aliases:["vietnam","han"], isPopularDestination:true, type: "country" as const },
+  // ── Countries (Standardized Slugs) ──
+  { slug:"singapore", city:"Singapore", code:"SIN", airport:"Changi Airport", country:"Singapore", flag:"🇸🇬", priceRatio:1.0, avgFlightHours:2.4, avgTempC:27, avgRainMm:190, aliases:["sin", "singapo"], isPopularDestination:true, isPopularCity:true, type: "country" },
+  { slug:"brunei", city:"Brunei", code:"BWN", airport:"Brunei Intl Airport", country:"Brunei", flag:"🇧🇳", priceRatio:1.3, avgFlightHours:3.2, avgTempC:27, avgRainMm:230, aliases:["bandar-seri-begawan","bwn"], isPopularDestination:true, type: "country" },
+  { slug:"cambodia", city:"Cambodia", code:"PNH", airport:"Phnom Penh Intl Airport", country:"Cambodia", flag:"🇰🇭", priceRatio:0.85, avgFlightHours:1.2, avgTempC:28, avgRainMm:150, aliases:["pnh"], isPopularDestination:true, type: "country" },
+  { slug:"china", city: "China", code: "PEK", airport: "Beijing Capital Intl", country: "China", flag: "🇨🇳", priceRatio: 1.8, avgFlightHours: 5.0, avgTempC: 13, avgRainMm: 60, aliases: ["cn"], isPopularDestination: true, type: "country" },
+  { slug:"hong-kong", city:"Hong Kong", code:"HKG", airport:"Hong Kong Intl Airport", country:"Hong Kong", flag:"🇭🇰", priceRatio:1.5, avgFlightHours:2.8, avgTempC:23, avgRainMm:180, aliases:["hkg"], isPopularDestination:true, type: "country" },
+  { slug:"india", city:"India", code:"BOM", airport:"Chhatrapati Shivaji Intl", country:"India", flag:"🇮🇳", priceRatio:1.6, avgFlightHours:4.5, avgTempC:28, avgRainMm:200, aliases:["bom"], isPopularDestination:true, type: "country" },
+  { slug:"indonesia", city:"Indonesia", code:"CGK", airport:"Soekarno-Hatta Intl", country:"Indonesia", flag:"🇮🇩", priceRatio:1.1, avgFlightHours:3.5, avgTempC:27, avgRainMm:175, aliases:["cgk"], isPopularDestination:true, type: "country" },
+  { slug:"japan", city:"Japan", code:"NRT", airport:"Narita Intl Airport", country:"Japan", flag:"🇯🇵", priceRatio:2.2, avgFlightHours:6.0, avgTempC:16, avgRainMm:130, aliases:["narita","nrt"], isPopularDestination:true, type: "country" },
+  { slug:"laos", city:"Laos", code:"VTE", airport:"Wattay Intl Airport", country:"Laos", flag:"🇱🇦", priceRatio:0.9, avgFlightHours:1.2, avgTempC:26, avgRainMm:150, aliases:["vte"], isPopularDestination:true, type: "country" },
+  { slug:"macau", city:"Macau", code:"MFM", airport:"Macau Intl Airport", country:"Macau", flag:"🇲🇴", priceRatio:1.4, avgFlightHours:2.5, avgTempC:23, avgRainMm:170, aliases:["mfm"], isPopularDestination:true, type: "country" },
+  { slug:"malaysia", city:"Malaysia", code:"KUL", airport:"KLIA", country:"Malaysia", flag:"🇲🇾", priceRatio:0.75, avgFlightHours:2.2, avgTempC:28, avgRainMm:210, aliases:["kul"], isPopularDestination:true, type: "country" },
+  { slug:"philippines", city:"Philippines", code:"MNL", airport:"Ninoy Aquino Intl", country:"Philippines", flag:"🇵🇭", priceRatio:1.2, avgFlightHours:3.3, avgTempC:28, avgRainMm:190, aliases:["mnl"], isPopularDestination:true, type: "country" },
+  { slug:"south-korea", city:"South Korea", code:"ICN", airport:"Incheon Intl Airport", country:"South Korea", flag:"🇰🇷", priceRatio:2.0, avgFlightHours:5.5, avgTempC:12, avgRainMm:110, aliases:["icn"], isPopularDestination:true, type: "country" },
+  { slug:"taiwan", city:"Taiwan", code:"TPE", airport:"Taoyuan Intl Airport", country:"Taiwan", flag:"🇹🇼", priceRatio:1.7, avgFlightHours:3.8, avgTempC:23, avgRainMm:160, aliases:["tpe"], isPopularDestination:true, type: "country" },
+  { slug:"thailand", city:"Thailand", code:"BKK", airport:"Suvarnabhumi Airport", country:"Thailand", flag:"🇹🇭", priceRatio:0.5, avgFlightHours:1.0, avgTempC:29, avgRainMm:150, aliases:["bkk"], isPopularDestination:true, type: "country" },
+  { slug:"united-arab-emirates", city:"United Arab Emirates", code:"DXB", airport:"Dubai Intl Airport", country:"United Arab Emirates", flag:"🇦🇪", priceRatio:2.5, avgFlightHours:6.5, avgTempC:28, avgRainMm:10, aliases:["uae","dxb"], isPopularDestination:true, type: "country" },
+  { slug:"vietnam", city:"Vietnam", code:"HAN", airport:"Noi Bai Intl Airport", country:"Vietnam", flag:"🇻🇳", priceRatio:0.85, avgFlightHours:1.8, avgTempC:24, avgRainMm:150, aliases:["han"], isPopularDestination:true, type: "country" },
+
+  // ── Cities ──
   { slug:"yangon", city:"Yangon", code:"RGN", airport:"Yangon Intl Airport", country:"Myanmar", flag:"🇲🇲", priceRatio:0.8, avgFlightHours:1.3, avgTempC:28, avgRainMm:240, aliases:["rgn"], isPopularCity:true },
   { slug:"mandalay", city:"Mandalay", code:"MDL", airport:"Mandalay Intl Airport", country:"Myanmar", flag:"🇲🇲", priceRatio:0.85, avgFlightHours:1.5, avgTempC:27, avgRainMm:130, aliases:["mdl"], isPopularCity:true },
-
-  // ── NEW EXPANSION (Phase 6) ─────────────────────────────────────────
-  { 
-    slug: "chiang-mai", city: "Chiang Mai", code: "CNX", airport: "Chiang Mai Intl", country: "Thailand", flag: "🇹🇭", 
-    priceRatio: 0.82, avgFlightHours: 1.5, avgTempC: 26, avgRainMm: 120, isPopularCity: true,
-    climate: "Tropical savanna with a cool, dry season (Nov–Feb).",
-    highlights: ["Doi Suthep Temple", "Sunday Walking Street", "Elephant Nature Park"]
-  },
-  { 
-    slug: "phuket", city: "Phuket", code: "HKT", airport: "Phuket Intl Airport", country: "Thailand", flag: "🇹🇭", 
-    priceRatio: 0.95, avgFlightHours: 2.0, avgTempC: 28, avgRainMm: 180, isPopularCity: true,
-    climate: "Tropical with a distinct dry season (Nov–Apr).",
-    highlights: ["Patong Beach", "Phi Phi Islands day trip", "Big Buddha"]
-  },
-  { 
-    slug: "bali", city: "Bali", code: "DPS", airport: "Ngurah Rai Intl", country: "Indonesia", flag: "🇮🇩", 
-    priceRatio: 0.98, avgFlightHours: 4.5, avgTempC: 27, avgRainMm: 170, isPopularCity: true,
-    climate: "Tropical; dry season (Apr–Oct) is peak tourist season.",
-    highlights: ["Tanah Lot Temple", "Ubud Rice Terraces", "Seminyak Beach"]
-  },
-  { 
-    slug: "da-nang", city: "Da Nang", code: "DAD", airport: "Da Nang Intl Airport", country: "Vietnam", flag: "🇻🇳", 
-    priceRatio: 0.78, avgFlightHours: 2.5, avgTempC: 25, avgRainMm: 140, isPopularCity: true,
-    climate: "Hot and dry Feb–Aug; ideal for beach holidays.",
-    highlights: ["My Khe Beach", "Marble Mountains", "Hoi An Ancient Town"]
-  },
-  { 
-    slug: "ho-chi-minh-city", city: "Ho Chi Minh City", code: "SGN", airport: "Tan Son Nhat Intl", country: "Vietnam", flag: "🇻🇳", 
-    priceRatio: 0.80, avgFlightHours: 2.0, avgTempC: 28, avgRainMm: 160, isPopularCity: true,
-    climate: "Tropical wet-and-dry; warm year-round.",
-    highlights: ["War Remnants Museum", "Ben Thanh Market", "Cu Chi Tunnels"]
-  },
-  { 
-    slug: "siem-reap", city: "Siem Reap", code: "SAI", airport: "Siem Reap–Angkor Intl", country: "Cambodia", flag: "🇰🇭", 
-    priceRatio: 0.85, avgFlightHours: 2.0, avgTempC: 27, avgRainMm: 150, isPopularCity: true,
-    climate: "Tropical monsoon; cool dry season (Nov–Feb) is best.",
-    highlights: ["Angkor Wat", "Bayon Temple", "Tonlé Sap Lake"]
-  },
-  { 
-    slug: "osaka", city: "Osaka", code: "OSA", airport: "Kansai Intl Airport", country: "Japan", flag: "🇯🇵", 
-    priceRatio: 1.15, avgFlightHours: 6.5, avgTempC: 16, avgRainMm: 110, isPopularCity: true,
-    climate: "Humid subtropical; mild winters and hot summers.",
-    highlights: ["Dotonbori", "Osaka Castle", "Universal Studios Japan"]
-  },
-  { 
-    slug: "krabi", city: "Krabi", code: "KBV", airport: "Krabi Intl Airport", country: "Thailand", flag: "🇹🇭", 
-    priceRatio: 0.90, avgFlightHours: 2.2, avgTempC: 28, avgRainMm: 170,
-    climate: "Dry high season (Nov–Apr) with calm seas.",
-    highlights: ["Railay Beach", "Tiger Cave Temple", "Four Islands tour"]
-  },
-  { 
-    slug: "penang", city: "Penang", code: "PEN", airport: "Penang Intl Airport", country: "Malaysia", flag: "🇲🇾", 
-    priceRatio: 0.75, avgFlightHours: 1.8, avgTempC: 27, avgRainMm: 190,
-    climate: "Equatorial; warm and humid year-round.",
-    highlights: ["Georgetown Street Art", "Penang Hill", "Gurney Drive Food"]
-  },
-  { 
-    slug: "luang-prabang", city: "Luang Prabang", code: "LPQ", airport: "Luang Prabang Intl", country: "Laos", flag: "🇱🇦", 
-    priceRatio: 0.88, avgFlightHours: 1.5, avgTempC: 25, avgRainMm: 140,
-    climate: "Tropical highland; pleasant and dry Oct–Feb.",
-    highlights: ["Kuang Si Waterfalls", "Alms-giving ceremony", "Royal Palace"]
-  },
+  { slug:"kuala-lumpur", city:"Kuala Lumpur", code:"KUL", airport:"KLIA", country:"Malaysia", flag:"🇲🇾", priceRatio:0.7, avgFlightHours:2.2, avgTempC:28, avgRainMm:210, aliases:["kl"], isPopularCity:true },
+  { slug:"bangkok", city:"Bangkok", code:"BKK", airport:"Suvarnabhumi Airport", country:"Thailand", flag:"🇹🇭", priceRatio:0.3, avgFlightHours:1.0, avgTempC:29, avgRainMm:150, aliases:["bkk"], isPopularCity:true },
+  { slug:"seoul", city:"Seoul", code:"ICN", airport:"Incheon Intl Airport", country:"South Korea", flag:"🇰🇷", priceRatio:2.0, avgFlightHours:5.5, avgTempC:12, avgRainMm:110, aliases:["icn"], isPopularCity:true },
+  { slug:"tokyo", city:"Tokyo", code:"NRT", airport:"Narita Intl Airport", country:"Japan", flag:"🇯🇵", priceRatio:2.2, avgFlightHours:6.0, avgTempC:16, avgRainMm:130, aliases:["narita","nrt"], isPopularCity:true },
+  { slug:"bali", city:"Bali", code:"DPS", airport:"Ngurah Rai Intl", country:"Indonesia", flag:"🇮🇩", priceRatio:0.98, avgFlightHours:4.5, avgTempC:27, avgRainMm:170, aliases:["denpasar","dps"], isPopularCity:true },
+  { slug:"phuket", city:"Phuket", code:"HKT", airport:"Phuket Intl Airport", country:"Thailand", flag:"🇹🇭", priceRatio:0.95, avgFlightHours:2.0, avgTempC:28, avgRainMm:180, aliases:["hkt"], isPopularCity:true },
+  { slug:"da-nang", city:"Da Nang", code:"DAD", airport:"Da Nang Intl Airport", country:"Vietnam", flag:"🇻🇳", priceRatio:0.78, avgFlightHours:2.5, avgTempC:25, avgRainMm:140, aliases:["dad"], isPopularCity:true },
+  { slug:"ho-chi-minh-city", city:"Ho Chi Minh City", code:"SGN", airport:"Tan Son Nhat Intl", country:"Vietnam", flag:"🇻🇳", priceRatio:0.80, avgFlightHours:2.0, avgTempC:28, avgRainMm:160, aliases:["sgn","hcmc"], isPopularCity:true },
+  { slug:"siem-reap", city:"Siem Reap", code:"SAI", airport:"Siem Reap–Angkor Intl", country:"Cambodia", flag:"🇰🇭", priceRatio:0.85, avgFlightHours:2.0, avgTempC:27, avgRainMm:150, aliases:["sai"], isPopularCity:true },
+  { slug:"taipei", city:"Taipei", code:"TPE", airport:"Taoyuan Intl Airport", country:"Taiwan", flag:"🇹🇼", priceRatio:1.7, avgFlightHours:3.8, avgTempC:23, avgRainMm:160, aliases:["tpe"], isPopularCity:true },
+  { slug:"osaka", city:"Osaka", code:"OSA", airport:"Kansai Intl Airport", country:"Japan", flag:"🇯🇵", priceRatio:1.15, avgFlightHours:6.5, avgTempC:16, avgRainMm:110, aliases:["kix"], isPopularCity:true },
+  { slug:"chiang-mai", city:"Chiang Mai", code:"CNX", airport:"Chiang Mai Intl", country:"Thailand", flag:"🇹🇭", priceRatio:0.82, avgFlightHours:1.5, avgTempC:26, avgRainMm:120, aliases:["cnx"], isPopularCity:true },
+  { slug:"phnom-penh", city:"Phnom Penh", code:"PNH", airport:"Phnom Penh Intl Airport", country:"Cambodia", flag:"🇰🇭", priceRatio:0.85, avgFlightHours:1.2, avgTempC:28, avgRainMm:150, aliases:["pnh"] },
+  { slug:"beijing", city:"Beijing", code:"PEK", airport:"Beijing Capital Intl", country:"China", flag:"🇨🇳", priceRatio:1.8, avgFlightHours:5.0, avgTempC:13, avgRainMm:60 },
+  { slug:"shanghai", city:"Shanghai", code:"PVG", airport:"Pudong Intl", country:"China", flag:"🇨🇳", priceRatio:1.7, avgFlightHours:4.5, avgTempC:16, avgRainMm:110 },
+  { slug:"guangzhou", city:"Guangzhou", code:"CAN", airport:"Baiyun Intl", country:"China", flag:"🇨🇳", priceRatio:1.5, avgFlightHours:4.0, avgTempC:22, avgRainMm:170 },
+  { slug:"chengdu", city:"Chengdu", code:"CTU", airport:"Shuangliu Intl", country:"China", flag:"🇨🇳", priceRatio:1.3, avgFlightHours:5.0, avgTempC:16, avgRainMm:90 },
+  { slug:"shenzhen", city:"Shenzhen", code:"SZX", airport:"Bao'an Intl", country:"China", flag:"🇨🇳", priceRatio:1.6, avgFlightHours:4.0, avgTempC:23, avgRainMm:190 },
+  { slug:"mumbai", city:"Mumbai", code:"BOM", airport:"Chhatrapati Shivaji Intl", country:"India", flag:"🇮🇳", priceRatio:1.6, avgFlightHours:4.5, avgTempC:28, avgRainMm:200 },
+  { slug:"dubai", city:"Dubai", code:"DXB", airport:"Dubai Intl Airport", country:"United Arab Emirates", flag:"🇦🇪", priceRatio:2.5, avgFlightHours:6.5, avgTempC:28, avgRainMm:10 },
+  { slug:"hanoi", city:"Hanoi", code:"HAN", airport:"Noi Bai Intl Airport", country:"Vietnam", flag:"🇻🇳", priceRatio:0.9, avgFlightHours:1.8, avgTempC:24, avgRainMm:150 },
+  { slug:"krabi", city:"Krabi", code:"KBV", airport:"Krabi Intl Airport", country:"Thailand", flag:"🇹🇭", priceRatio:0.90, avgFlightHours:2.2, avgTempC:28, avgRainMm:170 },
+  { slug:"penang", city:"Penang", code:"PEN", airport:"Penang Intl Airport", country:"Malaysia", flag:"🇲🇾", priceRatio:0.75, avgFlightHours:1.8, avgTempC:27, avgRainMm:190 },
+  { slug:"luang-prabang", city:"Luang Prabang", code:"LPQ", airport:"Luang Prabang Intl", country:"Laos", flag:"🇱🇦", priceRatio:0.88, avgFlightHours:1.5, avgTempC:25, avgRainMm:140 },
 ];
 
 // ── Utilities ──────────────────────────────────────────────────────
@@ -575,7 +529,23 @@ export function generateDynamicDestination(
   return buildRecord(seed, originSeed);
 }
 
-export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined { return REGISTRY.byCitySlug.get(toSlug(slug)); }
+export function getDestinationBySlug(slug: string): StaticDestinationRecord | undefined { 
+  const normalized = toSlug(slug);
+  const exact = REGISTRY.byCitySlug.get(normalized);
+  if (exact) return exact;
+
+  // Fuzzy match aliases (length >= 5 to prevent false matches on short codes)
+  if (normalized.length >= 5) {
+     let match: StaticDestinationRecord | undefined;
+     REGISTRY.byCitySlug.forEach((record, key) => {
+       if (!match && key.startsWith(normalized)) {
+         match = record;
+       }
+     });
+     if (match) return match;
+  }
+  return undefined; 
+}
 export function getDestinationByCode(code: string): StaticDestinationRecord | undefined { return REGISTRY.byCode.get(code.trim().toUpperCase()); }
 export function getDestinationsByCountrySlug(countrySlug: string): StaticDestinationRecord[] { return REGISTRY.byCountrySlug.get(toSlug(countrySlug)) ?? []; }
 export function getAllSlugs(): string[] { return DESTINATION_SEEDS.map((s) => s.slug); }

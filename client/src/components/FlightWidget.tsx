@@ -303,7 +303,7 @@ export default function FlightWidget({ marker }: Props) {
                             <div className="flex flex-col sm:flex-row gap-3 md:w-2/3">
                                 <div className="flex-1 min-w-0">
                                     <AirportAutocomplete
-                                        label="Change Origin"
+                                        label="From"
                                         value={origin}
                                         onChange={setOrigin}
                                         onClear={() => registerClearOriginCallback(() => setOrigin(null as any))}
@@ -311,7 +311,7 @@ export default function FlightWidget({ marker }: Props) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <AirportAutocomplete
-                                        label="Change Destination"
+                                        label="To"
                                         value={destination}
                                         onChange={setDestination}
                                         onClear={() => registerClearDestCallback(() => setDestination(null as any))}

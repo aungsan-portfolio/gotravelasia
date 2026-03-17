@@ -49,8 +49,13 @@ export default function DestinationHero({
                         Flights
                     </p>
 
-                    <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                        Current one-way fares to {toLabel}
+                    <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-5xl leading-tight">
+                        {cheapestPrice > 0 && (
+                            <span className="text-amber-400 block sm:inline mr-3">
+                                {formatPrice(cheapestPrice, currency)}+
+                            </span>
+                        )}
+                        Cheap flights to {toLabel}
                     </h1>
 
                     <p className="mt-4 max-w-2xl text-base leading-7 text-indigo-100 sm:text-lg">

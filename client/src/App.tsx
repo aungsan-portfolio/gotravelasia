@@ -61,7 +61,7 @@ function Router() {
         <Route path="/flights" component={FlightsQueryRedirect} />
 
         {/* Dedicated Destination Landing Pages (must be before generic /flights/:o/:d) */}
-        <Route path="/flights/to/:destination" component={DestinationLandingPage} />
+        <Route path="/flights/to/:slug" component={DestinationLandingPage} />
 
         <Route path="/flights/:originCode/:destinationCode" component={FlightDestinationPage} />
 
