@@ -1,3 +1,43 @@
-﻿client/src/pages/DestinationLandingPage.tsx(385,12): error TS2304: Cannot find name 'DestinationHero'.
-client/src/pages/FlightDestinationPage.tsx(50,17): error TS2322: Type '{ originCity: string; originCode: string; destinationCity: string; destinationCode: string; cheapestPrice: number; currency: string; updatedAt: string; dealsCount: number; }' is not assignable to type 'IntrinsicAttributes & DestinationHeroProps'.
-  Property 'originCity' does not exist on type 'IntrinsicAttributes & DestinationHeroProps'.
+﻿node.exe : npm warn 
+Unknown project config 
+"" (onlyBuiltDependenci
+es:). This will stop 
+working in the next 
+major version of npm.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+     :     
+NotSpecified: (npm 
+warn     
+Unknow...version of 
+npm.:    String) [], 
+RemoteExcepti    on
+    + 
+FullyQualifiedErrorId 
+:     
+NativeCommandError
+ 
+npm warn Unknown 
+project config "- 
+"@tailwindcss/oxide"". 
+This will stop working 
+in the next major 
+version of npm.
+npm warn Unknown 
+project config "- 
+esbuild". This will 
+stop working in the 
+next major version of 
+npm.
+client/src/data/destinationRegistry.ts(483,34): error TS2802: Type 'MapIterator<[string, StaticDestinationRecord[]]>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+client/src/data/destinationRegistry.ts(559,32): error TS2802: Type 'MapIterator<[string, StaticDestinationRecord]>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+client/src/data/destinationRegistry.ts(565,34): error TS2802: Type 'MapIterator<[string, StaticDestinationRecord[]]>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.

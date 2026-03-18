@@ -388,15 +388,107 @@ export interface DestinationLandingApiMeta {
   updatedAt?: string;
 }
 
-export interface DestinationLandingApiResponse {
+
+// =============================================================================
+// GoTravelAsia — Destination Types (New Popularity Engine)
+// Phase 1: Static registry + live fare signals (no analytics yet)
+// =============================================================================
+
+export type OriginMarket = "MM" | "TH" | "SG" | "MY" | "GLOBAL";
+
+// ---------------------------------------------------------------------------
+// Signal layer
+// ---------------------------------------------------------------------------
+
+/**
+ * All signals needed to compute a popularity score for one destination.
+ */
+export type DestinationSignal = {
+  // Identity
+  country: string;
+  city: string;
+  iata: string;
+  slug: string;
+
+  // Behavioral signals (Phase 1 → 0; Phase 2 → PostHog)
+  searchVolume: number;
+  outboundIntentRate: number;
+  clickThroughRate: number;
+
+  // Contextual signals
+  seasonalScore: number;
+  priceCompetitiveness: number;
+  routeAvailability: number;
+  contentStrength: number;
+
+  // Fare data
+  avgPrice?: number | null;
+  minPrice?: number | null;
+  directFlights?: boolean;
+};
+
+/** DestinationSignal enriched with a computed popularity score (0..1). */
+export type ScoredDestination = DestinationSignal & {
+  popularityScore: number;
+};
+
+// ---------------------------------------------------------------------------
+// Country-level aggregate
+// ---------------------------------------------------------------------------
+
+export type PopularCountry = {
+  country: string;
+  popularityScore: number;
+  topCity: string;
+  cityCount: number;
+};
+
+export type PopularSections = {
+  popularDestinations: PopularCountry[];
+  popularCities: ScoredDestination[];
+};
+
+// ---------------------------------------------------------------------------
+// API / registry shapes
+// ---------------------------------------------------------------------------
+
+export type DestinationMeta = {
+  slug: string;
+  city: string;
+  country: string;
+  iata: string;
+  imageUrl?: string | null;
+  description?: string | null;
+};
+
+export type FareEntry = {
+  origin: string;
+  destination: string;
+  price: number;
+  currency: string;
+  departDate?: string | null;
+};
+
+export type PriceInsights = {
+  cheapestMonth?: string | null;
+  currentMinPrice?: number | null;
+};
+
+/**
+ * The structured API response for the destination landing page.
+ * Merged with legacy envelope fields for compatibility during transition.
+ */
+export type DestinationLandingApiResponse = {
   success?: boolean;
   error?: string;
   message?: string;
-  meta?: DestinationLandingApiMeta;
   lastUpdated?: string;
-  data?: unknown;
-  payload?: unknown;
-  result?: unknown;
-  destinationData?: unknown;
-  page?: unknown;
-}
+
+  destination: DestinationMeta;
+  originMarket: OriginMarket;
+  popularDestinations: PopularCountry[];
+  popularCities: ScoredDestination[];
+  priceInsights: PriceInsights;
+  fareFinder: FareEntry[];
+};
+
