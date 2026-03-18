@@ -107,6 +107,9 @@ export default function FlightResults() {
     if (oldScript) oldScript.remove();
 
     document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
+    document.getElementById("tpwl-search")?.replaceChildren();
+    document.getElementById("tpwl-tickets")?.replaceChildren();
+    document.getElementById("tpwl-widget-weedles")?.replaceChildren();
     setWidgetState("loading");
 
     const init = buildInitFromQuery(search);
@@ -131,6 +134,7 @@ export default function FlightResults() {
     const mainScript = document.createElement("script");
     mainScript.id = SCRIPT_ID;
     mainScript.async = true;
+    mainScript.type = "module";
     mainScript.src = `https://tpwidg.com/wl_web/main.js?wl_id=${encodeURIComponent(WL_ID)}`;
     document.body.appendChild(mainScript);
 
@@ -194,6 +198,9 @@ export default function FlightResults() {
       const script = document.getElementById(SCRIPT_ID);
       if (script) script.remove();
       document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
+      document.getElementById("tpwl-search")?.replaceChildren();
+      document.getElementById("tpwl-tickets")?.replaceChildren();
+      document.getElementById("tpwl-widget-weedles")?.replaceChildren();
     };
   }, [search]);
 
