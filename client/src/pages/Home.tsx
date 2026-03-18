@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, Suspense } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/seo/SEO";
 import HeroSection from "@/components/HeroSection";
-import FlightWidget from "@/components/flights/FlightWidget";
+import FlightAffiliateSearch from "@/components/flights/FlightAffiliateSearch";
 import CheapDealsCards from "@/components/cheap-deals";
 import SpecialOffers from "@/components/cheap-deals/SpecialOffers";
 import PopularDestinations from "@/components/PopularDestinations";
@@ -53,7 +53,7 @@ export default function Home() {
     <Layout>
       <SEO path="/" />
       <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
-        {activeTab === "flights" && <FlightWidget />}
+        {activeTab === "flights" && <FlightAffiliateSearch marker={import.meta.env.VITE_TP_MARKER || "697202"} />}
 
         {/* Upgrade 4: Lazy-loaded tabs — Hotels & Transport only download when clicked */}
         <Suspense fallback={<TabSkeleton />}>
