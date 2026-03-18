@@ -1,5 +1,5 @@
 import Layout from "@/components/Layout";
-import FlightAffiliateSearch from "@/components/flights/FlightAffiliateSearch";
+import FlightWidget from "@/components/FlightWidget";
 import { ArrowLeft, Plane, ShieldCheck, Clock, TrendingDown } from "lucide-react";
 import SEO from "@/seo/SEO";
 
@@ -59,7 +59,9 @@ export default function FlightResults() {
                 </section>
 
                 {/* FLIGHT WIDGET AREA */}
-                    <FlightAffiliateSearch marker={import.meta.env.VITE_TP_MARKER || "12942"} className="lg:max-w-5xl mx-auto" />
+                <div className="relative z-20 -mt-8">
+                    <FlightWidget marker="12942" />
+                </div>
 
                 {/* BOTTOM FEATURES BAR - Trust Indicators */}
                 <section className="py-16 bg-white border-t border-slate-100">
