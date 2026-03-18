@@ -1,20 +1,10 @@
-// client/src/components/destination/DestinationLandingPage.tsx
+// =============================================================================
+// GoTravelAsia — Destination Landing Page (wired to real hook)
+// components/destination/DestinationLandingPage.tsx
+// =============================================================================
 
-import type {
-  DestinationLandingApiResponse,
-  PopularCountry,
-  ScoredDestination,
-} from "@/types/destination";
-
-// ---------------------------------------------------------------------------
-// Data-fetching hook — placeholder for real fetch (e.g., SWR / tRPC)
-// ---------------------------------------------------------------------------
-
-declare function useDestinationLandingData(slug: string): {
-  data: DestinationLandingApiResponse | undefined;
-  isLoading: boolean;
-  error: Error | null;
-};
+import { useDestinationLandingData } from "@/hooks/useDestinationLandingData";
+import type { PopularCountry, ScoredDestination } from "@/types/destination";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -28,13 +18,12 @@ function countryHref(topCity: string) {
   return `/flights/to/${topCity.toLowerCase().replace(/\s+/g, "-")}`;
 }
 
-/** Popularity bar width as a percentage string */
 function scoreWidth(score: number) {
   return `${Math.round(score * 100)}%`;
 }
 
 // ---------------------------------------------------------------------------
-// PopularDestinations section
+// Sub-sections
 // ---------------------------------------------------------------------------
 
 function PopularDestinations({ items }: { items: PopularCountry[] }) {
@@ -57,13 +46,7 @@ function PopularDestinations({ items }: { items: PopularCountry[] }) {
               </span>
               <p className="mt-1 text-lg font-semibold">{item.country}</p>
               <p className="mt-2 text-sm text-slate-400">Top city: {item.topCity}</p>
-
-              {/* Score bar */}
-              <div
-                className="mt-3 h-1.5 rounded bg-white/5"
-                role="presentation"
-                aria-hidden="true"
-              >
+              <div className="mt-3 h-1.5 rounded bg-white/5" aria-hidden="true">
                 <div
                   className="h-1.5 rounded bg-cyan-400"
                   style={{ width: scoreWidth(item.popularityScore) }}
@@ -76,10 +59,6 @@ function PopularDestinations({ items }: { items: PopularCountry[] }) {
     </section>
   );
 }
-
-// ---------------------------------------------------------------------------
-// PopularCities section
-// ---------------------------------------------------------------------------
 
 function PopularCities({ items }: { items: ScoredDestination[] }) {
   if (items.length === 0) return null;
@@ -101,25 +80,17 @@ function PopularCities({ items }: { items: ScoredDestination[] }) {
               </span>
               <p className="mt-1 text-lg font-semibold">{item.city}</p>
               <p className="text-sm text-slate-400">{item.country}</p>
-
-              {/* Score bar */}
-              <div
-                className="mt-3 h-1.5 rounded bg-white/5"
-                role="presentation"
-                aria-hidden="true"
-              >
+              <div className="mt-3 h-1.5 rounded bg-white/5" aria-hidden="true">
                 <div
                   className="h-1.5 rounded bg-cyan-400"
                   style={{ width: scoreWidth(item.popularityScore) }}
                 />
               </div>
-
               {item.minPrice != null && (
                 <p className="mt-2 text-sm font-medium text-emerald-300">
                   From ${item.minPrice}
                 </p>
               )}
-
               {item.directFlights && (
                 <p className="mt-1 text-xs text-slate-400">Direct flights available</p>
               )}
@@ -132,7 +103,7 @@ function PopularCities({ items }: { items: ScoredDestination[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Loading skeleton
+// Skeleton
 // ---------------------------------------------------------------------------
 
 function DestinationLandingSkeleton() {
@@ -158,23 +129,54 @@ function DestinationLandingSkeleton() {
 
 type Props = {
   slug: string;
+  /** ISO 3166-1 alpha-2 country code — from GeoIP or user preferences */
+  userCountryCode?: string | null;
 };
 
-export function DestinationLandingPage({ slug }: Props) {
-  const { data, isLoading, error } = useDestinationLandingData(slug);
+export function DestinationLandingPage({ slug, userCountryCode }: Props) {
+  const {
+    data,
+    isInitialLoading,
+    isRefetching,
+    error,
+    isNotFound,
+    refresh,
+  } = useDestinationLandingData(slug, { userCountryCode });
 
-  if (isLoading) return <DestinationLandingSkeleton />;
+  if (isInitialLoading) return <DestinationLandingSkeleton />;
 
-  if (error || !data) {
+  if (isNotFound) {
     return (
       <p className="py-20 text-center text-slate-400">
-        Unable to load destination data. Please try again later.
+        Destination not found.
       </p>
     );
   }
 
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-20 text-center">
+        <p className="text-slate-400">
+          Unable to load destination data. Please try again.
+        </p>
+        <button
+          onClick={refresh}
+          className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-10">
+    <div className="relative space-y-10">
+      {/* Subtle refetch indicator — doesn't replace content */}
+      {isRefetching && (
+        <div className="absolute right-0 top-0 text-xs text-slate-500 animate-pulse">
+          Updating…
+        </div>
+      )}
       <PopularDestinations items={data.popularDestinations} />
       <PopularCities items={data.popularCities} />
     </div>
