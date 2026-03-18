@@ -36,26 +36,20 @@ function cn(...parts: Array<string | false | null | undefined>) {
 
 /**
  * Checks if the widget has actually rendered something useful into the host.
+ * Uses the approved logic: check if children exist after a delay.
  */
 function hasRenderedWidget(host: HTMLElement | null) {
   if (!host) return false;
 
-  // Travelpayouts usually renders an iframe or a complex div structure
-  const iframe = host.querySelector("iframe");
-  if (iframe) return true;
+  // The specific search div is where the magic happens
+  const searchEl = host.querySelector("#tpwl-search");
+  if (searchEl && searchEl.children.length > 0) return true;
 
-  // Check if there are significant DOM nodes added by TPWL (shadow dom, custom elements, etc)
-  const tpwlElements = document.querySelectorAll('[id^="tpwl-"], tp-widget');
-  if (tpwlElements.length > 2) return true;
+  // Fallback for tickets area or other TPWL elements
+  const ticketEl = host.querySelector("#tpwl-tickets");
+  if (ticketEl && ticketEl.children.length > 0) return true;
 
-  const usefulElements = Array.from(host.querySelectorAll("*")).filter((el) => {
-    const tag = el.tagName.toLowerCase();
-    return tag !== "script" && tag !== "style";
-  });
-
-  const text = (host.textContent || "").trim();
-  // If we have actual UI elements or significant text, it's probably rendered
-  return usefulElements.length > 0 || text.length > 20;
+  return false;
 }
 
 /**
@@ -151,9 +145,6 @@ export default function FlightWidget({ marker }: Props) {
         removeOldScript();
         setStatus("loading");
         
-        // Safety: clear host but keep React-friendly if possible
-        host.innerHTML = "";
-
         // Prepare parameters from context
         const initParams: any = {};
         if (origin) initParams.origin = { name: origin.name, iata: origin.code };
@@ -205,7 +196,7 @@ export default function FlightWidget({ marker }: Props) {
             attributes: true,
         });
 
-        // Fail-safe timeout
+        // Fail-safe timeout (Approved 6s logic)
         timeoutRef.current = window.setTimeout(() => {
             if (hasRenderedWidget(host)) {
                 setStatus("ready");
@@ -213,7 +204,7 @@ export default function FlightWidget({ marker }: Props) {
                 setStatus("blocked");
             }
             cleanup();
-        }, LOAD_TIMEOUT_MS);
+        }, 6500);
 
         host.appendChild(script);
     }, [marker, origin, destination, departDate, returnDate, adults, childCount, infants, tripType, checkReady, cleanup, removeOldScript]);
@@ -328,7 +319,7 @@ export default function FlightWidget({ marker }: Props) {
                     {/* WIDGET HOST AREA */}
                     <div className={cn(
                         "relative min-h-[500px] transition-all duration-300 bg-slate-900 rounded-b-3xl text-slate-100",
-                        status === "ready" ? "opacity-100" : "opacity-60 grayscale-[0.5]"
+                        status === "ready" ? "opacity-100" : "opacity-0"
                     )}>
                         
                         {/* Loading Overlay */}
