@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
 
 declare global {
@@ -8,10 +8,29 @@ declare global {
   }
 }
 
-const WL_ID = "12942";      // current white-label id from your existing results page setup
-const TP_MARKER = "697202"; // replace if your Travelpayouts marker is different
+const WL_ID = "12942";
+const TP_MARKER = "697202";
 const SCRIPT_ID = "tpwl-main-script";
 const WEEDLE_SCRIPT_CLASS = "tpwl-weedle-script";
+const WEEDLE_POLL_INTERVAL_MS = 300;
+const WEEDLE_TIMEOUT_MS = 6000;
+
+type WidgetState = "loading" | "ready" | "fallback";
+
+type PopularDestination = {
+  code: string;
+  city: string;
+  country: string;
+};
+
+const POPULAR_DESTINATIONS: PopularDestination[] = [
+  { code: "IST", city: "Istanbul", country: "Turkey" },
+  { code: "DXB", city: "Dubai", country: "United Arab Emirates" },
+  { code: "MOW", city: "Moscow", country: "Russia" },
+  { code: "LAS", city: "Las Vegas", country: "United States" },
+  { code: "NYC", city: "New York", country: "United States" },
+  { code: "LON", city: "London", country: "United Kingdom" },
+];
 
 function safeParam(value: string | null, fallback = ""): string {
   return value ? decodeURIComponent(value) : fallback;
@@ -20,17 +39,12 @@ function safeParam(value: string | null, fallback = ""): string {
 function getRouteInfo(search: URLSearchParams) {
   const origin = safeParam(search.get("origin"));
   const destination = safeParam(search.get("destination"));
-  const depart = safeParam(search.get("depart"));
-  const ret = safeParam(search.get("return"));
 
   if (origin && destination) {
     return ` from ${origin.toUpperCase()} to ${destination.toUpperCase()}`;
   }
 
-  const flightSearch = safeParam(search.get("flightSearch"));
-  if (flightSearch) return "";
-
-  return "";
+  return safeParam(search.get("flightSearch")) ? "" : "";
 }
 
 function buildInitFromQuery(search: URLSearchParams) {
@@ -43,7 +57,7 @@ function buildInitFromQuery(search: URLSearchParams) {
   const children = Number(search.get("children") || 0);
   const infants = Number(search.get("infants") || 0);
 
-  const init: Record<string, any> = {};
+  const init: Record<string, unknown> = {};
 
   if (origin) init.origin = { iata: origin.toUpperCase(), name: origin.toUpperCase() };
   if (destination) init.destination = { iata: destination.toUpperCase(), name: destination.toUpperCase() };
@@ -64,15 +78,36 @@ function buildInitFromQuery(search: URLSearchParams) {
   return init;
 }
 
+function hasRenderedWeedles(container: HTMLElement | null): boolean {
+  if (!container) return false;
+
+  const weedles = Array.from(container.querySelectorAll<HTMLElement>(".tpwl-widget-weedle"));
+  if (weedles.length === 0) return false;
+
+  return weedles.some((weedle) =>
+    Array.from(weedle.children).some(
+      (child) => !(child instanceof HTMLScriptElement) && child.textContent?.trim() !== "",
+    ) || weedle.querySelector("iframe, a, img, [class*='tpwl'], [data-tpwl-rendered='true']") !== null,
+  );
+}
+
+function buildFallbackDestinationUrl(origin: string, destination: string): string {
+  const params = new URLSearchParams({ origin, destination });
+  return `/flights/results?${params.toString()}`;
+}
+
 export default function FlightResults() {
   const search = useMemo(() => new URLSearchParams(window.location.search), []);
   const routeInfo = useMemo(() => getRouteInfo(search), [search]);
+  const [widgetState, setWidgetState] = useState<WidgetState>("loading");
+  const fallbackOrigin = useMemo(() => safeParam(search.get("origin"), "BKK").toUpperCase() || "BKK", [search]);
 
   useEffect(() => {
     const oldScript = document.getElementById(SCRIPT_ID);
     if (oldScript) oldScript.remove();
 
     document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
+    setWidgetState("loading");
 
     const init = buildInitFromQuery(search);
 
@@ -103,26 +138,33 @@ export default function FlightResults() {
       const container = document.getElementById("tpwl-widget-weedles");
       if (!container) return;
 
-      const weedleElements = container.querySelectorAll<HTMLElement>('div[is="weedle"]');
+      const weedleElements = container.querySelectorAll<HTMLElement>('div[data-destination]');
       weedleElements.forEach((element) => {
         element.innerHTML = "";
-        const destination = element.getAttribute("data-destination");
+        const destination = element.dataset.destination;
         if (!destination || !window.TPWL_EXTRA) return;
+
+        const marker = String(window.TPWL_EXTRA.marker ?? TP_MARKER);
+        const currency = String(window.TPWL_EXTRA.currency ?? "USD").toLowerCase();
+        const trs = String(window.TPWL_EXTRA.trs ?? "");
+        const domain = String(window.TPWL_EXTRA.domain ?? window.location.hostname);
+        const locale = String(window.TPWL_EXTRA.locale ?? "en");
+        const linkColor = String(window.TPWL_EXTRA.link_color ?? "5B7CFF");
 
         const scriptElement = document.createElement("script");
         scriptElement.async = true;
         scriptElement.className = WEEDLE_SCRIPT_CLASS;
         scriptElement.src =
           `https://tpwidg.com/content` +
-          `?currency=${String(window.TPWL_EXTRA.currency).toLowerCase()}` +
-          `&trs=${window.TPWL_EXTRA.trs}` +
-          `&shmarker=${window.TPWL_EXTRA.marker}` +
-          `&destination=${destination}` +
-          `&target_host=${window.TPWL_EXTRA.domain}` +
-          `&locale=${window.TPWL_EXTRA.locale}` +
+          `?currency=${currency}` +
+          `&trs=${encodeURIComponent(trs)}` +
+          `&shmarker=${encodeURIComponent(marker)}` +
+          `&destination=${encodeURIComponent(destination)}` +
+          `&target_host=${encodeURIComponent(domain)}` +
+          `&locale=${encodeURIComponent(locale)}` +
           `&limit=6` +
           `&powered_by=false` +
-          `&primary=%23${window.TPWL_EXTRA.link_color}` +
+          `&primary=%23${linkColor}` +
           `&promo_id=4044` +
           `&campaign_id=100`;
 
@@ -130,10 +172,25 @@ export default function FlightResults() {
       });
     };
 
-    const timer = window.setTimeout(mountWeedles, 1200);
+    const mountTimer = window.setTimeout(mountWeedles, 1200);
+    const pollStart = Date.now();
+    const pollTimer = window.setInterval(() => {
+      const container = document.getElementById("tpwl-widget-weedles");
+      if (hasRenderedWeedles(container)) {
+        setWidgetState("ready");
+        window.clearInterval(pollTimer);
+        return;
+      }
+
+      if (Date.now() - pollStart >= WEEDLE_TIMEOUT_MS) {
+        setWidgetState("fallback");
+        window.clearInterval(pollTimer);
+      }
+    }, WEEDLE_POLL_INTERVAL_MS);
 
     return () => {
-      window.clearTimeout(timer);
+      window.clearTimeout(mountTimer);
+      window.clearInterval(pollTimer);
       const script = document.getElementById(SCRIPT_ID);
       if (script) script.remove();
       document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
@@ -272,6 +329,104 @@ export default function FlightResults() {
         .tpwl-widget-weedle {
           display: flex;
           justify-content: center;
+          min-height: 220px;
+        }
+
+        .tpwl-widget-state,
+        .tpwl-widget-fallback {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 20px;
+        }
+
+        .tpwl-widget-skeleton,
+        .tpwl-widget-card {
+          border-radius: 24px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .tpwl-widget-skeleton {
+          min-height: 220px;
+          padding: 24px;
+          animation: tpwl-pulse 1.6s ease-in-out infinite;
+        }
+
+        .tpwl-widget-skeleton::before,
+        .tpwl-widget-skeleton::after {
+          content: "";
+          display: block;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
+          background-size: 200% 100%;
+          animation: tpwl-shimmer 1.6s linear infinite;
+        }
+
+        .tpwl-widget-skeleton::before {
+          width: 65%;
+          height: 18px;
+          margin-bottom: 18px;
+        }
+
+        .tpwl-widget-skeleton::after {
+          width: 40%;
+          height: 14px;
+        }
+
+        .tpwl-widget-message {
+          margin: 0 0 20px;
+          text-align: center;
+          color: #475569;
+        }
+
+        .tpwl-widget-card {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 220px;
+          padding: 24px;
+          color: inherit;
+        }
+
+        .tpwl-widget-card__code {
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #6366f1;
+        }
+
+        .tpwl-widget-card__city {
+          margin: 12px 0 6px;
+          font-size: 28px;
+          font-weight: 700;
+          color: #0f172a;
+        }
+
+        .tpwl-widget-card__country {
+          margin: 0;
+          color: #64748b;
+        }
+
+        .tpwl-widget-card__cta {
+          margin-top: 24px;
+          font-weight: 600;
+          color: #4f46e5;
+        }
+
+        .tpwl-widget-container[hidden] {
+          display: none;
+        }
+
+        @keyframes tpwl-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.65; }
+        }
+
+        @keyframes tpwl-shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
 
         .tpwl-footer__wrapper {
@@ -315,7 +470,9 @@ export default function FlightResults() {
           .tpwl-widgets__wrapper { padding: 56px 16px; }
           .tpwl-widgets__wrapper h3 { font-size: 32px; }
           .tpwl-widgets__wrapper .tpwl__content { flex: 1 0 100%; }
-          .tpwl-widget-weedles { grid-template-columns: 1fr; }
+          .tpwl-widget-weedles,
+          .tpwl-widget-state,
+          .tpwl-widget-fallback { grid-template-columns: 1fr; }
           .tpwl-footer__wrapper { padding: 56px 16px; }
           .tpwl-footer__wrapper .tpwl__content { flex: 1 1 auto; }
         }
@@ -354,13 +511,47 @@ export default function FlightResults() {
             <div className="tpwl__content">
               <h3>Popular destinations</h3>
 
-              <div id="tpwl-widget-weedles" className="tpwl-widget-weedles">
-                <div className="tpwl-widget-weedle" data-destination="IST" is="weedle" />
-                <div className="tpwl-widget-weedle" data-destination="DXB" is="weedle" />
-                <div className="tpwl-widget-weedle" data-destination="MOW" is="weedle" />
-                <div className="tpwl-widget-weedle" data-destination="LAS" is="weedle" />
-                <div className="tpwl-widget-weedle" data-destination="NYC" is="weedle" />
-                <div className="tpwl-widget-weedle" data-destination="LON" is="weedle" />
+              {widgetState === "loading" && (
+                <div className="tpwl-widget-state" aria-live="polite" aria-busy="true">
+                  {POPULAR_DESTINATIONS.map((destination) => (
+                    <div key={destination.code} className="tpwl-widget-skeleton" />
+                  ))}
+                </div>
+              )}
+
+              {widgetState === "fallback" && (
+                <>
+                  <p className="tpwl-widget-message" role="status">
+                    Popular destination widgets are temporarily unavailable, so we&apos;re showing direct flight search links instead.
+                  </p>
+                  <div className="tpwl-widget-fallback">
+                    {POPULAR_DESTINATIONS.map((destination) => (
+                      <a
+                        key={destination.code}
+                        href={buildFallbackDestinationUrl(fallbackOrigin, destination.code)}
+                        className="tpwl-widget-card"
+                      >
+                        <div>
+                          <span className="tpwl-widget-card__code">{destination.code}</span>
+                          <h4 className="tpwl-widget-card__city">{destination.city}</h4>
+                          <p className="tpwl-widget-card__country">{destination.country}</p>
+                        </div>
+                        <span className="tpwl-widget-card__cta">Search flights →</span>
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div
+                id="tpwl-widget-weedles"
+                className="tpwl-widget-weedles tpwl-widget-container"
+                hidden={widgetState !== "ready"}
+                aria-hidden={widgetState !== "ready"}
+              >
+                {POPULAR_DESTINATIONS.map((destination) => (
+                  <div key={destination.code} className="tpwl-widget-weedle" data-destination={destination.code} />
+                ))}
               </div>
             </div>
           </div>
