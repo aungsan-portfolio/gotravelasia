@@ -23,13 +23,14 @@ type PopularDestination = {
   country: string;
 };
 
+// ── CHANGE 1: SEA destinations replacing IST/DXB/MOW/LAS/NYC/LON ──────────
 const POPULAR_DESTINATIONS: PopularDestination[] = [
-  { code: "IST", city: "Istanbul", country: "Turkey" },
-  { code: "DXB", city: "Dubai", country: "United Arab Emirates" },
-  { code: "MOW", city: "Moscow", country: "Russia" },
-  { code: "LAS", city: "Las Vegas", country: "United States" },
-  { code: "NYC", city: "New York", country: "United States" },
-  { code: "LON", city: "London", country: "United Kingdom" },
+  { code: "SIN", city: "Singapore",   country: "Singapore" },
+  { code: "BKK", city: "Bangkok",     country: "Thailand" },
+  { code: "KUL", city: "Kuala Lumpur", country: "Malaysia" },
+  { code: "HAN", city: "Hanoi",       country: "Vietnam" },
+  { code: "DPS", city: "Bali",        country: "Indonesia" },
+  { code: "HKT", city: "Phuket",      country: "Thailand" },
 ];
 
 function safeParam(value: string | null, fallback = ""): string {
@@ -39,11 +40,9 @@ function safeParam(value: string | null, fallback = ""): string {
 function getRouteInfo(search: URLSearchParams) {
   const origin = safeParam(search.get("origin"));
   const destination = safeParam(search.get("destination"));
-
   if (origin && destination) {
     return ` from ${origin.toUpperCase()} to ${destination.toUpperCase()}`;
   }
-
   return safeParam(search.get("flightSearch")) ? "" : "";
 }
 
@@ -80,10 +79,8 @@ function buildInitFromQuery(search: URLSearchParams) {
 
 function hasRenderedWeedles(container: HTMLElement | null): boolean {
   if (!container) return false;
-
   const weedles = Array.from(container.querySelectorAll<HTMLElement>(".tpwl-widget-weedle"));
   if (weedles.length === 0) return false;
-
   return weedles.some((weedle) =>
     Array.from(weedle.children).some(
       (child) => !(child instanceof HTMLScriptElement) && child.textContent?.trim() !== "",
@@ -94,6 +91,31 @@ function hasRenderedWeedles(container: HTMLElement | null): boolean {
 function buildFallbackDestinationUrl(origin: string, destination: string): string {
   const params = new URLSearchParams({ origin, destination });
   return `/flights/results?${params.toString()}`;
+}
+
+// ── GoTravel Asia inline logo SVG ──────────────────────────────────────────
+function GoTravelLogo() {
+  return (
+    <a href="/" aria-label="GoTravel Asia home" style={{ display: "flex", alignItems: "center", gap: "9px", textDecoration: "none" }}>
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="34" height="34" rx="7" fill="#3D0870"/>
+        <path d="M6 24 Q9 7 24 6" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+        <path d="M6 27 Q10 9 27 8" stroke="#F5A623" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.45"/>
+        <path d="M21 9.5L24.5 7.5L25.5 8.8L23 10.5L25 12.5L23 12.5L21.5 11.2L19 12.5L18.5 11Z" fill="#F5A623"/>
+        <text x="5" y="26" fontFamily="Arial Black,Impact,sans-serif" fontWeight="900" fontSize="12.5" fill="#FFFFFF" letterSpacing="-0.5">GO</text>
+      </svg>
+      <span style={{
+        fontFamily: "'Syne', sans-serif",
+        fontWeight: 800,
+        fontSize: "17px",
+        color: "#3D0870",
+        letterSpacing: "-0.02em",
+        lineHeight: 1,
+      }}>
+        GO<span style={{ color: "#5B0FA8" }}>TRAVEL</span> ASIA
+      </span>
+    </a>
+  );
 }
 
 export default function FlightResults() {
@@ -121,6 +143,7 @@ export default function FlightResults() {
       init,
     };
 
+    // ── CHANGE 2: link_color → GoTravel Asia gold ──────────────────────────
     window.TPWL_EXTRA = {
       ...(window.TPWL_EXTRA || {}),
       currency: "USD",
@@ -128,7 +151,7 @@ export default function FlightResults() {
       marker: TP_MARKER,
       domain: window.location.hostname,
       locale: "en",
-      link_color: "5B7CFF",
+      link_color: "F5A623",  // ← Gold (was "5B7CFF" indigo)
     };
 
     const mainScript = document.createElement("script");
@@ -148,12 +171,12 @@ export default function FlightResults() {
         const destination = element.dataset.destination;
         if (!destination || !window.TPWL_EXTRA) return;
 
-        const marker = String(window.TPWL_EXTRA.marker ?? TP_MARKER);
-        const currency = String(window.TPWL_EXTRA.currency ?? "USD").toLowerCase();
-        const trs = String(window.TPWL_EXTRA.trs ?? "");
-        const domain = String(window.TPWL_EXTRA.domain ?? window.location.hostname);
-        const locale = String(window.TPWL_EXTRA.locale ?? "en");
-        const linkColor = String(window.TPWL_EXTRA.link_color ?? "5B7CFF");
+        const marker    = String(window.TPWL_EXTRA.marker    ?? TP_MARKER);
+        const currency  = String(window.TPWL_EXTRA.currency  ?? "USD").toLowerCase();
+        const trs       = String(window.TPWL_EXTRA.trs       ?? "");
+        const domain    = String(window.TPWL_EXTRA.domain    ?? window.location.hostname);
+        const locale    = String(window.TPWL_EXTRA.locale    ?? "en");
+        const linkColor = String(window.TPWL_EXTRA.link_color ?? "F5A623");
 
         const scriptElement = document.createElement("script");
         scriptElement.async = true;
@@ -185,7 +208,6 @@ export default function FlightResults() {
         window.clearInterval(pollTimer);
         return;
       }
-
       if (Date.now() - pollStart >= WEEDLE_TIMEOUT_MS) {
         setWidgetState("fallback");
         window.clearInterval(pollTimer);
@@ -211,14 +233,25 @@ export default function FlightResults() {
         description="We search hundreds of travel sites at once to find the cheapest flights for you."
       />
 
+      {/* ── CHANGE 3: CSS variables + styles → GoTravel Asia brand ───────── */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
         :root {
-          --tpwl-main-text: #0f172a;
-          --tpwl-search-result-background: #f8fafc;
-          --tpwl-search-form-background: #172554;
-          --tpwl-headline-text: #ffffff;
-          --tpwl-links: #4f46e5;
-          --tpwl-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          /* GoTravel Asia brand tokens */
+          --gta-purple:      #5B0FA8;
+          --gta-purple-dark: #3D0870;
+          --gta-gold:        #F5A623;
+          --gta-off-white:   #F7F4FF;
+          --gta-muted:       #9B7FCC;
+
+          /* Travelpayouts CSS variable overrides */
+          --tpwl-font-family:              "DM Sans", system-ui, sans-serif;
+          --tpwl-main-text:                #1A0A33;
+          --tpwl-search-result-background: #F7F4FF;
+          --tpwl-search-form-background:   #3D0870;
+          --tpwl-headline-text:            #FFFFFF;
+          --tpwl-links:                    #F5A623;
         }
 
         body {
@@ -234,56 +267,150 @@ export default function FlightResults() {
           color: var(--tpwl-links);
           text-decoration: none;
           cursor: pointer;
-          transition: 0.1s linear;
+          transition: 0.15s linear;
         }
 
         body a:hover,
         body a:focus {
+          opacity: 0.82;
           text-decoration: underline;
         }
 
+        /* ── Navbar ──────────────────────────────────────── */
+        .gta-navbar {
+          position: sticky;
+          top: 0;
+          z-index: 200;
+          background: var(--gta-gold);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 40px;
+          height: 56px;
+          box-shadow: 0 2px 16px rgba(61,8,112,.22);
+        }
+
+        .gta-navbar__left {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .gta-back {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--gta-purple-dark);
+          text-decoration: none;
+          letter-spacing: .02em;
+        }
+
+        .gta-back:hover { opacity: .72; text-decoration: none; }
+
+        .gta-nav-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: 2px solid var(--gta-purple-dark);
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--gta-purple-dark);
+          background: transparent;
+          cursor: pointer;
+          text-decoration: none;
+          letter-spacing: .02em;
+          transition: background .15s, color .15s;
+        }
+
+        .gta-nav-cta:hover {
+          background: var(--gta-purple-dark);
+          color: var(--gta-gold);
+          text-decoration: none;
+          opacity: 1;
+        }
+
+        /* ── Hero header ─────────────────────────────────── */
         .tpwl-logo-header {
           position: relative;
           color: var(--tpwl-headline-text);
           font-weight: 600;
           background-color: var(--tpwl-search-form-background);
-          padding: 32px 100px 16px;
+          padding: 52px 100px 22px;
           margin-bottom: -20px;
           z-index: 101;
-          background-size: cover;
-          background-repeat: no-repeat;
+          overflow: hidden;
           transform: translateZ(0);
           backface-visibility: hidden;
         }
+
+        /* Decorative circles in hero */
+        .tpwl-logo-header::before {
+          content: "";
+          position: absolute;
+          top: -80px; right: -80px;
+          width: 380px; height: 380px;
+          border-radius: 50%;
+          border: 56px solid rgba(245,166,35,.10);
+          pointer-events: none;
+        }
+
+        .tpwl-logo-header::after {
+          content: "";
+          position: absolute;
+          bottom: -60px; left: 40px;
+          width: 200px; height: 200px;
+          border-radius: 50%;
+          border: 32px solid rgba(245,166,35,.07);
+          pointer-events: none;
+        }
+
+        .tpwl-hero__inner { position: relative; z-index: 1; }
 
         .tpwl-logo-header h1 {
-          font-size: 48px;
-          margin: 0;
+          font-family: "Syne", sans-serif;
+          font-size: 46px;
+          font-weight: 800;
+          margin: 0 0 8px;
+          letter-spacing: -0.03em;
+          line-height: 1.1;
+          color: #FFFFFF;
         }
 
+        .tpwl-hero-sub {
+          font-size: 15px;
+          color: rgba(255,255,255,.6);
+          margin-bottom: 22px;
+        }
+
+        .tpwl-hero-badges {
+          display: flex;
+          gap: 22px;
+          flex-wrap: wrap;
+        }
+
+        .tpwl-hero-badge {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--gta-gold);
+          letter-spacing: .05em;
+          text-transform: uppercase;
+        }
+
+        /* ── Sticky search bar ───────────────────────────── */
         .tpwl-search-header {
-          padding: 24px 100px;
+          padding: 20px 100px 26px;
           background-color: var(--tpwl-search-form-background);
           position: sticky;
-          top: 0;
+          top: 56px;  /* below navbar */
           z-index: 100;
           transition: all 0.3s linear;
+          border-bottom: 1px solid rgba(245,166,35,.18);
           transform: translateZ(0);
           backface-visibility: hidden;
-        }
-
-        .tpwl-logo__wrapper {
-          margin-bottom: 140px;
-          font-size: 24px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .tpwl-logo__logo {
-          width: 40px;
-          height: 40px;
-          background: no-repeat url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path fill="%23fff" fill-rule="evenodd" d="M17.026 2.117a3.483 3.483 0 0 1 5.021 4.828l-2.778 2.91a6.391 6.391 0 0 0-.219.235v.005c.011.061.03.145.068.31l1.728 7.487.015.066c.058.243.13.549.105.861a2 2 0 0 1-.222.773c-.145.278-.367.499-.545.675l-.048.048-.4.4c-.278.278-.533.533-.759.721-.232.194-.55.418-.964.491a2 2 0 0 1-1.54-.363c-.338-.251-.522-.594-.643-.871-.118-.27-.232-.612-.357-.985l-1.51-4.533-2.202 2.201a6.644 6.644 0 0 0-.2.205 6.18 6.18 0 0 0 .028.285l.184 1.654.006.059c.025.217.056.49.013.764a2 2 0 0 1-.236.672c-.137.241-.332.435-.487.59l-.042.04-.197.198-.026.026c-.214.214-.419.419-.604.574-.199.167-.458.35-.798.439a2 2 0 0 1-1.378-.137 2.04 2.04 0 0 1-.697-.587 10.212 10.212 0 0 1-.48-.68l-1.588-2.383a5.878 5.878 0 0 0-.066-.098v-.002h-.002a5.934 5.934 0 0 0-.098-.067L2.726 17.34c-.253-.168-.493-.329-.682-.48a2.041 2.041 0 0 1-.587-.696 2 2 0 0 1-.136-1.379 2.04 2.04 0 0 1 .439-.798c.155-.185.36-.389.574-.604l.223-.222.041-.042c.155-.155.349-.35.589-.487a2 2 0 0 1 .673-.236c.273-.044.546-.013.764.012l.058.007 1.654.184c.15.016.226.024.28.028h.005l.003-.003a6.33 6.33 0 0 0 .202-.197l2.201-2.202-4.533-1.51c-.373-.125-.715-.24-.984-.357-.278-.122-.62-.305-.871-.643a2 2 0 0 1-.364-1.54c.073-.415.298-.732.492-.965.188-.226.443-.48.72-.759l.03-.029.37-.37.049-.049c.176-.177.397-.4.674-.545a2 2 0 0 1 .773-.222c.313-.024.618.048.862.105l.066.016 7.459 1.72c.165.04.25.058.312.069h.005c.002 0 .003-.002.004-.003.046-.043.107-.105.225-.227l2.71-2.799Zm3.551 1.374a1.483 1.483 0 0 0-2.114.017l-2.71 2.8-.046.048c-.17.177-.384.399-.653.547a2 2 0 0 1-.824.243c-.306.022-.606-.048-.845-.104l-.065-.015-7.459-1.722a6.532 6.532 0 0 0-.317-.069h-.006a6.532 6.532 0 0 0-.237.23l-.37.37a11.529 11.529 0 0 0-.647.678l.028.012c.175.077.428.162.854.304l6.029 2.01a1 1 0 0 1 .39 1.655L8.24 13.841l-.041.042c-.154.155-.348.35-.589.487a2 2 0 0 1-.673.236c-.273.043-.546.012-.763-.013l-.06-.007-1.653-.183a6.405 6.405 0 0 0-.285-.029l-.003.003c-.041.037-.095.09-.202.198l-.198.197a9.188 9.188 0 0 0-.493.515l.014.012c.112.09.278.201.57.397l2.353 1.568.021.014c.078.052.176.117.268.195a2.003 2.003 0 0 1 .419.492l.013.02 1.569 2.353a9.253 9.253 0 0 0 .408.585l.015-.012c.11-.092.251-.233.5-.482l.198-.197c.107-.107.16-.161.197-.202l.003-.004v-.004a6.341 6.341 0 0 0-.028-.28l-.184-1.654-.006-.059c-.025-.217-.057-.49-.013-.764a2 2 0 0 1 .236-.673c.137-.24.332-.434.487-.588l.042-.042 3.345-3.345a1 1 0 0 1 1.656.39l2.01 6.03c.141.425.227.678.303.853l.013.028.024-.02c.147-.122.336-.31.653-.627l.37-.37c.123-.123.185-.185.228-.233l.003-.004v-.005a6.592 6.592 0 0 0-.07-.317l-1.728-7.488-.015-.064c-.055-.237-.125-.536-.104-.84a2 2 0 0 1 .208-.759c.138-.273.35-.494.519-.67l.045-.047 2.78-2.91a1.483 1.483 0 0 0-.025-2.073Z" clip-rule="evenodd"/></svg>');
         }
 
         .tpwl-search__wrapper {
@@ -298,6 +425,7 @@ export default function FlightResults() {
           min-width: 976px;
         }
 
+        /* ── Results area ────────────────────────────────── */
         .tpwl-main {
           background-color: var(--tpwl-search-result-background);
         }
@@ -313,18 +441,32 @@ export default function FlightResults() {
           padding: 0 100px;
         }
 
+        /* ── Popular destinations ────────────────────────── */
         .tpwl-widgets__wrapper {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 56px 100px;
-          margin-bottom: 32px;
+          padding: 64px 100px;
+          margin-bottom: 0;
+          background: #FFFFFF;
+          border-top: 1px solid rgba(91,15,168,.08);
         }
 
         .tpwl-widgets__wrapper h3 {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
           text-align: center;
-          font-size: 36px;
-          margin: 0 0 32px;
+          font-size: 30px;
+          margin: 0 0 6px;
+          color: var(--gta-purple-dark);
+          letter-spacing: -0.02em;
+        }
+
+        .tpwl-dest-sub {
+          text-align: center;
+          color: var(--gta-muted);
+          font-size: 14px;
+          margin-bottom: 36px;
         }
 
         .tpwl-widget-weedles {
@@ -348,10 +490,10 @@ export default function FlightResults() {
 
         .tpwl-widget-skeleton,
         .tpwl-widget-card {
-          border-radius: 24px;
+          border-radius: 20px;
           background: #ffffff;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+          border: 1px solid rgba(91,15,168,.12);
+          box-shadow: 0 8px 24px rgba(61,8,112,.07);
         }
 
         .tpwl-widget-skeleton {
@@ -365,26 +507,23 @@ export default function FlightResults() {
           content: "";
           display: block;
           border-radius: 999px;
-          background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
+          background: linear-gradient(90deg, #ede5ff, #f7f4ff, #ede5ff);
           background-size: 200% 100%;
           animation: tpwl-shimmer 1.6s linear infinite;
         }
 
         .tpwl-widget-skeleton::before {
-          width: 65%;
-          height: 18px;
-          margin-bottom: 18px;
+          width: 65%; height: 18px; margin-bottom: 18px;
         }
 
         .tpwl-widget-skeleton::after {
-          width: 40%;
-          height: 14px;
+          width: 40%; height: 14px;
         }
 
         .tpwl-widget-message {
           margin: 0 0 20px;
           text-align: center;
-          color: #475569;
+          color: var(--gta-muted);
         }
 
         .tpwl-widget-card {
@@ -394,6 +533,14 @@ export default function FlightResults() {
           min-height: 220px;
           padding: 24px;
           color: inherit;
+          transition: box-shadow .2s, transform .2s;
+        }
+
+        .tpwl-widget-card:hover {
+          box-shadow: 0 12px 32px rgba(91,15,168,.15);
+          transform: translateY(-2px);
+          text-decoration: none;
+          opacity: 1;
         }
 
         .tpwl-widget-card__code {
@@ -401,104 +548,100 @@ export default function FlightResults() {
           font-weight: 700;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #6366f1;
+          color: var(--gta-purple);
         }
 
         .tpwl-widget-card__city {
-          margin: 12px 0 6px;
-          font-size: 28px;
+          margin: 10px 0 5px;
+          font-size: 26px;
           font-weight: 700;
-          color: #0f172a;
+          color: var(--gta-purple-dark);
+          font-family: "Syne", sans-serif;
         }
 
         .tpwl-widget-card__country {
           margin: 0;
-          color: #64748b;
+          color: var(--gta-muted);
+          font-size: 14px;
         }
 
         .tpwl-widget-card__cta {
           margin-top: 24px;
-          font-weight: 600;
-          color: #4f46e5;
+          font-weight: 700;
+          color: var(--gta-gold);
+          font-size: 14px;
         }
 
         .tpwl-widget-container[hidden] {
           display: none;
         }
 
-        @keyframes tpwl-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.65; }
-        }
-
-        @keyframes tpwl-shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-
-        .tpwl-footer__wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 56px 100px;
-          text-align: center;
-          font-size: 16px;
-          font-weight: 600;
-          background-color: var(--tpwl-search-result-background);
-        }
-
-        .tpwl-footer__copyright {
-          margin-bottom: 12px;
-        }
-
-        .tpwl-footer__links {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-        }
-
         @media (max-width: 389px) {
-          .tpwl-footer__wrapper { padding: 56px 16px; }
+          .tpwl-footer__wrapper { padding: 40px 16px; }
           .tpwl__content { max-width: unset; min-width: unset; }
-          .tpwl-footer__copyright { margin-bottom: 20px; }
-          .tpwl-footer__links { display: block; }
-          .tpwl-footer__links a { display: block; margin-bottom: 16px; }
-          .tpwl-footer__links a:last-child { margin-bottom: 0; }
+          .tpwl-footer__copyright { margin-bottom: 16px; }
+          .tpwl-footer__links { flex-direction: column; gap: 10px; }
+        }
+
+        @media (max-width: 600px) {
+          .gta-navbar { padding: 0 16px; }
+          .gta-back span { display: none; }
         }
 
         @media (max-width: 1175px) {
-          .tpwl-logo-header { position: static; padding: 32px 16px 6px; margin-bottom: 0; }
-          .tpwl-logo-header h1 { font-size: 36px; max-width: 512px; }
+          .tpwl-logo-header { position: static; padding: 40px 16px 16px; margin-bottom: 0; }
+          .tpwl-logo-header h1 { font-size: 30px; max-width: 480px; }
           .tpwl__content { max-width: unset; min-width: unset; }
           .tpwl-search__wrapper { display: block; }
-          .tpwl-search-header { padding: 24px 16px; position: static; }
-          .tpwl-logo__wrapper { margin-bottom: 120px; }
+          .tpwl-search-header { padding: 16px; position: static; }
           .tpwl-tickets__wrapper { padding: 0 16px; }
-          .tpwl-widgets__wrapper { padding: 56px 16px; }
-          .tpwl-widgets__wrapper h3 { font-size: 32px; }
+          .tpwl-widgets__wrapper { padding: 48px 16px; }
+          .tpwl-widgets__wrapper h3 { font-size: 26px; }
           .tpwl-widgets__wrapper .tpwl__content { flex: 1 0 100%; }
           .tpwl-widget-weedles,
           .tpwl-widget-state,
           .tpwl-widget-fallback { grid-template-columns: 1fr; }
-          .tpwl-footer__wrapper { padding: 56px 16px; }
+          .tpwl-footer__wrapper { padding: 40px 16px; }
           .tpwl-footer__wrapper .tpwl__content { flex: 1 1 auto; }
         }
       `}</style>
 
       <div className="tpwl-page">
-        <header className="tpwl-logo-header">
-          <div className="tpwl-logo__wrapper">
-            <div className="tpwl-logo__logo" />
-            Flight tickets
-          </div>
 
+        {/* ── CHANGE 4: Navbar — gold bar with GoTravel Asia logo ── */}
+        <nav className="gta-navbar" role="navigation" aria-label="Main navigation">
+          <div className="gta-navbar__left">
+            <a href="/" className="gta-back" aria-label="Back to GoTravel Asia">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Back to Explorer</span>
+            </a>
+            <GoTravelLogo />
+          </div>
+          <a href="#" className="gta-nav-cta" target="_blank" rel="noopener noreferrer">
+            🔔 Price Alerts
+          </a>
+        </nav>
+
+        {/* ── Hero ────────────────────────────────────────── */}
+        <header className="tpwl-logo-header">
           <div className="tpwl-search__wrapper">
             <div className="tpwl__content">
-              <h1>Your journey begins here</h1>
+              <div className="tpwl-hero__inner">
+                <h1>Your journey begins here.</h1>
+                <p className="tpwl-hero-sub">Crafting unforgettable journeys across Southeast Asia and beyond.</p>
+                <div className="tpwl-hero-badges">
+                  <span className="tpwl-hero-badge">✦ 100+ booking sites</span>
+                  <span className="tpwl-hero-badge">⏱ Live updates</span>
+                  <span className="tpwl-hero-badge">✓ Best price guarantee</span>
+                </div>
+              </div>
             </div>
           </div>
         </header>
 
+        {/* ── Search form ─────────────────────────────────── */}
         <header className="tpwl-search-header">
           <div className="tpwl-search__wrapper">
             <div className="tpwl__content">
@@ -507,6 +650,7 @@ export default function FlightResults() {
           </div>
         </header>
 
+        {/* ── Results + Popular destinations ──────────────── */}
         <main className="tpwl-main">
           <div className="tpwl-tickets__wrapper">
             <div className="tpwl__content">
@@ -516,12 +660,13 @@ export default function FlightResults() {
 
           <div className="tpwl-widgets__wrapper">
             <div className="tpwl__content">
-              <h3>Popular destinations</h3>
+              <h3>Popular Destinations</h3>
+              <p className="tpwl-dest-sub">Top routes from Southeast Asia</p>
 
               {widgetState === "loading" && (
                 <div className="tpwl-widget-state" aria-live="polite" aria-busy="true">
-                  {POPULAR_DESTINATIONS.map((destination) => (
-                    <div key={destination.code} className="tpwl-widget-skeleton" />
+                  {POPULAR_DESTINATIONS.map((d) => (
+                    <div key={d.code} className="tpwl-widget-skeleton" />
                   ))}
                 </div>
               )}
@@ -529,19 +674,19 @@ export default function FlightResults() {
               {widgetState === "fallback" && (
                 <>
                   <p className="tpwl-widget-message" role="status">
-                    Popular destination widgets are temporarily unavailable, so we&apos;re showing direct flight search links instead.
+                    Popular destination widgets are temporarily unavailable. Here are direct flight search links instead.
                   </p>
                   <div className="tpwl-widget-fallback">
-                    {POPULAR_DESTINATIONS.map((destination) => (
+                    {POPULAR_DESTINATIONS.map((d) => (
                       <a
-                        key={destination.code}
-                        href={buildFallbackDestinationUrl(fallbackOrigin, destination.code)}
+                        key={d.code}
+                        href={buildFallbackDestinationUrl(fallbackOrigin, d.code)}
                         className="tpwl-widget-card"
                       >
                         <div>
-                          <span className="tpwl-widget-card__code">{destination.code}</span>
-                          <h4 className="tpwl-widget-card__city">{destination.city}</h4>
-                          <p className="tpwl-widget-card__country">{destination.country}</p>
+                          <span className="tpwl-widget-card__code">{d.code}</span>
+                          <h4 className="tpwl-widget-card__city">{d.city}</h4>
+                          <p className="tpwl-widget-card__country">{d.country}</p>
                         </div>
                         <span className="tpwl-widget-card__cta">Search flights →</span>
                       </a>
@@ -556,22 +701,31 @@ export default function FlightResults() {
                 hidden={widgetState !== "ready"}
                 aria-hidden={widgetState !== "ready"}
               >
-                {POPULAR_DESTINATIONS.map((destination) => (
-                  <div key={destination.code} className="tpwl-widget-weedle" data-destination={destination.code} />
+                {POPULAR_DESTINATIONS.map((d) => (
+                  <div key={d.code} className="tpwl-widget-weedle" data-destination={d.code} />
                 ))}
               </div>
             </div>
           </div>
         </main>
 
+        {/* ── Footer ──────────────────────────────────────── */}
         <footer className="tpwl-footer__wrapper">
           <div className="tpwl__content">
-            <div className="tpwl-footer__copyright">
-              Travelpayouts © 2008−{new Date().getFullYear()}
+            <div className="tpwl-footer__brand">
+              <svg width="26" height="26" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+                <rect width="34" height="34" rx="7" fill="#5B0FA8"/>
+                <path d="M6 24 Q9 7 24 6" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+                <text x="5" y="26" fontFamily="Arial Black,Impact,sans-serif" fontWeight="900" fontSize="12.5" fill="#FFFFFF" letterSpacing="-0.5">GO</text>
+              </svg>
+              <div className="tpwl-footer__brand-name">GoTravel Asia</div>
             </div>
-
+            <p className="tpwl-footer__tagline">Crafting Unforgettable Journeys</p>
+            <div className="tpwl-footer__copyright">
+              Powered by Travelpayouts © 2008–{new Date().getFullYear()}
+            </div>
             <div className="tpwl-footer__links">
-              <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a>
+              <a href="/terms"   target="_blank" rel="noreferrer">Terms of Service</a>
               <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>
               <a href="/cookies" target="_blank" rel="noreferrer">Cookie Policy</a>
             </div>
