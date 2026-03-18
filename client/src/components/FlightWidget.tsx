@@ -44,6 +44,10 @@ function hasRenderedWidget(host: HTMLElement | null) {
   const iframe = host.querySelector("iframe");
   if (iframe) return true;
 
+  // Check if there are significant DOM nodes added by TPWL (shadow dom, custom elements, etc)
+  const tpwlElements = document.querySelectorAll('[id^="tpwl-"], tp-widget');
+  if (tpwlElements.length > 2) return true;
+
   const usefulElements = Array.from(host.querySelectorAll("*")).filter((el) => {
     const tag = el.tagName.toLowerCase();
     return tag !== "script" && tag !== "style";
@@ -51,7 +55,7 @@ function hasRenderedWidget(host: HTMLElement | null) {
 
   const text = (host.textContent || "").trim();
   // If we have actual UI elements or significant text, it's probably rendered
-  return usefulElements.length > 0 || text.length > 30;
+  return usefulElements.length > 0 || text.length > 20;
 }
 
 /**
@@ -323,7 +327,7 @@ export default function FlightWidget({ marker }: Props) {
 
                     {/* WIDGET HOST AREA */}
                     <div className={cn(
-                        "relative min-h-[500px] transition-all duration-300",
+                        "relative min-h-[500px] transition-all duration-300 bg-slate-900 rounded-b-3xl text-slate-100",
                         status === "ready" ? "opacity-100" : "opacity-60 grayscale-[0.5]"
                     )}>
                         
@@ -352,8 +356,8 @@ export default function FlightWidget({ marker }: Props) {
                         )}
 
                         {/* ACTUAL WIDGET DOM ELEMENTS */}
-                        <div className="p-2 md:p-4">
-                            <div ref={widgetHostRef} id="tpwl-search" className="w-full" />
+                        <div ref={widgetHostRef} className="p-2 md:p-4">
+                            <div id="tpwl-search" className="w-full" />
                             <div id="tpwl-tickets" className="w-full mt-6" />
                         </div>
                     </div>
