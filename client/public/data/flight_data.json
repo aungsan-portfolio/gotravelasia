@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-18 12:59",
-    "count": 6583,
+    "updated_at": "2026-03-18 18:53",
+    "count": 6590,
     "currency": "USD",
     "errors": 68
   },
@@ -16193,6 +16193,20 @@
     {
       "origin": "CGK",
       "destination": "KUL",
+      "price": 44.0,
+      "date": "2026-10-13",
+      "airline": "8B",
+      "airline_code": "8B",
+      "transfers": 0,
+      "flight_number": "679",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860024704,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CGK",
+      "destination": "KUL",
       "price": 45.0,
       "date": "2026-03-30",
       "airline": "QZ",
@@ -16257,6 +16271,20 @@
       "flight_number": "383",
       "found_at": "2026-03-18 06:57",
       "fetchedAt": 1773817022793,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CGK",
+      "destination": "KUL",
+      "price": 50.0,
+      "date": "2026-11-21",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "354",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860024765,
       "provider": "tp",
       "region": "SEA"
     },
@@ -51715,6 +51743,20 @@
     {
       "origin": "KUL",
       "destination": "BWN",
+      "price": 95.0,
+      "date": "2026-07-28",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "278",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860022603,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "BWN",
       "price": 99.0,
       "date": "2026-03-23",
       "airline": "AK",
@@ -82521,6 +82563,20 @@
     {
       "origin": "SIN",
       "destination": "BKI",
+      "price": 63.0,
+      "date": "2026-08-11",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "1794",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860020597,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "BKI",
       "price": 68.0,
       "date": "2026-03-27",
       "airline": "OD",
@@ -82557,6 +82613,48 @@
       "flight_number": "1794",
       "found_at": "2026-03-10 18:40",
       "fetchedAt": 1773168047049,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "BKI",
+      "price": 72.0,
+      "date": "2026-08-09",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "1796",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860020597,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "BKI",
+      "price": 72.0,
+      "date": "2026-08-10",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "1796",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860020597,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "BKI",
+      "price": 130.0,
+      "date": "2026-08-08",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 2,
+      "flight_number": "3681",
+      "found_at": "2026-03-18 18:53",
+      "fetchedAt": 1773860020597,
       "provider": "tp",
       "region": "SEA"
     },
