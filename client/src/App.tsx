@@ -15,7 +15,7 @@ const Phuket = lazy(() => import("./pages/destinations/Phuket"));
 const Krabi = lazy(() => import("./pages/destinations/Krabi"));
 const Pai = lazy(() => import("./pages/destinations/Pai"));
 const ChiangRai = lazy(() => import("./pages/destinations/ChiangRai"));
-const FlightResults = lazy(() => import("./pages/FlightResults"));
+const WhiteLabelResultsBridge = lazy(() => import("./pages/flights/WhiteLabelResultsBridge"));
 const FlightDestinationPage = lazy(() => import("./pages/FlightDestinationPage"));
 const DestinationLandingPage = lazy(() => import("./pages/DestinationLandingPage"));
 const FlightsQueryRedirect = lazy(() => import("./pages/FlightsQueryRedirect"));
@@ -55,7 +55,7 @@ function Router() {
         <Route path="/thailand/chiang-rai" component={ChiangRai} />
 
         {/* Flight Search Results (Travelpayouts White Label) */}
-        <Route path="/flights/results" component={FlightResults} />
+        <Route path="/flights/results" component={WhiteLabelResultsBridge} />
 
         {/* Query-based redirect entry */}
         <Route path="/flights" component={FlightsQueryRedirect} />
