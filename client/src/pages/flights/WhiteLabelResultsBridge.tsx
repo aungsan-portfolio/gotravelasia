@@ -11,8 +11,8 @@
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
 import { CompactFlightToolbar } from "@/components/flights/search/CompactFlightToolbar";
-import { StaysSection } from "@/components/flights/StaysSection";
-import { CarsSection } from "@/components/flights/CarsSection";
+import { StaysSection } from "@/components/flights/StaysSectionComponent";
+import { CarsSection } from "@/components/flights/CarsSectionComponent";
 import type { AirportOption } from "@/features/flights/search/flightSearch.types";
 
 // ── Types ────────────────────────────────────────────────────────────────────

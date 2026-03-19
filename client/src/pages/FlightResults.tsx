@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
-import { StaysSection } from "@/components/flights/StaysSection";
-import { CarsSection } from "@/components/flights/CarsSection";
+import { StaysSection } from "@/components/flights/StaysSectionComponent";
+import { CarsSection } from "@/components/flights/CarsSectionComponent";
 
 declare global {
   interface Window {
