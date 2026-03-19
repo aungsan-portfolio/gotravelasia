@@ -78,6 +78,9 @@ function parseFlightSearch(raw: string): {
   const year = new Date().getFullYear();
 
   function toIso(dd: string, mm: string): string {
+    const d = parseInt(dd, 10);
+    const m = parseInt(mm, 10);
+    if (d < 1 || d > 31 || m < 1 || m > 12) return "";
     return `${year}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
 

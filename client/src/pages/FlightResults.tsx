@@ -64,25 +64,28 @@ function parseFlightSearch(raw: string): {
   const EMPTY = { origin: "", destination: "", departDate: null, returnDate: null };
   if (!raw) return EMPTY;
 
+  // Each segment: 3-letter IATA + 4-digit DDMM
   const segments = [...raw.matchAll(/([A-Z]{3})(\d{2})(\d{2})/g)];
-  if (segments.length === 0) return EMPTY;
+  if (segments.length < 1) return EMPTY;
 
-  function buildIso(dd: string, mm: string): string {
-    const year = new Date().getFullYear();
-    const month = parseInt(mm, 10);
-    const useYear = month < new Date().getMonth() + 1 ? year + 1 : year;
-    return `${useYear}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  const year = new Date().getFullYear();
+
+  function toIso(dd: string, mm: string): string {
+    const d = parseInt(dd, 10);
+    const m = parseInt(mm, 10);
+    if (d < 1 || d > 31 || m < 1 || m > 12) return "";
+    return `${year}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
 
   const origin = segments[0][1];
-  const departDate = buildIso(segments[0][2], segments[0][3]);
+  const departDate = toIso(segments[0][2], segments[0][3]);
+
+  // Destination: the 3-letter code right after the first 4 digits
   const destMatch = raw.match(/^[A-Z]{3}\d{4}([A-Z]{3})/);
   const destination = destMatch?.[1] ?? "";
 
-  let returnDate: string | null = null;
-  if (segments.length >= 2) {
-    returnDate = buildIso(segments[1][2], segments[1][3]);
-  }
+  // Return date: second segment's date (if present)
+  const returnDate = segments.length >= 2 ? toIso(segments[1][2], segments[1][3]) : null;
 
   return { origin, destination, departDate, returnDate };
 }
