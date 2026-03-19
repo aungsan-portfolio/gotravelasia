@@ -801,7 +801,7 @@ export default function FlightResults() {
 
           <CarsSection
             cityName={cityName}
-            destinationCode={destinationCode}
+            airportCode={destinationCode}
             pickupDate={departDate}
             returnDate={returnDate}
           />

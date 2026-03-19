@@ -559,7 +559,7 @@ export default function WhiteLabelResultsBridge() {
           {/* ── Cars section ──────────────────────────── */}
           <CarsSection
             cityName={cityName}
-            destinationCode={destinationCode}
+            airportCode={destinationCode}
             pickupDate={departDate}
             returnDate={crossSellReturnDate}
           />
