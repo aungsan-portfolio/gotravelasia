@@ -33,6 +33,16 @@ function safeParam(v: string | null, fallback = "") {
   return v ? decodeURIComponent(v) : fallback;
 }
 
+function normalizeCode(v: string | null): string {
+  return safeParam(v).toUpperCase().trim();
+}
+
+function safeIsoDate(v: string | null): string | null {
+  const raw = safeParam(v).trim();
+  if (!raw) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+}
+
 function getRouteLabel(search: URLSearchParams): string {
   const o = safeParam(search.get("origin"));
   const d = safeParam(search.get("destination"));
@@ -78,25 +88,39 @@ function parseFlightSearch(raw: string): {
 }
 
 function buildInitFromQuery(search: URLSearchParams) {
-  const origin      = safeParam(search.get("origin"));
-  const destination = safeParam(search.get("destination"));
-  const departDate  = safeParam(search.get("depart"));
-  const returnDate  = safeParam(search.get("return"));
-  const tripType    = safeParam(search.get("tripType"), "return");
-  const adults      = Number(search.get("adults")   || 1);
-  const children    = Number(search.get("children") || 0);
-  const infants     = Number(search.get("infants")  || 0);
+  // Try plain params first; fall back to compact format
+  let origin = safeParam(search.get("origin"));
+  let destination = safeParam(search.get("destination"));
+  let departDate = safeParam(search.get("depart"));
+  let returnDate = safeParam(search.get("return"));
+
+  if (!origin || !destination) {
+    const parsed = parseFlightSearch(safeParam(search.get("flightSearch")));
+    if (!origin) origin = parsed.origin;
+    if (!destination) destination = parsed.destination;
+    if (!departDate) departDate = parsed.departDate ?? "";
+    if (!returnDate) returnDate = parsed.returnDate ?? "";
+  }
+
+  const tripType = safeParam(search.get("tripType"), "roundtrip");
+  const adults = Number(search.get("adults") || 1);
+  const children = Number(search.get("children") || 0);
+  const infants = Number(search.get("infants") || 0);
 
   const init: Record<string, unknown> = {};
-  if (origin)      init.origin      = { iata: origin.toUpperCase(),      name: origin.toUpperCase() };
-  if (destination) init.destination = { iata: destination.toUpperCase(), name: destination.toUpperCase() };
-  if (departDate)  init.departDate  = departDate;
-  if (tripType === "one-way") { init.oneWay = true; }
-  else if (returnDate) { init.returnDate = returnDate; }
+  if (origin) init.origin = { iata: origin.toUpperCase(), name: origin.toUpperCase() };
+  if (destination)
+    init.destination = { iata: destination.toUpperCase(), name: destination.toUpperCase() };
+  if (departDate) init.departDate = departDate;
+  if (tripType === "one-way" || !returnDate) {
+    init.oneWay = true;
+  } else if (returnDate) {
+    init.returnDate = returnDate;
+  }
   init.passengers = {
-    adults:   adults   > 0 ? adults   : 1,
+    adults: adults > 0 ? adults : 1,
     children: children > 0 ? children : 0,
-    infants:  infants  > 0 ? infants  : 0,
+    infants: infants > 0 ? infants : 0,
   };
   return init;
 }
@@ -770,16 +794,16 @@ export default function FlightResults() {
           <StaysSection
             cityName={cityName}
             destinationCode={destinationCode}
-            checkIn={checkIn}
-            checkOut={checkOut}
+            checkIn={departDate}
+            checkOut={returnDate}
             adults={adults}
           />
 
           <CarsSection
             cityName={cityName}
             destinationCode={destinationCode}
-            pickupDate={checkIn}
-            returnDate={checkOut}
+            pickupDate={departDate}
+            returnDate={returnDate}
           />
 
           {/* ══ POPULAR DESTINATIONS ═══════════════════════ */}

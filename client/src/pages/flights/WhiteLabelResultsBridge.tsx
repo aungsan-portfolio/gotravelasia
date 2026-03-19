@@ -60,7 +60,7 @@ function safeIsoDate(v: string | null): string | null {
 
 /**
  * Parses Travelpayouts compact search format into individual fields.
- * Pattern per segment: {3-char IATA}{DD}{MM}
+ * Format: {ORIGIN:3}{DD:2}{MM:2}{DEST:3}{PAX:1}
  */
 function parseFlightSearch(raw: string): {
   origin: string;
@@ -71,29 +71,25 @@ function parseFlightSearch(raw: string): {
   const EMPTY = { origin: "", destination: "", departDate: null, returnDate: null };
   if (!raw) return EMPTY;
 
-  // Match all segments: 3 IATA letters + 4 digits (DDMM)
+  // Each segment: 3-letter IATA + 4-digit DDMM
   const segments = [...raw.matchAll(/([A-Z]{3})(\d{2})(\d{2})/g)];
-  if (segments.length === 0) return EMPTY;
+  if (segments.length < 1) return EMPTY;
 
-  function buildIso(dd: string, mm: string): string {
-    const year = new Date().getFullYear();
-    const month = parseInt(mm, 10);
-    // If the month is earlier than current month, assume next year
-    const useYear = month < new Date().getMonth() + 1 ? year + 1 : year;
-    return `${useYear}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  const year = new Date().getFullYear();
+
+  function toIso(dd: string, mm: string): string {
+    return `${year}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
 
   const origin = segments[0][1];
-  const departDate = buildIso(segments[0][2], segments[0][3]);
+  const departDate = toIso(segments[0][2], segments[0][3]);
 
-  // Destination: the IATA that follows the first segment's date digits
+  // Destination: the 3-letter code right after the first 4 digits
   const destMatch = raw.match(/^[A-Z]{3}\d{4}([A-Z]{3})/);
   const destination = destMatch?.[1] ?? "";
 
-  let returnDate: string | null = null;
-  if (segments.length >= 2) {
-    returnDate = buildIso(segments[1][2], segments[1][3]);
-  }
+  // Return date: second segment's date (if present)
+  const returnDate = segments.length >= 2 ? toIso(segments[1][2], segments[1][3]) : null;
 
   return { origin, destination, departDate, returnDate };
 }
@@ -141,6 +137,8 @@ function codeToCityName(code: string): string {
     IST: "Istanbul",
     CJU: "Jeju",
     PUS: "Busan",
+    MNL: "Manila",
+    CGK: "Jakarta",
   };
   return map[code] ?? code;
 }
@@ -155,10 +153,20 @@ function getRouteLabel(search: URLSearchParams): string {
 }
 
 function buildInitFromQuery(search: URLSearchParams) {
-  const origin = safeParam(search.get("origin"));
-  const destination = safeParam(search.get("destination"));
-  const departDate = safeParam(search.get("depart"));
-  const returnDate = safeParam(search.get("return"));
+  // Try plain params first; fall back to compact format
+  let origin = safeParam(search.get("origin"));
+  let destination = safeParam(search.get("destination"));
+  let departDate = safeParam(search.get("depart"));
+  let returnDate = safeParam(search.get("return"));
+
+  if (!origin || !destination) {
+    const parsed = parseFlightSearch(safeParam(search.get("flightSearch")));
+    if (!origin) origin = parsed.origin;
+    if (!destination) destination = parsed.destination;
+    if (!departDate) departDate = parsed.departDate ?? "";
+    if (!returnDate) returnDate = parsed.returnDate ?? "";
+  }
+
   const tripType = safeParam(search.get("tripType"), "roundtrip");
   const adults = Number(search.get("adults") || 1);
   const children = Number(search.get("children") || 0);
@@ -166,9 +174,10 @@ function buildInitFromQuery(search: URLSearchParams) {
 
   const init: Record<string, unknown> = {};
   if (origin) init.origin = { iata: origin.toUpperCase(), name: origin.toUpperCase() };
-  if (destination) init.destination = { iata: destination.toUpperCase(), name: destination.toUpperCase() };
+  if (destination)
+    init.destination = { iata: destination.toUpperCase(), name: destination.toUpperCase() };
   if (departDate) init.departDate = departDate;
-  if (tripType === "one-way") {
+  if (tripType === "one-way" || !returnDate) {
     init.oneWay = true;
   } else if (returnDate) {
     init.returnDate = returnDate;
@@ -239,24 +248,9 @@ export default function WhiteLabelResultsBridge() {
 
   // Robust parsing: Priority 1 (individual params) then Priority 2 (flightSearch compact)
   const parsedSearch = useMemo(() => {
-    const plainDest = normalizeCode(
-      search.get("destination") ||
-        search.get("to") ||
-        search.get("destinationCode") ||
-        search.get("arrival"),
-    );
-    const plainDepart = safeIsoDate(
-      search.get("depart") ||
-        search.get("departureDate") ||
-        search.get("dateFrom") ||
-        search.get("startDate"),
-    );
-    const plainReturn = safeIsoDate(
-      search.get("return") ||
-        search.get("returnDate") ||
-        search.get("dateTo") ||
-        search.get("endDate"),
-    );
+    const plainDest = safeParam(search.get("destination")).toUpperCase();
+    const plainDepart = safeParam(search.get("depart")) || null;
+    const plainReturn = safeParam(search.get("return")) || null;
 
     if (plainDest) {
       return { destination: plainDest, departDate: plainDepart, returnDate: plainReturn };
