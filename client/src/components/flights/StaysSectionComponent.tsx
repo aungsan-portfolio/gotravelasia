@@ -56,6 +56,24 @@ function buildWidgetSrc({
   return url.toString();
 }
 
+const STAY_CATEGORIES = [
+  {
+    id: "luxury",
+    label: "5* class hotels",
+    image: "/images/stays/luxury.webp",
+  },
+  {
+    id: "comfort",
+    label: "3+ class hotels",
+    image: "/images/stays/comfort.webp",
+  },
+  {
+    id: "rentals",
+    label: "Rentals",
+    image: "/images/stays/rentals.webp",
+  },
+] as const;
+
 export function StaysSection({
   cityName,
   destinationCode,
@@ -138,10 +156,10 @@ export function StaysSection({
   return (
     <section
       aria-labelledby="stays-heading"
-      className="border-t border-neutral-200 bg-white px-4 py-8 sm:px-6 lg:px-8"
+      className="border-t border-neutral-100 bg-neutral-50 px-4 py-8 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-screen-xl">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 id="stays-heading" className="text-lg font-bold text-neutral-950 sm:text-xl">
               Stays near {cityName || destinationCode}
@@ -153,10 +171,34 @@ export function StaysSection({
             href={hotelUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:border-yellow-400 hover:bg-yellow-50"
+            className="shrink-0 rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors hover:border-yellow-400 hover:bg-yellow-50 hover:text-neutral-950"
           >
-            Find stays
+            Find stays →
           </a>
+        </div>
+
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {STAY_CATEGORIES.map((cat) => (
+            <a
+              key={cat.id}
+              href={hotelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="aspect-[16/10] overflow-hidden bg-neutral-100">
+                <img
+                  src={cat.image}
+                  alt={cat.label}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                />
+              </div>
+              <div className="px-4 py-3">
+                <div className="text-sm font-bold text-neutral-950">{cat.label}</div>
+              </div>
+            </a>
+          ))}
         </div>
 
         {!widgetFailed ? (
@@ -167,9 +209,7 @@ export function StaysSection({
           />
         ) : (
           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-5">
-            <p className="text-sm text-neutral-700">
-              Hotel preview could not load right now.
-            </p>
+            <p className="text-sm text-neutral-700">Hotel preview could not load right now.</p>
             <a
               href={hotelUrl}
               target="_blank"
