@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
+import { StaysSection } from "@/components/flights/StaysSection";
+import { CarsSection } from "@/components/flights/CarsSection";
 
 declare global {
   interface Window {
@@ -101,6 +103,20 @@ export default function FlightResults() {
     () => safeParam(search.get("origin"), "BKK").toUpperCase() || "BKK",
     [search],
   );
+
+  const destinationCode = useMemo(
+    () => safeParam(search.get("destination")).toUpperCase(),
+    [search],
+  );
+
+  const cityName = useMemo(() => {
+    const found = POPULAR_DESTINATIONS.find((d) => d.code === destinationCode);
+    return found ? found.city : destinationCode;
+  }, [destinationCode]);
+
+  const checkIn = useMemo(() => safeParam(search.get("depart")), [search]);
+  const checkOut = useMemo(() => safeParam(search.get("return")), [search]);
+  const adults = useMemo(() => Number(search.get("adults") || 1), [search]);
 
   useEffect(() => {
     // ── Cleanup previous run ─────────────────────────────
@@ -651,6 +667,21 @@ export default function FlightResults() {
               <div id="tpwl-tickets" />
             </div>
           </div>
+
+          <StaysSection
+            cityName={cityName}
+            destinationCode={destinationCode}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            adults={adults}
+          />
+
+          <CarsSection
+            cityName={cityName}
+            destinationCode={destinationCode}
+            pickupDate={checkIn}
+            returnDate={checkOut}
+          />
 
           {/* ══ POPULAR DESTINATIONS ═══════════════════════ */}
           <section aria-labelledby="gta-explore-heading">

@@ -3,35 +3,86 @@
 // Replaces FlightResults.tsx's inline toolbar with CompactFlightToolbar.
 // Travelpayouts widget only handles the RESULTS section.
 // Custom toolbar handles search input + redirect.
+// Added:
+//   - StaysSection
+//   - CarsSection
+// mounted after TP results and before popular destinations.
 
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
 import { CompactFlightToolbar } from "@/components/flights/search/CompactFlightToolbar";
+import { StaysSection } from "@/components/flights/results/StaysSection";
+import { CarsSection } from "@/components/flights/results/CarsSection";
 import type { AirportOption } from "@/features/flights/search/flightSearch.types";
 
 // ── Travelpayouts config ──────────────────────────────────────────────────────
-const WL_ID               = "12942";
-const TP_MARKER           = "697202";
-const SCRIPT_ID           = "tpwl-main-script";
+const WL_ID = "12942";
+const TP_MARKER = "697202";
+const SCRIPT_ID = "tpwl-main-script";
 const WEEDLE_SCRIPT_CLASS = "tpwl-weedle-script";
 const WEEDLE_POLL_INTERVAL_MS = 300;
-const WEEDLE_TIMEOUT_MS       = 6000;
+const WEEDLE_TIMEOUT_MS = 6000;
 
 type WidgetState = "loading" | "ready" | "fallback";
 type PopularDestination = { code: string; city: string; country: string };
 
 const POPULAR_DESTINATIONS: PopularDestination[] = [
-  { code: "SIN", city: "Singapore",    country: "Singapore" },
-  { code: "BKK", city: "Bangkok",      country: "Thailand"  },
-  { code: "KUL", city: "Kuala Lumpur", country: "Malaysia"  },
-  { code: "HAN", city: "Hanoi",        country: "Vietnam"   },
-  { code: "DPS", city: "Bali",         country: "Indonesia" },
-  { code: "HKT", city: "Phuket",       country: "Thailand"  },
+  { code: "SIN", city: "Singapore", country: "Singapore" },
+  { code: "BKK", city: "Bangkok", country: "Thailand" },
+  { code: "KUL", city: "Kuala Lumpur", country: "Malaysia" },
+  { code: "HAN", city: "Hanoi", country: "Vietnam" },
+  { code: "DPS", city: "Bali", country: "Indonesia" },
+  { code: "HKT", city: "Phuket", country: "Thailand" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function safeParam(v: string | null, fallback = "") {
   return v ? decodeURIComponent(v) : fallback;
+}
+
+function normalizeCode(v: string | null, fallback = "") {
+  return safeParam(v, fallback).trim().toUpperCase();
+}
+
+function safeIsoDate(v: string | null): string | null {
+  const raw = safeParam(v).trim();
+  if (!raw) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+}
+
+function addDays(iso: string, days: number): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  const d = new Date(year, (month ?? 1) - 1, day ?? 1);
+  d.setDate(d.getDate() + days);
+  const yyyy = d.getFullYear();
+  const mm = `${d.getMonth() + 1}`.padStart(2, "0");
+  const dd = `${d.getDate()}`.padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function codeToCityName(code: string): string {
+  const map: Record<string, string> = {
+    SIN: "Singapore",
+    BKK: "Bangkok",
+    DMK: "Bangkok",
+    KUL: "Kuala Lumpur",
+    HAN: "Hanoi",
+    SGN: "Ho Chi Minh City",
+    DPS: "Bali",
+    HKT: "Phuket",
+    CNX: "Chiang Mai",
+    PNH: "Phnom Penh",
+    SEL: "Seoul",
+    ICN: "Seoul",
+    GMP: "Seoul",
+    TYO: "Tokyo",
+    HND: "Tokyo",
+    NRT: "Tokyo",
+    KIX: "Osaka",
+    HKG: "Hong Kong",
+    TPE: "Taipei",
+  };
+  return map[code] ?? code;
 }
 
 function getRouteLabel(search: URLSearchParams): string {
@@ -44,25 +95,28 @@ function getRouteLabel(search: URLSearchParams): string {
 }
 
 function buildInitFromQuery(search: URLSearchParams) {
-  const origin      = safeParam(search.get("origin"));
+  const origin = safeParam(search.get("origin"));
   const destination = safeParam(search.get("destination"));
-  const departDate  = safeParam(search.get("depart"));
-  const returnDate  = safeParam(search.get("return"));
-  const tripType    = safeParam(search.get("tripType"), "roundtrip");
-  const adults      = Number(search.get("adults")   || 1);
-  const children    = Number(search.get("children") || 0);
-  const infants     = Number(search.get("infants")  || 0);
+  const departDate = safeParam(search.get("depart"));
+  const returnDate = safeParam(search.get("return"));
+  const tripType = safeParam(search.get("tripType"), "roundtrip");
+  const adults = Number(search.get("adults") || 1);
+  const children = Number(search.get("children") || 0);
+  const infants = Number(search.get("infants") || 0);
 
   const init: Record<string, unknown> = {};
-  if (origin)      init.origin      = { iata: origin.toUpperCase(),      name: origin.toUpperCase() };
+  if (origin) init.origin = { iata: origin.toUpperCase(), name: origin.toUpperCase() };
   if (destination) init.destination = { iata: destination.toUpperCase(), name: destination.toUpperCase() };
-  if (departDate)  init.departDate  = departDate;
-  if (tripType === "one-way") { init.oneWay = true; }
-  else if (returnDate) { init.returnDate = returnDate; }
+  if (departDate) init.departDate = departDate;
+  if (tripType === "one-way") {
+    init.oneWay = true;
+  } else if (returnDate) {
+    init.returnDate = returnDate;
+  }
   init.passengers = {
-    adults:   adults   > 0 ? adults   : 1,
+    adults: adults > 0 ? adults : 1,
     children: children > 0 ? children : 0,
-    infants:  infants  > 0 ? infants  : 0,
+    infants: infants > 0 ? infants : 0,
   };
   return init;
 }
@@ -91,27 +145,93 @@ function buildFallbackUrl(origin: string, dest: string) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function WhiteLabelResultsBridge() {
-  const search       = useMemo(() => new URLSearchParams(window.location.search), []);
-  const routeLabel   = useMemo(() => getRouteLabel(search), [search]);
+  const search = useMemo(() => new URLSearchParams(window.location.search), []);
+  const routeLabel = useMemo(() => getRouteLabel(search), [search]);
   const [widgetState, setWidgetState] = useState<WidgetState>("loading");
+
   const fallbackOrigin = useMemo(
     () => safeParam(search.get("origin"), "BKK").toUpperCase() || "BKK",
     [search],
   );
 
   // Pre-fill toolbar from URL params
-  const toolbarInitial = useMemo(() => ({
-    origin:      parseAirport(search.get("origin")),
-    destination: parseAirport(search.get("destination")),
-    departDate:  search.get("depart")  ?? null,
-    returnDate:  search.get("return")  ?? null,
-    tripType:    (search.get("tripType") === "one-way" ? "oneway" : "roundtrip") as "roundtrip" | "oneway",
-    travellers: {
-      adults:   Number(search.get("adults")   || 1),
-      children: Number(search.get("children") || 0),
-      infants:  Number(search.get("infants")  || 0),
-    },
-  }), [search]);
+  const toolbarInitial = useMemo(
+    () => ({
+      origin: parseAirport(search.get("origin")),
+      destination: parseAirport(search.get("destination")),
+      departDate: search.get("depart") ?? null,
+      returnDate: search.get("return") ?? null,
+      tripType: (search.get("tripType") === "one-way" ? "oneway" : "roundtrip") as "roundtrip" | "oneway",
+      travellers: {
+        adults: Number(search.get("adults") || 1),
+        children: Number(search.get("children") || 0),
+        infants: Number(search.get("infants") || 0),
+      },
+    }),
+    [search],
+  );
+
+  // Cross-sell derived params
+  const destinationCode = useMemo(
+    () =>
+      normalizeCode(
+        search.get("destination") ||
+          search.get("to") ||
+          search.get("destinationCode") ||
+          search.get("arrival"),
+      ),
+    [search],
+  );
+
+  const cityName = useMemo(() => {
+    const explicit =
+      safeParam(search.get("cityName")) ||
+      safeParam(search.get("destinationCity")) ||
+      safeParam(search.get("city"));
+
+    if (explicit) return explicit;
+    if (destinationCode) return codeToCityName(destinationCode);
+    return "";
+  }, [search, destinationCode]);
+
+  const departDate = useMemo(
+    () =>
+      safeIsoDate(
+        search.get("depart") ||
+          search.get("departureDate") ||
+          search.get("dateFrom") ||
+          search.get("startDate"),
+      ),
+    [search],
+  );
+
+  const rawReturnDate = useMemo(
+    () =>
+      safeIsoDate(
+        search.get("return") ||
+          search.get("returnDate") ||
+          search.get("dateTo") ||
+          search.get("endDate"),
+      ),
+    [search],
+  );
+
+  const tripType = useMemo(
+    () => safeParam(search.get("tripType"), "roundtrip").toLowerCase(),
+    [search],
+  );
+
+  const crossSellReturnDate = useMemo(() => {
+    if (tripType === "one-way") {
+      return departDate ? addDays(departDate, 3) : null;
+    }
+    return rawReturnDate || (departDate ? addDays(departDate, 3) : null);
+  }, [tripType, departDate, rawReturnDate]);
+
+  const adults = useMemo(() => {
+    const raw = Number(search.get("adults") || 1);
+    return Number.isFinite(raw) && raw > 0 ? raw : 1;
+  }, [search]);
 
   useEffect(() => {
     // Cleanup
@@ -142,17 +262,20 @@ export default function WhiteLabelResultsBridge() {
 
     // Load TP widget — type="module" required
     const mainScript = document.createElement("script");
-    mainScript.id    = SCRIPT_ID;
+    mainScript.id = SCRIPT_ID;
     mainScript.async = true;
-    mainScript.type  = "module";
-    mainScript.src   = `https://tpwidg.com/wl_web/main.js?wl_id=${encodeURIComponent(WL_ID)}`;
+    mainScript.type = "module";
+    mainScript.src = `https://tpwidg.com/wl_web/main.js?wl_id=${encodeURIComponent(WL_ID)}`;
     document.body.appendChild(mainScript);
 
     // Hide TP secondary rows via JS (class names are hashed per build)
     const HIDE_PHRASES = ["powered by", "travelpayouts", "multi-city", "show hotels"];
     let attempts = 0;
     const hideTimer = window.setInterval(() => {
-      if (++attempts > 25) { window.clearInterval(hideTimer); return; }
+      if (++attempts > 25) {
+        window.clearInterval(hideTimer);
+        return;
+      }
       const root = document.getElementById("tpwl-search");
       if (!root) return;
       root.querySelectorAll<HTMLElement>("*").forEach((el) => {
@@ -182,7 +305,7 @@ export default function WhiteLabelResultsBridge() {
         if (!destination || !window.TPWL_EXTRA) return;
         const e = window.TPWL_EXTRA;
         const s = document.createElement("script");
-        s.async     = true;
+        s.async = true;
         s.className = WEEDLE_SCRIPT_CLASS;
         s.src =
           `https://tpwidg.com/content` +
@@ -198,8 +321,8 @@ export default function WhiteLabelResultsBridge() {
     };
 
     const mountTimer = window.setTimeout(mountWeedles, 1200);
-    const pollStart  = Date.now();
-    const pollTimer  = window.setInterval(() => {
+    const pollStart = Date.now();
+    const pollTimer = window.setInterval(() => {
       const container = document.getElementById("tpwl-widget-weedles");
       if (hasRenderedWeedles(container)) {
         setWidgetState("ready");
@@ -353,17 +476,33 @@ export default function WhiteLabelResultsBridge() {
       `}</style>
 
       <div className="tpwl-page">
-
-        {/* ── Custom compact toolbar (Phase 1: shell) ──── */}
+        {/* ── Custom compact toolbar ───────────────────── */}
         <CompactFlightToolbar initialState={toolbarInitial} />
 
-        {/* ── TP results widget ─────────────────────────── */}
+        {/* ── TP results widget ────────────────────────── */}
         <main className="tpwl-main">
           <div className="tpwl-tickets__wrapper">
             <div className="tpwl__content">
               <div id="tpwl-tickets" />
             </div>
           </div>
+
+          {/* ── Stays section ─────────────────────────── */}
+          <StaysSection
+            cityName={cityName}
+            destinationCode={destinationCode}
+            checkIn={departDate}
+            checkOut={crossSellReturnDate}
+            adults={adults}
+          />
+
+          {/* ── Cars section ──────────────────────────── */}
+          <CarsSection
+            cityName={cityName}
+            destinationCode={destinationCode}
+            pickupDate={departDate}
+            returnDate={crossSellReturnDate}
+          />
 
           {/* Popular destinations */}
           <section aria-labelledby="gta-explore-heading">
@@ -415,7 +554,7 @@ export default function WhiteLabelResultsBridge() {
           <div className="tpwl__content">
             <div className="tpwl-footer__copyright">© {new Date().getFullYear()} GoTravel Asia</div>
             <div className="tpwl-footer__links">
-              <a href="/terms"   target="_blank" rel="noreferrer">Terms</a>
+              <a href="/terms" target="_blank" rel="noreferrer">Terms</a>
               <a href="/privacy" target="_blank" rel="noreferrer">Privacy</a>
               <a href="/cookies" target="_blank" rel="noreferrer">Cookies</a>
             </div>
