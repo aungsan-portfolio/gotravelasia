@@ -5,8 +5,8 @@ import { CarsSection } from "@/components/flights/CarsSection";
 
 declare global {
   interface Window {
-    TPWL_CONFIGURATION?: Record<string, any>;
-    TPWL_EXTRA?: Record<string, any>;
+    TPWL_CONFIGURATION?: any;
+    TPWL_EXTRA?: any;
   }
 }
 

@@ -11,9 +11,17 @@
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
 import { CompactFlightToolbar } from "@/components/flights/search/CompactFlightToolbar";
-import { StaysSection } from "@/components/flights/results/StaysSection";
-import { CarsSection } from "@/components/flights/results/CarsSection";
+import { StaysSection } from "@/components/flights/StaysSection";
+import { CarsSection } from "@/components/flights/CarsSection";
 import type { AirportOption } from "@/features/flights/search/flightSearch.types";
+
+// ── Types ────────────────────────────────────────────────────────────────────
+declare global {
+  interface Window {
+    TPWL_CONFIGURATION?: any;
+    TPWL_EXTRA?: any;
+  }
+}
 
 // ── Travelpayouts config ──────────────────────────────────────────────────────
 const WL_ID = "12942";

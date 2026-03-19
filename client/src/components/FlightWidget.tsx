@@ -15,8 +15,9 @@ type WidgetStatus = "idle" | "loading" | "ready" | "blocked";
 
 declare global {
   interface Window {
-    TPWL_CONFIGURATION?: Record<string, any>;
+    TPWL_CONFIGURATION?: any;
     TPWL?: any;
+    TPWL_EXTRA?: any;
   }
 }
 
