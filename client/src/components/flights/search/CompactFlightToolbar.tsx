@@ -1,45 +1,107 @@
 // components/flights/search/CompactFlightToolbar.tsx
 //
-// Cheapflights-style compact search toolbar.
-// Gold background | white pill | black Search button
+// Responsive layout — matches Cheapflights mobile/desktop pattern:
 //
-// Phase 1: Full UI shell with state management.
-//          Submits to Travelpayouts White Label results page.
-// Phase 2: Connect real airport autocomplete + date picker.
+// ┌─ MOBILE (<lg) ──────────────────────────────────────────┐
+// │ [Logo]                              [🔔 Alerts]          │
+// │ ┌─────────────────────────────────────────────────────┐ │
+// │ │ Return / One-way                                     │ │
+// │ │ [From (full width)]  ⇅  [To (full width)]           │ │
+// │ │ [Dates──────────────]  [Pax + Cabin────]            │ │
+// │ │ [────────── Search flights ──────────────]          │ │
+// │ └─────────────────────────────────────────────────────┘ │
+// └─────────────────────────────────────────────────────────┘
+//
+// ┌─ DESKTOP (lg+) ─────────────────────────────────────────┐
+// │ [Logo] [Return|Oneway|From ⇄ To|Dates|Pax] [Search] [🔔]│
+// └─────────────────────────────────────────────────────────┘
 
-import { TripTypeSegment }   from "./TripTypeSegment";
-import { RouteField }        from "./RouteField";
+import { TripTypeSegment }    from "./TripTypeSegment";
+import { RouteField }         from "./RouteField";
 import { SwapAirportsButton } from "./SwapAirportsButton";
-import { DateRangeField }    from "./DateRangeField";
-import { PaxCabinField }     from "./PaxCabinField";
+import { DateRangeField }     from "./DateRangeField";
+import { PaxCabinField }      from "./PaxCabinField";
 import { SearchSubmitButton } from "./SearchSubmitButton";
-import { useFlightSearch }   from "@/features/flights/search/useFlightSearch";
+import { useFlightSearch }    from "@/features/flights/search/useFlightSearch";
+import { formatCabinLabel, getTotalTravellers } from "@/features/flights/search/flightSearch.utils";
 import type { FlightSearchState } from "@/features/flights/search/flightSearch.types";
 
 interface Props {
-  /** Pre-fill toolbar for destination pages (e.g. /flights/to/singapore) */
   initialState?: Partial<FlightSearchState>;
-  /** Show back button + branding (default: true) */
   showBranding?: boolean;
 }
 
 function GtaLogo() {
   return (
     <a href="/" aria-label="GoTravel Asia home" className="flex shrink-0 items-center gap-2 no-underline">
-      <svg width="30" height="30" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 34 34" fill="none" aria-hidden="true">
         <rect width="34" height="34" rx="7" fill="#3D0870"/>
         <path d="M6 24 Q9 7 24 6" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
         <path d="M6 27 Q10 9 27 8" stroke="#F5A623" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.45"/>
         <path d="M21 9.5L24.5 7.5L25.5 8.8L23 10.5L25 12.5L23 12.5L21.5 11.2L19 12.5L18.5 11Z" fill="#F5A623"/>
         <text x="5" y="26" fontFamily="Arial Black,Impact,sans-serif" fontWeight="900" fontSize="12.5" fill="#fff" letterSpacing="-0.5">GO</text>
       </svg>
-      <span className="hidden text-[15px] font-black tracking-tight text-[#3D0870] lg:block">
+      {/* wordmark — hidden on smallest screens */}
+      <span className="hidden text-[15px] font-black tracking-tight text-[#3D0870] sm:block lg:block">
         GO<span className="text-[#5B0FA8]">TRAVEL</span> ASIA
       </span>
     </a>
   );
 }
 
+// ── Mobile collapsed summary pill ─────────────────────────────────────────────
+// Shows "CNX → BKK  |  26 Mar – 14 Apr  👤 1" like Cheapflights
+function MobileSummaryPill({
+  state,
+  onClick,
+}: {
+  state: FlightSearchState;
+  onClick: () => void;
+}) {
+  const origin      = state.origin?.code      ?? "From";
+  const destination = state.destination?.code ?? "To";
+  const depart      = state.departDate
+    ? new Date(state.departDate + "T00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    : "Depart";
+  const ret = state.returnDate
+    ? new Date(state.returnDate + "T00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    : null;
+  const total = getTotalTravellers(state);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full flex-col rounded-xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-black/[0.08] transition hover:shadow-md"
+      aria-label="Edit flight search"
+    >
+      {/* Route row */}
+      <div className="flex items-center gap-2">
+        <span className="text-base font-black tracking-tight text-neutral-950">
+          {origin} – {destination}
+        </span>
+        <svg className="text-neutral-400" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M5 2.5l4 4.5-4 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+      {/* Dates + pax row */}
+      <div className="mt-0.5 flex items-center gap-3 text-sm text-neutral-500">
+        <span>
+          {depart}{ret ? ` – ${ret}` : ""}
+        </span>
+        <span className="flex items-center gap-1">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
+            <path d="M2 12c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          {total}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 export function CompactFlightToolbar({
   initialState,
   showBranding = true,
@@ -48,56 +110,33 @@ export function CompactFlightToolbar({
 
   function handleSubmit() {
     const result = actions.submit();
-    if (result.ok) {
-      window.location.href = result.url;
-    }
+    if (result.ok) window.location.href = result.url;
   }
 
   return (
     <div className="sticky top-0 z-40 w-full border-b border-yellow-500/30 bg-yellow-400 shadow-sm">
-      {/* ── Main toolbar row ──────────────────────────── */}
-      <div className="mx-auto flex max-w-screen-xl items-center gap-3 px-4 py-2.5">
 
-        {/* Branding */}
+      {/* ══════════════════════════════════════════════════════════
+          DESKTOP LAYOUT  (lg and above)
+          Single pill row — classic Cheapflights toolbar
+      ══════════════════════════════════════════════════════════ */}
+      <div className="mx-auto hidden max-w-screen-xl items-center gap-3 px-4 py-2.5 lg:flex">
+
         {showBranding && (
           <>
             <GtaLogo />
-            <div className="hidden h-5 w-px bg-yellow-600/30 lg:block" />
+            <div className="h-5 w-px bg-yellow-600/30" />
           </>
         )}
 
-        {/* ── Search pill ─────────────────────────────── */}
+        {/* Search pill */}
         <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl bg-white px-2 py-1.5 shadow-sm ring-1 ring-black/[0.08]">
-
-          {/* Trip type */}
-          <TripTypeSegment
-            value={state.tripType}
-            onChange={actions.setTripType}
-          />
-
+          <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
           <div className="h-7 w-px shrink-0 bg-neutral-200" />
-
-          {/* Origin */}
-          <RouteField
-            label="From"
-            placeholder="Origin"
-            value={state.origin}
-            onChange={actions.setOrigin}
-          />
-
+          <RouteField label="From" placeholder="Origin" value={state.origin} onChange={actions.setOrigin} />
           <SwapAirportsButton onClick={actions.onSwapRoute} />
-
-          {/* Destination */}
-          <RouteField
-            label="To"
-            placeholder="Destination"
-            value={state.destination}
-            onChange={actions.setDestination}
-          />
-
+          <RouteField label="To" placeholder="Destination" value={state.destination} onChange={actions.setDestination} />
           <div className="h-7 w-px shrink-0 bg-neutral-200" />
-
-          {/* Dates */}
           <DateRangeField
             tripType={state.tripType}
             departDate={state.departDate}
@@ -105,10 +144,7 @@ export function CompactFlightToolbar({
             onDepartChange={actions.setDepartDate}
             onReturnChange={actions.setReturnDate}
           />
-
           <div className="h-7 w-px shrink-0 bg-neutral-200" />
-
-          {/* Pax + cabin */}
           <PaxCabinField
             travellers={state.travellers}
             cabin={state.cabin}
@@ -117,21 +153,130 @@ export function CompactFlightToolbar({
           />
         </div>
 
-        {/* ── Search button ────────────────────────────── */}
         <SearchSubmitButton onClick={handleSubmit} />
 
-        {/* Right pill: Price Alerts */}
         <a
           href="#"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden shrink-0 items-center gap-1.5 rounded-full border border-yellow-600/30 px-4 py-2 text-xs font-bold text-yellow-900 transition-colors hover:bg-yellow-500/20 sm:flex"
+          className="hidden shrink-0 items-center gap-1.5 rounded-full border border-yellow-600/30 px-4 py-2 text-xs font-bold text-yellow-900 hover:bg-yellow-500/20 xl:flex"
         >
           🔔 Alerts
         </a>
       </div>
 
-      {/* ── Inline validation errors ─────────────────── */}
+      {/* ══════════════════════════════════════════════════════════
+          MOBILE LAYOUT  (below lg)
+          Row 1: Logo + Alerts button
+          Row 2: Expanded form card (stacked fields)
+      ══════════════════════════════════════════════════════════ */}
+      <div className="lg:hidden">
+
+        {/* Top bar: logo + alerts */}
+        <div className="flex items-center justify-between px-4 py-2">
+          {showBranding && <GtaLogo />}
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full border border-yellow-600/30 px-3 py-1.5 text-xs font-bold text-yellow-900 hover:bg-yellow-500/20"
+          >
+            🔔 Alerts
+          </a>
+        </div>
+
+        {/* ── Stacked search form ──────────────────────────── */}
+        <div className="mx-4 mb-3 rounded-2xl bg-white shadow-md ring-1 ring-black/[0.06]">
+
+          {/* Trip type tabs */}
+          <div className="border-b border-neutral-100 px-3 pt-3">
+            <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
+          </div>
+
+          {/* Route row: From ⇅ To (vertical swap on mobile) */}
+          <div className="relative px-3 py-2">
+            {/* From */}
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">From</div>
+              <div className="mt-0.5">
+                <RouteField
+                  label="From"
+                  placeholder="City or airport"
+                  value={state.origin}
+                  onChange={actions.setOrigin}
+                />
+              </div>
+            </div>
+
+            {/* Vertical swap button */}
+            <div className="relative my-[-1px] flex justify-center">
+              <button
+                type="button"
+                onClick={actions.onSwapRoute}
+                aria-label="Swap origin and destination"
+                className="z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-yellow-400 bg-white shadow-sm transition-transform hover:scale-110"
+              >
+                {/* vertical swap icon */}
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M4 2v10M4 12l-2-2M4 12l2-2M10 2v10M10 2l-2 2M10 2l2 2"
+                    stroke="#3D0870" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* To */}
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">To</div>
+              <div className="mt-0.5">
+                <RouteField
+                  label="To"
+                  placeholder="City or airport"
+                  value={state.destination}
+                  onChange={actions.setDestination}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dates + Pax row (2-col grid) */}
+          <div className="grid grid-cols-2 gap-0 border-t border-neutral-100 px-3 py-2">
+
+            {/* Dates */}
+            <div className="border-r border-neutral-100 pr-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Date</div>
+              <div className="mt-0.5">
+                <DateRangeField
+                  tripType={state.tripType}
+                  departDate={state.departDate}
+                  returnDate={state.returnDate}
+                  onDepartChange={actions.setDepartDate}
+                  onReturnChange={actions.setReturnDate}
+                />
+              </div>
+            </div>
+
+            {/* Pax + cabin */}
+            <div className="pl-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Travellers</div>
+              <div className="mt-0.5">
+                <PaxCabinField
+                  travellers={state.travellers}
+                  cabin={state.cabin}
+                  onTravellersChange={actions.setTravellers}
+                  onCabinChange={actions.setCabin}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Full-width Search button */}
+          <div className="border-t border-neutral-100 px-3 pb-3 pt-2">
+            <SearchSubmitButton onClick={handleSubmit} fullWidth />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Validation errors (both layouts) ──────────────── */}
       {errors.length > 0 && (
         <div
           role="alert"
