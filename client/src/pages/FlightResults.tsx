@@ -8,15 +8,14 @@ declare global {
   }
 }
 
-const WL_ID    = "12942";
-const TP_MARKER = "697202";
-const SCRIPT_ID = "tpwl-main-script";
-const WEEDLE_SCRIPT_CLASS   = "tpwl-weedle-script";
+const WL_ID               = "12942";
+const TP_MARKER           = "697202";
+const SCRIPT_ID           = "tpwl-main-script";
+const WEEDLE_SCRIPT_CLASS = "tpwl-weedle-script";
 const WEEDLE_POLL_INTERVAL_MS = 300;
 const WEEDLE_TIMEOUT_MS       = 6000;
 
 type WidgetState = "loading" | "ready" | "fallback";
-
 type PopularDestination = { code: string; city: string; country: string };
 
 const POPULAR_DESTINATIONS: PopularDestination[] = [
@@ -32,10 +31,14 @@ function safeParam(v: string | null, fallback = "") {
   return v ? decodeURIComponent(v) : fallback;
 }
 
-function getRouteInfo(search: URLSearchParams) {
+function getRouteLabel(search: URLSearchParams): string {
   const o = safeParam(search.get("origin"));
   const d = safeParam(search.get("destination"));
-  return o && d ? ` ${o.toUpperCase()} → ${d.toUpperCase()}` : "";
+  if (o && d) return `${o.toUpperCase()} → ${d.toUpperCase()}`;
+  // Parse compact format e.g. "CNX2504SIN1"
+  const m = safeParam(search.get("flightSearch")).match(/^([A-Z]{3})\d{4}([A-Z]{3})/);
+  if (m) return `${m[1]} → ${m[2]}`;
+  return "";
 }
 
 function buildInitFromQuery(search: URLSearchParams) {
@@ -65,11 +68,12 @@ function buildInitFromQuery(search: URLSearchParams) {
 function hasRenderedWeedles(container: HTMLElement | null): boolean {
   if (!container) return false;
   const weedles = Array.from(container.querySelectorAll<HTMLElement>(".tpwl-widget-weedle"));
-  if (weedles.length === 0) return false;
-  return weedles.some((w) =>
-    Array.from(w.children).some(
-      (c) => !(c instanceof HTMLScriptElement) && c.textContent?.trim() !== "",
-    ) || w.querySelector("iframe,a,img,[class*='tpwl'],[data-tpwl-rendered='true']") !== null,
+  if (!weedles.length) return false;
+  return weedles.some(
+    (w) =>
+      Array.from(w.children).some(
+        (c) => !(c instanceof HTMLScriptElement) && c.textContent?.trim() !== "",
+      ) || w.querySelector("iframe,a,img,[class*='tpwl'],[data-tpwl-rendered='true']") !== null,
   );
 }
 
@@ -77,14 +81,13 @@ function buildFallbackUrl(origin: string, dest: string) {
   return `/flights/results?${new URLSearchParams({ origin, destination: dest })}`;
 }
 
-// ── GoTravel Asia Logo ────────────────────────────────────────────────────────
-function GtaLogo({ size = 32 }: { size?: number }) {
+function GtaLogo({ size = 30 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 34 34" fill="none" aria-hidden="true">
-      <rect width="34" height="34" rx="7" fill="#3D0870"/>
-      <path d="M6 24 Q9 7 24 6" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
-      <path d="M6 27 Q10 9 27 8" stroke="#F5A623" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.45"/>
-      <path d="M21 9.5L24.5 7.5L25.5 8.8L23 10.5L25 12.5L23 12.5L21.5 11.2L19 12.5L18.5 11Z" fill="#F5A623"/>
+      <rect width="34" height="34" rx="7" fill="#3D0870" />
+      <path d="M6 24 Q9 7 24 6" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+      <path d="M6 27 Q10 9 27 8" stroke="#F5A623" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.45" />
+      <path d="M21 9.5L24.5 7.5L25.5 8.8L23 10.5L25 12.5L23 12.5L21.5 11.2L19 12.5L18.5 11Z" fill="#F5A623" />
       <text x="5" y="26" fontFamily="Arial Black,Impact,sans-serif" fontWeight="900" fontSize="12.5" fill="#fff" letterSpacing="-0.5">GO</text>
     </svg>
   );
@@ -92,7 +95,7 @@ function GtaLogo({ size = 32 }: { size?: number }) {
 
 export default function FlightResults() {
   const search       = useMemo(() => new URLSearchParams(window.location.search), []);
-  const routeInfo    = useMemo(() => getRouteInfo(search), [search]);
+  const routeLabel   = useMemo(() => getRouteLabel(search), [search]);
   const [widgetState, setWidgetState] = useState<WidgetState>("loading");
   const fallbackOrigin = useMemo(
     () => safeParam(search.get("origin"), "BKK").toUpperCase() || "BKK",
@@ -100,6 +103,7 @@ export default function FlightResults() {
   );
 
   useEffect(() => {
+    // ── Cleanup previous run ─────────────────────────────
     document.getElementById(SCRIPT_ID)?.remove();
     document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
     document.getElementById("tpwl-search")?.replaceChildren();
@@ -107,6 +111,7 @@ export default function FlightResults() {
     document.getElementById("tpwl-widget-weedles")?.replaceChildren();
     setWidgetState("loading");
 
+    // ── Travelpayouts global config ──────────────────────
     window.TPWL_CONFIGURATION = {
       ...window.TPWL_CONFIGURATION,
       resultsURL: `${window.location.origin}/flights/results`,
@@ -116,50 +121,54 @@ export default function FlightResults() {
 
     window.TPWL_EXTRA = {
       ...(window.TPWL_EXTRA || {}),
-      currency: "USD",
+      currency: "THB",
       trs: "",
       marker: TP_MARKER,
       domain: window.location.hostname,
       locale: "en",
-      link_color: "0770e3",
+      link_color: "F5A623",
     };
 
-    const mainScript   = document.createElement("script");
-    mainScript.id      = SCRIPT_ID;
-    mainScript.async   = true;
-    mainScript.type    = "module";
-    mainScript.src     = `https://tpwidg.com/wl_web/main.js?wl_id=${encodeURIComponent(WL_ID)}`;
+    // ── Load main Travelpayouts widget script ────────────
+    const mainScript = document.createElement("script");
+    mainScript.id    = SCRIPT_ID;
+    mainScript.async = true;
+    mainScript.type  = "module";
+    mainScript.src   = `https://tpwidg.com/wl_web/main.js?wl_id=${encodeURIComponent(WL_ID)}`;
     document.body.appendChild(mainScript);
 
+    // ── Mount weedle popular destination scripts ─────────
     const mountWeedles = () => {
       const container = document.getElementById("tpwl-widget-weedles");
       if (!container) return;
-      container.querySelectorAll<HTMLElement>('div[data-destination]').forEach((el) => {
+      container.querySelectorAll<HTMLElement>("div[data-destination]").forEach((el) => {
         el.innerHTML = "";
         const destination = el.dataset.destination;
         if (!destination || !window.TPWL_EXTRA) return;
+        const e = window.TPWL_EXTRA;
         const s = document.createElement("script");
         s.async     = true;
         s.className = WEEDLE_SCRIPT_CLASS;
-        const e = window.TPWL_EXTRA;
         s.src =
           `https://tpwidg.com/content` +
-          `?currency=${String(e.currency ?? "USD").toLowerCase()}` +
+          `?currency=${String(e.currency ?? "THB").toLowerCase()}` +
           `&trs=${encodeURIComponent(String(e.trs ?? ""))}` +
           `&shmarker=${encodeURIComponent(String(e.marker ?? TP_MARKER))}` +
           `&destination=${encodeURIComponent(destination)}` +
           `&target_host=${encodeURIComponent(String(e.domain ?? window.location.hostname))}` +
           `&locale=${encodeURIComponent(String(e.locale ?? "en"))}` +
           `&limit=6&powered_by=false` +
-          `&primary=%230770e3` +
+          `&primary=%23F5A623` +
           `&promo_id=4044&campaign_id=100`;
         el.appendChild(s);
       });
     };
 
     const mountTimer = window.setTimeout(mountWeedles, 1200);
-    const pollStart  = Date.now();
-    const pollTimer  = window.setInterval(() => {
+
+    // ── Poll until weedles render or timeout ─────────────
+    const pollStart = Date.now();
+    const pollTimer = window.setInterval(() => {
       const container = document.getElementById("tpwl-widget-weedles");
       if (hasRenderedWeedles(container)) {
         setWidgetState("ready");
@@ -186,143 +195,215 @@ export default function FlightResults() {
   return (
     <>
       <SEO
-        title={`Cheap Flights${routeInfo} | GoTravelAsia`}
-        description="Compare hundreds of airlines and travel sites to find the cheapest flights."
+        title={`Cheap Flights${routeLabel ? ` ${routeLabel}` : ""} | GoTravelAsia`}
+        description="Compare hundreds of airlines to find the cheapest flights across Southeast Asia."
       />
 
       <style>{`
+        /* ═══════════════════════════════════════════════════
+           GoTravelAsia — Flight Results Page
+           Layout:
+             1. Gold toolbar (logo + TP search widget)
+             2. TP results widget — full viewport width
+             3. Popular destinations grid
+             4. Footer
+           No static filters. No fake prices.
+        ═══════════════════════════════════════════════════ */
+
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         :root {
-          --cf-blue:        #0770e3;
-          --cf-blue-dark:   #0557b0;
-          --cf-blue-light:  #e8f1fd;
-          --cf-navy:        #00162b;
-          --cf-gray-100:    #f5f7fa;
-          --cf-gray-200:    #e6e9ef;
-          --cf-gray-400:    #9ba8ba;
-          --cf-gray-600:    #4a566d;
-          --cf-green:       #00a550;
-          --cf-white:       #ffffff;
+          --gold:        #F5A623;
+          --gold-dark:   #D4881A;
+          --purple:      #5B0FA8;
+          --purple-dark: #3D0870;
+          --navy:        #00162b;
+          --gray-50:     #f5f7fa;
+          --gray-100:    #edf0f5;
+          --gray-200:    #dde2ec;
+          --gray-400:    #8f9bb3;
+          --gray-600:    #4a566d;
+          --white:       #ffffff;
 
-          --gta-gold:       #F5A623;
-          --gta-purple:     #5B0FA8;
-          --gta-purple-dark:#3D0870;
-
+          /* Travelpayouts CSS variable overrides */
           --tpwl-font-family:              "Plus Jakarta Sans", system-ui, sans-serif;
           --tpwl-main-text:                #00162b;
           --tpwl-search-result-background: #f5f7fa;
-          --tpwl-search-form-background:   #0770e3;
+          --tpwl-search-form-background:   #3D0870;
           --tpwl-headline-text:            #ffffff;
-          --tpwl-links:                    #0770e3;
+          --tpwl-links:                    #F5A623;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
+        html, body {
           font-family: var(--tpwl-font-family), sans-serif;
-          color: var(--cf-navy);
-          background: var(--cf-gray-100);
+          color: var(--navy);
+          background: var(--gray-50);
           -webkit-font-smoothing: antialiased;
         }
 
         body a {
-          color: var(--cf-blue);
+          color: var(--gold);
           text-decoration: none;
           transition: color 0.12s;
         }
-        body a:hover { color: var(--cf-blue-dark); text-decoration: underline; }
+        body a:hover { color: var(--gold-dark); text-decoration: underline; }
 
-        /* ── Hide Travelpayouts branding ──────────────────── */
-        a[href*="travelpayouts"]:not(.cf-nav__logo),
+        /* ── Hide Travelpayouts branding ────────────────── */
+        a[href*="travelpayouts"]:not(.gta-logo),
         [class*="powered-by"], [class*="poweredBy"],
         [class*="powered_by"], [class*="PoweredBy"],
-        .tpwl-powered, span[class*="powered"], div[class*="powered"] {
+        [class*="tpwl-powered"], span[class*="powered"] {
           display: none !important;
         }
 
-        /* ═══ 1. NAVBAR ════════════════════════════════════ */
-        .cf-nav {
-          background: var(--cf-white);
-          border-bottom: 1px solid var(--cf-gray-200);
-          position: sticky; top: 0; z-index: 300;
-          display: flex; align-items: center;
-          justify-content: space-between;
-          padding: 0 24px; height: 52px;
-        }
-        .cf-nav__left  { display: flex; align-items: center; gap: 16px; }
-        .cf-nav__right { display: flex; align-items: center; gap: 12px; }
+        /* ── Hide TP's own hero header and search band ──── */
+        .tpwl-logo-header   { display: none !important; }
+        .tpwl-search-header { display: none !important; }
 
-        .cf-nav__back {
-          display: flex; align-items: center; gap: 5px;
-          font-size: 13px; font-weight: 600;
-          color: var(--cf-gray-600); text-decoration: none;
-          padding: 6px 10px; border-radius: 6px;
+        /* ═══════════════════════════════════════════════════
+           TOOLBAR — gold band
+           Row 1: Logo | route | actions  (48px)
+           Row 2: Travelpayouts search widget (auto height)
+        ═══════════════════════════════════════════════════ */
+        .gta-toolbar {
+          position: sticky;
+          top: 0;
+          z-index: 400;
+          background: var(--gold);
+          box-shadow: 0 2px 8px rgba(0,0,0,.15);
+          padding: 0 24px 14px;
+        }
+
+        /* ── Top row: logo + actions ────────────────────── */
+        .gta-toolbar__top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 48px;
+        }
+
+        .gta-toolbar__left {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .gta-logo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          text-decoration: none;
+        }
+        .gta-logo__text {
+          font-weight: 800;
+          font-size: 15px;
+          color: var(--purple-dark);
+          letter-spacing: -0.03em;
+        }
+        .gta-logo__text b { color: var(--purple); }
+
+        .gta-back {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--purple-dark);
+          text-decoration: none;
+          padding: 5px 10px;
+          border-radius: 6px;
           transition: background 0.12s;
         }
-        .cf-nav__back:hover {
-          background: var(--cf-gray-100);
-          color: var(--cf-navy); text-decoration: none;
-        }
-
-        .cf-nav__logo {
-          display: flex; align-items: center; gap: 8px;
+        .gta-back:hover {
+          background: rgba(61,8,112,.12);
           text-decoration: none;
-        }
-        .cf-nav__wordmark {
-          font-weight: 800; font-size: 15px;
-          color: var(--gta-purple-dark); letter-spacing: -0.02em;
-        }
-        .cf-nav__wordmark b { color: var(--gta-purple); }
-
-        .cf-nav__divider {
-          width: 1px; height: 20px;
-          background: var(--cf-gray-200);
+          color: var(--purple-dark);
         }
 
-        .cf-nav__route {
-          font-size: 13px; font-weight: 700;
-          color: var(--cf-navy); letter-spacing: 0.01em;
+        .gta-toolbar__divider {
+          width: 1px; height: 18px;
+          background: rgba(61,8,112,.2);
         }
 
-        .cf-nav__pill {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 7px 14px; border-radius: 20px;
-          font-size: 12px; font-weight: 700;
-          cursor: pointer; text-decoration: none;
-          transition: background 0.15s, color 0.15s;
-          letter-spacing: 0.02em;
+        .gta-toolbar__route {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--purple-dark);
         }
-        .cf-nav__pill--outline {
-          border: 1.5px solid var(--cf-gray-200);
-          color: var(--cf-gray-600);
+
+        .gta-toolbar__right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .gta-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 7px 14px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background 0.12s, color 0.12s;
+          white-space: nowrap;
+        }
+        .gta-btn--outline {
+          border: 1.5px solid rgba(61,8,112,.3);
+          color: var(--purple-dark);
           background: transparent;
         }
-        .cf-nav__pill--outline:hover {
-          border-color: var(--cf-blue);
-          color: var(--cf-blue);
+        .gta-btn--outline:hover {
+          background: rgba(61,8,112,.1);
           text-decoration: none;
+          color: var(--purple-dark);
         }
-        .cf-nav__pill--primary {
-          background: var(--cf-blue);
-          color: white; border: none;
+        .gta-btn--dark {
+          background: var(--purple-dark);
+          color: var(--gold);
+          border: none;
         }
-        .cf-nav__pill--primary:hover {
-          background: var(--cf-blue-dark);
-          text-decoration: none; color: white;
+        .gta-btn--dark:hover {
+          background: var(--purple);
+          text-decoration: none;
+          color: var(--gold);
         }
 
-        /* ═══ 2. SEARCH BAR ════════════════════════════════ */
-        .tpwl-logo-header { display: none !important; }
+        /* ── Search widget row ──────────────────────────── */
+        .gta-toolbar__search {
+          width: 100%;
+        }
 
-        .tpwl-search-header {
-          background: var(--cf-blue) !important;
-          padding: 14px 24px 16px !important;
-          position: sticky !important;
-          top: 52px !important;
-          z-index: 200 !important;
-          border-bottom: none !important;
-          box-shadow: 0 2px 8px rgba(7,112,227,.25) !important;
+        #tpwl-search {
+          width: 100%;
+          overflow: visible;
+        }
+
+        /* TP dropdowns must sit above everything */
+        [class*="Dropdown"], [class*="dropdown"],
+        [class*="Popup"],    [class*="popup"],
+        [class*="Calendar"], [class*="calendar"],
+        [class*="Suggest"],  [class*="suggest"] {
+          z-index: 500 !important;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           RESULTS AREA — full width, TP controls layout
+        ═══════════════════════════════════════════════════ */
+        .tpwl-main {
+          background: var(--gray-50) !important;
+          min-height: 60vh;
+        }
+
+        .tpwl-tickets__wrapper {
+          display: block !important;
+          max-width: 1280px !important;
+          margin: 0 auto !important;
+          padding: 16px 24px 0 !important;
         }
 
         .tpwl__content {
@@ -331,332 +412,274 @@ export default function FlightResults() {
           min-width: 976px;
         }
 
-        .tpwl-search__wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        /* ═══ 3. RESULTS ═══════════════════════════════════ */
-        .tpwl-main {
-          background: var(--cf-gray-100) !important;
-          min-height: 60vh;
-        }
-
-        .cf-results-wrapper {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 20px 24px 48px;
-        }
-
-        .cf-results-meta {
-          font-size: 13px; font-weight: 600;
-          color: var(--cf-gray-600);
-          margin-bottom: 10px;
-        }
-
-        .tpwl-tickets__wrapper {
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding: 0;
-        }
-
-        .tpwl-tickets__wrapper #tpwl-tickets:not(:empty) {
-          margin-bottom: 32px;
-        }
-
-        /* ── Override TP ticket cards → CF style ──────── */
-        [class*="ticket"], [class*="Ticket"],
-        [class*="result"], [class*="Result"] {
-          border-radius: 10px !important;
-          border: 1.5px solid var(--cf-gray-200) !important;
-          background: var(--cf-white) !important;
-          box-shadow: 0 1px 4px rgba(0,22,43,.06) !important;
+        /* ── Minimal ticket card polish ──────────────────── */
+        [class*="ticket"]:not([class*="tpwl-widget"]),
+        [class*="Ticket"]:not([class*="tpwl-widget"]) {
           margin-bottom: 8px !important;
-          transition: box-shadow 0.15s, border-color 0.15s !important;
-        }
-        [class*="ticket"]:hover, [class*="Ticket"]:hover,
-        [class*="result"]:hover, [class*="Result"]:hover {
-          box-shadow: 0 4px 16px rgba(7,112,227,.12) !important;
-          border-color: var(--cf-blue) !important;
         }
 
+        /* CTA buttons — brand gold */
         [class*="buy"], [class*="Buy"],
         [class*="book"], [class*="Book"],
-        button[class*="cta"], a[class*="cta"],
-        [class*="BuyButton"], [class*="booking"] {
-          background: var(--cf-blue) !important;
-          color: white !important;
-          border-radius: 8px !important;
-          font-weight: 700 !important;
+        [class*="select"], [class*="Select"],
+        [class*="BuyButton"] {
+          background: var(--gold) !important;
+          color: var(--navy) !important;
+          font-weight: 800 !important;
           border: none !important;
-          padding: 10px 20px !important;
           transition: background 0.12s !important;
         }
         [class*="buy"]:hover, [class*="Buy"]:hover,
-        [class*="book"]:hover, [class*="Book"]:hover {
-          background: var(--cf-blue-dark) !important;
+        [class*="select"]:hover, [class*="Select"]:hover {
+          background: var(--gold-dark) !important;
         }
 
-        [class*="price"], [class*="Price"] {
-          color: var(--cf-navy) !important;
-          font-weight: 800 !important;
-        }
-
-        [class*="direct"], [class*="Direct"],
-        [class*="nonstop"], [class*="nonStop"] {
-          color: var(--cf-green) !important;
-          font-weight: 700 !important;
-        }
-
-        /* ═══ 4. EXPLORE DESTINATIONS ══════════════════════ */
-        .cf-explore {
-          background: var(--cf-white);
-          border-top: 1px solid var(--cf-gray-200);
-          padding: 40px 24px;
-        }
-
-        .cf-explore__inner {
-          max-width: 1280px;
-          margin: 0 auto;
-        }
-
-        .cf-explore__header {
-          display: flex; align-items: baseline;
-          justify-content: space-between;
-          margin-bottom: 20px;
-        }
-
-        .cf-explore__title {
-          font-size: 20px; font-weight: 800;
-          color: var(--cf-navy); letter-spacing: -0.02em;
-        }
-
-        .cf-explore__see-all {
-          font-size: 13px; font-weight: 600; color: var(--cf-blue);
-        }
-        .cf-explore__see-all:hover { text-decoration: underline; }
-
+        /* ═══════════════════════════════════════════════════
+           POPULAR DESTINATIONS
+        ═══════════════════════════════════════════════════ */
         .tpwl-widgets__wrapper { display: none !important; }
 
-        .cf-dest-grid {
+        .gta-explore {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 40px 24px 56px;
+        }
+
+        .gta-explore__header {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          margin-bottom: 18px;
+        }
+        .gta-explore__title {
+          font-size: 18px;
+          font-weight: 800;
+          color: var(--navy);
+          letter-spacing: -0.02em;
+        }
+        .gta-explore__link {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--purple);
+        }
+        .gta-explore__link:hover { text-decoration: underline; color: var(--purple); }
+
+        .gta-dest-grid {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
-          gap: 12px;
+          gap: 10px;
         }
 
-        .cf-dest-card {
+        .gta-dest-card {
+          background: var(--white);
+          border: 1.5px solid var(--gray-200);
           border-radius: 10px;
-          border: 1.5px solid var(--cf-gray-200);
-          background: var(--cf-white);
-          padding: 16px;
-          display: flex; flex-direction: column;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
           justify-content: space-between;
-          min-height: 120px;
-          cursor: pointer;
-          transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
-          text-decoration: none; color: inherit;
+          min-height: 110px;
+          text-decoration: none;
+          color: inherit;
+          transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
         }
-        .cf-dest-card:hover {
-          box-shadow: 0 6px 20px rgba(7,112,227,.12);
-          border-color: var(--cf-blue);
+        .gta-dest-card:hover {
+          border-color: var(--purple);
+          box-shadow: 0 6px 20px rgba(91,15,168,.12);
           transform: translateY(-2px);
-          text-decoration: none; color: inherit;
+          text-decoration: none;
+          color: inherit;
+        }
+        .gta-dest-card__iata {
+          font-size: 10px;
+          font-weight: 800;
+          color: var(--purple);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+        .gta-dest-card__city {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--navy);
+          margin-top: 3px;
+        }
+        .gta-dest-card__country {
+          font-size: 11px;
+          color: var(--gray-400);
+          margin-top: 1px;
+        }
+        .gta-dest-card__cta {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--gold-dark);
+          margin-top: 10px;
         }
 
-        .cf-dest-card__iata {
-          font-size: 11px; font-weight: 800;
-          color: var(--cf-blue);
-          text-transform: uppercase; letter-spacing: 0.08em;
-        }
-        .cf-dest-card__city {
-          font-size: 15px; font-weight: 700;
-          color: var(--cf-navy); margin-top: 4px;
-        }
-        .cf-dest-card__country {
-          font-size: 12px; color: var(--cf-gray-400); margin-top: 2px;
-        }
-        .cf-dest-card__cta {
-          font-size: 12px; font-weight: 700;
-          color: var(--cf-blue); margin-top: 12px;
-        }
-
+        /* Live weedle grid */
         #tpwl-widget-weedles {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
-          gap: 12px;
+          gap: 10px;
         }
-
         .tpwl-widget-weedle {
-          display: flex; justify-content: center;
-          min-height: 120px;
+          display: flex;
+          justify-content: center;
+          min-height: 110px;
         }
 
-        .cf-skel {
+        /* Skeleton loading */
+        .gta-skel {
+          background: var(--white);
+          border: 1.5px solid var(--gray-200);
           border-radius: 10px;
-          border: 1.5px solid var(--cf-gray-200);
-          background: var(--cf-white);
-          min-height: 120px;
-          animation: cf-pulse 1.5s ease-in-out infinite;
+          min-height: 110px;
+          animation: skel-pulse 1.4s ease-in-out infinite;
         }
-        @keyframes cf-pulse {
+        @keyframes skel-pulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+          50%       { opacity: 0.4; }
         }
 
-        .tpwl-widget-container[hidden] { display: none; }
-
-        /* ═══ 5. FOOTER ════════════════════════════════════ */
-        .cf-footer {
-          background: var(--cf-navy);
-          color: rgba(255,255,255,.45);
-          padding: 40px 24px;
-          text-align: center;
+        /* ═══════════════════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════════════════ */
+        .gta-footer {
+          background: var(--purple-dark);
+          color: rgba(255,255,255,.4);
+          padding: 36px 24px;
           font-size: 13px;
+          text-align: center;
         }
 
-        .cf-footer__inner {
+        .gta-footer__inner {
           max-width: 1280px;
           margin: 0 auto;
         }
 
-        .cf-footer__copyright {
+        .gta-footer__copyright {
           margin-bottom: 12px;
         }
 
-        .cf-footer__links {
+        .gta-footer__links {
           display: flex;
           justify-content: center;
-          gap: 24px;
+          gap: 20px;
         }
-
-        .cf-footer__links a {
-          color: rgba(255,255,255,.4);
+        .gta-footer__links a {
+          color: rgba(255,255,255,.35);
         }
-        .cf-footer__links a:hover {
-          color: var(--gta-gold);
+        .gta-footer__links a:hover {
+          color: var(--gold);
           text-decoration: none;
         }
 
         /* ═══ RESPONSIVE ═══════════════════════════════════ */
         @media (max-width: 1024px) {
-          .cf-dest-grid,
+          .tpwl__content { max-width: unset; min-width: unset; }
+          .gta-dest-grid,
           #tpwl-widget-weedles { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (max-width: 768px) {
-          .cf-nav { padding: 0 16px; }
-          .cf-nav__route { display: none; }
-          .cf-nav__divider { display: none; }
-          .tpwl-search-header { padding: 12px 16px 14px !important; }
+          .gta-toolbar { padding: 0 16px 10px; }
+          .gta-toolbar__top { height: 44px; }
+          .gta-toolbar__route { display: none; }
+          .gta-toolbar__divider { display: none; }
           .tpwl__content { max-width: unset; min-width: unset; }
-          .tpwl-search__wrapper { display: block; }
-          .cf-results-wrapper { padding: 12px 16px 32px; }
-          .cf-dest-grid,
+          .tpwl-tickets__wrapper { padding: 12px 16px 0 !important; }
+          .gta-explore { padding: 28px 16px 40px; }
+          .gta-dest-grid,
           #tpwl-widget-weedles { grid-template-columns: repeat(2, 1fr); }
-          .cf-explore { padding: 28px 16px; }
         }
 
         @media (max-width: 480px) {
-          .cf-nav__back span { display: none; }
-          .cf-dest-grid,
-          #tpwl-widget-weedles { grid-template-columns: 1fr 1fr; }
-          .cf-footer { padding: 32px 16px; }
-          .cf-footer__links { flex-direction: column; gap: 10px; }
+          .gta-logo__text { display: none; }
+          .gta-btn--outline { display: none; }
+          .gta-footer { padding: 28px 16px; }
+          .gta-footer__links { flex-direction: column; gap: 10px; }
         }
       `}</style>
 
       <div className="tpwl-page">
 
-        {/* ══ 1. NAVBAR ════════════════════════════════════ */}
-        <nav className="cf-nav" role="navigation" aria-label="Main navigation">
-          <div className="cf-nav__left">
-            <a href="/" className="cf-nav__back" aria-label="Back to GoTravel Asia">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Back</span>
-            </a>
+        {/* ══ TOOLBAR — gold bar with TP search inside ═════ */}
+        <div className="gta-toolbar" role="banner">
 
-            <a href="/" className="cf-nav__logo">
-              <GtaLogo size={30} />
-              <span className="cf-nav__wordmark">GO<b>TRAVEL</b> ASIA</span>
-            </a>
+          {/* Top row */}
+          <div className="gta-toolbar__top">
+            <div className="gta-toolbar__left">
+              <a href="/" className="gta-back" aria-label="Back to GoTravel Asia">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back
+              </a>
 
-            {routeInfo && (
-              <>
-                <div className="cf-nav__divider" />
-                <span className="cf-nav__route">{routeInfo}</span>
-              </>
-            )}
-          </div>
+              <a href="/" className="gta-logo" aria-label="GoTravel Asia home">
+                <GtaLogo size={28} />
+                <span className="gta-logo__text">GO<b>TRAVEL</b> ASIA</span>
+              </a>
 
-          <div className="cf-nav__right">
-            <a href="#" className="cf-nav__pill cf-nav__pill--outline" target="_blank" rel="noopener noreferrer">
-              🔔 Price Alerts
-            </a>
-            <a href="/" className="cf-nav__pill cf-nav__pill--primary">
-              New Search
-            </a>
-          </div>
-        </nav>
+              {routeLabel && (
+                <>
+                  <div className="gta-toolbar__divider" />
+                  <span className="gta-toolbar__route">{routeLabel}</span>
+                </>
+              )}
+            </div>
 
-        {/* ══ 2. SEARCH BAR (Travelpayouts widget) ════════ */}
-        <header className="tpwl-search-header">
-          <div className="tpwl-search__wrapper">
-            <div className="tpwl__content">
-              <div id="tpwl-search" />
+            <div className="gta-toolbar__right">
+              <a href="#" className="gta-btn gta-btn--outline" target="_blank" rel="noopener noreferrer">
+                🔔 Price Alerts
+              </a>
+              <a href="/" className="gta-btn gta-btn--dark">
+                New Search
+              </a>
             </div>
           </div>
-        </header>
 
-        {/* ══ 3. RESULTS (full-width, no sidebar) ═════════ */}
+          {/* Search widget row — Travelpayouts renders here */}
+          <div className="gta-toolbar__search">
+            <div id="tpwl-search" />
+          </div>
+        </div>
+
+        {/* ══ RESULTS — Travelpayouts controls this ════════ */}
         <main className="tpwl-main">
-          <div className="cf-results-wrapper">
-            <div className="cf-results-meta">
-              <span>Showing available flights</span>
-            </div>
-
-            <div className="tpwl-tickets__wrapper">
-              <div className="tpwl__content">
-                <div id="tpwl-tickets" />
-              </div>
+          <div className="tpwl-tickets__wrapper">
+            <div className="tpwl__content">
+              <div id="tpwl-tickets" />
             </div>
           </div>
 
-          {/* ══ 4. EXPLORE DESTINATIONS ════════════════════ */}
-          <section className="cf-explore" aria-labelledby="cf-explore-title">
-            <div className="cf-explore__inner">
-              <div className="cf-explore__header">
-                <h2 id="cf-explore-title" className="cf-explore__title">
-                  Explore popular destinations
+          {/* ══ POPULAR DESTINATIONS ═══════════════════════ */}
+          <section aria-labelledby="gta-explore-heading">
+            <div className="gta-explore">
+              <div className="gta-explore__header">
+                <h2 id="gta-explore-heading" className="gta-explore__title">
+                  Popular destinations
                 </h2>
-                <a href="/flights" className="cf-explore__see-all">See all →</a>
+                <a href="/flights" className="gta-explore__link">See all →</a>
               </div>
 
               {widgetState === "loading" && (
-                <div className="cf-dest-grid" aria-busy="true">
+                <div className="gta-dest-grid" aria-busy="true" aria-label="Loading popular destinations">
                   {POPULAR_DESTINATIONS.map((d) => (
-                    <div key={d.code} className="cf-skel" />
+                    <div key={d.code} className="gta-skel" />
                   ))}
                 </div>
               )}
 
               {widgetState === "fallback" && (
-                <div className="cf-dest-grid">
+                <div className="gta-dest-grid">
                   {POPULAR_DESTINATIONS.map((d) => (
-                    <a
-                      key={d.code}
-                      href={buildFallbackUrl(fallbackOrigin, d.code)}
-                      className="cf-dest-card"
-                    >
+                    <a key={d.code} href={buildFallbackUrl(fallbackOrigin, d.code)} className="gta-dest-card">
                       <div>
-                        <div className="cf-dest-card__iata">{d.code}</div>
-                        <div className="cf-dest-card__city">{d.city}</div>
-                        <div className="cf-dest-card__country">{d.country}</div>
+                        <div className="gta-dest-card__iata">{d.code}</div>
+                        <div className="gta-dest-card__city">{d.city}</div>
+                        <div className="gta-dest-card__country">{d.country}</div>
                       </div>
-                      <div className="cf-dest-card__cta">Search flights →</div>
+                      <div className="gta-dest-card__cta">Search flights →</div>
                     </a>
                   ))}
                 </div>
@@ -664,7 +687,6 @@ export default function FlightResults() {
 
               <div
                 id="tpwl-widget-weedles"
-                className="tpwl-widget-container"
                 hidden={widgetState !== "ready"}
                 aria-hidden={widgetState !== "ready"}
               >
@@ -676,16 +698,16 @@ export default function FlightResults() {
           </section>
         </main>
 
-        {/* ══ 5. FOOTER ════════════════════════════════════ */}
-        <footer className="cf-footer">
-          <div className="cf-footer__inner">
-            <div className="cf-footer__copyright">
-              © {new Date().getFullYear()} GoTravel Asia — Powered by Travelpayouts
+        {/* ══ FOOTER ═══════════════════════════════════════ */}
+        <footer className="gta-footer">
+          <div className="gta-footer__inner">
+            <div className="gta-footer__copyright">
+              © {new Date().getFullYear()} GoTravel Asia
             </div>
-            <div className="cf-footer__links">
-              <a href="/terms"   target="_blank" rel="noreferrer">Terms of Service</a>
-              <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>
-              <a href="/cookies" target="_blank" rel="noreferrer">Cookie Policy</a>
+            <div className="gta-footer__links">
+              <a href="/terms"   target="_blank" rel="noreferrer">Terms</a>
+              <a href="/privacy" target="_blank" rel="noreferrer">Privacy</a>
+              <a href="/cookies" target="_blank" rel="noreferrer">Cookies</a>
             </div>
           </div>
         </footer>
