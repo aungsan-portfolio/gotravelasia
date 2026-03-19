@@ -16,14 +16,18 @@
 // │ [Logo] [Return|Oneway|From ⇄ To|Dates|Pax] [Search] [🔔]│
 // └─────────────────────────────────────────────────────────┘
 
-import { TripTypeSegment }    from "./TripTypeSegment";
-import { RouteField }         from "./RouteField";
+import { useState, useEffect } from "react";
+import { TripTypeSegment } from "./TripTypeSegment";
+import { RouteField } from "./RouteField";
 import { SwapAirportsButton } from "./SwapAirportsButton";
-import { DateRangeField }     from "./DateRangeField";
-import { PaxCabinField }      from "./PaxCabinField";
+import { DateRangeField } from "./DateRangeField";
+import { PaxCabinField } from "./PaxCabinField";
 import { SearchSubmitButton } from "./SearchSubmitButton";
-import { useFlightSearch }    from "@/features/flights/search/useFlightSearch";
-import { formatCabinLabel, getTotalTravellers } from "@/features/flights/search/flightSearch.utils";
+import { useFlightSearch } from "@/features/flights/search/useFlightSearch";
+import {
+  formatCabinLabel,
+  getTotalTravellers,
+} from "@/features/flights/search/flightSearch.utils";
 import type { FlightSearchState } from "@/features/flights/search/flightSearch.types";
 
 interface Props {
@@ -107,10 +111,18 @@ export function CompactFlightToolbar({
   showBranding = true,
 }: Props) {
   const { state, errors, actions } = useFlightSearch(initialState);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // If initial route exists, stay collapsed until user clicks
+  // Otherwise expand to let them fill it in
+  const hasRoute = !!(state.origin && state.destination);
 
   function handleSubmit() {
     const result = actions.submit();
-    if (result.ok) window.location.href = result.url;
+    if (result.ok) {
+      setIsExpanded(false);
+      window.location.href = result.url;
+    }
   }
 
   return (
@@ -185,94 +197,122 @@ export function CompactFlightToolbar({
           </a>
         </div>
 
-        {/* ── Stacked search form ──────────────────────────── */}
-        <div className="mx-4 mb-3 rounded-2xl bg-white shadow-md ring-1 ring-black/[0.06]">
-
-          {/* Trip type tabs */}
-          <div className="border-b border-neutral-100 px-3 pt-3">
-            <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
-          </div>
-
-          {/* Route row: From ⇅ To (vertical swap on mobile) */}
-          <div className="relative px-3 py-2">
-            {/* From */}
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">From</div>
-              <div className="mt-0.5">
-                <RouteField
-                  label="From"
-                  placeholder="City or airport"
-                  value={state.origin}
-                  onChange={actions.setOrigin}
-                />
+        {/* ── Mobile Form Logic ──────────────────────────── */}
+        <div className="mx-4 mb-3">
+          {hasRoute && !isExpanded ? (
+            <MobileSummaryPill state={state} onClick={() => setIsExpanded(true)} />
+          ) : (
+            <div className="rounded-2xl bg-white shadow-md ring-1 ring-black/[0.06]">
+              {/* Trip type tabs */}
+              <div className="border-b border-neutral-100 px-3 pt-3">
+                <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
               </div>
-            </div>
 
-            {/* Vertical swap button */}
-            <div className="relative my-[-1px] flex justify-center">
-              <button
-                type="button"
-                onClick={actions.onSwapRoute}
-                aria-label="Swap origin and destination"
-                className="z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-yellow-400 bg-white shadow-sm transition-transform hover:scale-110"
-              >
-                {/* vertical swap icon */}
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path d="M4 2v10M4 12l-2-2M4 12l2-2M10 2v10M10 2l-2 2M10 2l2 2"
-                    stroke="#3D0870" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
+              {/* Route row: From ⇅ To (vertical swap on mobile) */}
+              <div className="relative px-3 py-2">
+                {/* From */}
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    From
+                  </div>
+                  <div className="mt-0.5">
+                    <RouteField
+                      label="From"
+                      placeholder="City or airport"
+                      value={state.origin}
+                      onChange={actions.setOrigin}
+                    />
+                  </div>
+                </div>
 
-            {/* To */}
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">To</div>
-              <div className="mt-0.5">
-                <RouteField
-                  label="To"
-                  placeholder="City or airport"
-                  value={state.destination}
-                  onChange={actions.setDestination}
-                />
+                {/* Vertical swap button */}
+                <div className="relative my-[-1px] flex justify-center">
+                  <button
+                    type="button"
+                    onClick={actions.onSwapRoute}
+                    aria-label="Swap origin and destination"
+                    className="z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-yellow-400 bg-white shadow-sm transition-transform hover:scale-110"
+                  >
+                    {/* vertical swap icon */}
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path
+                        d="M4 2v10M4 12l-2-2M4 12l2-2M10 2v10M10 2l-2 2M10 2l2 2"
+                        stroke="#3D0870"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* To */}
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    To
+                  </div>
+                  <div className="mt-0.5">
+                    <RouteField
+                      label="To"
+                      placeholder="City or airport"
+                      value={state.destination}
+                      onChange={actions.setDestination}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Dates + Pax row (2-col grid) */}
-          <div className="grid grid-cols-2 gap-0 border-t border-neutral-100 px-3 py-2">
+              {/* Dates + Pax row (2-col grid) */}
+              <div className="grid grid-cols-2 gap-0 border-t border-neutral-100 px-3 py-2">
+                {/* Dates */}
+                <div className="border-r border-neutral-100 pr-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    Date
+                  </div>
+                  <div className="mt-0.5">
+                    <DateRangeField
+                      tripType={state.tripType}
+                      departDate={state.departDate}
+                      returnDate={state.returnDate}
+                      onDepartChange={actions.setDepartDate}
+                      onReturnChange={actions.setReturnDate}
+                    />
+                  </div>
+                </div>
 
-            {/* Dates */}
-            <div className="border-r border-neutral-100 pr-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Date</div>
-              <div className="mt-0.5">
-                <DateRangeField
-                  tripType={state.tripType}
-                  departDate={state.departDate}
-                  returnDate={state.returnDate}
-                  onDepartChange={actions.setDepartDate}
-                  onReturnChange={actions.setReturnDate}
-                />
+                {/* Pax + cabin */}
+                <div className="pl-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    Travellers
+                  </div>
+                  <div className="mt-0.5">
+                    <PaxCabinField
+                      travellers={state.travellers}
+                      cabin={state.cabin}
+                      onTravellersChange={actions.setTravellers}
+                      onCabinChange={actions.setCabin}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Pax + cabin */}
-            <div className="pl-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Travellers</div>
-              <div className="mt-0.5">
-                <PaxCabinField
-                  travellers={state.travellers}
-                  cabin={state.cabin}
-                  onTravellersChange={actions.setTravellers}
-                  onCabinChange={actions.setCabin}
-                />
+              {/* Full-width Search button */}
+              <div className="border-t border-neutral-100 px-3 pb-3 pt-2">
+                <SearchSubmitButton onClick={handleSubmit} fullWidth />
               </div>
-            </div>
-          </div>
 
-          {/* Full-width Search button */}
-          <div className="border-t border-neutral-100 px-3 pb-3 pt-2">
-            <SearchSubmitButton onClick={handleSubmit} fullWidth />
-          </div>
+              {/* Cancel/Collapse button (optional but good for UX) */}
+              {hasRoute && (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="w-full pb-3 text-center text-xs font-semibold text-neutral-400 hover:text-neutral-600"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

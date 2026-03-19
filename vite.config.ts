@@ -161,6 +161,14 @@ const plugins = [
       globIgnores: ["**/data/flight_data.json"],
       runtimeCaching: [
         {
+          urlPattern: ({ url }) =>
+            url.hostname === "hotellook.com" ||
+            url.hostname === "www.travelpayouts.com" ||
+            url.hostname === "autocomplete.travelpayouts.com" ||
+            url.hostname.endsWith("tpx.gr"),
+          handler: "NetworkOnly",
+        },
+        {
           urlPattern: /^https:\/\/api\.travelpayouts\.com\/.*/i,
           handler: "NetworkFirst",
           options: {
