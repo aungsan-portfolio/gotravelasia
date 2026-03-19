@@ -58,6 +58,46 @@ function safeIsoDate(v: string | null): string | null {
   return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
 }
 
+/**
+ * Parses Travelpayouts compact search format into individual fields.
+ * Pattern per segment: {3-char IATA}{DD}{MM}
+ */
+function parseFlightSearch(raw: string): {
+  origin: string;
+  destination: string;
+  departDate: string | null;
+  returnDate: string | null;
+} {
+  const EMPTY = { origin: "", destination: "", departDate: null, returnDate: null };
+  if (!raw) return EMPTY;
+
+  // Match all segments: 3 IATA letters + 4 digits (DDMM)
+  const segments = [...raw.matchAll(/([A-Z]{3})(\d{2})(\d{2})/g)];
+  if (segments.length === 0) return EMPTY;
+
+  function buildIso(dd: string, mm: string): string {
+    const year = new Date().getFullYear();
+    const month = parseInt(mm, 10);
+    // If the month is earlier than current month, assume next year
+    const useYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+    return `${useYear}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  }
+
+  const origin = segments[0][1];
+  const departDate = buildIso(segments[0][2], segments[0][3]);
+
+  // Destination: the IATA that follows the first segment's date digits
+  const destMatch = raw.match(/^[A-Z]{3}\d{4}([A-Z]{3})/);
+  const destination = destMatch?.[1] ?? "";
+
+  let returnDate: string | null = null;
+  if (segments.length >= 2) {
+    returnDate = buildIso(segments[1][2], segments[1][3]);
+  }
+
+  return { origin, destination, departDate, returnDate };
+}
+
 function addDays(iso: string, days: number): string {
   const [year, month, day] = iso.split("-").map(Number);
   const d = new Date(year, (month ?? 1) - 1, day ?? 1);
@@ -80,6 +120,10 @@ function codeToCityName(code: string): string {
     HKT: "Phuket",
     CNX: "Chiang Mai",
     PNH: "Phnom Penh",
+    RGN: "Yangon",
+    MDL: "Mandalay",
+    REP: "Siem Reap",
+    VTE: "Vientiane",
     SEL: "Seoul",
     ICN: "Seoul",
     GMP: "Seoul",
@@ -89,6 +133,14 @@ function codeToCityName(code: string): string {
     KIX: "Osaka",
     HKG: "Hong Kong",
     TPE: "Taipei",
+    SYD: "Sydney",
+    MEL: "Melbourne",
+    LHR: "London",
+    CDG: "Paris",
+    DXB: "Dubai",
+    IST: "Istanbul",
+    CJU: "Jeju",
+    PUS: "Busan",
   };
   return map[code] ?? code;
 }
@@ -180,54 +232,48 @@ export default function WhiteLabelResultsBridge() {
   );
 
   // Cross-sell derived params
-  const destinationCode = useMemo(
-    () =>
-      normalizeCode(
-        search.get("destination") ||
-          search.get("to") ||
-          search.get("destinationCode") ||
-          search.get("arrival"),
-      ),
-    [search],
-  );
-
-  const cityName = useMemo(() => {
-    const explicit =
-      safeParam(search.get("cityName")) ||
-      safeParam(search.get("destinationCity")) ||
-      safeParam(search.get("city"));
-
-    if (explicit) return explicit;
-    if (destinationCode) return codeToCityName(destinationCode);
-    return "";
-  }, [search, destinationCode]);
-
-  const departDate = useMemo(
-    () =>
-      safeIsoDate(
-        search.get("depart") ||
-          search.get("departureDate") ||
-          search.get("dateFrom") ||
-          search.get("startDate"),
-      ),
-    [search],
-  );
-
-  const rawReturnDate = useMemo(
-    () =>
-      safeIsoDate(
-        search.get("return") ||
-          search.get("returnDate") ||
-          search.get("dateTo") ||
-          search.get("endDate"),
-      ),
-    [search],
-  );
-
   const tripType = useMemo(
     () => safeParam(search.get("tripType"), "roundtrip").toLowerCase(),
     [search],
   );
+
+  // Robust parsing: Priority 1 (individual params) then Priority 2 (flightSearch compact)
+  const parsedSearch = useMemo(() => {
+    const plainDest = normalizeCode(
+      search.get("destination") ||
+        search.get("to") ||
+        search.get("destinationCode") ||
+        search.get("arrival"),
+    );
+    const plainDepart = safeIsoDate(
+      search.get("depart") ||
+        search.get("departureDate") ||
+        search.get("dateFrom") ||
+        search.get("startDate"),
+    );
+    const plainReturn = safeIsoDate(
+      search.get("return") ||
+        search.get("returnDate") ||
+        search.get("dateTo") ||
+        search.get("endDate"),
+    );
+
+    if (plainDest) {
+      return { destination: plainDest, departDate: plainDepart, returnDate: plainReturn };
+    }
+
+    const fs = safeParam(search.get("flightSearch"));
+    const parsed = parseFlightSearch(fs);
+    return {
+      destination: parsed.destination,
+      departDate: parsed.departDate,
+      returnDate: parsed.returnDate,
+    };
+  }, [search]);
+
+  const destinationCode = parsedSearch.destination;
+  const departDate = parsedSearch.departDate;
+  const rawReturnDate = parsedSearch.returnDate;
 
   const crossSellReturnDate = useMemo(() => {
     if (tripType === "one-way") {
@@ -241,7 +287,19 @@ export default function WhiteLabelResultsBridge() {
     return Number.isFinite(raw) && raw > 0 ? raw : 1;
   }, [search]);
 
+  const cityName = useMemo(() => {
+    const explicit =
+      safeParam(search.get("cityName")) ||
+      safeParam(search.get("destinationCity")) ||
+      safeParam(search.get("city"));
+
+    if (explicit) return explicit;
+    if (destinationCode) return codeToCityName(destinationCode);
+    return "";
+  }, [search, destinationCode]);
+
   useEffect(() => {
+    console.debug("[GTA] parsed →", { destinationCode, cityName, departDate, rawReturnDate });
     // Cleanup
     document.getElementById(SCRIPT_ID)?.remove();
     document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());

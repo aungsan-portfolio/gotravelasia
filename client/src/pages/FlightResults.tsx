@@ -37,10 +37,44 @@ function getRouteLabel(search: URLSearchParams): string {
   const o = safeParam(search.get("origin"));
   const d = safeParam(search.get("destination"));
   if (o && d) return `${o.toUpperCase()} → ${d.toUpperCase()}`;
-  // Parse compact format e.g. "CNX2504SIN1"
   const m = safeParam(search.get("flightSearch")).match(/^([A-Z]{3})\d{4}([A-Z]{3})/);
   if (m) return `${m[1]} → ${m[2]}`;
   return "";
+}
+
+/**
+ * Parses Travelpayouts compact search format into individual fields.
+ */
+function parseFlightSearch(raw: string): {
+  origin: string;
+  destination: string;
+  departDate: string | null;
+  returnDate: string | null;
+} {
+  const EMPTY = { origin: "", destination: "", departDate: null, returnDate: null };
+  if (!raw) return EMPTY;
+
+  const segments = [...raw.matchAll(/([A-Z]{3})(\d{2})(\d{2})/g)];
+  if (segments.length === 0) return EMPTY;
+
+  function buildIso(dd: string, mm: string): string {
+    const year = new Date().getFullYear();
+    const month = parseInt(mm, 10);
+    const useYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+    return `${useYear}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  }
+
+  const origin = segments[0][1];
+  const departDate = buildIso(segments[0][2], segments[0][3]);
+  const destMatch = raw.match(/^[A-Z]{3}\d{4}([A-Z]{3})/);
+  const destination = destMatch?.[1] ?? "";
+
+  let returnDate: string | null = null;
+  if (segments.length >= 2) {
+    returnDate = buildIso(segments[1][2], segments[1][3]);
+  }
+
+  return { origin, destination, departDate, returnDate };
 }
 
 function buildInitFromQuery(search: URLSearchParams) {
