@@ -142,6 +142,12 @@ function codeToCityName(code: string): string {
     PUS: "Busan",
     MNL: "Manila",
     CGK: "Jakarta",
+    PEN: "Penang",
+    DAD: "Da Nang",
+    CEB: "Cebu",
+    KNO: "Medan",
+    SUB: "Surabaya",
+    USM: "Koh Samui",
   };
   return map[code] ?? code;
 }

@@ -234,6 +234,15 @@ export default function FlightResults() {
       IST: "Istanbul",
       CJU: "Jeju",
       PUS: "Busan",
+      PNH: "Phnom Penh",
+      MNL: "Manila",
+      CGK: "Jakarta",
+      PEN: "Penang",
+      DAD: "Da Nang",
+      CEB: "Cebu",
+      KNO: "Medan",
+      SUB: "Surabaya",
+      USM: "Koh Samui",
     };
     return CITY_MAP[destinationCode] ?? destinationCode;
   }, [destinationCode]);
