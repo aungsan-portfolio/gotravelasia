@@ -138,21 +138,86 @@ export default function FlightResults() {
     [search],
   );
 
-  const destinationCode = useMemo(
-    () => safeParam(search.get("destination")).toUpperCase(),
-    [search],
-  );
+  const parsedSearch = useMemo(() => {
+    const plainDest = normalizeCode(
+      search.get("destination") ||
+        search.get("to") ||
+        search.get("destinationCode") ||
+        search.get("arrival"),
+    );
+    const plainDepart = safeIsoDate(
+      search.get("depart") ||
+        search.get("departureDate") ||
+        search.get("dateFrom") ||
+        search.get("startDate"),
+    );
+    const plainReturn = safeIsoDate(
+      search.get("return") ||
+        search.get("returnDate") ||
+        search.get("dateTo") ||
+        search.get("endDate"),
+    );
+
+    if (plainDest) {
+      return { destination: plainDest, departDate: plainDepart, returnDate: plainReturn };
+    }
+
+    const fs = safeParam(search.get("flightSearch"));
+    const parsed = parseFlightSearch(fs);
+    return {
+      destination: parsed.destination,
+      departDate: parsed.departDate,
+      returnDate: parsed.returnDate,
+    };
+  }, [search]);
+
+  const destinationCode = parsedSearch.destination;
+  const departDate = parsedSearch.departDate;
+  const returnDate = parsedSearch.returnDate;
 
   const cityName = useMemo(() => {
-    const found = POPULAR_DESTINATIONS.find((d) => d.code === destinationCode);
-    return found ? found.city : destinationCode;
+    const CITY_MAP: Record<string, string> = {
+      SIN: "Singapore",
+      BKK: "Bangkok",
+      DMK: "Bangkok",
+      CNX: "Chiang Mai",
+      KUL: "Kuala Lumpur",
+      HAN: "Hanoi",
+      SGN: "Ho Chi Minh City",
+      DPS: "Bali",
+      HKT: "Phuket",
+      RGN: "Yangon",
+      MDL: "Mandalay",
+      REP: "Siem Reap",
+      VTE: "Vientiane",
+      ICN: "Seoul",
+      SEL: "Seoul",
+      GMP: "Seoul",
+      TYO: "Tokyo",
+      HND: "Tokyo",
+      NRT: "Tokyo",
+      KIX: "Osaka",
+      HKG: "Hong Kong",
+      TPE: "Taipei",
+      SYD: "Sydney",
+      MEL: "Melbourne",
+      LHR: "London",
+      CDG: "Paris",
+      DXB: "Dubai",
+      IST: "Istanbul",
+      CJU: "Jeju",
+      PUS: "Busan",
+    };
+    return CITY_MAP[destinationCode] ?? destinationCode;
   }, [destinationCode]);
 
-  const checkIn = useMemo(() => safeParam(search.get("depart")), [search]);
-  const checkOut = useMemo(() => safeParam(search.get("return")), [search]);
-  const adults = useMemo(() => Number(search.get("adults") || 1), [search]);
+  const adults = useMemo(() => {
+    const raw = Number(search.get("adults") || 1);
+    return Number.isFinite(raw) && raw > 0 ? raw : 1;
+  }, [search]);
 
   useEffect(() => {
+    console.debug("[GTA] parsed →", { destinationCode, cityName, departDate, returnDate });
     // ── Cleanup previous run ─────────────────────────────
     document.getElementById(SCRIPT_ID)?.remove();
     document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
