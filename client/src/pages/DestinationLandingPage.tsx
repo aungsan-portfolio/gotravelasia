@@ -13,6 +13,7 @@ import { buildDestinationPageVM } from "@/lib/destination/buildDestinationPageVM
 import { trpc } from "@/lib/trpc";
 
 
+import { LodgingBusinessJsonLd } from "@/components/JsonLd";
 import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import Navbar from "@/components/flights/destination/Navbar";
 import DestinationHero from "@/components/destination/DestinationHero";
@@ -32,6 +33,9 @@ import TrustBenchmarks from "@/components/flights/destination/TrustBenchmarks";
 import FooterSections from "@/components/flights/destination/FooterSections";
 import CountryNavigator from "@/components/destination/CountryNavigator";
 import DestinationSEOContent from "@/components/flights/destination/DestinationSEOContent";
+import { StaysSection } from "@/components/flights/stays-section";
+import { CarsSection } from "@/components/flights/cars-section";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type LiveState = "static" | "live" | "partial" | "error";
 
@@ -146,10 +150,18 @@ function getApiMessage(payload: unknown): string | null {
 }
 
 export default function DestinationLandingPage() {
-  const [matched, params] = useRoute<{ slug: string }>(ROUTE_PATTERN);
+  const [isFlightRoute, flightParams] = useRoute<{ slug: string }>(ROUTE_PATTERN);
+  const [isHotelRoute, hotelParams] = useRoute<{ city: string; hotel?: string }>("/hotels/:city/:hotel?");
+  
+  const params = flightParams || hotelParams;
   const locationSearch = typeof window !== "undefined" ? window.location.search : "";
   const searchParams = useMemo(() => new URLSearchParams(locationSearch), [locationSearch]);
-  const slug = useMemo(() => (matched ? params?.slug?.trim().toLowerCase() ?? "" : ""), [matched, params]);
+
+  const slug = useMemo(() => {
+    if (flightParams?.slug) return flightParams.slug.trim().toLowerCase();
+    if (hotelParams?.city) return hotelParams.city.trim().toLowerCase();
+    return "";
+  }, [flightParams, hotelParams]);
 
   const staticRecord = useMemo(() => {
     if (!slug) return undefined;
@@ -434,6 +446,8 @@ export default function DestinationLandingPage() {
     );
   }, [vm, filters]);
 
+  const matched = isFlightRoute || isHotelRoute;
+
   if (!matched) {
     return null;
   }
@@ -477,6 +491,20 @@ export default function DestinationLandingPage() {
             .light .bg-background { background-color: #0b0719 !important; }
         `}</style>
       </Helmet>
+
+      {/* Structured Data for SEO Growth */}
+      {vm && (
+        <LodgingBusinessJsonLd 
+          hotel={{
+            name: `${vm.route.destination.city} Hotels & Accommodation`,
+            city: vm.route.destination.city,
+            stars: 4,
+            minPrice: vm.deals.summary.cheapestPrice || 1000,
+            image: `/images/${vm.route.destination.city.toLowerCase()}.webp`,
+            url: `https://gotravel-asia.vercel.app${window.location.pathname}`
+          }} 
+        />
+      )}
 
       <div className="min-h-screen bg-[#0b0719] text-white font-sans selection:bg-violet-500/30">
         <Navbar dest={vm.route.destination.city} destCode={vm.route.destination.code} origin={vm.route.origin.city} />
@@ -635,6 +663,26 @@ export default function DestinationLandingPage() {
         <TrustBenchmarks />
 
         <AirlineReviews data={vm} />
+
+        <div className="bg-neutral-50">
+          <ErrorBoundary>
+            <StaysSection
+              cityName={vm.route.destination.city}
+              destinationCode={vm.route.destination.code}
+              checkIn={null}
+              checkOut={null}
+            />
+          </ErrorBoundary>
+
+          <ErrorBoundary>
+            <CarsSection
+              cityName={vm.route.destination.city}
+              airportCode={vm.route.destination.code}
+              pickupDate={null}
+              returnDate={null}
+            />
+          </ErrorBoundary>
+        </div>
 
         <DestinationSEOContent data={vm} />
 

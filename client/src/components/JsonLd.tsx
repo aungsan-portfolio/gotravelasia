@@ -109,3 +109,39 @@ export function FAQJsonLd({
     />
   );
 }
+
+interface LodgingBusinessProps {
+  name: string;
+  stars?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  city: string;
+  image?: string;
+  url?: string;
+}
+
+export function LodgingBusinessJsonLd({ hotel }: { hotel: LodgingBusinessProps }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    name: hotel.name,
+    image: hotel.image,
+    url: hotel.url,
+    starRating: hotel.stars ? {
+      "@type": "Rating",
+      ratingValue: hotel.stars
+    } : undefined,
+    priceRange: hotel.minPrice ? `฿${hotel.minPrice} - ฿${hotel.maxPrice || hotel.minPrice}` : undefined,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: hotel.city,
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }}
+    />
+  );
+}
