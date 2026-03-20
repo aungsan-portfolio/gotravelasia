@@ -57,4 +57,4 @@ export function build12GoUrl(fromId: string, toId: string, date?: string): strin
 }
 
 /** White Label homepage — use for branded "Browse All" links */
-export const WHITE_LABEL_HOME = 'https://gotravelasia.12go.asia';
+export const WHITE_LABEL_HOME = `https://gotravelasia.12go.asia/?z=${AFFILIATE.TWELVE_GO_REFERER}`;
