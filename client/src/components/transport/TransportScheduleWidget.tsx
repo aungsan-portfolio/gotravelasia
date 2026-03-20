@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { build12GoUrl, SEA_STATIONS, getStationsByCity } from "@/lib/transport";
 import { trackAffiliateClick } from "@/lib/tracking";
 import {
@@ -136,6 +137,7 @@ export default function TransportScheduleWidget() {
     const [from, setFrom] = useState(SEA_STATIONS[0].id);
     const [to, setTo] = useState(SEA_STATIONS[1].id);
     const [query, setQuery] = useState({ from: SEA_STATIONS[0].id, to: SEA_STATIONS[1].id });
+    const [bookingUrl, setBookingUrl] = useState<string | null>(null);
     const [travelDate, setTravelDate] = useState(() => {
         const d = new Date();
         d.setDate(d.getDate() + 7);
@@ -211,7 +213,7 @@ export default function TransportScheduleWidget() {
 
     const handleExternalSearch = () => {
         trackAffiliateClick('12go', { from, to, date: travelDate, context: 'search_widget' });
-        window.open(build12GoUrl(from, to, travelDate), '_blank', 'noopener,noreferrer');
+        setBookingUrl(build12GoUrl(from, to, travelDate));
     };
 
     return (
@@ -413,19 +415,13 @@ export default function TransportScheduleWidget() {
                                 </p>
 
                                 {/* Book CTA */}
-                                <a
-                                    href={option.bookingUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block mt-auto"
+                                <Button
+                                    size="sm"
+                                    onClick={() => setBookingUrl(option.bookingUrl)}
+                                    className="w-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors font-mono uppercase text-xs mt-auto"
                                 >
-                                    <Button
-                                        size="sm"
-                                        className="w-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-colors font-mono uppercase text-xs"
-                                    >
-                                        Book Now <ExternalLink className="w-3 h-3 ml-1" />
-                                    </Button>
-                                </a>
+                                    Book Now <ExternalLink className="w-3 h-3 ml-1" />
+                                </Button>
                             </Card>
                         ))
                     )}
@@ -444,6 +440,19 @@ export default function TransportScheduleWidget() {
                     Actual availability and fares may differ — always confirm on 12Go.asia before booking.
                 </p>
             </div>
+
+            <Dialog open={!!bookingUrl} onOpenChange={(open) => !open && setBookingUrl(null)}>
+                <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden sm:rounded-2xl border-none">
+                    {bookingUrl && (
+                        <iframe 
+                            src={bookingUrl} 
+                            className="w-full h-full border-0 bg-white"
+                            title="Book Transport Ticket"
+                            allow="payment"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
