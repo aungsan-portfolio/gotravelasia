@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { trackAffiliateClick } from "@/lib/tracking";
 import OptimizedImage from "@/seo/OptimizedImage";
 import { build12GoUrl } from "@/lib/transport";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 // Badge import removed — using native spans for mobile compatibility
 // Radix Tabs removed — causes touch/scroll freeze on mobile browsers
 import {
@@ -56,7 +55,6 @@ export function FeaturedTrainCard({ from, to, date }: FeaturedTrainCardProps) {
         "exterior" | "1st-class" | "2nd-class"
     >("exterior");
     const [trainData, setTrainData] = useState<FeaturedTrain | null>(null);
-    const [bookingUrl, setBookingUrl] = useState<string | null>(null);
 
     // Derive route info (safe even when from/to are undefined)
     const isBkkToCnx = from === "Bangkok" && to === "Chiang Mai";
@@ -340,7 +338,7 @@ export function FeaturedTrainCard({ from, to, date }: FeaturedTrainCardProps) {
                                         route: `${from ?? 'Unknown'} to ${to ?? 'Unknown'}`,
                                         context: 'featured_card'
                                     });
-                                    setBookingUrl(train.bookingUrl);
+                                    window.location.href = train.bookingUrl;
                                 }}
                             >
                                 Check Availability on 12Go{" "}
@@ -350,19 +348,6 @@ export function FeaturedTrainCard({ from, to, date }: FeaturedTrainCardProps) {
                     </div>
                 </div>
             </Card>
-
-            <Dialog open={!!bookingUrl} onOpenChange={(open) => !open && setBookingUrl(null)}>
-                <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden sm:rounded-2xl border-none">
-                    {bookingUrl && (
-                        <iframe 
-                            src={bookingUrl} 
-                            className="w-full h-full border-0 bg-white"
-                            title="Book Transport Ticket"
-                            allow="payment"
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }
