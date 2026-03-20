@@ -15,7 +15,7 @@ import {
     Search,
     Loader2,
 } from "lucide-react";
-import { FeaturedTrainCard } from "./FeaturedTrainCard";
+import { FeaturedTrainCard } from "../FeaturedTrainCard";
 
 // ──────────────────────────────────────────────
 // Types (matches transport.json structure)

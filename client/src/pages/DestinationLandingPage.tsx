@@ -665,7 +665,7 @@ export default function DestinationLandingPage() {
         <AirlineReviews data={vm} />
 
         <div className="bg-neutral-50">
-          <ErrorBoundary>
+          <ErrorBoundary fallback={<div className="p-4 text-center text-red-500">Failed to load section.</div>}>
             <StaysSection
               cityName={vm.route.destination.city}
               destinationCode={vm.route.destination.code}
@@ -674,7 +674,7 @@ export default function DestinationLandingPage() {
             />
           </ErrorBoundary>
 
-          <ErrorBoundary>
+          <ErrorBoundary fallback={<div className="p-4 text-center text-red-500">Failed to load section.</div>}>
             <CarsSection
               cityName={vm.route.destination.city}
               airportCode={vm.route.destination.code}
