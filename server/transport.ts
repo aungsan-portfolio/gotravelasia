@@ -11,33 +11,7 @@
  * 4. Add 12GO_API_KEY to environment variables
  */
 
-export interface TransportSchedule {
-  id: string;
-  type: 'bus' | 'train' | 'minibus';
-  company: string;
-  departureTime: string;
-  arrivalTime: string;
-  duration: string;
-  price: number;
-  currency: string;
-  seats: number;
-  rating: number;
-  bookingUrl: string;
-}
-
-export interface TransportSearchParams {
-  from: string;
-  to: string;
-  date: string;
-}
-
-export interface TransportSearchResult {
-  from: string;
-  to: string;
-  date: string;
-  schedules: TransportSchedule[];
-  affiliateLink: string;
-}
+import type { TransportSchedule, TransportSearchParams, TransportSearchResult } from "@shared/types/transport";
 
 /**
  * Mock data for demonstration
@@ -178,7 +152,7 @@ export async function searchTransport(
     to,
     date,
     schedules,
-    affiliateLink: `https://12go.asia/en/travel/${from.toLowerCase()}-${to.toLowerCase()}?z=14566451&sub_id=transport_api`,
+    affiliateLink: `https://12go.asia/en/travel/${from.toLowerCase()}/${to.toLowerCase()}?z=14566451&sub_id=transport_api`,
   };
 }
 
