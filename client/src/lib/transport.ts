@@ -51,13 +51,13 @@ export function getStationsByCity(cityCode: IataCode): TransportStation[] {
  * docs: https://12go.asia/en/affiliate
  */
 export function build12GoUrl(fromId: string, toId: string, date?: string): string {
-  // Format: /en/travel/[from]/[to]?date=YYYY-MM-DD
+  // Simple format for White Label: domain/from/to?date=YYYY-MM-DD
   const baseUrl = `https://gotravelasia.12go.asia/en/travel/${fromId}/${toId}`;
-  const params = new URLSearchParams({
-    date: date || "",
-    z: AFFILIATE.TWELVE_GO_REFERER, // Referral ID
-    a_aid: "gotravel-asia", // Affiliate Account ID
-    a_bid: "697202", // Banner ID / Marker
-  });
-  return `${baseUrl}?${params.toString()}`;
+  if (date) return `${baseUrl}?date=${date}`;
+  return baseUrl;
+}
+
+export function buildTransportLink(from: string, to: string): string {
+  const base = "https://gotravelasia.12go.asia/en/travel";
+  return `${base}/${from.toLowerCase()}/${to.toLowerCase()}`;
 }

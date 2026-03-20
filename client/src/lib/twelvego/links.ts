@@ -3,5 +3,5 @@
  */
 export function buildTransportLink(from: string, to: string): string {
   const base = "https://gotravelasia.12go.asia/en/travel";
-  return `${base}/${from.toLowerCase()}/${to.toLowerCase()}?z=14566451&sub_id=transport_api`;
+  return `${base}/${from.toLowerCase()}/${to.toLowerCase()}`;
 }
