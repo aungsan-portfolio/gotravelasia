@@ -52,7 +52,7 @@ export function getStationsByCity(cityCode: IataCode): TransportStation[] {
  */
 export function build12GoUrl(fromId: string, toId: string, date?: string): string {
   // Format: /en/travel/[from]/[to]?date=YYYY-MM-DD
-  const baseUrl = `https://12go.asia/en/travel/${fromId}/${toId}`;
+  const baseUrl = `https://gotravelasia.12go.asia/en/travel/${fromId}/${toId}`;
   const params = new URLSearchParams({
     date: date || "",
     z: AFFILIATE.TWELVE_GO_REFERER, // Referral ID
