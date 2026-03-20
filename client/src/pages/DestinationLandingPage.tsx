@@ -209,7 +209,10 @@ export default function DestinationLandingPage() {
     enabled: !!slug && !staticRecord,
   });
 
-  const recordToUse = staticRecord || dynamicRecord;
+  const recordToUse = useMemo(
+    () => staticRecord || dynamicRecord,
+    [staticRecord, dynamicRecord]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -246,7 +249,7 @@ export default function DestinationLandingPage() {
         setState({
           vm: staticVm,
           liveState: "static",
-          isLoading: true,
+          isLoading: false,
           errorMessage: null,
         });
       }
@@ -375,7 +378,7 @@ export default function DestinationLandingPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, staticRecord, recordToUse, isResolving, requestedOrigin]);
+  }, [slug, staticRecord, dynamicRecord, isResolving, requestedOrigin]);
 
   const vm = state.vm;
   const fareEntries = vm?.fareFinder.entries ?? [];
