@@ -96,3 +96,26 @@ export const destinations = mysqlTable("destinations", {
 
 export type Destination = typeof destinations.$inferSelect;
 export type InsertDestination = typeof destinations.$inferInsert;
+
+/**
+ * Hotel deals found by the bot or cached from API calls.
+ */
+export const hotelDeals = mysqlTable("hotelDeals", {
+  id: int("id").autoincrement().primaryKey(),
+  hotelId: varchar("hotelId", { length: 64 }).notNull(),
+  hotelName: text("hotelName").notNull(),
+  city: varchar("city", { length: 255 }).notNull(),
+  price: int("price").notNull(),
+  currency: varchar("currency", { length: 3 }).default("USD").notNull(),
+  discountPercentage: int("discountPercentage").default(0),
+  imageUrl: text("imageUrl"),
+  bookingUrl: text("bookingUrl").notNull(),
+  checkIn: varchar("checkIn", { length: 10 }),   // YYYY-MM-DD
+  checkOut: varchar("checkOut", { length: 10 }),  // YYYY-MM-DD
+  isBotVerified: boolean("isBotVerified").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type HotelDeal = typeof hotelDeals.$inferSelect;
+export type InsertHotelDeal = typeof hotelDeals.$inferInsert;
