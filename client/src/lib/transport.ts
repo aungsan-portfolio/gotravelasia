@@ -2,7 +2,6 @@ import { AFFILIATE } from "./config";
 import type { IataCode } from "./cities";
 
 export type TransportType = 'train' | 'bus' | 'ferry';
-// ... (rest of the interface and SEA_STATIONS)
 
 export interface TransportStation {
   id: string;          // 12Go station ID
@@ -48,16 +47,14 @@ export function getStationsByCity(cityCode: IataCode): TransportStation[] {
 
 /**
  * Builds a 12Go Asia affiliate search URL
- * docs: https://12go.asia/en/affiliate
+ * Deep route links only work on main 12go.asia domain (not white label)
  */
 export function build12GoUrl(fromId: string, toId: string, date?: string): string {
-  // Simple format for White Label: domain/from/to?date=YYYY-MM-DD
-  const baseUrl = `https://gotravelasia.12go.asia/en/travel/${fromId}/${toId}`;
-  if (date) return `${baseUrl}?date=${date}`;
-  return baseUrl;
+  const baseUrl = `https://12go.asia/en/travel/${fromId}/${toId}`;
+  const params = new URLSearchParams({ z: AFFILIATE.TWELVE_GO_REFERER });
+  if (date) params.set('date', date);
+  return `${baseUrl}?${params.toString()}`;
 }
 
-export function buildTransportLink(from: string, to: string): string {
-  const base = "https://gotravelasia.12go.asia/en/travel";
-  return `${base}/${from.toLowerCase()}/${to.toLowerCase()}`;
-}
+/** White Label homepage — use for branded "Browse All" links */
+export const WHITE_LABEL_HOME = 'https://gotravelasia.12go.asia';
