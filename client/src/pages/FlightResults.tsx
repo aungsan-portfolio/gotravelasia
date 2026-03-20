@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
-import { StaysSection } from "@/components/flights/StaysSectionComponent";
-import { CarsSection } from "@/components/flights/CarsSectionComponent";
+import { StaysSection } from "@/components/flights/stays-section";
+import { CarsSection } from "@/components/flights/cars-section";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { getCityName } from "@/lib/cities";
 
 declare global {
   interface Window {
@@ -203,48 +205,7 @@ export default function FlightResults() {
   const returnDate = parsedSearch.returnDate;
 
   const cityName = useMemo(() => {
-    const CITY_MAP: Record<string, string> = {
-      SIN: "Singapore",
-      BKK: "Bangkok",
-      DMK: "Bangkok",
-      CNX: "Chiang Mai",
-      KUL: "Kuala Lumpur",
-      HAN: "Hanoi",
-      SGN: "Ho Chi Minh City",
-      DPS: "Bali",
-      HKT: "Phuket",
-      RGN: "Yangon",
-      MDL: "Mandalay",
-      REP: "Siem Reap",
-      VTE: "Vientiane",
-      ICN: "Seoul",
-      SEL: "Seoul",
-      GMP: "Seoul",
-      TYO: "Tokyo",
-      HND: "Tokyo",
-      NRT: "Tokyo",
-      KIX: "Osaka",
-      HKG: "Hong Kong",
-      TPE: "Taipei",
-      SYD: "Sydney",
-      MEL: "Melbourne",
-      LHR: "London",
-      CDG: "Paris",
-      DXB: "Dubai",
-      IST: "Istanbul",
-      CJU: "Jeju",
-      PUS: "Busan",
-      PNH: "Phnom Penh",
-      MNL: "Manila",
-      CGK: "Jakarta",
-      PEN: "Penang",
-      DAD: "Da Nang",
-      CEB: "Cebu",
-      KNO: "Medan",
-      SUB: "Surabaya",
-      USM: "Koh Samui",
-    };
-    return CITY_MAP[destinationCode] ?? destinationCode;
+    return getCityName(destinationCode);
   }, [destinationCode]);
 
   const adults = useMemo(() => {
@@ -803,20 +764,24 @@ export default function FlightResults() {
             </div>
           </div>
 
-          <StaysSection
-            cityName={cityName}
-            destinationCode={destinationCode}
-            checkIn={departDate}
-            checkOut={returnDate}
-            adults={adults}
-          />
+          <ErrorBoundary fallback={<div className="text-sm text-neutral-500">Hotel previews currently unavailable</div>}>
+            <StaysSection
+              cityName={cityName}
+              destinationCode={destinationCode}
+              checkIn={departDate}
+              checkOut={returnDate}
+              adults={adults}
+            />
+          </ErrorBoundary>
 
-          <CarsSection
-            cityName={cityName}
-            airportCode={destinationCode}
-            pickupDate={departDate}
-            returnDate={returnDate}
-          />
+          <ErrorBoundary fallback={<div className="text-sm text-neutral-500">Car rental previews currently unavailable</div>}>
+            <CarsSection
+              cityName={cityName}
+              airportCode={destinationCode}
+              pickupDate={departDate}
+              returnDate={returnDate}
+            />
+          </ErrorBoundary>
 
           {/* ══ POPULAR DESTINATIONS ═══════════════════════ */}
           <section aria-labelledby="gta-explore-heading">

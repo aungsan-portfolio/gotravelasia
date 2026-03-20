@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { trackAffiliateClick } from "@/lib/tracking";
 
 const TP_MARKER = "697202";
 const ECONOMY_BOOKINGS_URL = "https://economybookings.tpx.gr/wDfimShS";
@@ -15,19 +16,19 @@ const CAR_CATEGORIES = [
     id: "small",
     label: "Small",
     example: "e.g. Toyota Yaris",
-    image: "/images/cars/small.webp",
+    image: "small",
   },
   {
     id: "medium",
     label: "Medium",
     example: "e.g. Toyota Camry",
-    image: "/images/cars/medium.webp",
+    image: "medium",
   },
   {
     id: "large",
     label: "Large",
     example: "e.g. Toyota Fortuner",
-    image: "/images/cars/large.webp",
+    image: "large",
   },
 ] as const;
 
@@ -113,6 +114,13 @@ export function CarsSection(props: Props) {
             href={buildCarUrl(props)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              trackAffiliateClick('economybookings', { 
+                city: cityName, 
+                iata: airportCode,
+                context: 'top_link'
+              });
+            }}
             className="shrink-0 rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors hover:border-yellow-400 hover:bg-yellow-50 hover:text-neutral-950"
           >
             Find cars →
@@ -126,15 +134,29 @@ export function CarsSection(props: Props) {
               href={buildCarUrl(props, cat.id)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                trackAffiliateClick('economybookings', { 
+                  city: cityName, 
+                  iata: airportCode,
+                  category: cat.id
+                });
+              }}
               className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="aspect-[16/10] overflow-hidden bg-neutral-100 p-2">
-                <img
-                  src={cat.image}
-                  alt={cat.label}
-                  loading="lazy"
-                  className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
-                />
+                <picture>
+                  <source srcSet={`/images/optimized/${cat.image}.avif`} type="image/avif" />
+                  <source srcSet={`/images/optimized/${cat.image}.webp`} type="image/webp" />
+                  <img
+                    src={`/images/cars/${cat.image}.webp`}
+                    alt={cat.label}
+                    loading="lazy"
+                    decoding="async"
+                    width="400"
+                    height="250"
+                    className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                  />
+                </picture>
               </div>
               <div className="px-4 py-3 text-center">
                 <div className="text-sm font-bold text-neutral-950">{cat.label}</div>

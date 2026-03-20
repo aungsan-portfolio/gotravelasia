@@ -217,3 +217,10 @@ scripts/flight_bot/cache/
 
 # Hero Section raw images
 client/public/images/hero/*.jpg
+
+# Local Logs
+errors.txt
+final_errors.txt
+rebuild_errors.txt
+clean_errors.txt
+test_output.txt

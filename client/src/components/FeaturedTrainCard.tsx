@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { trackAffiliateClick } from "@/lib/tracking";
 import OptimizedImage from "@/seo/OptimizedImage";
+import { build12GoUrl } from "@/lib/transport";
 // Badge import removed — using native spans for mobile compatibility
 // Radix Tabs removed — causes touch/scroll freeze on mobile browsers
 import {
@@ -32,6 +34,7 @@ interface FeaturedTrain {
 interface FeaturedTrainCardProps {
     from?: string;
     to?: string;
+    date?: string;
 }
 
 /** Safe slug for old iOS Safari */
@@ -46,7 +49,7 @@ const assetUrl = (path: string) => {
 };
 
 /* ─── Component ─── */
-export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
+export function FeaturedTrainCard({ from, to, date }: FeaturedTrainCardProps) {
     /* ── All hooks FIRST (Rules of Hooks) ── */
     const [activeTab, setActiveTab] = useState<
         "exterior" | "1st-class" | "2nd-class"
@@ -119,13 +122,17 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                         ],
                     },
                 ],
-                bookingUrl: `https://12go.asia/en/travel/${slug(from || "bangkok")}/${slug(to || "chiang-mai")}?z=14566451&sub_id=featured_train_card`,
+                bookingUrl: build12GoUrl(
+                    slug(from || "bangkok"), 
+                    slug(to || "chiang-mai"), 
+                    date || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]
+                ),
                 tips: [
                     "Lower berths have windows and more space",
                     "Dining car serves Thai food — bring snacks too",
                 ],
             },
-        [trainData, isBkkToCnx, from, to],
+        [trainData, isBkkToCnx, from, to, date],
     );
 
     /* ── Early returns AFTER all hooks ── */
@@ -329,7 +336,16 @@ export function FeaturedTrainCard({ from, to }: FeaturedTrainCardProps) {
                                 rel="noopener noreferrer"
                                 className="w-full sm:w-auto"
                             >
-                                <Button className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-200 transition-all font-bold">
+                                <Button 
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-200 transition-all font-bold"
+                                    onClick={() => {
+                                        trackAffiliateClick('12go', { 
+                                            train: train.trainName, 
+                                            route: `${from ?? 'Unknown'} to ${to ?? 'Unknown'}`,
+                                            context: 'featured_card'
+                                        });
+                                    }}
+                                >
                                     Check Availability on 12Go{" "}
                                     <ExternalLink className="w-4 h-4 ml-2" />
                                 </Button>

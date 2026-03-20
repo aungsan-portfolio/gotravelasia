@@ -22,11 +22,7 @@ const FlightsQueryRedirect = lazy(() => import("./pages/FlightsQueryRedirect"));
 const TermsAndPrivacy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Contact = lazy(() => import("./pages/Contact"));
-const BestThingsToDoBangkok = lazy(() => import("./pages/blog/BestThingsToDoBangkok"));
-const CheapFlightsBangkok = lazy(() => import("./pages/blog/CheapFlightsBangkok"));
-const BestTransfersBangkok = lazy(() => import("./pages/blog/BestTransfersBangkok"));
-const BestInsuranceThailand = lazy(() => import("./pages/blog/BestInsuranceThailand"));
-const BestEsimThailand = lazy(() => import("./pages/blog/BestEsimThailand"));
+const BlogPost = lazy(() => import("./pages/blog/BlogPost"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const About = lazy(() => import("./pages/About"));
@@ -63,15 +59,15 @@ function Router() {
         {/* Dedicated Destination Landing Pages (must be before generic /flights/:o/:d) */}
         <Route path="/flights/to/:slug" component={DestinationLandingPage} />
 
+        {/* Path-based Hotel Routes (SEO Growth) */}
+        <Route path="/hotels/:city" component={DestinationLandingPage} />
+        <Route path="/hotels/:city/:hotel" component={DestinationLandingPage} />
+
         <Route path="/flights/:originCode/:destinationCode" component={FlightDestinationPage} />
 
         {/* Blog & Money Pages */}
         <Route path="/blog" component={Blog} />
-        <Route path="/blog/best-things-to-do-in-bangkok" component={BestThingsToDoBangkok} />
-        <Route path="/blog/cheap-flights-to-bangkok" component={CheapFlightsBangkok} />
-        <Route path="/blog/best-airport-transfers-in-bangkok" component={BestTransfersBangkok} />
-        <Route path="/blog/best-travel-insurance-for-thailand" component={BestInsuranceThailand} />
-        <Route path="/blog/best-esim-for-thailand" component={BestEsimThailand} />
+        <Route path="/blog/:slug" component={BlogPost} />
 
         {/* Legal & Company Pages */}
         <Route path="/privacy" component={TermsAndPrivacy} />
@@ -91,7 +87,7 @@ function Router() {
 
 function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary fallback={<div className="p-10 text-center font-bold text-lg">Something went wrong. Please refresh the page.</div>}>
       <FlightSearchProvider>
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>

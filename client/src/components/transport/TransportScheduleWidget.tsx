@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { build12GoUrl } from "@/lib/config";
+import { build12GoUrl, SEA_STATIONS, getStationsByCity } from "@/lib/transport";
+import { trackAffiliateClick } from "@/lib/tracking";
 import {
     Bus,
     Train,
@@ -132,9 +133,14 @@ export default function TransportScheduleWidget() {
     const [data, setData] = useState<TransportData>(FALLBACK_DATA);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [from, setFrom] = useState("Bangkok");
-    const [to, setTo] = useState("Chiang Mai");
-    const [query, setQuery] = useState({ from: "Bangkok", to: "Chiang Mai" });
+    const [from, setFrom] = useState(SEA_STATIONS[0].id);
+    const [to, setTo] = useState(SEA_STATIONS[1].id);
+    const [query, setQuery] = useState({ from: SEA_STATIONS[0].id, to: SEA_STATIONS[1].id });
+    const [travelDate, setTravelDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d.toISOString().split("T")[0];
+    });
 
     useEffect(() => {
         let cancelled = false;
@@ -173,42 +179,39 @@ export default function TransportScheduleWidget() {
         };
     }, []);
 
-    // Extract available cities from loaded data
-    const cities = useMemo(() => {
-        const citySet = new Set<string>();
-        data.routes.forEach((r) => {
-            citySet.add(r.from);
-            citySet.add(r.to);
-        });
-        return Array.from(citySet).sort();
-    }, [data]);
-
-    // Filter "To" cities (exclude selected "From")
-    const filteredToCities = useMemo(
-        () => cities.filter((c) => c !== from),
-        [cities, from]
+    // Filter "To" stations (exclude selected "From")
+    const filteredToStations = useMemo(
+        () => SEA_STATIONS.filter((s) => s.id !== from),
+        [from]
     );
 
     // Get matching schedule options (sorted cheapest first)
-    const options = useMemo(() => {
-        const route = data.routes.find(
-            (r) => r.from === query.from && r.to === query.to
+    const currentRoute = useMemo(() => {
+        // Find if we have local schedule data for these IDs
+        // Note: transport.json might use names or different IDs. 
+        // For MVP, we match by the station ID or name.
+        const fromStation = SEA_STATIONS.find(s => s.id === query.from);
+        const toStation = SEA_STATIONS.find(s => s.id === query.to);
+        
+        return data.routes.find(
+            (r) => (r.from === fromStation?.name || r.from === query.from) && 
+                   (r.to === toStation?.name || r.to === query.to)
         );
-        if (!route) return [];
-        return [...route.options].sort((a, b) => a.price - b.price);
     }, [data, query]);
 
-    // Auto-fix: if "to" equals "from", pick the first different city
-    const handleFromChange = (value: string) => {
-        setFrom(value);
-        if (value === to) {
-            const alt = filteredToCities.find((c) => c !== value) || cities[0];
-            if (alt) setTo(alt);
-        }
-    };
+    const options = useMemo(() => {
+        if (!currentRoute) return [];
+        return [...currentRoute.options].sort((a, b) => a.price - b.price);
+    }, [currentRoute]);
 
     const handleSearch = () => {
         setQuery({ from, to });
+        // Track the search (can be added later)
+    };
+
+    const handleExternalSearch = () => {
+        trackAffiliateClick('12go', { from, to, date: travelDate, context: 'search_widget' });
+        window.open(build12GoUrl(from, to, travelDate), '_blank', 'noopener,noreferrer');
     };
 
     return (
@@ -233,11 +236,11 @@ export default function TransportScheduleWidget() {
                         <label className="text-sm font-medium">From</label>
                         <select
                             value={from}
-                            onChange={(e) => handleFromChange(e.target.value)}
+                            onChange={(e) => setFrom(e.target.value)}
                             className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         >
-                            {cities.map((city) => (
-                                <option key={city} value={city}>{city}</option>
+                            {SEA_STATIONS.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name} ({s.cityCode})</option>
                             ))}
                         </select>
                     </div>
@@ -250,10 +253,21 @@ export default function TransportScheduleWidget() {
                             onChange={(e) => setTo(e.target.value)}
                             className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         >
-                            {filteredToCities.map((city) => (
-                                <option key={city} value={city}>{city}</option>
+                            {filteredToStations.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name} ({s.cityCode})</option>
                             ))}
                         </select>
+                    </div>
+
+                    {/* Date */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Departure Date</label>
+                        <input
+                            type="date"
+                            value={travelDate}
+                            onChange={(e) => setTravelDate(e.target.value)}
+                            className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
                     </div>
 
                     {/* Search button */}
@@ -273,9 +287,9 @@ export default function TransportScheduleWidget() {
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <h4 className="font-bold text-lg flex items-center gap-2">
-                        {query.from}
+                        {SEA_STATIONS.find(s => s.id === query.from)?.name || query.from}
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        {query.to}
+                        {SEA_STATIONS.find(s => s.id === query.to)?.name || query.to}
                     </h4>
                     <div className="flex items-center gap-2">
                         {loading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
@@ -298,7 +312,7 @@ export default function TransportScheduleWidget() {
                 </div>
 
                 {/* ✨ FEATURED JOURNEY CARD (BKK-CNX Only) ✨ */}
-                <FeaturedTrainCard from={query.from} to={query.to} />
+                <FeaturedTrainCard from={query.from} to={query.to} date={travelDate} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {options.length === 0 ? (
@@ -317,17 +331,26 @@ export default function TransportScheduleWidget() {
                             ))
                         ) : (
                             // Fetch done but no data for this route
-                            <Card className="p-6 border border-dashed col-span-full">
-                                <p className="font-semibold">No schedules found for this route.</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Try a different From/To, or we may not have data yet.
-                                </p>
-                                {loadError && (
-                                    <p className="text-sm text-amber-700 mt-2">
-                                        Live data failed to load — showing fallback routes only.
+                        <Card className="p-8 border border-dashed col-span-full text-center bg-muted/20">
+                            <div className="max-w-md mx-auto space-y-4">
+                                <div className="p-3 bg-primary/10 rounded-full w-fit mx-auto">
+                                    <Bus className="w-8 h-8 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-xl">Find live schedules on 12Go</p>
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                        We don't have current offline data for this specific route, but 12Go Asia has the largest network of trains, buses, and ferries in SEA.
                                     </p>
-                                )}
-                            </Card>
+                                </div>
+                                <Button 
+                                    onClick={handleExternalSearch}
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg"
+                                >
+                                    Search Live on 12Go.asia
+                                    <ExternalLink className="w-5 h-5 ml-2" />
+                                </Button>
+                            </div>
+                        </Card>
                         )
                     ) : (
                         options.map((option, idx) => (

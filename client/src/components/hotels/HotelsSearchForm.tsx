@@ -1,97 +1,199 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { AFFILIATE } from "@/lib/config";
-
-const AGODA_CID = AFFILIATE.AGODA_CID;
-
-const HOTEL_CITIES = [
-    { name: "Bangkok", slug: "bangkok-th" },
-    { name: "Chiang Mai", slug: "chiang-mai-th" },
-    { name: "Phuket", slug: "phuket-th" },
-    { name: "Krabi", slug: "krabi-th" },
-    { name: "Singapore", slug: "singapore-sg" },
-    { name: "Kuala Lumpur", slug: "kuala-lumpur-my" },
-    { name: "Hanoi", slug: "hanoi-vn" },
-    { name: "Ho Chi Minh City", slug: "ho-chi-minh-city-vn" },
-];
+import { SEA_CITIES, buildAgodaSearchUrl } from "@/lib/agoda/links";
+import { trackAffiliateClick } from "@/lib/tracking";
 
 export default function HotelsSearchForm() {
     const today = new Date().toISOString().split("T")[0];
+    
+    // Form State
+    const [cityId, setCityId] = useState<number>(SEA_CITIES[0].id);
     const [checkIn, setCheckIn] = useState(today);
+    const [checkOut, setCheckOut] = useState("");
+    const [adults, setAdults] = useState(2);
+    const [rooms, setRooms] = useState(1);
+    const [childrenAges, setChildrenAges] = useState<number[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
     const minCheckOut = checkIn
         ? new Date(new Date(checkIn).getTime() + 86400000).toISOString().split("T")[0]
         : today;
 
+    const selectedCity = useMemo(() => 
+        SEA_CITIES.find(c => c.id === cityId) || SEA_CITIES[0]
+    , [cityId]);
+
+    const handleChildrenCountChange = (count: number) => {
+        setChildrenAges(prev => 
+            Array.from({ length: count }, (_, i) => prev[i] ?? 8) // Default age 8
+        );
+    };
+
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const citySlug = fd.get("city") as string;
-        const checkInDate = fd.get("checkIn") as string;
-        const checkOutDate = fd.get("checkOut") as string;
+        setError(null);
 
-        if (!checkInDate || !checkOutDate || new Date(checkOutDate) <= new Date(checkInDate)) {
-            alert("Please select valid check-in and check-out dates");
-            return;
+        try {
+            const url = buildAgodaSearchUrl({
+                city: selectedCity,
+                checkIn,
+                checkOut,
+                adults,
+                children: childrenAges,
+                rooms
+            });
+
+            // Track the click before opening
+            trackAffiliateClick('agoda', {
+                city: selectedCity.slug,
+                checkIn,
+                checkout: checkOut,
+                adults: String(adults),
+                children: String(childrenAges.length)
+            });
+
+            window.open(url, "_blank", "noopener,noreferrer");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Invalid search parameters");
         }
-
-        const url = `https://www.agoda.com/city/${citySlug}.html?cid=${AGODA_CID}&checkIn=${checkInDate}&checkout=${checkOutDate}&utm_source=gotravelasia&utm_medium=affiliate`;
-        window.open(url, "_blank", "noopener,noreferrer");
     };
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Destination */}
                 <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
                         Destination
                     </label>
                     <select
-                        name="city"
-                        defaultValue="bangkok-th"
-                        className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
+                        value={cityId}
+                        onChange={(e) => setCityId(Number(e.target.value))}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white"
                     >
-                        {HOTEL_CITIES.map((city) => (
-                            <option key={city.slug} value={city.slug}>
-                                {city.name}
+                        {SEA_CITIES.map((city) => (
+                            <option key={city.id} value={city.id} className="text-gray-900">
+                                {city.displayName} ({city.country})
                             </option>
                         ))}
                     </select>
                 </div>
+
+                {/* Check-in */}
                 <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
                         Check-in
                     </label>
                     <input
                         type="date"
-                        name="checkIn"
-                        defaultValue={today}
+                        value={checkIn}
                         min={today}
                         onChange={(e) => setCheckIn(e.target.value)}
                         required
-                        className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
                     />
                 </div>
+
+                {/* Check-out */}
                 <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
                         Check-out
                     </label>
                     <input
                         type="date"
-                        name="checkOut"
+                        value={checkOut}
                         min={minCheckOut}
+                        onChange={(e) => setCheckOut(e.target.value)}
                         required
-                        className="w-full px-4 py-3.5 md:py-3 bg-white text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm min-h-[48px]"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
                     />
                 </div>
             </div>
-            <Button
-                type="submit"
-                className="w-full md:w-auto md:self-end bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors h-12 px-10 rounded-xl text-base"
-            >
-                Search Hotels on Agoda
-            </Button>
+
+            {/* Guests & Rooms */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
+                        Rooms
+                    </label>
+                    <select
+                        value={rooms}
+                        onChange={(e) => setRooms(Number(e.target.value))}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white"
+                    >
+                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n} className="text-gray-900">{n} Room{n > 1 ? 's' : ''}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
+                        Adults
+                    </label>
+                    <select
+                        value={adults}
+                        onChange={(e) => setAdults(Number(e.target.value))}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white"
+                    >
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n} className="text-gray-900">{n} Adult{n > 1 ? 's' : ''}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
+                        Children
+                    </label>
+                    <select
+                        value={childrenAges.length}
+                        onChange={(e) => handleChildrenCountChange(Number(e.target.value))}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white"
+                    >
+                        {[0, 1, 2, 3, 4].map(n => <option key={n} value={n} className="text-gray-900">{n} Child{n !== 1 ? 'ren' : ''}</option>)}
+                    </select>
+                </div>
+                
+                {/* Child Ages Dropdowns */}
+                {childrenAges.length > 0 && (
+                    <div className="md:col-span-full grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+                        {childrenAges.map((age, i) => (
+                            <div key={i}>
+                                <label className="text-[9px] font-bold text-gray-500 uppercase mb-1 block">Child {i + 1} Age</label>
+                                <select
+                                    value={age}
+                                    onChange={(e) => {
+                                        const next = [...childrenAges];
+                                        next[i] = Number(e.target.value);
+                                        setChildrenAges(next);
+                                    }}
+                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:ring-1 focus:ring-orange-400"
+                                >
+                                    <option value={0} className="text-gray-900">Under 1</option>
+                                    {Array.from({ length: 17 }, (_, a) => (
+                                        <option key={a + 1} value={a + 1} className="text-gray-900">{a + 1} yr old</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
+                {error ? (
+                    <p className="text-red-400 text-xs font-medium animate-pulse" role="alert">
+                        ⚠️ {error}
+                    </p>
+                ) : (
+                    <p className="text-gray-500 text-[10px] italic">
+                        * You will be redirected to Agoda for booking
+                    </p>
+                )}
+                
+                <Button
+                    type="submit"
+                    className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold transition-all h-12 px-10 rounded-xl text-base shadow-lg shadow-orange-500/20"
+                >
+                    Search Hotels on Agoda
+                </Button>
+            </div>
         </form>
     );
 }

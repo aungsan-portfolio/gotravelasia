@@ -214,6 +214,18 @@ async function startServer() {
     res.type("application/xml").send(buildSitemapXml());
   });
 
+  // Destination Landing API
+  const { getDestinationLandingData } = await import("../api/destination-landing");
+  app.get("/api/destination-landing", async (req, res) => {
+    try {
+      const { slug } = req.query;
+      if (typeof slug !== "string") return res.status(400).json({ error: "slug is required" });
+      const data = await getDestinationLandingData({ slug });
+      res.json(data);
+    } catch (e: any) {
+      res.status(404).json({ error: e.message });
+    }
+  });
 
   // Gemini Chat Proxy (rate limited: 10 req/hr per IP)
   app.post("/api/chat", rateLimit(chatRateLimits, 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."), async (req, res) => {

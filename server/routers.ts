@@ -5,6 +5,7 @@ import { z } from "zod";
 import { searchTransport, getPopularRoutes } from "./transport";
 import { destinationRouter } from "./destinationRouter";
 import { searchAmadeusLocations } from "./amadeusAPI";
+import { COOKIE_NAME } from "../shared/const";
 
 const flightsRouter = router({
   airportSearch: publicProcedure
@@ -21,6 +22,18 @@ export const appRouter = router({
   system: systemRouter,
   destination: destinationRouter,
   flights: flightsRouter,
+  auth: router({
+    logout: publicProcedure.mutation(({ ctx }) => {
+      ctx.res.clearCookie(COOKIE_NAME, {
+        maxAge: -1,
+        secure: true,
+        sameSite: "none",
+        httpOnly: true,
+        path: "/",
+      });
+      return { success: true };
+    }),
+  }),
 
 
   transport: router({

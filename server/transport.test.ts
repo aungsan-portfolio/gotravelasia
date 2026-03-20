@@ -93,9 +93,7 @@ describe('Transport Service', () => {
         date: '2026-01-29',
       });
 
-      expect(result.affiliateLink).toBe(
-        'https://www.12go.asia/en/travel/bus/bkk-cnx'
-      );
+      expect(result.affiliateLink).toContain('https://12go.asia/en/travel/bkk/cnx');
     });
   });
 

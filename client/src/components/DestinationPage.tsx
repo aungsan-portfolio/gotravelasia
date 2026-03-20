@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Plane, Hotel, Ticket, Car, Wifi, ShieldCheck, MapPin } from "lucide-react";
-import TransportScheduleWidget from "./TransportScheduleWidget";
+import TransportScheduleWidget from "./transport/TransportScheduleWidget";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { BreadcrumbJsonLd } from "@/components/JsonLd";
 

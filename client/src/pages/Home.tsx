@@ -14,8 +14,8 @@ import {
 } from "@/lib/config";
 
 // ─── Lazy-loaded tabs (Upgrade 4: code splitting) ───
-const HotelsSearchForm = React.lazy(() => import("@/components/HotelsSearchForm"));
-const TransportScheduleWidget = React.lazy(() => import("@/components/TransportScheduleWidget"));
+const HotelsSearchForm = React.lazy(() => import("@/components/hotels/HotelsSearchForm"));
+const TransportScheduleWidget = React.lazy(() => import("@/components/transport/TransportScheduleWidget"));
 
 // Fallback skeleton for lazy tabs
 function TabSkeleton() {
