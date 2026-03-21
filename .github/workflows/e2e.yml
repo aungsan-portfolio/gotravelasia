@@ -12,23 +12,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-      
+          cache: 'pnpm'
+
       - name: Install dependencies
-        run: npm ci
-        
+        run: pnpm install --frozen-lockfile
+
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-        
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build app (for local server)
+        run: pnpm build
+        env:
+          VITE_AGODA_CID: ${{ secrets.VITE_AGODA_CID }}
+
       - name: Run Playwright tests
-        run: npx playwright test
+        run: pnpm exec playwright test
         env:
           VITE_AGODA_CID: ${{ secrets.VITE_AGODA_CID }}
           BASE_URL: ${{ secrets.VERCEL_PREVIEW_URL || 'http://localhost:5173' }}
-          
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
