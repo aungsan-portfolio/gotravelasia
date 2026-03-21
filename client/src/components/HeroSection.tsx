@@ -280,19 +280,20 @@ export default function HeroSection({
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ opacity: 0.06 }}
+        viewBox="0 0 100 100"
         preserveAspectRatio="none"
         aria-hidden="true"
       >
         {[15, 30, 45, 60, 75].map((pct) => (
-          <line key={`h-${pct}`} x1="0" y1={`${pct}%`} x2="100%" y2={`${pct}%`}
-            stroke="#a78bfa" strokeWidth="0.8" />
+          <line key={`h-${pct}`} x1="0" y1={pct} x2="100" y2={pct}
+            stroke="#a78bfa" strokeWidth="0.15" />
         ))}
         {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((pct) => (
-          <line key={`v-${pct}`} x1={`${pct}%`} y1="0" x2={`${pct}%`} y2="100%"
-            stroke="#a78bfa" strokeWidth="0.8" />
+          <line key={`v-${pct}`} x1={pct} y1="0" x2={pct} y2="100"
+            stroke="#a78bfa" strokeWidth="0.15" />
         ))}
-        <path d="M0 80% Q50% 10% 100% 60%" stroke="#a78bfa" strokeWidth="1" fill="none" />
-        <path d="M0 50% Q40% 90% 100% 30%" stroke="#a78bfa" strokeWidth="1" fill="none" />
+        <path d="M0 80 Q50 10 100 60" stroke="#a78bfa" strokeWidth="0.2" fill="none" />
+        <path d="M0 50 Q40 90 100 30" stroke="#a78bfa" strokeWidth="0.2" fill="none" />
       </svg>
 
       {/* ── Layer 2: Flight trails ── */}
@@ -486,6 +487,7 @@ export default function HeroSection({
                   return (
                     <button
                       key={tab.id}
+                      data-testid={`tab-${tab.id}`}
                       role="tab"
                       aria-selected={isActive}
                       aria-controls={`tab-panel-${tab.id}`}
