@@ -10,9 +10,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
+import { MobileSummaryPill } from "@/components/flights/results/MobileSummaryPill";
 import { CompactFlightToolbar } from "@/components/flights/search/CompactFlightToolbar";
-import { StaysSection } from "@/components/flights/stays-section";
-import { CarsSection } from "@/components/flights/cars-section";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { getCityName } from "@/lib/cities";
 import type { AirportOption } from "@/features/flights/search/flightSearch.types";
@@ -258,6 +257,41 @@ export default function WhiteLabelResultsBridge() {
     if (destinationCode) return getCityName(destinationCode);
     return "";
   }, [search, destinationCode]);
+
+  const staysUrl = useMemo(() => {
+    const url = new URL("https://hotellook.com/search");
+    url.searchParams.set("destination", destinationCode || cityName);
+    if (departDate) url.searchParams.set("checkIn", departDate);
+    if (crossSellReturnDate) url.searchParams.set("checkOut", crossSellReturnDate);
+    url.searchParams.set("adults", String(adults));
+    url.searchParams.set("marker", TP_MARKER);
+    url.searchParams.set("currency", "thb");
+    return url.toString();
+  }, [destinationCode, cityName, departDate, crossSellReturnDate, adults]);
+
+  const carUrl = useMemo(() => {
+    const url = new URL("https://economybookings.tpx.gr/wDfimShS");
+    if (destinationCode) url.searchParams.set("pickup_iata", destinationCode);
+    if (departDate) url.searchParams.set("pickup_date", departDate);
+    if (crossSellReturnDate) url.searchParams.set("return_date", crossSellReturnDate);
+    url.searchParams.set("currency", "THB");
+    url.searchParams.set("marker", TP_MARKER);
+    return url.toString();
+  }, [destinationCode, departDate, crossSellReturnDate]);
+
+  const trackAffiliateClick = (type: "stays" | "cars", href: string) => {
+    try {
+      const payload = JSON.stringify({
+        type,
+        href,
+        ts: Date.now(),
+        route: window.location.pathname + window.location.search,
+      });
+      navigator.sendBeacon("/api/affiliate/click", payload);
+    } catch {
+      // no-op
+    }
+  };
 
   useEffect(() => {
     console.debug("[GTA] parsed →", { destinationCode, cityName, departDate, rawReturnDate });
@@ -514,25 +548,41 @@ export default function WhiteLabelResultsBridge() {
             </div>
           </div>
 
-          {/* ── Stays section ─────────────────────────── */}
-          <ErrorBoundary fallback={<div className="text-sm text-neutral-500">Stays preview currently unavailable</div>}>
-            <StaysSection
-              cityName={cityName}
-              destinationCode={destinationCode}
-              checkIn={departDate}
-              checkOut={crossSellReturnDate}
-              adults={adults}
-            />
-          </ErrorBoundary>
+        <section className="mt-6 grid gap-4 lg:grid-cols-2 px-4 max-w-screen-xl mx-auto">
+          {/* stays card */}
+          <a
+            href={staysUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="cta-find-stays"
+            aria-label="Find stays"
+            className="group rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06] no-underline"
+            onClick={() => trackAffiliateClick("stays", staysUrl)}
+          >
+            <div className="text-xs uppercase tracking-[0.24em] text-white/50">Hotels</div>
+            <h3 className="mt-2 text-lg font-semibold text-white">Find stays</h3>
+            <p className="mt-2 text-sm text-white/70">
+              Compare nearby accommodation for this route and travel window.
+            </p>
+          </a>
 
-          <ErrorBoundary fallback={<div className="text-sm text-neutral-500">Cars preview currently unavailable</div>}>
-            <CarsSection
-              cityName={cityName}
-              airportCode={destinationCode}
-              pickupDate={departDate}
-              returnDate={crossSellReturnDate}
-            />
-          </ErrorBoundary>
+          {/* cars card */}
+          <a
+            href={carUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="cta-small-car"
+            aria-label="Small car"
+            className="group rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06] no-underline"
+            onClick={() => trackAffiliateClick("cars", carUrl)}
+          >
+            <div className="text-xs uppercase tracking-[0.24em] text-white/50">Car rental</div>
+            <h3 className="mt-2 text-lg font-semibold text-white">Small car</h3>
+            <p className="mt-2 text-sm text-white/70">
+              Rent a vehicle for your stay in {cityName || destinationCode}.
+            </p>
+          </a>
+        </section>
 
           {/* Popular destinations */}
           <section aria-labelledby="gta-explore-heading">
@@ -592,6 +642,7 @@ export default function WhiteLabelResultsBridge() {
         </footer>
 
         <div id="tpwl-cookie-banner" className="tpwl-cookie-banner" />
+        <MobileSummaryPill />
       </div>
     </>
   );
