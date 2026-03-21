@@ -60,7 +60,7 @@ export default function HotelsSearchForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="hotel-search-form">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Destination */}
                 <div>
@@ -70,6 +70,8 @@ export default function HotelsSearchForm() {
                     <select
                         value={cityId}
                         onChange={(e) => setCityId(Number(e.target.value))}
+                        data-testid="hotel-destination-select"
+                        aria-label="Hotel destination"
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white"
                     >
                         {SEA_CITIES.map((city) => (
@@ -91,6 +93,8 @@ export default function HotelsSearchForm() {
                         min={today}
                         onChange={(e) => setCheckIn(e.target.value)}
                         required
+                        data-testid="hotel-checkin-input"
+                        aria-label="Check-in"
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
                     />
                 </div>
@@ -106,6 +110,8 @@ export default function HotelsSearchForm() {
                         min={minCheckOut}
                         onChange={(e) => setCheckOut(e.target.value)}
                         required
+                        data-testid="hotel-checkout-input"
+                        aria-label="Check-out"
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
                     />
                 </div>
@@ -144,6 +150,8 @@ export default function HotelsSearchForm() {
                     <select
                         value={childrenAges.length}
                         onChange={(e) => handleChildrenCountChange(Number(e.target.value))}
+                        data-testid="hotel-children-count"
+                        aria-label="Children"
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-sm text-white"
                     >
                         {[0, 1, 2, 3, 4].map(n => <option key={n} value={n} className="text-gray-900">{n} Child{n !== 1 ? 'ren' : ''}</option>)}
@@ -163,6 +171,8 @@ export default function HotelsSearchForm() {
                                         next[i] = Number(e.target.value);
                                         setChildrenAges(next);
                                     }}
+                                    data-testid={`hotel-child-age-${i}`}
+                                    aria-label={`Child ${i + 1} age`}
                                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white outline-none focus:ring-1 focus:ring-orange-400"
                                 >
                                     <option value={0} className="text-gray-900">Under 1</option>
@@ -189,6 +199,7 @@ export default function HotelsSearchForm() {
                 
                 <Button
                     type="submit"
+                    data-testid="hotel-search-submit"
                     className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold transition-all h-12 px-10 rounded-xl text-base shadow-lg shadow-orange-500/20"
                 >
                     Search Hotels on Agoda

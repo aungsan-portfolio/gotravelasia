@@ -76,6 +76,7 @@ function MobileSummaryPill({
     <button
       type="button"
       onClick={onClick}
+      data-testid="mobile-summary-pill"
       className="flex w-full flex-col rounded-xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-black/[0.08] transition hover:shadow-md"
       aria-label="Edit flight search"
     >
