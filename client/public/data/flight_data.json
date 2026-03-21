@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-21 06:36",
-    "count": 6621,
+    "updated_at": "2026-03-21 18:29",
+    "count": 6625,
     "currency": "USD",
     "errors": 69
   },
@@ -50172,6 +50172,20 @@
     {
       "origin": "KUL",
       "destination": "BKI",
+      "price": 48.0,
+      "date": "2026-11-30",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 0,
+      "flight_number": "2534",
+      "found_at": "2026-03-21 18:29",
+      "fetchedAt": 1774117752762,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "BKI",
       "price": 49.0,
       "date": "2026-04-07",
       "airline": "FY",
@@ -50194,6 +50208,20 @@
       "flight_number": "2530",
       "found_at": "2026-03-11 18:47",
       "fetchedAt": 1773254872182,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "BKI",
+      "price": 49.0,
+      "date": "2026-11-17",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 0,
+      "flight_number": "2530",
+      "found_at": "2026-03-21 18:29",
+      "fetchedAt": 1774117752762,
       "provider": "tp",
       "region": "SEA"
     },
@@ -65030,6 +65058,20 @@
       "flight_number": "773",
       "found_at": "2026-03-20 12:47",
       "fetchedAt": 1774010821667,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MNL",
+      "destination": "SIN",
+      "price": 61.0,
+      "date": "2026-08-10",
+      "airline": "5J",
+      "airline_code": "5J",
+      "transfers": 0,
+      "flight_number": "817",
+      "found_at": "2026-03-21 18:29",
+      "fetchedAt": 1774117754297,
       "provider": "tp",
       "region": "SEA"
     },
@@ -83510,6 +83552,20 @@
       "flight_number": "1796",
       "found_at": "2026-03-18 18:53",
       "fetchedAt": 1773860020597,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "BKI",
+      "price": 94.0,
+      "date": "2026-11-19",
+      "airline": "TR",
+      "airline_code": "TR",
+      "transfers": 0,
+      "flight_number": "490",
+      "found_at": "2026-03-21 18:29",
+      "fetchedAt": 1774117751709,
       "provider": "tp",
       "region": "SEA"
     },
