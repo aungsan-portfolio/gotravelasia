@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-21 01:28",
-    "count": 6618,
+    "updated_at": "2026-03-21 06:36",
+    "count": 6621,
     "currency": "USD",
     "errors": 69
   },
@@ -64420,6 +64420,34 @@
     {
       "origin": "MNL",
       "destination": "KUL",
+      "price": 66.0,
+      "date": "2026-10-14",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "583",
+      "found_at": "2026-03-21 06:36",
+      "fetchedAt": 1774075011434,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MNL",
+      "destination": "KUL",
+      "price": 66.0,
+      "date": "2026-10-24",
+      "airline": "5J",
+      "airline_code": "5J",
+      "transfers": 0,
+      "flight_number": "501",
+      "found_at": "2026-03-21 06:36",
+      "fetchedAt": 1774075011434,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MNL",
+      "destination": "KUL",
       "price": 68.0,
       "date": "2026-06-21",
       "airline": "AK",
@@ -64596,6 +64624,20 @@
       "flight_number": "585",
       "found_at": "2026-03-20 12:47",
       "fetchedAt": 1774010821667,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MNL",
+      "destination": "KUL",
+      "price": 84.0,
+      "date": "2026-10-02",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "583",
+      "found_at": "2026-03-21 06:36",
+      "fetchedAt": 1774075011434,
       "provider": "tp",
       "region": "SEA"
     },
