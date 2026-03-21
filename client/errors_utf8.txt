@@ -1,5 +1,0 @@
-﻿src/components/FlightWidget.tsx(306,41): error TS2322: Type '"Change Origin"' is not assignable to type '"From" | "To"'.
-src/components/FlightWidget.tsx(314,41): error TS2322: Type '"Change Destination"' is not assignable to type '"From" | "To"'.
-src/pages/DestinationLandingPage.tsx(415,24): error TS2304: Cannot find name 'isCountry'.
-src/pages/DestinationLandingPage.tsx(451,124): error TS2339: Property 'airport' does not exist on type 'DestinationRef'.
-src/pages/DestinationLandingPage.tsx(455,82): error TS2339: Property 'avgFlightHours' does not exist on type 'StaticDestinationRecord'.
