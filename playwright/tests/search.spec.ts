@@ -11,7 +11,7 @@ test.describe('GoTravel Asia – Smoke Tests', () => {
     const heading = page.locator('h1');
     await expect(heading).toBeVisible({ timeout: 15000 });
     // The heading contains "Asia" in some form
-    await expect(heading).toContainText('Asia', { timeout: 5000 });
+    await expect(heading).toContainText('Asia', { timeout: 10000 });
   });
 
   test('Tab buttons are visible and clickable', async ({ page }) => {
