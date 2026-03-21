@@ -4,11 +4,26 @@ import { Button } from "@/components/ui/button";
 import { SEA_CITIES, buildAgodaSearchUrl } from "@/lib/agoda/links";
 import { trackAffiliateClick } from "@/lib/tracking";
 
-export default function HotelsSearchForm() {
+interface Props {
+    layout?: "default" | "compact";
+    initialCity?: string;
+}
+
+export default function HotelsSearchForm({ layout = "default", initialCity = "" }: Props) {
     const today = new Date().toISOString().split("T")[0];
     
+    // Check if initialCity matches any of our slugs
+    const initialCityId = useMemo(() => {
+        if (!initialCity) return SEA_CITIES[0].id;
+        const found = SEA_CITIES.find(c => 
+            c.slug.toLowerCase() === initialCity.toLowerCase() || 
+            c.displayName.toLowerCase() === initialCity.toLowerCase()
+        );
+        return found ? found.id : SEA_CITIES[0].id;
+    }, [initialCity]);
+
     // Form State
-    const [cityId, setCityId] = useState<number>(SEA_CITIES[0].id);
+    const [cityId, setCityId] = useState<number>(initialCityId);
     const [checkIn, setCheckIn] = useState(today);
     const [checkOut, setCheckOut] = useState("");
     const [adults, setAdults] = useState(2);

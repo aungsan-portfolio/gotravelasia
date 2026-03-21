@@ -30,6 +30,9 @@ import {
   getTotalTravellers,
 } from "@/features/flights/search/flightSearch.utils";
 import type { FlightSearchState } from "@/features/flights/search/flightSearch.types";
+import HotelsSearchForm from "@/components/hotels/HotelsSearchForm";
+
+type SearchTab = "flights" | "hotels";
 
 interface Props {
   initialState?: Partial<FlightSearchState>;
@@ -63,6 +66,7 @@ export function CompactFlightToolbar({
 }: Props) {
   const { state, errors, actions } = useFlightSearch(initialState);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<SearchTab>("flights");
 
   // If initial route exists, stay collapsed until user clicks
   // Otherwise expand to let them fill it in
@@ -92,31 +96,77 @@ export function CompactFlightToolbar({
           </>
         )}
 
-        {/* Search pill */}
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl bg-white px-2 py-1.5 shadow-sm ring-1 ring-black/[0.08]">
-          <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
-          <div className="h-7 w-px shrink-0 bg-neutral-200" />
-          <RouteField label="From" placeholder="Origin" value={state.origin} onChange={actions.setOrigin} />
-          <SwapAirportsButton onClick={actions.onSwapRoute} />
-          <RouteField label="To" placeholder="Destination" value={state.destination} onChange={actions.setDestination} />
-          <div className="h-7 w-px shrink-0 bg-neutral-200" />
-          <DateRangeField
-            tripType={state.tripType}
-            departDate={state.departDate}
-            returnDate={state.returnDate}
-            onDepartChange={actions.setDepartDate}
-            onReturnChange={actions.setReturnDate}
-          />
-          <div className="h-7 w-px shrink-0 bg-neutral-200" />
-          <PaxCabinField
-            travellers={state.travellers}
-            cabin={state.cabin}
-            onTravellersChange={actions.setTravellers}
-            onCabinChange={actions.setCabin}
-          />
+        {/* Tab switcher */}
+        <div className="inline-flex rounded-2xl bg-white/10 p-1">
+          <button
+            type="button"
+            data-testid="tab-flights"
+            role="tab"
+            aria-selected={activeTab === "flights"}
+            aria-label="Flights"
+            onClick={() => setActiveTab("flights")}
+            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+              activeTab === "flights"
+                ? "bg-white text-purple-900 shadow-sm"
+                : "text-purple-900/60 hover:bg-white/10"
+            }`}
+          >
+            Flights
+          </button>
+          <button
+            type="button"
+            data-testid="tab-hotels"
+            role="tab"
+            aria-selected={activeTab === "hotels"}
+            aria-label="Hotels"
+            onClick={() => setActiveTab("hotels")}
+            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+              activeTab === "hotels"
+                ? "bg-white text-purple-900 shadow-sm"
+                : "text-purple-900/60 hover:bg-white/10"
+            }`}
+          >
+            Hotels
+          </button>
         </div>
 
-        <SearchSubmitButton onClick={handleSubmit} />
+        <div className="h-5 w-px bg-yellow-600/30" />
+
+        {/* Search forms */}
+        {activeTab === "flights" ? (
+          <>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl bg-white px-2 py-1.5 shadow-sm ring-1 ring-black/[0.08]">
+              <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
+              <div className="h-7 w-px shrink-0 bg-neutral-200" />
+              <RouteField label="From" placeholder="Origin" value={state.origin} onChange={actions.setOrigin} />
+              <SwapAirportsButton onClick={actions.onSwapRoute} />
+              <RouteField label="To" placeholder="Destination" value={state.destination} onChange={actions.setDestination} />
+              <div className="h-7 w-px shrink-0 bg-neutral-200" />
+              <DateRangeField
+                tripType={state.tripType}
+                departDate={state.departDate}
+                returnDate={state.returnDate}
+                onDepartChange={actions.setDepartDate}
+                onReturnChange={actions.setReturnDate}
+              />
+              <div className="h-7 w-px shrink-0 bg-neutral-200" />
+              <PaxCabinField
+                travellers={state.travellers}
+                cabin={state.cabin}
+                onTravellersChange={actions.setTravellers}
+                onCabinChange={actions.setCabin}
+              />
+            </div>
+            <SearchSubmitButton onClick={handleSubmit} />
+          </>
+        ) : (
+          <div className="flex-1">
+            <HotelsSearchForm 
+              layout="compact" 
+              initialCity={state.destination?.city || ""} 
+            />
+          </div>
+        )}
 
         <a
           href="#"
@@ -154,10 +204,46 @@ export function CompactFlightToolbar({
             <MobileSummaryPill state={state} onClick={() => setIsExpanded(true)} />
           ) : (
             <div className="rounded-2xl bg-white shadow-md ring-1 ring-black/[0.06]">
-              {/* Trip type tabs */}
-              <div className="border-b border-neutral-100 px-3 pt-3">
-                <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
+              {/* Tab switcher (Mobile) */}
+              <div className="flex border-b border-neutral-100 p-2">
+                <button
+                  type="button"
+                  data-testid="tab-flights"
+                  role="tab"
+                  aria-selected={activeTab === "flights"}
+                  aria-label="Flights"
+                  onClick={() => setActiveTab("flights")}
+                  className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${
+                    activeTab === "flights"
+                      ? "bg-purple-950 text-white shadow-sm"
+                      : "text-neutral-500 hover:bg-neutral-50"
+                  }`}
+                >
+                  Flights
+                </button>
+                <button
+                  type="button"
+                  data-testid="tab-hotels"
+                  role="tab"
+                  aria-selected={activeTab === "hotels"}
+                  aria-label="Hotels"
+                  onClick={() => setActiveTab("hotels")}
+                  className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${
+                    activeTab === "hotels"
+                      ? "bg-purple-950 text-white shadow-sm"
+                      : "text-neutral-500 hover:bg-neutral-50"
+                  }`}
+                >
+                  Hotels
+                </button>
               </div>
+
+              {activeTab === "flights" ? (
+                <>
+                  {/* Trip type tabs */}
+                  <div className="border-b border-neutral-100 px-3 pt-3">
+                    <TripTypeSegment value={state.tripType} onChange={actions.setTripType} />
+                  </div>
 
               {/* Route row: From ⇅ To (vertical swap on mobile) */}
               <div className="relative px-3 py-2">
@@ -251,6 +337,16 @@ export function CompactFlightToolbar({
               <div className="border-t border-neutral-100 px-3 pb-3 pt-2">
                 <SearchSubmitButton onClick={handleSubmit} fullWidth />
               </div>
+
+                </>
+              ) : (
+                <div className="p-3">
+                  <HotelsSearchForm 
+                    layout="default" 
+                    initialCity={state.destination?.city || ""} 
+                  />
+                </div>
+              )}
 
               {/* Cancel/Collapse button (optional but good for UX) */}
               {hasRoute && (

@@ -537,16 +537,18 @@ export default function WhiteLabelResultsBridge() {
       `}</style>
 
       <div className="tpwl-page">
-        {/* ── Custom compact toolbar ───────────────────── */}
-        <CompactFlightToolbar initialState={toolbarInitial} />
+      <section id="results-toolbar" className="border-b border-white/10 bg-slate-950">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <CompactFlightToolbar initialState={toolbarInitial} />
+        </div>
+      </section>
 
-        {/* ── TP results widget ────────────────────────── */}
-        <main className="tpwl-main">
-          <div className="tpwl-tickets__wrapper">
-            <div className="tpwl__content">
-              <div id="tpwl-tickets" />
-            </div>
+      <main className="tpwl-main">
+        <div className="tpwl-tickets__wrapper">
+          <div className="tpwl__content">
+            <div id="tpwl-tickets" />
           </div>
+        </div>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-2 px-4 max-w-screen-xl mx-auto">
           {/* stays card */}
