@@ -11,6 +11,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { hotelSearchHandler } from "../api/hotels";
 import { serveStatic, setupVite } from "./vite";
 import fs from "fs";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
@@ -338,6 +339,9 @@ async function startServer() {
       res.status(500).json({ error: "Failed to fetch cheap prices" });
     }
   });
+
+  // ─── Hotels Search API ───
+  app.get("/api/hotels/search", hotelSearchHandler);
 
   app.get("/api/calendar-prices", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many requests"), async (req, res) => {
     try {
@@ -709,6 +713,21 @@ async function startServer() {
       createContext,
     })
   );
+
+  // ─── 12Go iframe CSP ───
+  app.use("/transport", (_req, res, next) => {
+    res.setHeader("Content-Security-Policy", [
+      "default-src 'self'",
+      "script-src  'self' 'unsafe-inline' 'unsafe-eval' *.12go.asia",
+      "style-src   'self' 'unsafe-inline' fonts.googleapis.com *.12go.asia",
+      "font-src    'self' fonts.gstatic.com *.12go.asia",
+      "frame-src   'self' *.12go.asia gotravelasia.12go.asia",
+      "img-src     'self' data: blob: *.12go.asia",
+      "connect-src 'self' *.12go.asia",
+    ].join("; "));
+    next();
+  });
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
