@@ -716,26 +716,13 @@ async function startServer() {
 
   // ─── 12Go iframe CSP ───
   app.use(["/", "/transport"], (_req, res, next) => {
-    res.setHeader("Content-Security-Policy", [
-      "default-src 'self'",
-      "script-src  'self' 'unsafe-inline' 'unsafe-eval' *.12go.asia",
-      "style-src   'self' 'unsafe-inline' fonts.googleapis.com *.12go.asia",
-      "font-src    'self' fonts.gstatic.com",
-      "frame-src   'self' *.12go.asia gotravelasia.12go.asia",
-      "img-src     'self' data: blob: *.12go.asia *.unsplash.com *",
-      "connect-src 'self' *.12go.asia",
-    ].join("; "));
+    res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline' 'unsafe-eval' *; connect-src 'self' *; img-src 'self' data: blob: *;");
     next();
   });
 
   // ─── Hotels + Flights CDNs CSP ───
   app.use(['/hotels', '/flights'], (_req, res, next) => {
-    res.setHeader('Content-Security-Policy', [
-      "default-src 'self'",
-      "script-src  'self' 'unsafe-inline' 'unsafe-eval'",
-      "img-src     'self' data: blob: *.agoda.com *.booking.com *.unsplash.com *",
-      "connect-src 'self' api.awin.com affiliateapi7643.agoda.com *.trip.com",
-    ].join('; '));
+    res.setHeader('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *; connect-src 'self' *; img-src 'self' data: blob: *;");
     next();
   });
 
