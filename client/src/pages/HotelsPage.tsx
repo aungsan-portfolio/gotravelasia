@@ -1,274 +1,350 @@
-/**
- * client/src/pages/HotelsPage.tsx
- * Step 4 — Hotels Integration
- */
-import { useState, useRef, useEffect } from 'react';
-import { Link, useSearch }             from 'wouter';
-import HotelCard            from '@/components/HotelCard';
-import type { HotelData, AffiliateLinks } from '@/components/HotelCard';
-import { CITIES_BY_COUNTRY, HOTEL_CITIES_SORTED, type City } from '@/lib/cities';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useSearch } from 'wouter';
+import HotelCard from '@/components/HotelCard';
+import type { AffiliateLinks, HotelData } from '@/components/HotelCard';
+import { CITIES_BY_COUNTRY, type City } from '@shared/hotels/cities';
+import { buildHotelSearchParams, defaultHotelDates, parseHotelSearchParams } from '@shared/hotels/searchParams';
+import type { HotelSearchMeta, HotelSearchResponse, HotelSort } from '@shared/hotels/types';
 
-const SORT_OPTIONS = [
-  { v:'rank',  l:'Recommended' },
-  { v:'score', l:'Review score' },
-  { v:'price', l:'Lowest price' },
-  { v:'stars', l:'Star rating'  },
-] as const;
-type SortKey = typeof SORT_OPTIONS[number]['v'];
+const SORT_OPTIONS: Array<{ value: HotelSort; label: string }> = [
+  { value: 'rank', label: 'Recommended' },
+  { value: 'review_desc', label: 'Review score' },
+  { value: 'price_asc', label: 'Lowest price' },
+  { value: 'price_desc', label: 'Highest price' },
+  { value: 'stars_desc', label: 'Star rating' },
+];
 
-const offsetDate = (days: number) =>
-  new Date(Date.now() + days * 86_400_000).toISOString().split('T')[0];
+const EMPTY_META: HotelSearchMeta = {
+  source: 'mock',
+  checkIn: '',
+  checkOut: '',
+  adults: 2,
+  rooms: 1,
+  page: 1,
+  sort: 'rank',
+  pageSize: 20,
+  totalCount: 0,
+  totalPages: 1,
+  warnings: [],
+};
 
 export default function HotelsPage() {
-  const searchStr = useSearch();
-  const urlParams = new URLSearchParams(searchStr ?? '');
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const parsedParams = useMemo(() => parseHotelSearchParams(search ?? ''), [search]);
+  const dateDefaults = useMemo(() => defaultHotelDates(), []);
 
-  const today  = new Date().toISOString().split('T')[0];
-  const defIn  = offsetDate(1);
-  const defOut = offsetDate(4);
+  const [citySlug, setCitySlug] = useState(parsedParams.city);
+  const [checkIn, setCheckIn] = useState(parsedParams.checkIn);
+  const [checkOut, setCheckOut] = useState(parsedParams.checkOut);
+  const [adults, setAdults] = useState(parsedParams.adults);
+  const [rooms, setRooms] = useState(parsedParams.rooms);
+  const [sortBy, setSortBy] = useState<HotelSort>(parsedParams.sort);
+  const [page, setPage] = useState(parsedParams.page);
 
-  // form
-  const [citySlug, setCitySlug] = useState(urlParams.get('city') ?? 'yangon');
-  const [checkIn,  setCheckIn]  = useState(urlParams.get('checkIn') ?? defIn);
-  const [checkOut, setCheckOut] = useState(urlParams.get('checkOut') ?? defOut);
-  const [adults,   setAdults]   = useState(parseInt(urlParams.get('adults') || '2', 10));
-  const [rooms,    setRooms]    = useState(parseInt(urlParams.get('rooms') || '1', 10));
-
-  // results
-  const [hotels,   setHotels]   = useState<HotelData[]>([]);
-  const [aff,      setAff]      = useState<AffiliateLinks | null>(null);
+  const [hotels, setHotels] = useState<HotelData[]>([]);
+  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLinks | null>(null);
   const [cityMeta, setCityMeta] = useState<City | null>(null);
-  const [loading,  setLoading]  = useState(false);
+  const [meta, setMeta] = useState<HotelSearchMeta>(EMPTY_META);
+  const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [error,    setError]    = useState('');
-
-  // filter / sort
+  const [error, setError] = useState('');
   const [minStars, setMinStars] = useState(0);
-  const [sortBy,   setSortBy]   = useState<SortKey>('rank');
 
   const resultsRef = useRef<HTMLDivElement>(null);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
-    if (urlParams.has('city') && !searched && !loading) {
-      handleSearch();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setCitySlug(parsedParams.city);
+    setCheckIn(parsedParams.checkIn);
+    setCheckOut(parsedParams.checkOut);
+    setAdults(parsedParams.adults);
+    setRooms(parsedParams.rooms);
+    setSortBy(parsedParams.sort);
+    setPage(parsedParams.page);
+  }, [parsedParams]);
 
-  async function handleSearch(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    setLoading(true); setError('');
+  useEffect(() => {
+    if (!parsedParams.city) return;
+    hydratedRef.current = true;
+    void fetchHotels(parsedParams, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedParams.city, parsedParams.checkIn, parsedParams.checkOut, parsedParams.adults, parsedParams.rooms, parsedParams.page, parsedParams.sort]);
+
+  const displayedHotels = useMemo(() => hotels.filter((hotel) => (hotel.stars ?? 0) >= minStars), [hotels, minStars]);
+  const canPaginate = meta.totalPages > 1;
+
+  async function fetchHotels(nextParams = parsedParams, shouldScroll = true) {
+    setLoading(true);
+    setError('');
+
     try {
-      const p = new URLSearchParams({ city: citySlug, checkIn, checkOut, adults: String(adults), rooms: String(rooms) });
-      const res = await fetch(`/api/hotels/search?${p}`);
-      if (!res.ok) {
-        const d = await res.json() as { error?: string };
-        throw new Error(d.error ?? 'Search failed');
+      const response = await fetch(`/api/hotels/search?${buildHotelSearchParams(nextParams).toString()}`);
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error ?? 'Search failed');
       }
-      const data = await res.json() as { hotels: HotelData[]; affiliateLinks: AffiliateLinks; city: City };
-      setHotels(data.hotels ?? []);
-      setAff(data.affiliateLinks ?? null);
-      setCityMeta(data.city ?? null);
+
+      const payload = (await response.json()) as HotelSearchResponse;
+      setHotels(payload.hotels ?? []);
+      setAffiliateLinks(payload.affiliateLinks ?? null);
+      setCityMeta(payload.city ?? null);
+      setMeta(payload.meta ?? EMPTY_META);
       setSearched(true);
-      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
+      if (shouldScroll) {
+        setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Search failed. Please try again.');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const displayed = [...hotels]
-    .filter(h => (h.stars ?? 0) >= minStars)
-    .sort((a, b) => {
-      if (sortBy === 'score') return (b.reviewScore ?? 0) - (a.reviewScore ?? 0);
-      if (sortBy === 'price') return (a.lowestRate  ?? 999) - (b.lowestRate  ?? 999);
-      if (sortBy === 'stars') return (b.stars       ?? 0) - (a.stars       ?? 0);
-      return 0;
+  function updateUrl(overrides: Partial<{ city: string; checkIn: string; checkOut: string; adults: number; rooms: number; page: number; sort: HotelSort }>, shouldScroll = false) {
+    const params = buildHotelSearchParams({
+      city: overrides.city ?? citySlug,
+      checkIn: overrides.checkIn ?? checkIn,
+      checkOut: overrides.checkOut ?? checkOut,
+      adults: overrides.adults ?? adults,
+      rooms: overrides.rooms ?? rooms,
+      page: overrides.page ?? page,
+      sort: overrides.sort ?? sortBy,
     });
+
+    navigate(`/hotels?${params.toString()}`);
+
+    if (shouldScroll && hydratedRef.current) {
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }
+
+  function handleSearchSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    updateUrl({ city: citySlug, checkIn, checkOut, adults, rooms, page: 1, sort: sortBy }, true);
+  }
+
+  function handleSortChange(nextSort: HotelSort) {
+    setSortBy(nextSort);
+    updateUrl({ sort: nextSort, page: 1 }, true);
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    updateUrl({ page: nextPage }, true);
+  }
 
   return (
     <div className="min-h-screen">
-      {/* ── Hero / Search ──────────────────────────────── */}
-      <section className="relative bg-navy py-14 px-6 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background:'radial-gradient(ellipse 60% 50% at 15% 65%,rgba(124,92,191,.16) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 88% 25%,rgba(245,200,66,.06) 0%,transparent 70%)'
-        }} />
-        <div className="relative max-w-6xl mx-auto text-center">
-
-          <div className="inline-flex items-center gap-2 text-gold text-[11px] font-bold tracking-widest px-4 py-1.5 rounded-full mb-5 border border-gold/25 bg-gold/10">
-            <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+      <section className="relative overflow-hidden bg-navy px-6 py-14">
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 50% at 15% 65%,rgba(124,92,191,.16) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 88% 25%,rgba(245,200,66,.06) 0%,transparent 70%)',
+          }}
+        />
+        <div className="relative mx-auto max-w-6xl text-center">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/10 px-4 py-1.5 text-[11px] font-bold tracking-widest text-gold">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
             43 CITIES · HOTELS ACROSS ASIA
           </div>
 
-          <h1 className="font-display text-4xl md:text-5xl font-extrabold leading-tight text-white mb-3">
-            Find your perfect hotel<br />
+          <h1 className="mb-3 font-display text-4xl font-extrabold leading-tight text-white md:text-5xl">
+            Find your perfect hotel
+            <br />
             <span className="text-gold">at the lowest price</span>
           </h1>
-          <p className="text-white/65 text-base mb-8">
-            Compare Agoda, Booking.com, Trip.com, Expedia &amp; Klook
-          </p>
+          <p className="mb-8 text-base text-white/65">Compare Agoda, Booking.com, Trip.com, Expedia &amp; Klook</p>
 
-          {/* Search form */}
-          <form onSubmit={handleSearch}
-            className="glass-card rounded-3xl p-5 max-w-5xl mx-auto">
-            <div className="flex flex-wrap gap-2 items-end">
-
-              {/* Destination — grouped optgroup */}
-              <div className="flex flex-col gap-1 flex-[2] min-w-[180px]">
-                <label className="text-[10px] font-semibold text-white/35 tracking-widest uppercase flex items-center gap-1">
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                  </svg>Destination
+          <form onSubmit={handleSearchSubmit} className="glass-card mx-auto max-w-5xl rounded-3xl p-5">
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex min-w-[180px] flex-[2] flex-col gap-1">
+                <label className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-white/35">
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  Destination
                 </label>
-                <select value={citySlug} onChange={e => setCitySlug(e.target.value)} className="field-dark">
+                <select value={citySlug} onChange={(event) => setCitySlug(event.target.value)} className="field-dark">
                   {Object.entries(CITIES_BY_COUNTRY).map(([country, data]) => (
                     <optgroup key={country} label={`${data.flag} ${country}`}>
-                      {data.cities.filter(c => c.hasHotels).map(c => (
-                        <option key={c.slug} value={c.slug}>{c.flag} {c.name}</option>
+                      {data.cities.filter((city) => city.hasHotels).map((city) => (
+                        <option key={city.slug} value={city.slug}>
+                          {city.flag} {city.name}
+                        </option>
                       ))}
                     </optgroup>
                   ))}
                 </select>
               </div>
 
-              {/* Check-in */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[130px]">
-                <label className="text-[10px] font-semibold text-white/35 tracking-widest uppercase">Check-in</label>
-                <input type="date" className="field-dark" value={checkIn} min={today}
-                  onChange={e => setCheckIn(e.target.value)} />
+              <div className="flex min-w-[130px] flex-1 flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-white/35">Check-in</label>
+                <input type="date" className="field-dark" value={checkIn} min={dateDefaults.checkIn} onChange={(event) => setCheckIn(event.target.value)} />
               </div>
 
-              {/* Check-out */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[130px]">
-                <label className="text-[10px] font-semibold text-white/35 tracking-widest uppercase">Check-out</label>
-                <input type="date" className="field-dark" value={checkOut} min={checkIn}
-                  onChange={e => setCheckOut(e.target.value)} />
+              <div className="flex min-w-[130px] flex-1 flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-white/35">Check-out</label>
+                <input type="date" className="field-dark" value={checkOut} min={checkIn} onChange={(event) => setCheckOut(event.target.value)} />
               </div>
 
-              {/* Adults */}
-              <div className="flex flex-col gap-1 w-20">
-                <label className="text-[10px] font-semibold text-white/35 tracking-widest uppercase">Adults</label>
-                <select className="field-dark" value={adults} onChange={e => setAdults(parseInt(e.target.value))}>
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+              <div className="flex w-20 flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-white/35">Adults</label>
+                <select className="field-dark" value={adults} onChange={(event) => setAdults(Number(event.target.value))}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
+                    <option key={value} value={value}>{value}</option>
+                  ))}
                 </select>
               </div>
 
-              {/* Rooms */}
-              <div className="flex flex-col gap-1 w-20">
-                <label className="text-[10px] font-semibold text-white/35 tracking-widest uppercase">Rooms</label>
-                <select className="field-dark" value={rooms} onChange={e => setRooms(parseInt(e.target.value))}>
-                  {[1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
+              <div className="flex w-20 flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-white/35">Rooms</label>
+                <select className="field-dark" value={rooms} onChange={(event) => setRooms(Number(event.target.value))}>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <option key={value} value={value}>{value}</option>
+                  ))}
                 </select>
               </div>
 
-              <button type="submit" disabled={loading}
-                className="flex items-center gap-2 bg-orange-brand hover:bg-orange-brand-hover disabled:opacity-60 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap self-end">
-                {loading
-                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Searching…</>
-                  : <><svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search Hotels</>
-                }
+              <button type="submit" disabled={loading} className="self-end whitespace-nowrap rounded-xl bg-orange-brand px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-orange-brand-hover disabled:opacity-60">
+                {loading ? 'Searching…' : 'Search Hotels'}
               </button>
             </div>
           </form>
         </div>
       </section>
 
-      {/* ── Results ────────────────────────────────────── */}
       {(searched || loading) && (
-        <section className="max-w-6xl mx-auto px-6 py-8" ref={resultsRef}>
+        <section className="mx-auto max-w-6xl px-6 py-8" ref={resultsRef}>
+          {error && <div className="mb-4 rounded-xl border border-red-400/20 bg-red-400/8 px-4 py-3 text-sm text-red-400">{error}</div>}
 
-          {/* Error */}
-          {error && (
-            <div className="mb-4 px-4 py-3 rounded-xl text-red-400 text-sm border border-red-400/20 bg-red-400/8">
-              {error}
-            </div>
-          )}
-
-          {/* Toolbar */}
           {!error && (
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-white/65 text-sm flex items-center gap-2">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="flex items-center gap-2 text-sm text-white/65">
                   {cityMeta && <span className="text-xl">{cityMeta.flag}</span>}
-                  {loading ? 'Searching…' : (
-                    <><span className="text-2xl font-extrabold font-display text-white">{displayed.length}</span>
-                    {' '}hotels{cityMeta && <> in <strong>{cityMeta.name}</strong></>}</>
+                  {loading ? (
+                    'Searching…'
+                  ) : (
+                    <>
+                      <span className="font-display text-2xl font-extrabold text-white">{displayedHotels.length}</span>
+                      {' '}hotels{cityMeta && <> in <strong>{cityMeta.name}</strong></>}
+                    </>
                   )}
                 </span>
                 {!loading && (
-                  <div className="flex gap-1.5">
-                    {[0,3,4,5].map(s => (
-                      <button key={s} onClick={() => setMinStars(s)}
-                        className={`text-[11px] px-3 py-1 rounded-full border transition-all cursor-pointer
-                          ${minStars === s ? 'bg-gold/12 border-gold text-gold' : 'bg-white/5 border-white/10 text-white/65 hover:border-gold/30'}`}>
-                        {s === 0 ? 'All' : '★'.repeat(s)+'+'}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[0, 3, 4, 5].map((stars) => (
+                      <button
+                        key={stars}
+                        type="button"
+                        onClick={() => setMinStars(stars)}
+                        className={`rounded-full border px-3 py-1 text-[11px] transition-all ${
+                          minStars === stars ? 'border-gold bg-gold/12 text-gold' : 'border-white/10 bg-white/5 text-white/65 hover:border-gold/30'
+                        }`}
+                      >
+                        {stars === 0 ? 'All' : `${'★'.repeat(stars)}+`}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
+
               {!loading && (
                 <div className="flex items-center gap-2">
                   <span className="text-[12px] text-white/38">Sort:</span>
-                  <select value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)}
-                    className="bg-white/5 border border-white/10 text-white/65 text-sm px-3 py-1.5 rounded-lg outline-none">
-                    {SORT_OPTIONS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                  <select value={sortBy} onChange={(event) => handleSortChange(event.target.value as HotelSort)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/65 outline-none">
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
               )}
             </div>
           )}
 
-          {/* OTA banner */}
-          {!loading && aff && (
-            <div className="flex flex-wrap items-center gap-3 mb-5 px-4 py-2.5 rounded-xl border border-white/7 bg-white/[0.03]">
+          {!loading && meta.warnings?.length ? (
+            <div className="mb-4 rounded-xl border border-amber-400/20 bg-amber-400/8 px-4 py-3 text-sm text-amber-200">
+              {meta.warnings.join(' ')}
+            </div>
+          ) : null}
+
+          {!loading && affiliateLinks && (
+            <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-white/7 bg-white/[0.03] px-4 py-2.5">
               <span className="text-[11px] text-white/38">Also search on:</span>
-              {([['Agoda','#E22128',aff.agoda],['Booking.com','#4A90E2',aff.booking],['Trip.com','#1890FF',aff.trip],['Klook','#FF5C35',aff.klook],['Expedia','#00355F',aff.expedia]] as [string,string,string|undefined][])
-                .filter(([,,u]) => u)
+              {([
+                ['Agoda', '#E22128', affiliateLinks.agoda],
+                ['Booking.com', '#4A90E2', affiliateLinks.booking],
+                ['Trip.com', '#1890FF', affiliateLinks.trip],
+                ['Klook', '#FF5C35', affiliateLinks.klook],
+                ['Expedia', '#00355F', affiliateLinks.expedia],
+              ] as [string, string, string | undefined][])
+                .filter(([, , url]) => url)
                 .map(([name, color, url]) => (
-                  <a key={name} href={url} target="_blank" rel="noopener noreferrer sponsored"
-                    className="flex items-center gap-1.5 text-[12px] font-medium text-white/65 bg-white/5 border border-white/10 px-3 py-1 rounded-full hover:text-white hover:bg-white/8 transition-all">
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                  <a key={name} href={url} target="_blank" rel="noopener noreferrer sponsored" className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12px] font-medium text-white/65 transition-all hover:bg-white/8 hover:text-white">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
                     {name}
                   </a>
                 ))}
+              <span className="ml-auto text-[11px] text-white/35">Source: {meta.source === 'agoda' ? 'Agoda live feed' : 'Fallback mock data'}</span>
             </div>
           )}
 
-          {/* Skeleton */}
           {loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-navy-card border border-white/8 rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="overflow-hidden rounded-2xl border border-white/8 bg-navy-card">
                   <div className="h-[175px] animate-shimmer" />
-                  <div className="p-4 flex flex-col gap-3">
-                    <div className="h-3 rounded animate-shimmer w-3/4" />
-                    <div className="h-3 rounded animate-shimmer w-1/2" />
-                    <div className="h-3 rounded animate-shimmer w-2/3" />
+                  <div className="flex flex-col gap-3 p-4">
+                    <div className="h-3 w-3/4 animate-shimmer rounded" />
+                    <div className="h-3 w-1/2 animate-shimmer rounded" />
+                    <div className="h-3 w-2/3 animate-shimmer rounded" />
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Hotel grid */}
-          {!loading && displayed.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {displayed.map((hotel, i) => (
-                <HotelCard key={hotel.hotelId} hotel={hotel} city={cityMeta ?? undefined}
-                  affiliateLinks={aff ?? {}} checkIn={checkIn} checkOut={checkOut}
-                  adults={adults} animDelay={i * 50} />
-              ))}
-            </div>
+          {!loading && displayedHotels.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {displayedHotels.map((hotel, index) => (
+                  <HotelCard
+                    key={hotel.hotelId}
+                    hotel={hotel}
+                    city={cityMeta ?? undefined}
+                    affiliateLinks={affiliateLinks ?? {}}
+                    checkIn={meta.checkIn || checkIn}
+                    checkOut={meta.checkOut || checkOut}
+                    adults={meta.adults || adults}
+                    animDelay={index * 50}
+                  />
+                ))}
+              </div>
+
+              {canPaginate && (
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+                  <button type="button" disabled={meta.page <= 1} onClick={() => handlePageChange(meta.page - 1)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40">
+                    Previous
+                  </button>
+                  <span className="px-3 text-sm text-white/65">Page {meta.page} of {meta.totalPages}</span>
+                  <button type="button" disabled={meta.page >= meta.totalPages} onClick={() => handlePageChange(meta.page + 1)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40">
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
-          {/* Empty */}
-          {!loading && searched && displayed.length === 0 && !error && (
-            <div className="text-center py-16 text-white/65">
-              <div className="text-5xl mb-4">🔍</div>
+          {!loading && searched && displayedHotels.length === 0 && !error && (
+            <div className="py-16 text-center text-white/65">
+              <div className="mb-4 text-5xl">🔍</div>
               <p>No hotels found. Try different dates or filters.</p>
-              {aff?.agoda && (
-                <a href={aff.agoda} target="_blank" rel="noreferrer sponsored"
-                  className="inline-block mt-5 bg-gold text-navy font-bold text-sm px-6 py-2.5 rounded-xl">
+              {affiliateLinks?.agoda && (
+                <a href={affiliateLinks.agoda} target="_blank" rel="noreferrer sponsored" className="mt-5 inline-block rounded-xl bg-gold px-6 py-2.5 text-sm font-bold text-navy">
                   Search on Agoda →
                 </a>
               )}
@@ -277,20 +353,26 @@ export default function HotelsPage() {
         </section>
       )}
 
-      {/* ── City browse (pre-search) ───────────────────── */}
       {!searched && (
-        <section className="max-w-6xl mx-auto px-6 py-10">
-          <h2 className="font-display text-xl font-bold text-white mb-6">Browse by destination</h2>
+        <section className="mx-auto max-w-6xl px-6 py-10">
+          <h2 className="mb-6 font-display text-xl font-bold text-white">Browse by destination</h2>
           {Object.entries(CITIES_BY_COUNTRY).map(([country, data]) => (
             <div key={country} className="mb-7">
-              <h3 className="text-sm font-semibold text-white/45 mb-3">{data.flag} {country}</h3>
+              <h3 className="mb-3 text-sm font-semibold text-white/45">{data.flag} {country}</h3>
               <div className="flex flex-wrap gap-2">
-                {data.cities.filter(c => c.hasHotels).map(c => (
-                  <button key={c.slug}
-                    onClick={() => { setCitySlug(c.slug); window.scrollTo({ top:0, behavior:'smooth' }); }}
-                    className={`text-sm px-4 py-2 rounded-full border transition-all cursor-pointer
-                      ${citySlug === c.slug ? 'bg-gold/12 border-gold text-gold' : 'bg-white/5 border-white/10 text-white/65 hover:border-gold/35 hover:text-white hover:bg-gold/6'}`}>
-                    {c.flag} {c.name}
+                {data.cities.filter((city) => city.hasHotels).map((city) => (
+                  <button
+                    key={city.slug}
+                    type="button"
+                    onClick={() => {
+                      setCitySlug(city.slug);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`rounded-full border px-4 py-2 text-sm transition-all ${
+                      citySlug === city.slug ? 'border-gold bg-gold/12 text-gold' : 'border-white/10 bg-white/5 text-white/65 hover:border-gold/35 hover:bg-gold/6 hover:text-white'
+                    }`}
+                  >
+                    {city.flag} {city.name}
                   </button>
                 ))}
               </div>
@@ -299,12 +381,14 @@ export default function HotelsPage() {
         </section>
       )}
 
-      {/* Cross-links */}
-      <div className="max-w-6xl mx-auto px-6 pb-10 flex flex-wrap gap-2 border-t border-white/5 pt-6">
-        {[['Flights','/flights'],['Transport','/transport'],['Activities','/activities']].map(([l,h]) => (
-          <Link key={l} href={h}
-            className="text-xs text-gold/70 border border-gold/20 px-4 py-1.5 rounded-full hover:bg-gold/8 transition-all">
-            Also see: {l} →
+      <div className="mx-auto flex max-w-6xl flex-wrap gap-2 border-t border-white/5 px-6 pb-10 pt-6">
+        {[
+          ['Flights', '/flights'],
+          ['Transport', '/transport'],
+          ['Activities', '/activities'],
+        ].map(([label, href]) => (
+          <Link key={label} href={href} className="rounded-full border border-gold/20 px-4 py-1.5 text-xs text-gold/70 transition-all hover:bg-gold/8">
+            Also see: {label} →
           </Link>
         ))}
       </div>

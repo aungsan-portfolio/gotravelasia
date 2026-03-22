@@ -1,130 +1,119 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { CITIES_BY_COUNTRY } from "@/lib/cities";
+import { useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
+import { CITIES_BY_COUNTRY } from '@shared/hotels/cities';
+import { buildHotelSearchParams, defaultHotelDates, normalizeHotelSearchParams } from '@shared/hotels/searchParams';
 
-export default function HotelsSearchForm() {
-    const [, setLocation] = useLocation();
-    
-    const today = new Date().toISOString().split("T")[0];
-    const defIn = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-    const defOut = new Date(Date.now() + 4 * 86400000).toISOString().split("T")[0];
+interface Props {
+  layout?: 'default' | 'compact';
+  initialCity?: string;
+}
 
-    const [citySlug, setCitySlug] = useState("bangkok");
-    const [checkIn, setCheckIn] = useState(defIn);
-    const [checkOut, setCheckOut] = useState(defOut);
-    const [adults, setAdults] = useState(2);
-    const [rooms, setRooms] = useState(1);
+export default function HotelsSearchForm({ layout = 'default', initialCity }: Props) {
+  const [, setLocation] = useLocation();
+  const defaults = useMemo(() => defaultHotelDates(), []);
+  const initialParams = useMemo(
+    () => normalizeHotelSearchParams({ city: initialCity || 'bangkok', checkIn: defaults.checkIn, checkOut: defaults.checkOut }),
+    [defaults.checkIn, defaults.checkOut, initialCity],
+  );
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const params = new URLSearchParams({
-            city: citySlug,
-            checkIn,
-            checkOut,
-            adults: adults.toString(),
-            rooms: rooms.toString(),
-        });
-        setLocation(`/hotels?${params.toString()}`);
-    };
+  const [citySlug, setCitySlug] = useState(initialParams.city);
+  const [checkIn, setCheckIn] = useState(initialParams.checkIn);
+  const [checkOut, setCheckOut] = useState(initialParams.checkOut);
+  const [adults, setAdults] = useState(initialParams.adults);
+  const [rooms, setRooms] = useState(initialParams.rooms);
 
-    return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {/* Destination */}
-                <div className="md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Destination
-                    </label>
-                    <select
-                        value={citySlug}
-                        onChange={(e) => setCitySlug(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
-                    >
-                        {Object.entries(CITIES_BY_COUNTRY).map(([country, data]) => (
-                            <optgroup key={country} label={`${data.flag} ${country}`}>
-                                {data.cities.filter(c => c.hasHotels).map(c => (
-                                    <option key={c.slug} value={c.slug} className="text-gray-900">
-                                        {c.name}
-                                    </option>
-                                ))}
-                            </optgroup>
-                        ))}
-                    </select>
-                </div>
+  const isCompact = layout === 'compact';
+  const shellClassName = isCompact ? 'flex flex-wrap items-end gap-3' : 'flex flex-col gap-4';
+  const topGridClassName = isCompact ? 'grid flex-1 grid-cols-1 gap-3 xl:grid-cols-5' : 'grid grid-cols-1 gap-3 md:grid-cols-4';
+  const bottomGridClassName = isCompact ? 'grid w-full grid-cols-1 gap-3 md:grid-cols-3 xl:w-auto xl:grid-cols-[110px_140px_auto]' : 'grid grid-cols-1 gap-3 md:grid-cols-4';
+  const fieldClassName = isCompact
+    ? 'w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-900 outline-none focus:ring-2 focus:ring-yellow-400'
+    : 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-yellow-400';
+  const dateFieldClassName = `${fieldClassName} ${isCompact ? '' : '[color-scheme:dark]'}`.trim();
+  const labelClassName = isCompact
+    ? 'mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-neutral-500'
+    : 'mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-widest text-white/40';
+  const submitClassName = isCompact
+    ? 'h-[46px] rounded-xl bg-purple-950 px-6 font-bold text-white transition-all hover:bg-purple-900'
+    : 'h-[46px] w-full rounded-xl bg-yellow-400 text-base font-bold text-[#0d0b1e] shadow-lg shadow-yellow-400/20 transition-all hover:bg-yellow-500';
 
-                {/* Check-in */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Check-in
-                    </label>
-                    <input
-                        type="date"
-                        value={checkIn}
-                        min={today}
-                        onChange={(e) => setCheckIn(e.target.value)}
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
-                    />
-                </div>
+  const submitSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    const params = buildHotelSearchParams({ city: citySlug, checkIn, checkOut, adults, rooms, page: 1, sort: 'rank' });
+    setLocation(`/hotels?${params.toString()}`);
+  };
 
-                {/* Check-out */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Check-out
-                    </label>
-                    <input
-                        type="date"
-                        value={checkOut}
-                        min={checkIn}
-                        onChange={(e) => setCheckOut(e.target.value)}
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
-                    />
-                </div>
-            </div>
+  return (
+    <form onSubmit={submitSearch} className={shellClassName}>
+      <div className={topGridClassName}>
+        <div className={isCompact ? 'xl:col-span-2' : 'md:col-span-2'}>
+          <label className={labelClassName}>Destination</label>
+          <select value={citySlug} onChange={(event) => setCitySlug(event.target.value)} className={fieldClassName}>
+            {Object.entries(CITIES_BY_COUNTRY).map(([country, data]) => (
+              <optgroup key={country} label={`${data.flag} ${country}`}>
+                {data.cities.filter((city) => city.hasHotels).map((city) => (
+                  <option key={city.slug} value={city.slug} className="text-gray-900">
+                    {city.flag} {city.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {/* Rooms */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Rooms
-                    </label>
-                    <select
-                        value={rooms}
-                        onChange={(e) => setRooms(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
-                    >
-                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n} className="text-gray-900">{n} Room{n > 1 ? 's' : ''}</option>)}
-                    </select>
-                </div>
+        <div>
+          <label className={labelClassName}>Check-in</label>
+          <input type="date" value={checkIn} min={defaults.checkIn} onChange={(event) => setCheckIn(event.target.value)} required className={dateFieldClassName} />
+        </div>
 
-                {/* Adults */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Adults
-                    </label>
-                    <select
-                        value={adults}
-                        onChange={(e) => setAdults(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
-                    >
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n} className="text-gray-900">{n} Adult{n > 1 ? 's' : ''}</option>)}
-                    </select>
-                </div>
+        <div>
+          <label className={labelClassName}>Check-out</label>
+          <input type="date" value={checkOut} min={checkIn} onChange={(event) => setCheckOut(event.target.value)} required className={dateFieldClassName} />
+        </div>
 
-                {/* Empty space for alignment */}
-                <div className="hidden md:block"></div>
+        {isCompact && (
+          <div>
+            <label className={labelClassName}>Adults</label>
+            <select value={adults} onChange={(event) => setAdults(Number(event.target.value))} className={fieldClassName}>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
+                <option key={value} value={value} className="text-gray-900">
+                  {value}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
 
-                {/* Submit button */}
-                <div className="flex items-end">
-                    <button
-                        type="submit"
-                        className="w-full bg-yellow-400 hover:bg-yellow-500 text-[#0d0b1e] font-bold transition-all h-[46px] rounded-xl text-base shadow-lg shadow-yellow-400/20"
-                    >
-                        Compare Prices
-                    </button>
-                </div>
-            </div>
-        </form>
-    );
+      <div className={bottomGridClassName}>
+        <div>
+          <label className={labelClassName}>Rooms</label>
+          <select value={rooms} onChange={(event) => setRooms(Number(event.target.value))} className={fieldClassName}>
+            {[1, 2, 3, 4, 5].map((value) => (
+              <option key={value} value={value} className="text-gray-900">
+                {value} Room{value > 1 ? 's' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={labelClassName}>Adults</label>
+          <select value={adults} onChange={(event) => setAdults(Number(event.target.value))} className={fieldClassName}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
+              <option key={value} value={value} className="text-gray-900">
+                {value} Adult{value > 1 ? 's' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={isCompact ? 'flex items-end' : 'flex items-end md:col-span-2'}>
+          <button type="submit" className={submitClassName}>
+            Compare Prices
+          </button>
+        </div>
+      </div>
+    </form>
+  );
 }
