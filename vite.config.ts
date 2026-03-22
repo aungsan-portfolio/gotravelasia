@@ -155,6 +155,8 @@ const plugins = [
   VitePWA({
     registerType: "autoUpdate",
     workbox: {
+      navigateFallback: "/index.html",
+      navigateFallbackDenylist: [/^\/api\//, /^\/12go-widget\.html/],
       cleanupOutdatedCaches: true,
       maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,json}"],
