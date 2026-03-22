@@ -715,7 +715,7 @@ async function startServer() {
   );
 
   // ─── 12Go iframe CSP ───
-  app.use("/transport", (_req, res, next) => {
+  app.use(["/", "/transport"], (_req, res, next) => {
     res.setHeader("Content-Security-Policy", [
       "default-src 'self'",
       "script-src  'self' 'unsafe-inline' 'unsafe-eval' *.12go.asia",
