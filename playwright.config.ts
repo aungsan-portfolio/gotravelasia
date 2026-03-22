@@ -5,13 +5,13 @@ export default defineConfig({
   retries: 2,
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:4173',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
   },
 
   webServer: {
-    command: 'pnpm preview',
-    url: 'http://localhost:4173',
+    command: 'pnpm start',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
