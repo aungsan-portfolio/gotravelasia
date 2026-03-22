@@ -12,7 +12,6 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter }           from "../routers";
 import { createContext }        from "./context";
 import { searchHotels }         from "../api/hotels";
-import { serveStatic, setupVite } from "./vite";
 import handleAuth              from "../../api/_handlers/auth";
 import handleFlights           from "../../api/_handlers/flights";
 import handleGeo               from "../../api/_handlers/geo";
@@ -71,8 +70,13 @@ async function startServer() {
   const server = createServer(app);
 
   // ── Vite / Static ─────────────────────────────────────────────
-  if (process.env.NODE_ENV === "development") await setupVite(app, server);
-  else serveStatic(app);
+  if (process.env.NODE_ENV === "development") {
+    const { setupVite } = await import("./vite");
+    await setupVite(app, server);
+  } else {
+    const { serveStatic } = await import("./vite");
+    serveStatic(app);
+  }
 
   // ── Listen ────────────────────────────────────────────────────
   const preferredPort = parseInt(process.env.PORT || "3000");
