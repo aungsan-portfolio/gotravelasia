@@ -1,11 +1,5 @@
 import { test, expect, type Page, type BrowserContext, type Locator } from '@playwright/test';
 
-const BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL ||
-  process.env.BASE_URL ||
-  process.env.VERCEL_PREVIEW_URL
-    ? `https://${process.env.VERCEL_PREVIEW_URL}`
-    : 'http://localhost:3000';
 
 /**
  * IMPORTANT CONTRACT FOR THIS SPEC
@@ -39,7 +33,7 @@ const BASE_URL =
 
 test.describe('Search & Affiliate Flows', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await dismissOverlays(page);
   });
 
@@ -140,7 +134,7 @@ test.describe('Search & Affiliate Flows', () => {
   });
 
   test('Cars: EconomyBookings deep-link contains affiliate marker', async ({ page, context }) => {
-    await page.goto(`${BASE_URL}/flights/results?origin=SIN&destination=BKK`, {
+    await page.goto('/flights/results?origin=SIN&destination=BKK', {
       waitUntil: 'domcontentloaded',
     });
     await dismissOverlays(page);
@@ -185,7 +179,7 @@ test.describe('Search & Affiliate Flows', () => {
       };
     });
 
-    await page.goto(`${BASE_URL}/flights/results?origin=SIN&destination=BKK`, {
+    await page.goto('/flights/results?origin=SIN&destination=BKK', {
       waitUntil: 'domcontentloaded',
     });
     await dismissOverlays(page);
@@ -215,7 +209,7 @@ test.describe('Search & Affiliate Flows', () => {
   test('Mobile UX: MobileSummaryPill shows on scroll', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    await page.goto(`${BASE_URL}/flights/results?origin=SIN&destination=BKK`, {
+    await page.goto('/flights/results?origin=SIN&destination=BKK', {
       waitUntil: 'domcontentloaded',
     });
     await dismissOverlays(page);
