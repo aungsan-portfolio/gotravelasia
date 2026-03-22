@@ -46,18 +46,51 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-myanmar: "Noto Sans Myanmar", sans-serif;
   --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+
+  --color-navy: #0d0b1e;
+  --color-navy-2: #13102a;
+  --color-navy-3: #1c1835;
+  --color-navy-card: #1a1730;
+
+  --color-gold: #f5c842;
+  --color-gold-2: #e8b82e;
+
+  --color-orange-brand: #ff6b2b;
+  --color-orange-brand-hover: #e85a1e;
 
   @keyframes shimmer {
     from { background-position: -200% 0; }
     to { background-position: 200% 0; }
   }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@utility animate-fade-up {
+  animation: fadeUp 0.4s ease both;
 }
 
 @utility animate-shimmer {
-  animation: shimmer 1.4s ease infinite;
-  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%);
+  background: linear-gradient(90deg, #1a1735 25%, #221f40 50%, #1a1735 75%);
   background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
 }
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+@utility field-dark {
+  @apply bg-white/[0.07] border border-white/[0.12] rounded-xl text-white
+         placeholder-white/35 px-4 py-2.5 text-sm outline-none
+         transition-colors focus:border-yellow-400/50;
+}
+.field-dark option { background: var(--color-navy-3, #1c1835); }
 
 /* Myanmar font utility class */
 .font-myanmar {
@@ -178,9 +211,17 @@
     @apply border-border outline-ring/50;
   }
 
+  html { scroll-behavior: smooth; }
+
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-[#0d0b1e] text-white font-body antialiased;
+    min-height: 100vh;
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar       { width: 6px; }
+  ::-webkit-scrollbar-track { background: #13102a; }
+  ::-webkit-scrollbar-thumb { background: #1c1835; border-radius: 3px; }
 
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

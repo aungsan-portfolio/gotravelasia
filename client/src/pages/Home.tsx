@@ -6,6 +6,7 @@ import FlightWidget from "@/components/flights/FlightWidget";
 import CheapDealsCards from "@/components/cheap-deals";
 import SpecialOffers from "@/components/cheap-deals/SpecialOffers";
 import PopularDestinations from "@/components/PopularDestinations";
+import TransportPreview from "@/components/home/TransportPreview";
 import HomeFAQSection from "@/components/HomeFAQSection";
 import AboutSection from "@/components/AboutSection";
 
@@ -14,7 +15,7 @@ import {
 } from "@/lib/config";
 
 // ─── Lazy-loaded tabs (Upgrade 4: code splitting) ───
-const HotelsSearchForm = React.lazy(() => import("@/components/hotels/HotelsSearchForm"));
+const HotelSearchPreview = React.lazy(() => import("@/components/home/HotelSearchPreview"));
 const TwelveGoWidget = React.lazy(() => import("@/components/TwelveGoWidget"));
 
 // Fallback skeleton for lazy tabs
@@ -57,7 +58,7 @@ export default function Home() {
 
         {/* Upgrade 4: Lazy-loaded tabs — Hotels & Transport only download when clicked */}
         <Suspense fallback={<TabSkeleton />}>
-          {activeTab === "hotels" && <HotelsSearchForm />}
+          {activeTab === "hotels" && <HotelSearchPreview />}
           {activeTab === "transport" && (
             <div
               className="w-full relative z-10"
@@ -74,6 +75,8 @@ export default function Home() {
       <CheapDealsCards />
 
       <PopularDestinations />
+
+      <TransportPreview />
 
       <HomeFAQSection />
 

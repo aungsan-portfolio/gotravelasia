@@ -11,7 +11,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { hotelSearchHandler } from "../api/hotels";
+import { searchHotels } from "../api/hotels";
 import { serveStatic, setupVite } from "./vite";
 import fs from "fs";
 import { fetchAmadeusCalendarPrices } from "./amadeus";
@@ -341,7 +341,7 @@ async function startServer() {
   });
 
   // ─── Hotels Search API ───
-  app.get("/api/hotels/search", hotelSearchHandler);
+  app.get("/api/hotels/search", searchHotels);
 
   app.get("/api/calendar-prices", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many requests"), async (req, res) => {
     try {
@@ -720,11 +720,22 @@ async function startServer() {
       "default-src 'self'",
       "script-src  'self' 'unsafe-inline' 'unsafe-eval' *.12go.asia",
       "style-src   'self' 'unsafe-inline' fonts.googleapis.com *.12go.asia",
-      "font-src    'self' fonts.gstatic.com *.12go.asia",
+      "font-src    'self' fonts.gstatic.com",
       "frame-src   'self' *.12go.asia gotravelasia.12go.asia",
-      "img-src     'self' data: blob: *.12go.asia",
+      "img-src     'self' data: blob: *.12go.asia *.unsplash.com *",
       "connect-src 'self' *.12go.asia",
     ].join("; "));
+    next();
+  });
+
+  // ─── Hotels + Flights CDNs CSP ───
+  app.use(['/hotels', '/flights'], (_req, res, next) => {
+    res.setHeader('Content-Security-Policy', [
+      "default-src 'self'",
+      "script-src  'self' 'unsafe-inline' 'unsafe-eval'",
+      "img-src     'self' data: blob: *.agoda.com *.booking.com *.unsplash.com *",
+      "connect-src 'self' api.awin.com affiliateapi7643.agoda.com *.trip.com",
+    ].join('; '));
     next();
   });
 
