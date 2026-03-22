@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <script>
+    const p = new URLSearchParams(window.location.search);
+    const from = p.get('from') || '';
+    const to = p.get('to') || '';
+    const date = p.get('date') || '';
+    const height = p.get('height') || '400';
+
+    let attrs = [
+      'src="https://cdn0.trainbusferry.com/tools/form/en/?id=14566451&domain=gotravelasia.12go.asia"',
+      'data-one2go="14566451"',
+      'data-color="default"',
+      'data-language="en"',
+      'data-width="100%"',
+      `data-height="${height}"`,
+      'data-border="0"',
+      'data-starget="_blank"',
+      'data-domain="gotravelasia.12go.asia"',
+      'data-curr="THB"'
+    ];
+
+    if (from) attrs.push('data-origin="' + from + '"');
+    if (to) attrs.push('data-destination="' + to + '"');
+    if (date) {
+      attrs.push('data-departure="' + date + '"'); 
+      attrs.push('data-date="' + date + '"');      
+    }
+
+    document.write('<script ' + attrs.join(' ') + '><\\/script>');
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
  * Step 3 — Transport Integration (12Go)
  */
 import { useEffect, useRef, useState } from 'react';
-import { twelveGoUrl, WL_BASE, type TwelveGoParams } from '../lib/twelveGo';
+import { twelveGoUrl, type TwelveGoParams } from '../lib/twelveGo';
 
 interface Props extends TwelveGoParams {
   minHeight?: number;
@@ -18,7 +18,8 @@ export default function TwelveGoWidget({
   const [loaded, setLoaded]  = useState(false);
   const [height, setHeight]  = useState(minHeight);
 
-  const src = twelveGoUrl({ from, to, date, transport, passengers });
+  // Route via local html script-wrapper to bypass White Label X-Frame-Options
+  const src = `/12go-widget.html?from=${encodeURIComponent(from||'')}&to=${encodeURIComponent(to||'')}&date=${encodeURIComponent(date||'')}&height=${minHeight}`;
 
   // postMessage auto-resize
   useEffect(() => {
