@@ -15,27 +15,26 @@
     const date = p.get('date') || '';
     const height = p.get('height') || '400';
 
-    let attrs = [
-      'src="https://cdn0.trainbusferry.com/tools/form/en/?id=14566451&domain=gotravelasia.12go.asia"',
-      'data-one2go="14566451"',
-      'data-color="default"',
-      'data-language="en"',
-      'data-width="100%"',
-      `data-height="${height}"`,
-      'data-border="0"',
-      'data-starget="_blank"',
-      'data-domain="gotravelasia.12go.asia"',
-      'data-curr="THB"'
-    ];
+    const script = document.createElement('script');
+    script.src = 'https://cdn0.trainbusferry.com/tools/form/en/?id=14566451&domain=gotravelasia.12go.asia';
+    script.setAttribute('data-one2go', '14566451');
+    script.setAttribute('data-color', 'default');
+    script.setAttribute('data-language', 'en');
+    script.setAttribute('data-width', '100%');
+    script.setAttribute('data-height', height);
+    script.setAttribute('data-border', '0');
+    script.setAttribute('data-starget', '_blank');
+    script.setAttribute('data-domain', 'gotravelasia.12go.asia');
+    script.setAttribute('data-curr', 'THB');
 
-    if (from) attrs.push('data-origin="' + from + '"');
-    if (to) attrs.push('data-destination="' + to + '"');
+    if (from) script.setAttribute('data-origin', from);
+    if (to) script.setAttribute('data-destination', to);
     if (date) {
-      attrs.push('data-departure="' + date + '"'); 
-      attrs.push('data-date="' + date + '"');      
+      script.setAttribute('data-departure', date);
+      script.setAttribute('data-date', date);
     }
 
-    document.write('<script ' + attrs.join(' ') + '><\\/script>');
+    document.body.appendChild(script);
   </script>
 </body>
 </html>
