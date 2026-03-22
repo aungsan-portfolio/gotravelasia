@@ -13,7 +13,7 @@ import SEO from "@/seo/SEO";
 import { MobileSummaryPill } from "@/components/flights/results/MobileSummaryPill";
 import { CompactFlightToolbar } from "@/components/flights/search/CompactFlightToolbar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { getCityName } from "@/lib/cities";
+import { getCityByIata } from "@/lib/cities";
 import type { AirportOption } from "@/features/flights/search/flightSearch.types";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -254,7 +254,7 @@ export default function WhiteLabelResultsBridge() {
       safeParam(search.get("city"));
 
     if (explicit) return explicit;
-    if (destinationCode) return getCityName(destinationCode);
+    if (destinationCode) return getCityByIata(destinationCode)?.name || "";
     return "";
   }, [search, destinationCode]);
 
