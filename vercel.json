@@ -14,7 +14,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.12go.asia emrldtp.com *.posthog.com accounts.google.com; connect-src 'self' *.12go.asia *.posthog.com ipapi.co emrldtp.com sentry.avs.io; img-src 'self' data: blob: *.12go.asia *;"
+          "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.12go.asia emrldtp.com *.posthog.com accounts.google.com *.travelpayouts.com; connect-src 'self' *.12go.asia *.posthog.com ipapi.co emrldtp.com sentry.avs.io *.travelpayouts.com; img-src 'self' data: blob: *.12go.asia *;"
         }
       ]
     }
