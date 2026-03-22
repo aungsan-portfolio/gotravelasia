@@ -15,7 +15,7 @@ import {
 
 // ─── Lazy-loaded tabs (Upgrade 4: code splitting) ───
 const HotelsSearchForm = React.lazy(() => import("@/components/hotels/HotelsSearchForm"));
-const TransportScheduleWidget = React.lazy(() => import("@/components/transport/TransportScheduleWidget"));
+const TwelveGoWidget = React.lazy(() => import("@/components/TwelveGoWidget"));
 
 // Fallback skeleton for lazy tabs
 function TabSkeleton() {
@@ -60,10 +60,10 @@ export default function Home() {
           {activeTab === "hotels" && <HotelsSearchForm />}
           {activeTab === "transport" && (
             <div
-              className="w-full overflow-y-auto max-h-[550px] md:max-h-none relative z-10"
-              style={{ WebkitOverflowScrolling: 'touch' }}
+              className="w-full relative z-10"
+              style={{ padding: '0 8px' }}
             >
-              <TransportScheduleWidget />
+              <TwelveGoWidget minHeight={450} />
             </div>
           )}
         </Suspense>

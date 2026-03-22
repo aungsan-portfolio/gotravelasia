@@ -18,13 +18,28 @@ export default function HotelsPage() {
   const defIn   = offset(1);
   const defOut  = offset(4);
 
+  // Read URL params for initial state
+  const searchParams = new URLSearchParams(window.location.search);
+  
   // ── Form state ─────────────────────────────────────
-  const [citySlug,  setCitySlug]  = useState('yangon');
-  const [checkIn,   setCheckIn]   = useState(defIn);
-  const [checkOut,  setCheckOut]  = useState(defOut);
-  const [adults,    setAdults]    = useState(2);
-  const [rooms,     setRooms]     = useState(1);
+  const [citySlug,  setCitySlug]  = useState(searchParams.get('city') || 'bangkok');
+  const [checkIn,   setCheckIn]   = useState(searchParams.get('checkIn') || defIn);
+  const [checkOut,  setCheckOut]  = useState(searchParams.get('checkOut') || defOut);
+  const [adults,    setAdults]    = useState(parseInt(searchParams.get('adults') || '2', 10));
+  const [rooms,     setRooms]     = useState(parseInt(searchParams.get('rooms') || '1', 10));
   const [sortBy,    setSortBy]    = useState('rank');
+
+  // Update URL if state changes
+  useEffect(() => {
+    const params = new URLSearchParams({
+      city: citySlug,
+      checkIn,
+      checkOut,
+      adults: adults.toString(),
+      rooms: rooms.toString(),
+    });
+    window.history.replaceState(null, '', `?${params.toString()}`);
+  }, [citySlug, checkIn, checkOut, adults, rooms]);
 
   // ── UI state ───────────────────────────────────────
   const [hotels,     setHotels]     = useState<any[]>([]);
