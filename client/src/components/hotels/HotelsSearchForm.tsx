@@ -1,130 +1,120 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { CITIES_BY_COUNTRY } from "@/lib/cities";
+import { useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
+import { CITIES_BY_COUNTRY, getHotelCities } from '@shared/hotels/cities';
+import { buildHotelSearchParams, defaultHotelDates } from '@shared/hotels/searchParams';
 
-export default function HotelsSearchForm() {
-    const [, setLocation] = useLocation();
-    
-    const today = new Date().toISOString().split("T")[0];
-    const defIn = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-    const defOut = new Date(Date.now() + 4 * 86400000).toISOString().split("T")[0];
+interface Props {
+  layout?: 'default' | 'compact';
+  initialCity?: string;
+}
 
-    const [citySlug, setCitySlug] = useState("bangkok");
-    const [checkIn, setCheckIn] = useState(defIn);
-    const [checkOut, setCheckOut] = useState(defOut);
-    const [adults, setAdults] = useState(2);
-    const [rooms, setRooms] = useState(1);
+export default function HotelsSearchForm({ layout = 'default', initialCity }: Props) {
+  const [, setLocation] = useLocation();
+  const defaults = useMemo(() => defaultHotelDates(), []);
+  const hotelCities = useMemo(() => getHotelCities(), []);
+  const fallbackCity = hotelCities.find((city) => city.name.toLowerCase() === initialCity?.toLowerCase())?.slug ?? hotelCities[0]?.slug ?? 'yangon';
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const params = new URLSearchParams({
-            city: citySlug,
-            checkIn,
-            checkOut,
-            adults: adults.toString(),
-            rooms: rooms.toString(),
-        });
-        setLocation(`/hotels?${params.toString()}`);
-    };
+  const [citySlug, setCitySlug] = useState(fallbackCity);
+  const [checkIn, setCheckIn] = useState(defaults.checkIn);
+  const [checkOut, setCheckOut] = useState(defaults.checkOut);
+  const [adults, setAdults] = useState(2);
+  const [rooms, setRooms] = useState(1);
 
-    return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {/* Destination */}
-                <div className="md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Destination
-                    </label>
-                    <select
-                        value={citySlug}
-                        onChange={(e) => setCitySlug(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
-                    >
-                        {Object.entries(CITIES_BY_COUNTRY).map(([country, data]) => (
-                            <optgroup key={country} label={`${data.flag} ${country}`}>
-                                {data.cities.filter(c => c.hasHotels).map(c => (
-                                    <option key={c.slug} value={c.slug} className="text-gray-900">
-                                        {c.name}
-                                    </option>
-                                ))}
-                            </optgroup>
-                        ))}
-                    </select>
-                </div>
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = buildHotelSearchParams({ city: citySlug, checkIn, checkOut, adults, rooms });
+    setLocation(`/hotels?${params.toString()}`);
+  };
 
-                {/* Check-in */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Check-in
-                    </label>
-                    <input
-                        type="date"
-                        value={checkIn}
-                        min={today}
-                        onChange={(e) => setCheckIn(e.target.value)}
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
-                    />
-                </div>
+  const compact = layout === 'compact';
 
-                {/* Check-out */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Check-out
-                    </label>
-                    <input
-                        type="date"
-                        value={checkOut}
-                        min={checkIn}
-                        onChange={(e) => setCheckOut(e.target.value)}
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
-                    />
-                </div>
-            </div>
+  return (
+    <form onSubmit={handleSubmit} className={`flex flex-col ${compact ? 'gap-3' : 'gap-4'}`}>
+      <div className={`grid grid-cols-1 ${compact ? 'xl:grid-cols-[minmax(200px,2fr)_repeat(4,minmax(110px,1fr))_minmax(160px,1fr)]' : 'md:grid-cols-4'} gap-3`}>
+        <div className={compact ? '' : 'md:col-span-2'}>
+          <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
+            Destination
+          </label>
+          <select
+            value={citySlug}
+            onChange={(e) => setCitySlug(e.target.value)}
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
+          >
+            {Object.entries(CITIES_BY_COUNTRY).map(([country, data]) => (
+              <optgroup key={country} label={`${data.flag} ${country}`}>
+                {data.cities.filter((city) => city.hasHotels).map((city) => (
+                  <option key={city.slug} value={city.slug} className="text-gray-900">
+                    {city.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {/* Rooms */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Rooms
-                    </label>
-                    <select
-                        value={rooms}
-                        onChange={(e) => setRooms(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
-                    >
-                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n} className="text-gray-900">{n} Room{n > 1 ? 's' : ''}</option>)}
-                    </select>
-                </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
+            Check-in
+          </label>
+          <input
+            type="date"
+            value={checkIn}
+            min={defaults.checkIn}
+            onChange={(e) => setCheckIn(e.target.value)}
+            required
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
+          />
+        </div>
 
-                {/* Adults */}
-                <div>
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
-                        Adults
-                    </label>
-                    <select
-                        value={adults}
-                        onChange={(e) => setAdults(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
-                    >
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n} className="text-gray-900">{n} Adult{n > 1 ? 's' : ''}</option>)}
-                    </select>
-                </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
+            Check-out
+          </label>
+          <input
+            type="date"
+            value={checkOut}
+            min={checkIn}
+            onChange={(e) => setCheckOut(e.target.value)}
+            required
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white [color-scheme:dark]"
+          />
+        </div>
 
-                {/* Empty space for alignment */}
-                <div className="hidden md:block"></div>
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
+            Rooms
+          </label>
+          <select
+            value={rooms}
+            onChange={(e) => setRooms(Number(e.target.value))}
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
+          >
+            {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n} className="text-gray-900">{n} Room{n > 1 ? 's' : ''}</option>)}
+          </select>
+        </div>
 
-                {/* Submit button */}
-                <div className="flex items-end">
-                    <button
-                        type="submit"
-                        className="w-full bg-yellow-400 hover:bg-yellow-500 text-[#0d0b1e] font-bold transition-all h-[46px] rounded-xl text-base shadow-lg shadow-yellow-400/20"
-                    >
-                        Compare Prices
-                    </button>
-                </div>
-            </div>
-        </form>
-    );
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block ml-1">
+            Adults
+          </label>
+          <select
+            value={adults}
+            onChange={(e) => setAdults(Number(e.target.value))}
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none font-bold text-sm text-white"
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <option key={n} value={n} className="text-gray-900">{n} Adult{n > 1 ? 's' : ''}</option>)}
+          </select>
+        </div>
+
+        <div className="flex items-end">
+          <button
+            type="submit"
+            className="w-full bg-yellow-400 hover:bg-yellow-500 text-[#0d0b1e] font-bold transition-all h-[46px] rounded-xl text-base shadow-lg shadow-yellow-400/20"
+          >
+            Compare Prices
+          </button>
+        </div>
+      </div>
+    </form>
+  );
 }
