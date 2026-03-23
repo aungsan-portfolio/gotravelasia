@@ -562,7 +562,7 @@ function getMockHotels(
   return sortHotels(withLinks, sort);
 }
 
-export async function searchHotels(req: Request, res: Response) {
+export async function searchHotels(req: any, res: any) {
   const normalized = normalizeHotelSearchParams(
     req.query as Record<string, string | string[] | undefined>
   );
