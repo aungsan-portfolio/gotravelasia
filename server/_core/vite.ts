@@ -20,13 +20,13 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
+  (app as any).use(vite.middlewares);
+  (app as any).use("*", async (req: any, res: any, next: any) => {
     const url = req.originalUrl;
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        (import.meta.dirname ?? ""),
         "../..",
         "client",
         "index.html"
@@ -50,18 +50,18 @@ export async function setupVite(app: Express, server: Server) {
 export function serveStatic(app: Express) {
   const distPath =
     process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
+      ? path.resolve((import.meta.dirname ?? ""), "../..", "dist", "public")
+      : path.resolve((import.meta.dirname ?? ""), "public");
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
 
-  app.use(express.static(distPath));
-
+  (app as any).use(express.static(distPath));
+  
   // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  (app as any).use("*", (_req: any, res: any) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
