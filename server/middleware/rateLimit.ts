@@ -20,10 +20,13 @@ export function rateLimit(
     const existing = store.get(ip);
     if (!existing || existing.resetAt <= now) {
       store.set(ip, { count: 1, resetAt: now + windowMs });
-      return next();
+      return (next as any)();
     }
-    if (existing.count >= max) { res.status(429).json({ error: msg }); return; }
+    if (existing.count >= max) {
+      (res as any).status(429).json({ error: msg });
+      return;
+    }
     existing.count++;
-    next();
+    (next as any)();
   };
 }

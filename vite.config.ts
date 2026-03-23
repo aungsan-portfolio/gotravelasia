@@ -70,7 +70,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
-function vitePluginManusDebugCollector(): Plugin {
+function vitePluginManusDebugCollector(): any {
   return {
     name: "manus-debug-collector",
 
@@ -163,7 +163,7 @@ const plugins = [
       globIgnores: ["**/data/flight_data.json"],
       runtimeCaching: [
         {
-          urlPattern: ({ url }) =>
+          urlPattern: ({ url }: { url: URL }) =>
             url.hostname === "hotellook.com" ||
             url.hostname === "www.travelpayouts.com" ||
             url.hostname === "autocomplete.travelpayouts.com" ||

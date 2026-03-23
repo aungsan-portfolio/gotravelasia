@@ -1,4 +1,4 @@
-import { searchHotels } from "./server/api/hotels.ts";
+import { searchHotels } from "./server/api/hotels.js";
 
 const req = {
   query: { city: "kunming", checkIn: "2026-03-25", checkOut: "2026-04-08", adults: "2", rooms: "1", page: "1", sort: "rank" }
