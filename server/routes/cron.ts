@@ -4,7 +4,7 @@ import { getActivePriceAlerts, updateAlertPrice } from "../db.js";
 
 const router = Router();
 
-router.get("/check-price-alerts", async (req, res) => {
+router.get("/check-price-alerts", async (req: any, res: any) => {
   try {
     if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
       res.status(401).json({ error: "Unauthorized" }); return;

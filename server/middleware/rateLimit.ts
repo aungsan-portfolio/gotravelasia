@@ -5,7 +5,7 @@ type RateLimitWindow = { count: number; resetAt: number };
 export const chatRateLimits     = new Map<string, RateLimitWindow>();
 export const calendarRateLimits = new Map<string, RateLimitWindow>();
 
-export function getClientIp(req: Request): string {
+export function getClientIp(req: any): string {
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string") return forwarded.split(",")[0]?.trim() || "unknown";
   return req.ip || req.socket.remoteAddress || "unknown";
