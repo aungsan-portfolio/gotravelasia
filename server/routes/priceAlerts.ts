@@ -5,7 +5,7 @@ import { buildWelcomeEmailHtml }            from "../utils/email.js";
 
 const router = Router();
 
-router.post("/subscribe", async (req, res) => {
+router.post("/subscribe", async (req: any, res: any) => {
   try {
     const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body;
     if (!email || !origin || !destination || !departDate) {
@@ -23,7 +23,7 @@ router.post("/subscribe", async (req, res) => {
   }
 });
 
-router.post("/submit", async (req, res) => {
+router.post("/submit", async (req: any, res: any) => {
   try {
     const { email, source, origin, destination, departDate, currentPrice, currency } = req.body;
     if (!email) { res.status(400).json({ error: "Email is required" }); return; }
