@@ -5,8 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch server/_core/index.ts",
-    "build": "vite build && esbuild api/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:mysql2 --external:nodemailer --external:sharp",
-    "vercel-build": "vite build && esbuild api/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:mysql2 --external:nodemailer --external:sharp",
+    "build": "vite build && esbuild api/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:mysql2 --external:nodemailer --external:sharp --external:vite --external:lightningcss --external:vite-plugin-pwa --external:@vite-pwa --external:@vitejs --external:vite-plugin-manus-runtime --external:rollup --external:@tailwindcss",
+    "vercel-build": "vite build && esbuild api/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:mysql2 --external:nodemailer --external:sharp --external:vite --external:lightningcss --external:vite-plugin-pwa --external:@vite-pwa --external:@vitejs --external:vite-plugin-manus-runtime --external:rollup --external:@tailwindcss",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
