@@ -63,6 +63,7 @@ app.use("/api/geo",                 handleGeo as any);
 app.use("/api/newsletter",          handleNewsletter as any);
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 
+app.get("/api/ping", (req, res) => res.json({ ok: true }));
 export default app;
 
 // ─── Server bootstrap (Local Only) ──────────────────────────────
@@ -71,10 +72,10 @@ async function startServer() {
 
   // ── Vite / Static ─────────────────────────────────────────────
   if (process.env.NODE_ENV === "development") {
-    const { setupVite } = await import("./vite");
+    const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
   } else {
-    const { serveStatic } = await import("./vite");
+    const { serveStatic } = await import("./vite.js");
     serveStatic(app);
   }
 

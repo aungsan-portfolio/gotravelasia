@@ -1,2 +1,3 @@
-import app from "../server/_core/index.js";
-export default app;
+export default (req: any, res: any) => {
+  res.json({ hello: "from vercel", timestamp: new Date().toISOString() });
+};

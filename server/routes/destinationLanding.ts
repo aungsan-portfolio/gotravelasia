@@ -3,7 +3,7 @@ const router = Router();
 
 router.get("/", async (req: any, res: any) => {
   try {
-    const { getDestinationLandingData } = await import("../api/destination-landing");
+    const { getDestinationLandingData } = await import("../api/destination-landing.js");
     const { slug } = req.query;
     if (typeof slug !== "string") { res.status(400).json({ error: "slug is required" }); return; }
     res.json(await getDestinationLandingData({ slug }));
