@@ -2,8 +2,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 export async function handleCalendarPrices(
-    req: VercelRequest,
-    res: VercelResponse,
+    req: any,
+    res: any,
     params: Record<string, string>
 ): Promise<void> {
     const token = process.env.TRAVELPAYOUTS_TOKEN;

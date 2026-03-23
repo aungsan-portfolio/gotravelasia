@@ -3,8 +3,8 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { sdk } from "../../server/_core/sdk.js";
 
 export async function handleMe(
-  req: VercelRequest,
-  res: VercelResponse
+  req: any,
+  res: any
 ): Promise<void> {
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });

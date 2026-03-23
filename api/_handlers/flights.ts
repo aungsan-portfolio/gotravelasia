@@ -5,7 +5,7 @@ import { handleCalendarPrices } from "../_lib/calendarPrices.js";
 import { handleCheapPrices }    from "../_lib/cheapPrices.js";
 import { handleSpecialOffers }  from "../_lib/specialOffers.js";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   if (setCors(req, res)) return;
 
   const params = parseRequest(req);

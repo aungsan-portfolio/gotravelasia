@@ -83,7 +83,7 @@ async function fetchCountryDeals(originCode: string, countrySlug: string): Promi
   };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   const slug        = String(req.query.slug        || "");
   const destination = String(req.query.destination || "").toUpperCase();
 

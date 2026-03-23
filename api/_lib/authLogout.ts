@@ -4,8 +4,8 @@ import { COOKIE_NAME } from "../../shared/const.js";
 import { getSessionCookieOptions } from "../../server/_core/cookies.js";
 
 export async function handleLogout(
-  req: VercelRequest,
-  res: VercelResponse
+  req: any,
+  res: any
 ): Promise<void> {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });

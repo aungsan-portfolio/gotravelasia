@@ -106,7 +106,7 @@ function ensureSchema(): Promise<void> {
 }
 
 // ── Request handler ──────────────────────────────────────────────────────────
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   const reqOrigin = req.headers.origin || "";
 
   if (ALLOWED_ORIGINS.some((o) => reqOrigin.startsWith(o))) {

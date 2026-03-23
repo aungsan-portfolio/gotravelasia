@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = [
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
 ].filter(Boolean);
 
-function setCors(req: VercelRequest, res: VercelResponse) {
+function setCors(req: any, res: any) {
     const origin = req.headers.origin || "";
     if (ALLOWED_ORIGINS.some((o) => origin.startsWith(o))) {
         res.setHeader("Access-Control-Allow-Origin", origin);
@@ -19,9 +19,8 @@ function setCors(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-export default async function handler(
-    req: VercelRequest,
-    res: VercelResponse
+    req: any,
+    res: any
 ) {
     setCors(req, res);
     if (req.method === "OPTIONS") return res.status(200).end();

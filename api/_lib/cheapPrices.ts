@@ -16,8 +16,8 @@ function setCache(key: string, data: any) {
 }
 
 export async function handleCheapPrices(
-    req: VercelRequest,
-    res: VercelResponse,
+    req: any,
+    res: any,
     params: Record<string, string>
 ): Promise<void> {
     const token = process.env.TRAVELPAYOUTS_TOKEN;

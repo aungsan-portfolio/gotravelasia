@@ -5,8 +5,8 @@ const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 export async function handleSpecialOffers(
-    req: VercelRequest,
-    res: VercelResponse,
+    req: any,
+    res: any,
     params: Record<string, string>
 ): Promise<void> {
     const token = process.env.TRAVELPAYOUTS_TOKEN;

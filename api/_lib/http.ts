@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
-export function setCors(req: VercelRequest, res: VercelResponse): boolean {
+export function setCors(req: any, res: any): boolean {
   const origin = req.headers.origin ?? "";
   if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
     res.setHeader("Access-Control-Allow-Origin", origin);
@@ -26,7 +26,7 @@ export function setCors(req: VercelRequest, res: VercelResponse): boolean {
   return false;
 }
 
-export function parseRequest(req: VercelRequest): Record<string, string> {
+export function parseRequest(req: any): Record<string, string> {
   const raw = req.query;
   const result: Record<string, string> = {};
   for (const [k, v] of Object.entries(raw)) {

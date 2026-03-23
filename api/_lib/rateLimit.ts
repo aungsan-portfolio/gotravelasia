@@ -11,7 +11,7 @@ const MAX_REQUESTS = 60;
 // In-memory store
 const hits = new Map<string, Entry>();
 
-function getClientIp(req: VercelRequest): string {
+function getClientIp(req: any): string {
   const xForwardedFor = req.headers["x-forwarded-for"];
 
   if (typeof xForwardedFor === "string" && xForwardedFor.length > 0) {
@@ -39,8 +39,8 @@ function cleanupExpiredEntries(now: number) {
 }
 
 export function rateLimitMiddleware(
-  req: VercelRequest,
-  res: VercelResponse
+  req: any,
+  res: any
 ): boolean {
   const now = Date.now();
   cleanupExpiredEntries(now);
