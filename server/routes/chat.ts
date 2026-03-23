@@ -5,7 +5,7 @@ const router = Router();
 const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
 router.post("/", rateLimit(chatRateLimits, 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."),
-  async (req, res) => {
+  async (req: any, res: any) => {
     try {
       const { contents } = req.body;
       const apiKey = process.env.GEMINI_API_KEY;

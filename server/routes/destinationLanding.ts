@@ -1,7 +1,7 @@
 import { Router } from "express";
 const router = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", async (req: any, res: any) => {
   try {
     const { getDestinationLandingData } = await import("../api/destination-landing");
     const { slug } = req.query;

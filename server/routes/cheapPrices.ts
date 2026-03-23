@@ -5,7 +5,7 @@ import { getCached, setCache } from "../utils/cache.js";
 const router = Router();
 
 router.get("/", rateLimit(calendarRateLimits, 60, 15 * 60 * 1000, "Too many requests"),
-  async (req, res) => {
+  async (req: any, res: any) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
       if (!token) { res.status(500).json({ error: "API token not configured" }); return; }
