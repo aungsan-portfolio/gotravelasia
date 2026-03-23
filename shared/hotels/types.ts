@@ -1,7 +1,12 @@
-import type { City } from './cities';
+import type { City } from "./cities";
 
-export type HotelSort = 'rank' | 'price_asc' | 'price_desc' | 'stars_desc' | 'review_desc';
-export type HotelSearchSource = 'agoda' | 'mock';
+export type HotelSort =
+  | "rank"
+  | "price_asc"
+  | "price_desc"
+  | "stars_desc"
+  | "review_desc";
+export type HotelSearchSource = "agoda" | "mock";
 
 export interface HotelSearchParams {
   city: string;
@@ -21,6 +26,13 @@ export interface HotelOutboundLinks {
   expedia?: string;
 }
 
+export interface HotelCoordinates {
+  lat: number;
+  lng: number;
+  /** Temporary fallback until upstream hotel-level coordinates are available. */
+  isFallback?: boolean;
+}
+
 export interface HotelResult {
   hotelId: string;
   name: string;
@@ -33,6 +45,7 @@ export interface HotelResult {
   lowestRate: number;
   currency?: string;
   rankingPosition?: number;
+  coordinates?: HotelCoordinates;
   outboundLinks?: HotelOutboundLinks;
 }
 
