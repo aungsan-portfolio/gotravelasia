@@ -1,11 +1,10 @@
 {
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm build",
+  "buildCommand": "pnpm run vercel-build",
   "outputDirectory": "dist/public",
   "framework": null,
   "functions": {
-    "api/index.ts": {
-      "includeFiles": "server/**",
+    "api/index.js": {
       "maxDuration": 30
     }
   },
