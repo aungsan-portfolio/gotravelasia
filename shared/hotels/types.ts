@@ -1,4 +1,4 @@
-import type { City } from "./cities";
+import type { City } from "./cities.js";
 
 export type HotelSort =
   | "rank"

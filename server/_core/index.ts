@@ -8,29 +8,29 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true 
 import express from "express";
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { appRouter }           from "../routers";
-import { createContext }        from "./context";
-import { searchHotels }         from "../api/hotels";
-import handleAuth              from "../../api/_handlers/auth";
-import handleFlights           from "../../api/_handlers/flights";
-import handleGeo               from "../../api/_handlers/geo";
-import handleNewsletter        from "../../api/_handlers/newsletter";
+import { registerOAuthRoutes } from "./oauth.js";
+import { appRouter }           from "../routers.js";
+import { createContext }        from "./context.js";
+import { searchHotels }         from "../api/hotels.js";
+import handleAuth              from "../../api/_handlers/auth.js";
+import handleFlights           from "../../api/_handlers/flights.js";
+import handleGeo               from "../../api/_handlers/geo.js";
+import handleNewsletter        from "../../api/_handlers/newsletter.js";
 
 // ─── Utils ──────────────────────────────────────────────────────
-import { findAvailablePort }    from "../utils/port";
+import { findAvailablePort }    from "../utils/port.js";
 
 // ─── Middleware ─────────────────────────────────────────────────
-import { cspOpen }              from "../middleware/csp";
+import { cspOpen }              from "../middleware/csp.js";
 
 // ─── Routes ─────────────────────────────────────────────────────
-import sitemapRouter         from "../routes/sitemap";
-import destinationRouter     from "../routes/destinationLanding";
-import chatRouter            from "../routes/chat";
-import cheapPricesRouter     from "../routes/cheapPrices";
-import calendarPricesRouter  from "../routes/calendarPrices";
-import priceAlertsRouter     from "../routes/priceAlerts";
-import cronRouter            from "../routes/cron";
+import sitemapRouter         from "../routes/sitemap.js";
+import destinationRouter     from "../routes/destinationLanding.js";
+import chatRouter            from "../routes/chat.js";
+import cheapPricesRouter     from "../routes/cheapPrices.js";
+import calendarPricesRouter  from "../routes/calendarPrices.js";
+import priceAlertsRouter     from "../routes/priceAlerts.js";
+import cronRouter            from "../routes/cron.js";
 
 // ─── App Setup ─────────────────────────────────────────────────
 const app = express();

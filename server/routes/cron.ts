@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { Resend }  from "resend";
-import { getActivePriceAlerts, updateAlertPrice } from "../db";
+import { getActivePriceAlerts, updateAlertPrice } from "../db.js";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
-import { getSeedBySlug, DESTINATION_SEEDS } from "../../shared/destination/registry";
-import type { DestinationLandingApiResponse } from "../../client/src/types/destination";
+import { getSeedBySlug, DESTINATION_SEEDS } from "../../shared/destination/registry.js";
+import type { DestinationLandingApiResponse } from "../../client/src/types/destination.js";
 
 export async function getDestinationLandingData(params: {
   slug: string;

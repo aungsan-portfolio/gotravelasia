@@ -2,7 +2,7 @@ import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers, destinations } from "../drizzle/schema.js";
 import { or } from "drizzle-orm";
-import { ENV } from './_core/env.js';
+import { ENV } from "./_core/env.js";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 

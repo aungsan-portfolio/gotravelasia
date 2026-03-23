@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rateLimit, chatRateLimits } from "../middleware/rateLimit";
+import { rateLimit, chatRateLimits } from "../middleware/rateLimit.js";
 
 const router = Router();
 const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];

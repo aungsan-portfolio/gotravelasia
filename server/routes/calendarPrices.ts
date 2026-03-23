@@ -1,9 +1,9 @@
 import { Router }  from "express";
 import path        from "path";
 import fs          from "fs";
-import { rateLimit, calendarRateLimits } from "../middleware/rateLimit";
-import { getCached, setCache }           from "../utils/cache";
-import { fetchAmadeusCalendarPrices }    from "../_core/amadeus";
+import { rateLimit, calendarRateLimits } from "../middleware/rateLimit.js";
+import { getCached, setCache }           from "../utils/cache.js";
+import { fetchAmadeusCalendarPrices }    from "../_core/amadeus.js";
 
 const router = Router();
 

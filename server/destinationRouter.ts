@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { publicProcedure, router } from "./_core/trpc";
-import { getDb } from "./db";
-import { destinations } from "../drizzle/schema";
-import { amadeusAPI } from "./amadeusAPI";
+import { publicProcedure, router } from "./_core/trpc.js";
+import { getDb } from "./db.js";
+import { destinations } from "../drizzle/schema.js";
+import { amadeusAPI } from "./amadeusAPI.js";
 
 export const destinationRouter = router({
   /**

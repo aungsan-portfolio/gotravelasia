@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import { getCityBySlug, type City } from "../../shared/hotels/cities";
-import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams";
+import { getCityBySlug, type City } from "../../shared/hotels/cities.js";
+import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams.js";
 import type {
   HotelOutboundLinks,
   HotelResult,
   HotelSearchResponse,
   HotelSort,
-} from "../../shared/hotels/types";
+} from "../../shared/hotels/types.js";
 
 const AGODA_SITE_ID = process.env.AGODA_SITE_ID ?? "";
 const AGODA_API_KEY = process.env.AGODA_API_KEY ?? "";

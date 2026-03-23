@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { rateLimit, calendarRateLimits } from "../middleware/rateLimit";
-import { getCached, setCache } from "../utils/cache";
+import { rateLimit, calendarRateLimits } from "../middleware/rateLimit.js";
+import { getCached, setCache } from "../utils/cache.js";
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Resend }  from "resend";
-import { createPriceAlert, saveSubscriber } from "../db";
-import { buildWelcomeEmailHtml }            from "../utils/email";
+import { createPriceAlert, saveSubscriber } from "../db.js";
+import { buildWelcomeEmailHtml }            from "../utils/email.js";
 
 const router = Router();
 

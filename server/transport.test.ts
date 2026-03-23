@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { searchTransport, getPopularRoutes } from './transport';
+import { searchTransport, getPopularRoutes } from "./transport.js";
 
 describe('Transport Service', () => {
   describe('searchTransport', () => {

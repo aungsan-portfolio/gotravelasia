@@ -1,4 +1,4 @@
-import type { HotelSearchParams, HotelSort } from './types';
+import type { HotelSearchParams, HotelSort } from "./types.js";
 
 const MS_PER_DAY = 86_400_000;
 const DEFAULT_CITY = 'yangon';

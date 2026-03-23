@@ -1,11 +1,11 @@
 
-import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { systemRouter } from "./_core/systemRouter.js";
+import { publicProcedure, router } from "./_core/trpc.js";
 import { z } from "zod";
-import { searchTransport, getPopularRoutes } from "./transport";
-import { destinationRouter } from "./destinationRouter";
-import { searchAmadeusLocations } from "./amadeusAPI";
-import { COOKIE_NAME } from "../shared/const";
+import { searchTransport, getPopularRoutes } from "./transport.js";
+import { destinationRouter } from "./destinationRouter.js";
+import { searchAmadeusLocations } from "./amadeusAPI.js";
+import { COOKIE_NAME } from "../shared/const.js";
 
 const flightsRouter = router({
   airportSearch: publicProcedure

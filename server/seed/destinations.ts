@@ -8,7 +8,7 @@
 
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { destinations } from "../../drizzle/schema";
+import { destinations } from "../../drizzle/schema.js";
 
 type CountrySeed = {
   slug: string;
