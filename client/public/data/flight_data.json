@@ -1,9 +1,9 @@
 {
   "meta": {
-    "updated_at": "2026-03-23 12:56",
-    "count": 6619,
+    "updated_at": "2026-03-23 18:46",
+    "count": 6622,
     "currency": "USD",
-    "errors": 70
+    "errors": 71
   },
   "routes": [
     {
@@ -15115,6 +15115,34 @@
     {
       "origin": "CEB",
       "destination": "KUL",
+      "price": 54.0,
+      "date": "2026-07-01",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 0,
+      "flight_number": "4696",
+      "found_at": "2026-03-23 18:46",
+      "fetchedAt": 1774291579737,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CEB",
+      "destination": "KUL",
+      "price": 54.0,
+      "date": "2026-07-22",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 0,
+      "flight_number": "3693",
+      "found_at": "2026-03-23 18:46",
+      "fetchedAt": 1774291579737,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CEB",
+      "destination": "KUL",
       "price": 59.0,
       "date": "2026-05-09",
       "airline": "Z2",
@@ -21115,6 +21143,20 @@
       "flight_number": "503",
       "found_at": "2026-03-10 00:31",
       "fetchedAt": 1773077501827,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CNX",
+      "destination": "SIN",
+      "price": 114.0,
+      "date": "2026-07-13",
+      "airline": "DD",
+      "airline_code": "DD",
+      "transfers": 1,
+      "flight_number": "121",
+      "found_at": "2026-03-23 18:45",
+      "fetchedAt": 1774291547906,
       "provider": "tp",
       "region": "SEA"
     },
