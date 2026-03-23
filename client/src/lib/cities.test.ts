@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getCityName, getCityCode } from "./cities";
+import { getCityName, getCityCode } from "./cities.js";
 
 describe("cities utility", () => {
     it("should correctly resolve IATA codes to city names", () => {

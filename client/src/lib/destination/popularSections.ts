@@ -6,7 +6,7 @@ import type {
   PopularSections,
   ScoredDestination,
 } from "@/types/destination";
-import { scoreDestinations } from "./popularity";
+import { scoreDestinations } from "./popularity.js";
 
 // ---------------------------------------------------------------------------
 // Country score formula

@@ -1,7 +1,7 @@
 // client/src/lib/flights/resolveFlightsRedirect.test.ts
 
 import { describe, expect, it } from "vitest";
-import { resolveFlightsRedirectPath } from "./resolveFlightsRedirect";
+import { resolveFlightsRedirectPath } from "./resolveFlightsRedirect.js";
 
 const singapore = {
   slug: "singapore",

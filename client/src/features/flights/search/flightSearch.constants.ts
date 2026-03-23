@@ -1,6 +1,6 @@
 // features/flights/search/flightSearch.constants.ts
 
-import type { FlightSearchState } from "./flightSearch.types";
+import type { FlightSearchState } from "./flightSearch.types.js";
 
 export const DEFAULT_FLIGHT_SEARCH: FlightSearchState = {
   tripType: "roundtrip",

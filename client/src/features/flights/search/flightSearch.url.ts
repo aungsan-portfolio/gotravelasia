@@ -5,7 +5,7 @@
 // your Travelpayouts White Label dashboard and align the exact encoding.
 // WL version/config affects parameter names slightly.
 
-import type { FlightSearchState } from "./flightSearch.types";
+import type { FlightSearchState } from "./flightSearch.types.js";
 
 interface BuildWhiteLabelUrlOptions {
   /** Base URL of your White Label results page.

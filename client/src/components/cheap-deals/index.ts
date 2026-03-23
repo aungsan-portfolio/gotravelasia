@@ -1,2 +1,2 @@
-export { default } from "./CheapDealsCards";
-export type { EnhancedDealCard } from "./types";
+export { default } from "./CheapDealsCards.js";
+export type { EnhancedDealCard } from "./types.js";

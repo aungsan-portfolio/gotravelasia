@@ -1,6 +1,6 @@
 // client/src/lib/tracking.test.ts
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { trackAffiliateClick } from './tracking';
+import { trackAffiliateClick } from "./tracking.js";
 
 describe('trackAffiliateClick', () => {
   beforeEach(() => {

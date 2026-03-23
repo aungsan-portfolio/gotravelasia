@@ -3,9 +3,9 @@ import { format, isValid } from "date-fns";
 import posthog from "posthog-js";
 import { z } from "zod";
 import { useFlightSearch } from "@/contexts/FlightSearchContext";
-import { AIRPORT_MAP, DEFAULT_ORIGIN, CABIN_OPTIONS, type CabinCode } from "./flightWidget.data";
-import { detectOriginAirport } from "./flightWidget.geo";
-import { recentSearches, type RecentSearchRecord } from "./flightWidget.recent";
+import { AIRPORT_MAP, DEFAULT_ORIGIN, CABIN_OPTIONS, type CabinCode } from "./flightWidget.data.js";
+import { detectOriginAirport } from "./flightWidget.geo.js";
+import { recentSearches, type RecentSearchRecord } from "./flightWidget.recent.js";
 import { usePriceHint } from "@/hooks/useFlightData";
 import { persistSearchToSession } from "@/lib/detectRouteFromContext";
 

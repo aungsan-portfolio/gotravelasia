@@ -1,7 +1,7 @@
 // client/src/lib/destination/signalMerger.ts
 
 import type { DestinationSignal } from "@/types/destination";
-import { safeDivide } from "./normalize";
+import { safeDivide } from "./normalize.js";
 
 // ---------------------------------------------------------------------------
 // Input shape

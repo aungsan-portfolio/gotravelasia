@@ -2,7 +2,7 @@ import type {
     FlightDeal,
     FlightDestinationPageData,
     RawFlightRoute,
-} from "../types/flights";
+} from "../types/flights.js";
 
 function safeString(value: unknown, fallback = ""): string {
     if (value === null || value === undefined) return fallback;

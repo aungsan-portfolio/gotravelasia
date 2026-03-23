@@ -1,5 +1,5 @@
-import { AFFILIATE } from "./config";
-import type { IataCode } from "./cities";
+import { AFFILIATE } from "./config.js";
+import type { IataCode } from "./cities.js";
 
 export type TransportType = 'train' | 'bus' | 'ferry';
 

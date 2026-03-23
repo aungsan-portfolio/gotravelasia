@@ -1,6 +1,6 @@
 // features/flights/search/flightSearch.validation.ts
 
-import type { FlightSearchState } from "./flightSearch.types";
+import type { FlightSearchState } from "./flightSearch.types.js";
 
 export interface ValidationResult {
   ok: boolean;

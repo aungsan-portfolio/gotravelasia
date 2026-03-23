@@ -1,12 +1,12 @@
 // ─── Pure utility functions ───────────────────────────────────────────────
 import { USD_TO_THB_RATE } from "@/const";
 import type { Deal } from "@/hooks/useFlightData";
-import type { DestinationMeta } from "./destinations";
+import type { DestinationMeta } from "./destinations.js";
 import {
     CACHE_TTL_MS,
     AIRLINE_NAMES,
     type EnhancedDealCard,
-} from "./types";
+} from "./types.js";
 
 // ── Date ──────────────────────────────────────────────────────────────────
 export function parseDateUTC(str: string): Date {

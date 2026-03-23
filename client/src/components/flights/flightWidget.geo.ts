@@ -1,4 +1,4 @@
-import { AIRPORT_MAP, DEFAULT_ORIGIN } from "./flightWidget.data";
+import { AIRPORT_MAP, DEFAULT_ORIGIN } from "./flightWidget.data.js";
 
 export const CITY_TO_AIRPORT: Record<string, string> = {
     yangon: "RGN", mandalay: "MDL", bangkok: "BKK",

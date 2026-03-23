@@ -1,7 +1,7 @@
 // client/src/lib/destination/popularity.ts
 
 import type { DestinationSignal, ScoredDestination } from "@/types/destination";
-import { clamp01, normalize } from "./normalize";
+import { clamp01, normalize } from "./normalize.js";
 
 // ---------------------------------------------------------------------------
 // Weight configuration

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useFlightData, useLivePriceMap } from "./useFlightData";
+import { useFlightData, useLivePriceMap } from "./useFlightData.js";
 import { adaptFlightDataset } from "@/lib/flightAdapters";
 import type { UseFlightDestinationDataResult, FlightDestinationPageData } from "@/types/flights";
 

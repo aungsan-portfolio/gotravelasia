@@ -1,6 +1,6 @@
 // client/src/lib/agoda/links.test.ts
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { buildAgodaSearchUrl, SEA_CITIES } from './links';
+import { buildAgodaSearchUrl, SEA_CITIES } from "./links.js";
 
 const BANGKOK = SEA_CITIES[0];
 const BASE = {

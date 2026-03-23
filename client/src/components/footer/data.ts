@@ -1,5 +1,5 @@
 import { AIRPORTS } from "@/components/flights/flightWidget.data";
-import type { Airport } from "./types";
+import type { Airport } from "./types.js";
 
 /** Single typed reference to avoid repeated `as` casts */
 const typedAirports = AIRPORTS as readonly Airport[];

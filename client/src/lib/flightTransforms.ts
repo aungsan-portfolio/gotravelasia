@@ -1,4 +1,4 @@
-import type { FlightDeal, SummaryCard } from "../types/flights";
+import type { FlightDeal, SummaryCard } from "../types/flights.js";
 
 export function formatCurrency(value: number, currency = "USD"): string {
     return new Intl.NumberFormat("en-US", {

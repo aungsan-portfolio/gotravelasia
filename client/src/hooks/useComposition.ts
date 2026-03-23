@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { usePersistFn } from "./usePersistFn";
+import { usePersistFn } from "./usePersistFn.js";
 
 export interface UseCompositionReturn<
   T extends HTMLInputElement | HTMLTextAreaElement,

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { addMonths, subMonths, endOfMonth } from "date-fns";
-import { fillGaps, computeThresholds } from "./priceCalendar.utils";
-import type { PriceMap, PriceEntry } from "./priceCalendar.utils";
+import { fillGaps, computeThresholds } from "./priceCalendar.utils.js";
+import type { PriceMap, PriceEntry } from "./priceCalendar.utils.js";
 import { USD_TO_THB_RATE as USD_TO_THB } from "@/const";
 
 type UseCalendarPricesProps = {

@@ -7,11 +7,11 @@ import type {
   FlightSearchState,
   TripType,
   TravellerState,
-} from "./flightSearch.types";
-import { DEFAULT_FLIGHT_SEARCH } from "./flightSearch.constants";
-import { swapRoute } from "./flightSearch.utils";
-import { validateFlightSearch } from "./flightSearch.validation";
-import { buildWhiteLabelSearchUrl, WL_RESULTS_BASE_URL } from "./flightSearch.url";
+} from "./flightSearch.types.js";
+import { DEFAULT_FLIGHT_SEARCH } from "./flightSearch.constants.js";
+import { swapRoute } from "./flightSearch.utils.js";
+import { validateFlightSearch } from "./flightSearch.validation.js";
+import { buildWhiteLabelSearchUrl, WL_RESULTS_BASE_URL } from "./flightSearch.url.js";
 
 export function useFlightSearch(initialState?: Partial<FlightSearchState>) {
   const [state, setState] = useState<FlightSearchState>({

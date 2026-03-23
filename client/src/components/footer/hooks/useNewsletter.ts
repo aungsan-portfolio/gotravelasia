@@ -6,8 +6,8 @@ import {
     useState,
     type FormEvent,
 } from "react";
-import type { NlStatus } from "../types";
-import { subscribeNewsletter } from "../utils";
+import type { NlStatus } from "../types.js";
+import { subscribeNewsletter } from "../utils.js";
 
 export function useNewsletter() {
     const [nlStatus, setNlStatus] = useState<NlStatus>("idle");

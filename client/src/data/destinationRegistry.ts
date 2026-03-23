@@ -10,9 +10,9 @@ import type {
   HeatmapDatum,
   WeatherMonthDatum,
   RelatedRoute,
-} from "../types/destination";
+} from "../types/destination.js";
 
-import { DESTINATION_SEEDS, type DestinationSeed } from "../../../shared/destination/registry";
+import { DESTINATION_SEEDS, type DestinationSeed } from "../../../shared/destination/registry.js";
 
 type OriginSeed = { city: string; code: string; country: string };
 

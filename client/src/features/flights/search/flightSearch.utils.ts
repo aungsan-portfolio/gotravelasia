@@ -1,6 +1,6 @@
 // features/flights/search/flightSearch.utils.ts
 
-import type { FlightSearchState } from "./flightSearch.types";
+import type { FlightSearchState } from "./flightSearch.types.js";
 
 export function swapRoute(state: FlightSearchState): FlightSearchState {
   return { ...state, origin: state.destination, destination: state.origin };
