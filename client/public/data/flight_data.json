@@ -1,9 +1,9 @@
 {
   "meta": {
-    "updated_at": "2026-03-24 06:58",
-    "count": 6546,
+    "updated_at": "2026-03-24 13:00",
+    "count": 6548,
     "currency": "USD",
-    "errors": 71
+    "errors": 72
   },
   "routes": [
     {
@@ -14997,6 +14997,20 @@
       "flight_number": "7114",
       "found_at": "2026-03-23 12:56",
       "fetchedAt": 1774270564597,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CEB",
+      "destination": "KUL",
+      "price": 72.0,
+      "date": "2026-06-30",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 0,
+      "flight_number": "3693",
+      "found_at": "2026-03-24 13:00",
+      "fetchedAt": 1774357220145,
       "provider": "tp",
       "region": "SEA"
     },
@@ -70467,6 +70481,20 @@
       "flight_number": "252",
       "found_at": "2026-03-10 00:31",
       "fetchedAt": 1773077491927,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "RGN",
+      "destination": "DMK",
+      "price": 94.0,
+      "date": "2026-09-15",
+      "airline": "FD",
+      "airline_code": "FD",
+      "transfers": 0,
+      "flight_number": "252",
+      "found_at": "2026-03-24 12:59",
+      "fetchedAt": 1774357184815,
       "provider": "tp",
       "region": "SEA"
     },
