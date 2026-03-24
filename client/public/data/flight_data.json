@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-24 13:00",
-    "count": 6548,
+    "updated_at": "2026-03-24 18:56",
+    "count": 6550,
     "currency": "USD",
     "errors": 72
   },
@@ -60159,6 +60159,34 @@
       "region": "SEA",
       "found_at": "2026-03-08 01:45",
       "fetchedAt": 1772934321392
+    },
+    {
+      "origin": "KUL",
+      "destination": "RGN",
+      "price": 168.0,
+      "date": "2026-06-14",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 2,
+      "flight_number": "820",
+      "found_at": "2026-03-24 18:55",
+      "fetchedAt": 1774378555789,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "RGN",
+      "price": 177.0,
+      "date": "2026-06-21",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 1,
+      "flight_number": "896",
+      "found_at": "2026-03-24 18:55",
+      "fetchedAt": 1774378555789,
+      "provider": "tp",
+      "region": "SEA"
     },
     {
       "origin": "KUL",
