@@ -23,7 +23,6 @@ export async function setupVite(app: Express, server: Server) {
   (app as any).use(vite.middlewares);
   (app as any).use("*", async (req: any, res: any, next: any) => {
     const url = req.originalUrl;
-    console.log(`[VITE] Catch-all route triggered for ${url}`);
 
     try {
       const clientTemplate = path.resolve(
@@ -32,25 +31,16 @@ export async function setupVite(app: Express, server: Server) {
         "client",
         "index.html"
       );
-      
-      console.log(`[VITE] Trying to read: ${clientTemplate}`);
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      
-      console.log(`[VITE] Successfully read index.html`);
-      
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
       );
       const page = await vite.transformIndexHtml(url, template);
-      
-      console.log(`[VITE] Successfully transformed index.html, sending 200 response`);
-      
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
-      console.error(`[VITE ERROR] Error serving ${url}:`, e);
       vite.ssrFixStacktrace(e as Error);
       next(e);
     }
@@ -58,10 +48,18 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath =
+  const currentDir = import.meta.dirname || ".";
+  const staticCandidates =
     process.env.NODE_ENV === "development"
-      ? path.resolve((import.meta.dirname || "."), "../..", "dist", "public")
-      : path.resolve((import.meta.dirname || "."), "public");
+      ? [path.resolve(currentDir, "../..", "dist", "public")]
+      : [
+          path.resolve(currentDir, "public"),
+          path.resolve(currentDir, "../..", "dist", "public"),
+        ];
+
+  const distPath =
+    staticCandidates.find((candidate) => fs.existsSync(candidate)) ||
+    staticCandidates[0];
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
