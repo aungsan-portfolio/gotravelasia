@@ -5,7 +5,10 @@ import { findAvailablePort } from "../utils/port.js";
 async function startServer() {
   const server = createServer(app);
 
-  if (process.env.NODE_ENV === "development") {
+  // Treat anything except explicit production as development-like runtime.
+  // This prevents local `pnpm exec tsx server/_core/index.ts` from
+  // accidentally falling back to static serving.
+  if (process.env.NODE_ENV !== "production") {
     const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
   } else {

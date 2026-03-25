@@ -28,7 +28,7 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const About = lazy(() => import("./pages/About"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
 const TransportPage = lazy(() => import("./pages/TransportPage"));
-const HotelsPage = lazy(() => import("./pages/HotelsPage"));
+const HotelsPage = lazy(() => import("./pages/hotels/HotelSearchResultsPage"));
 
 function PageLoader() {
   return (

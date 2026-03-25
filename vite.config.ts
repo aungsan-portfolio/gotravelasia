@@ -151,8 +151,7 @@ const plugins = [
   react(),
   tailwindcss(),
   jsxLocPlugin(),
-  ...(isDev ? [vitePluginManusDebugCollector()] : []),
-  VitePWA({
+  ...(isDev ? [vitePluginManusDebugCollector()] : [VitePWA({
     registerType: "autoUpdate",
     workbox: {
       navigateFallback: "/index.html",
@@ -226,7 +225,7 @@ const plugins = [
         },
       ],
     },
-  }),
+  })]),
 ];
 
 export default defineConfig({
