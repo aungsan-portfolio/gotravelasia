@@ -256,8 +256,11 @@ function normalizeHotel(
       rawHotel.dailyRate ??
       0
   );
-  const outboundLinks: HotelOutboundLinks = {
-    agoda: hotelId
+
+  // If Agoda provides a direct landingURL (lt_v1), use it. Otherwise, build one.
+  const agodaUrl =
+    rawHotel.landingURL ??
+    (hotelId
       ? agodaHotelUrl(
           hotelId,
           city.agodaCityId,
@@ -266,8 +269,12 @@ function normalizeHotel(
           adults,
           rooms
         )
-      : fallbackLinks.agoda,
+      : fallbackLinks.agoda);
+
+  const outboundLinks: HotelOutboundLinks = {
+    agoda: agodaUrl,
   };
+
   const lat = Number(
     rawHotel.latitude ??
       rawHotel.lat ??
@@ -318,7 +325,7 @@ async function fetchAgodaHotels(
   page: number,
   sort: HotelSort
 ) {
-  const key = `agoda:${agodaCityId}:${checkIn}:${checkOut}:${adults}:${rooms}:${page}:${sort}`;
+  const key = `agoda-lt:${agodaCityId}:${checkIn}:${checkOut}:${adults}:${rooms}:${page}:${sort}`;
   return cached(
     key,
     async () => {
@@ -336,33 +343,28 @@ async function fetchAgodaHotels(
       }
 
       try {
+        // Agoda lt_v1 (Long Tail) JSON Search API - confirmed working for CID 1959281
         const body = {
           criteria: {
             checkInDate: checkIn,
             checkOutDate: checkOut,
             cityId: agodaCityId,
-            numberOfAdult: adults,
-            numberOfRoom: rooms,
+            adults: adults,
+            rooms: rooms,
             pageNo: page,
             pageSize: PAGE_SIZE,
-            sortBy: AGODA_SORT_MAP[sort] ?? "rank",
-            additional: {
-              currency: "USD",
-              language: "en-us",
-              discountOnly: false,
-            },
           },
           publisherId: AGODA_SITE_ID,
         };
 
         const response = await fetch(
-          "https://affiliateapi7643.agoda.com/api/v3/json/Search",
+          "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1",
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: AGODA_API_KEY,
-              "X-API-Key": AGODA_API_KEY,
+              "Accept-Encoding": "gzip,deflate",
             },
             body: JSON.stringify(body),
           }
@@ -370,7 +372,7 @@ async function fetchAgodaHotels(
 
         if (!response.ok) {
           safeWarnOnce(
-            `Agoda search returned status ${response.status}; serving fallback hotel data.`
+            `Agoda lt_v1 search returned status ${response.status}; serving fallback hotel data.`
           );
           return {
             source: "mock" as const,
@@ -382,21 +384,16 @@ async function fetchAgodaHotels(
         }
 
         const payload = (await response.json()) as {
-          results?: {
-            hotels?: unknown[];
-            totalCount?: number;
-            pageNo?: number;
-          };
+          results?: unknown[];
+          totalResults?: number;
         };
-        const hotels = Array.isArray(payload.results?.hotels)
-          ? payload.results.hotels
-          : [];
+        const hotels = Array.isArray(payload.results) ? payload.results : [];
         if (!hotels.length) {
           return {
             source: "mock" as const,
             hotels: getMockHotels(agodaCityId, page, sort),
             warnings: [
-              "No live Agoda hotels were returned. Showing fallback results.",
+              "No live Agoda hotels were returned for this criteria. Showing fallback results.",
             ],
           };
         }
@@ -404,12 +401,10 @@ async function fetchAgodaHotels(
         return {
           source: "agoda" as const,
           hotels,
-          totalCount: payload.results?.totalCount,
+          totalCount: payload.totalResults ?? hotels.length,
         };
-      } catch {
-        safeWarnOnce(
-          "Agoda search failed unexpectedly; serving fallback hotel data."
-        );
+      } catch (err) {
+        console.error("[Hotels] Agoda lt_v1 search failed:", err);
         return {
           source: "mock" as const,
           hotels: getMockHotels(agodaCityId, page, sort),
