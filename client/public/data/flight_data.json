@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-25 12:57",
-    "count": 6483,
+    "updated_at": "2026-03-25 18:50",
+    "count": 6485,
     "currency": "USD",
     "errors": 72
   },
@@ -52432,6 +52432,34 @@
       "flight_number": "824",
       "found_at": "2026-03-11 12:47",
       "fetchedAt": 1773233240816,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "DAD",
+      "price": 55.0,
+      "date": "2026-10-07",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 0,
+      "flight_number": "824",
+      "found_at": "2026-03-25 18:50",
+      "fetchedAt": 1774464601172,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "KUL",
+      "destination": "DAD",
+      "price": 55.0,
+      "date": "2026-10-08",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 0,
+      "flight_number": "824",
+      "found_at": "2026-03-25 18:50",
+      "fetchedAt": 1774464601172,
       "provider": "tp",
       "region": "SEA"
     },
