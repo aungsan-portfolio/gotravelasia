@@ -24,6 +24,17 @@ function HotelFilterToolbarComponent({
 }: HotelFilterToolbarProps) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+        <img
+          src="/images/logo.png"
+          alt="GoTravelAsia Logo"
+          className="h-10 w-10 object-contain"
+        />
+        <h1 className="text-xl font-bold tracking-tight text-indigo-600">
+          GOTRAVELASIA
+        </h1>
+      </div>
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900">Hotel results</p>
