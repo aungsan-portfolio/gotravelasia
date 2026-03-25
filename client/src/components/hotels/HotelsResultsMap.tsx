@@ -12,11 +12,13 @@ interface Props {
   onMarkerHover: (hotelId: string | null) => void;
 }
 
-function markerClasses(isSelected: boolean, isHovered: boolean, index: number) {
-  if (isSelected)
+function markerClasses(isSelected: boolean, isHovered: boolean) {
+  if (isSelected) {
     return "scale-110 border-gold bg-gold text-navy shadow-[0_12px_30px_rgba(245,200,66,.35)]";
-  if (isHovered)
+  }
+  if (isHovered) {
     return "scale-105 border-white bg-white text-navy shadow-[0_10px_25px_rgba(255,255,255,.25)]";
+  }
   return "border-white/15 bg-navy-card/95 text-white shadow-[0_10px_25px_rgba(0,0,0,.35)]";
 }
 
@@ -31,11 +33,21 @@ function createMarkerContent(
   const isFallback = hotel.coordinates?.isFallback;
   content.innerHTML = `
     <div class="flex min-w-[58px] -translate-y-1/2 flex-col items-center gap-1">
-      <div class="rounded-full border px-3 py-1 text-xs font-bold transition-all ${markerClasses(isSelected, isHovered, index)}">
+      <div class="rounded-full border px-3 py-1 text-xs font-bold transition-all ${markerClasses(isSelected, isHovered)}">
         ${hotel.lowestRate > 0 ? `$${hotel.lowestRate}` : `#${index + 1}`}
       </div>
-      <div class="h-2.5 w-2.5 rotate-45 rounded-[2px] border-b border-r ${isSelected ? "border-gold bg-gold" : isHovered ? "border-white bg-white" : "border-white/15 bg-navy-card/95"}"></div>
-      ${isFallback ? '<div class="rounded-full border border-amber-300/30 bg-amber-300/15 px-2 py-0.5 text-[10px] font-semibold text-amber-100">Approx</div>' : ""}
+      <div class="h-2.5 w-2.5 rotate-45 rounded-[2px] border-b border-r ${
+        isSelected
+          ? "border-gold bg-gold"
+          : isHovered
+            ? "border-white bg-white"
+            : "border-white/15 bg-navy-card/95"
+      }"></div>
+      ${
+        isFallback
+          ? '<div class="rounded-full border border-amber-300/30 bg-amber-300/15 px-2 py-0.5 text-[10px] font-semibold text-amber-100">Approx</div>'
+          : ""
+      }
     </div>
   `;
   return content;
@@ -140,28 +152,9 @@ export default function HotelsResultsMap({
   ]);
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-navy-card/90 shadow-[0_18px_60px_rgba(0,0,0,.35)] flex flex-col h-full">
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 shrink-0">
-        <div>
-          <h3 className="font-display text-lg font-bold text-white">
-            Map view
-          </h3>
-          <p className="text-xs text-white/45">
-            Compare location and price at a glance.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/55">
-          <span className="rounded-full border border-gold/25 bg-gold/10 px-2.5 py-1 text-gold">
-            Selected
-          </span>
-          <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2.5 py-1 text-amber-100">
-            Approx = fallback
-          </span>
-        </div>
-      </div>
-
+    <div className="relative h-full overflow-hidden bg-navy-2">
       <MapView
-        className="flex-1 w-full relative"
+        className="relative h-full w-full"
         initialCenter={center}
         initialZoom={12}
         onMapReady={map => {
@@ -169,6 +162,9 @@ export default function HotelsResultsMap({
           setMapReady(true);
         }}
       />
+      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-lg border border-white/15 bg-[#151229]/90 px-2.5 py-1 text-xs text-white/70 backdrop-blur">
+        {hotels.length} mapped hotels
+      </div>
     </div>
   );
 }
