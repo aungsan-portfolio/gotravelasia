@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-26 07:02",
-    "count": 6396,
+    "updated_at": "2026-03-26 13:02",
+    "count": 6397,
     "currency": "USD",
     "errors": 71
   },
@@ -65150,6 +65150,20 @@
       "fetchedAt": 1773077420201,
       "provider": "tp",
       "region": "China"
+    },
+    {
+      "origin": "RGN",
+      "destination": "CCU",
+      "price": 180.0,
+      "date": "2026-05-11",
+      "airline": "FD",
+      "airline_code": "FD",
+      "transfers": 1,
+      "flight_number": "252",
+      "found_at": "2026-03-26 13:02",
+      "fetchedAt": 1774530149581,
+      "provider": "tp",
+      "region": "India"
     },
     {
       "origin": "RGN",
