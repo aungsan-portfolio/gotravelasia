@@ -123,6 +123,7 @@ var init_destination_landing = __esm({
 // server/_core/app.ts
 import dotenv from "dotenv";
 import path2 from "path";
+import fs2 from "fs";
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
@@ -1810,6 +1811,40 @@ async function searchHotels(req, res) {
   }
 }
 
+// server/api/autocomplete.ts
+async function searchAutocompleteHotels(req, res) {
+  const q = String(req.query.q || "").toLowerCase();
+  const suggestions = [
+    { displayName: "Bangkok", locationType: "city", locationId: "604", subtitle: "Thailand" },
+    { displayName: "Phuket", locationType: "city", locationId: "12080", subtitle: "Thailand" },
+    { displayName: "Chiang Mai", locationType: "city", locationId: "7401", subtitle: "Thailand" },
+    { displayName: "Yangon", locationType: "city", locationId: "2464", subtitle: "Myanmar" },
+    { displayName: "Mandalay", locationType: "city", locationId: "2465", subtitle: "Myanmar" },
+    { displayName: "Grand Palace Hotel", locationType: "hotel", locationId: "12345", subtitle: "Bangkok, Thailand" }
+  ].filter((s) => s.displayName.toLowerCase().includes(q) || s.subtitle && s.subtitle.toLowerCase().includes(q));
+  res.json({ suggestions });
+}
+
+// server/api/prices.ts
+async function searchFrontDoorPrices(req, res) {
+  const { month } = req.query;
+  if (!month) return res.status(400).json({ error: "Month required (YYYY-MM)" });
+  const [year, mn] = String(month).split("-").map(Number);
+  const days = new Date(year, mn, 0).getDate();
+  const scores = [85, 72, 45, 30, 60, 90, 55, 20, 75, 40, 65, 88, 33, 50, 77];
+  const data = Array.from({ length: days }, (_, i) => {
+    const dayNum = i + 1;
+    const dateStr = `${month}-${String(dayNum).padStart(2, "0")}`;
+    const score = scores[i % scores.length];
+    return {
+      date: dateStr,
+      score,
+      priceHint: score >= 70 ? "cheap" : score >= 40 ? "average" : "expensive"
+    };
+  });
+  res.json(data);
+}
+
 // api/_lib/http.ts
 var ALLOWED_ORIGINS = [
   "https://gotravel-asia.vercel.app",
@@ -2973,9 +3008,17 @@ router8.get("/check-price-alerts", async (req, res) => {
 var cron_default = router8;
 
 // server/_core/app.ts
+fs2.appendFileSync("server_debug.log", "[APP] Starting app.ts imports...\n");
 dotenv.config();
 dotenv.config({ path: path2.resolve(process.cwd(), ".env.local"), override: true });
+fs2.appendFileSync("server_debug.log", "[APP] Environment loaded.\n");
+fs2.appendFileSync("server_debug.log", "[APP] Core deps & handlers loaded.\n");
+fs2.appendFileSync("server_debug.log", "[APP] All routes imported.\n");
 var app = express();
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url}`);
+  next();
+});
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 registerOAuthRoutes(app);
@@ -2986,6 +3029,8 @@ app.use("/api/chat", chat_default);
 app.use("/api/cheap-prices", cheapPrices_default);
 app.use("/api/calendar-prices", calendarPrices_default);
 app.use("/api/hotels/search", searchHotels);
+app.use("/api/autocomplete/hotels", searchAutocompleteHotels);
+app.use("/api/frontdoor/prices", searchFrontDoorPrices);
 app.use("/api/price-alerts", priceAlerts_default);
 app.use("/api/alerts", priceAlerts_default);
 app.use("/api/cron", cron_default);
@@ -2995,6 +3040,7 @@ app.use("/api/geo", handler3);
 app.use("/api/newsletter", handler4);
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
+fs2.appendFileSync("server_debug.log", "[APP] App setup complete, exporting app.\n");
 var app_default = app;
 
 // server/_core/api-entry.ts
