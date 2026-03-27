@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-27 07:01",
-    "count": 6318,
+    "updated_at": "2026-03-27 12:55",
+    "count": 6322,
     "currency": "USD",
     "errors": 71
   },
@@ -70513,6 +70513,20 @@
     {
       "origin": "RGN",
       "destination": "ICN",
+      "price": 178.0,
+      "date": "2026-07-14",
+      "airline": "FD",
+      "airline_code": "FD",
+      "transfers": 1,
+      "flight_number": "254",
+      "found_at": "2026-03-27 12:54",
+      "fetchedAt": 1774616095343,
+      "provider": "tp",
+      "region": "Korea"
+    },
+    {
+      "origin": "RGN",
+      "destination": "ICN",
       "price": 245.0,
       "date": "2026-08-10",
       "airline": "Myanmar Airways International",
@@ -70549,6 +70563,48 @@
       "flight_number": "333",
       "found_at": "2026-03-10 00:29",
       "fetchedAt": 1773077343893,
+      "provider": "tp",
+      "region": "Korea"
+    },
+    {
+      "origin": "RGN",
+      "destination": "ICN",
+      "price": 272.0,
+      "date": "2026-07-13",
+      "airline": "CZ",
+      "airline_code": "CZ",
+      "transfers": 1,
+      "flight_number": "3056",
+      "found_at": "2026-03-27 12:54",
+      "fetchedAt": 1774616095343,
+      "provider": "tp",
+      "region": "Korea"
+    },
+    {
+      "origin": "RGN",
+      "destination": "ICN",
+      "price": 275.0,
+      "date": "2026-07-11",
+      "airline": "FD",
+      "airline_code": "FD",
+      "transfers": 1,
+      "flight_number": "254",
+      "found_at": "2026-03-27 12:54",
+      "fetchedAt": 1774616095343,
+      "provider": "tp",
+      "region": "Korea"
+    },
+    {
+      "origin": "RGN",
+      "destination": "ICN",
+      "price": 276.0,
+      "date": "2026-07-10",
+      "airline": "UB",
+      "airline_code": "UB",
+      "transfers": 1,
+      "flight_number": "019",
+      "found_at": "2026-03-27 12:54",
+      "fetchedAt": 1774616095343,
       "provider": "tp",
       "region": "Korea"
     },
