@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { addMonths, subMonths, endOfMonth } from "date-fns";
 import { fillGaps, computeThresholds } from "./priceCalendar.utils.js";
 import type { PriceMap, PriceEntry } from "./priceCalendar.utils.js";
-import { USD_TO_THB_RATE as USD_TO_THB } from "@/const";
 
 type UseCalendarPricesProps = {
     origin: string;
@@ -81,10 +80,14 @@ export function useCalendarPrices({
     const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
 
     useEffect(() => {
-        if (onCheapestPrice) {
-            onCheapestPrice(thresholds?.min ? Math.round(thresholds.min / USD_TO_THB) : null);
+        if (!onCheapestPrice) return;
+        const prices = Object.values(priceMap).filter((p) => Number.isFinite(p) && p > 0);
+        if (!prices.length) {
+            onCheapestPrice(null);
+            return;
         }
-    }, [thresholds, onCheapestPrice]);
+        onCheapestPrice(Math.min(...prices));
+    }, [priceMap, onCheapestPrice]);
 
     const enrichedData = useMemo(() => {
         return fillGaps(priceMap, leftMonth, endOfMonth(rightMonth));

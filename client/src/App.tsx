@@ -28,6 +28,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const About = lazy(() => import("./pages/About"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const TransportPage = lazy(() => import("./pages/TransportPage"));
 const HotelsPage = lazy(() => import("./pages/hotels/HotelSearchResultsPage"));
 
@@ -81,6 +82,7 @@ function Router() {
         <Route path="/contact" component={Contact} />
         <Route path="/faq" component={FAQ} />
         <Route path="/about" component={About} />
+        <Route path="/how-it-works" component={HowItWorks} />
         <Route path="/cookies" component={CookieSettings} />
 
         <Route path="/404" component={NotFound} />

@@ -30,10 +30,10 @@ export type Thresholds = { p33: number; p66: number; min: number };
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 export const TIER_STYLES: Record<PriceTier, { bg: string; text: string; estBg: string; estText: string }> = {
-    cheapest: { bg: "#b3f9c2", text: "#054d14", estBg: "#d1fae5", estText: "#166534" },
-    cheap: { bg: "#c6f6d5", text: "#065f16", estBg: "#dcfce7", estText: "#15803d" },
-    mid: { bg: "#fcb773", text: "#5b2601", estBg: "#fed7aa", estText: "#9a3412" },
-    expensive: { bg: "#fba09d", text: "#680d08", estBg: "#fecaca", estText: "#b91c1c" },
+    cheapest: { bg: "#b3f9c2", text: "#054d14", estBg: "#86efac", estText: "#14532d" },
+    cheap: { bg: "#c6f6d5", text: "#065f16", estBg: "#bbf7d0", estText: "#14532d" },
+    mid: { bg: "#fcb773", text: "#5b2601", estBg: "#fdba74", estText: "#7c2d12" },
+    expensive: { bg: "#fba09d", text: "#680d08", estBg: "#fca5a5", estText: "#7f1d1d" },
     none: { bg: "#f3f4f6", text: "#6b7280", estBg: "#f3f4f6", estText: "#9ca3af" },
 };
 
@@ -58,19 +58,38 @@ export function buildCalendarGrid(year: number, month: number) {
 
 export function computeThresholds(priceMap: PriceMap): Thresholds | null {
     const thbPrices = Object.values(priceMap)
-        .map(usd => Math.round(usd * USD_TO_THB))
+        .map((usd) => Math.round(usd * USD_TO_THB))
+        .filter((v) => Number.isFinite(v) && v > 0)
         .sort((a, b) => a - b);
 
     if (thbPrices.length === 0) return null;
 
     const min = thbPrices[0];
+    const max = thbPrices[thbPrices.length - 1];
+    if (min === max) return { p33: min, p66: min, min };
 
-    if (thbPrices.length <= 2) {
-        return { p33: Math.round(thbPrices[thbPrices.length - 1] * 1.05), p66: Math.round(thbPrices[thbPrices.length - 1] * 1.15), min };
+    const pickQuantile = (q: number) => {
+        const idx = (thbPrices.length - 1) * q;
+        const lo = Math.floor(idx);
+        const hi = Math.ceil(idx);
+        if (lo === hi) return thbPrices[lo];
+        const frac = idx - lo;
+        return Math.round(thbPrices[lo] + (thbPrices[hi] - thbPrices[lo]) * frac);
+    };
+
+    let p33 = Math.max(min, pickQuantile(0.33));
+    let p66 = Math.max(p33, pickQuantile(0.66));
+
+    // Duplicate-heavy fallback: guarantee monotonic tiers whenever range exists.
+    if (p33 === min) {
+        const nextAboveMin = thbPrices.find((v) => v > min);
+        if (nextAboveMin !== undefined) p33 = nextAboveMin;
+    }
+    if (p66 === p33) {
+        const nextAboveP33 = thbPrices.find((v) => v > p33);
+        p66 = nextAboveP33 ?? max;
     }
 
-    const p33 = thbPrices[Math.floor(thbPrices.length / 3)];
-    const p66 = thbPrices[Math.floor((thbPrices.length * 2) / 3)];
     return { p33, p66, min };
 }
 

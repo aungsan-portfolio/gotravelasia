@@ -134,8 +134,8 @@ export default function PriceCalendar({
                                     const priceUsd = enriched ? enriched.price : null;
                                     const isEstimated = enriched ? enriched.isEstimated : false;
 
-                                    const thbPrice = priceUsd ? Math.round(priceUsd * USD_TO_THB) : null;
-                                    const tier: PriceTier = thbPrice ? getTier(thbPrice, thresholds) : "none";
+                                    const thbPrice = typeof priceUsd === "number" ? Math.round(priceUsd * USD_TO_THB) : null;
+                                    const tier: PriceTier = thbPrice !== null ? getTier(thbPrice, thresholds) : "none";
 
                                     const isDisabled = isBefore(cell, disabledBefore);
                                     const isSelectedDepart = selectedDepart && isSameDay(cell, selectedDepart);
@@ -186,7 +186,7 @@ export default function PriceCalendar({
                                                 }}
                                                 onMouseEnter={() => setHoveredDay(cell)}
                                                 onMouseLeave={() => setHoveredDay(null)}
-                                                className={`w-[40px] h-[40px] md:w-[40px] md:h-[40px] mx-auto flex flex-col items-center justify-center gap-0 rounded-lg transition-colors border border-transparent ${isSelected ? "shadow-md z-10 relative" : ""
+                                                className={`w-[40px] h-[40px] md:w-[40px] md:h-[40px] mx-auto flex flex-col items-center justify-center gap-0 rounded-lg transition-colors border ${isEstimated && !isSelected ? "border-dashed border-black/35" : "border-transparent"} ${isSelected ? "shadow-md z-10 relative" : ""
                                                     }`}
                                                 style={{
                                                     backgroundColor: isSelected ? "#5B0EA6" : (inRange && tier === "none" ? "transparent" : currentBg),
@@ -196,9 +196,9 @@ export default function PriceCalendar({
                                                 <span className={`text-[14px] leading-tight ${isSelected ? "font-extrabold" : "font-bold"}`}>
                                                     {cell.getDate()}
                                                 </span>
-                                                {thbPrice ? (
-                                                    <span className="text-[10px] font-mono opacity-80 leading-none">
-                                                        {(thbPrice / 1000).toFixed(1)}k
+                                                {thbPrice !== null ? (
+                                                    <span className="text-[10px] font-mono opacity-90 leading-none">
+                                                        ฿{(thbPrice / 1000).toFixed(1)}k
                                                     </span>
                                                 ) : null}
                                             </motion.button>
@@ -250,6 +250,10 @@ export default function PriceCalendar({
                     <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#fba09d" }} />
                         <span className="text-[11px] font-bold text-gray-700">Expensive</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-sm border border-dashed border-black/35" style={{ backgroundColor: "#fdba74" }} />
+                        <span className="text-[11px] font-bold text-gray-700">Estimated</span>
                     </div>
                 </div>
 

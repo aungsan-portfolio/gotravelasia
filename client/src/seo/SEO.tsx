@@ -44,6 +44,10 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
         title: "About GoTravel Asia — Flight Comparison for Southeast Asia",
         description: "GoTravel Asia helps 50,000+ travelers find affordable flights across Southeast Asia.",
     },
+    "/how-it-works": {
+        title: "How GoTravel Asia Works",
+        description: "A high-level overview of how GoTravel Asia works across flights, hotels, and transport.",
+    },
     "/privacy": {
         title: "Privacy Policy | GoTravel Asia",
         description: "How GoTravel Asia collects, uses, and protects your personal data.",
