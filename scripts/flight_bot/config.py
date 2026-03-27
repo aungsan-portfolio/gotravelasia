@@ -88,5 +88,5 @@ def _generate_months(ahead=6):
 
 MONTHS_TO_SCAN = _generate_months(ahead=9)   # 9 months = more date coverage
 MAX_REQUESTS_PER_RUN = 1000                  # 5x increase (≈8 min at 0.5s delay)
-AMADEUS_MAX_REQUESTS_PER_RUN = 30            # Free limit: ~66 daily -> 30 route-months (90 API calls)
+AMADEUS_MAX_REQUESTS_PER_RUN = 5            # Conservative cap per run to protect free-tier limits
 CHECKPOINT_EVERY = 50

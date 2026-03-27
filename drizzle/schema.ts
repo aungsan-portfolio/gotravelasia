@@ -57,6 +57,23 @@ export const flightPriceAlerts = mysqlTable("flightPriceAlerts", {
 export type FlightPriceAlert = typeof flightPriceAlerts.$inferSelect;
 export type InsertFlightPriceAlert = typeof flightPriceAlerts.$inferInsert;
 
+export const emailQueue = mysqlTable("emailQueue", {
+  id: int("id").autoincrement().primaryKey(),
+  toEmail: varchar("toEmail", { length: 320 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  htmlContent: text("htmlContent").notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending|processing|pending_retry|sent|failed
+  attempts: int("attempts").default(0).notNull(),
+  lastError: text("lastError"),
+  scheduledAt: timestamp("scheduledAt"),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailQueueItem = typeof emailQueue.$inferSelect;
+export type InsertEmailQueueItem = typeof emailQueue.$inferInsert;
+
 /**
  * Subscribers — email-only signups from PriceAlertPopup (ခ flow).
  * When a user signs up from the homepage (no route context),

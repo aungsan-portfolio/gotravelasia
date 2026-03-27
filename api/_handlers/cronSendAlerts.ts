@@ -1,155 +1,98 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { drizzle } from "drizzle-orm/mysql2";
-import { and, asc, eq, isNull, or, lte } from "drizzle-orm";
-import { int, mysqlTable, text, varchar, timestamp } from "drizzle-orm/mysql-core";
-import mysql from "mysql2/promise";
 import nodemailer from "nodemailer";
+import {
+  claimEmailQueueItem,
+  ensureEmailQueueTable,
+  getDueEmailQueueItems,
+  markEmailQueueAttemptFailed,
+  markEmailQueueSent,
+} from "../../server/db.js";
 
-// Inline schema for the queue table
-export const emailQueue = mysqlTable("emailQueue", {
-    id: int("id").autoincrement().primaryKey(),
-    toEmail: varchar("toEmail", { length: 320 }).notNull(),
-    subject: varchar("subject", { length: 255 }).notNull(),
-    htmlContent: text("htmlContent").notNull(),
-    status: varchar("status", { length: 20 }).default("pending").notNull(),
-    attempts: int("attempts").default(0).notNull(),
-    lastError: text("lastError"),
-    scheduledAt: timestamp("scheduledAt"), // nullable = send ASAP
-    sentAt: timestamp("sentAt"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-function createMySQLConnection(dbUrl: string) {
-    const url = new URL(dbUrl);
-    return mysql.createConnection({
-        host: url.hostname,
-        port: parseInt(url.port) || 3306,
-        user: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: url.pathname.slice(1),
-        ssl: { rejectUnauthorized: false },
-    });
+function validateEnv(required: string[]) {
+  const missing = required.filter((name) => !process.env[name]);
+  return {
+    ok: missing.length === 0,
+    missing,
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    let connection: mysql.Connection | null = null;
-
-    try {
-        // 1) Cron auth check
-        const authHeader = req.headers.authorization;
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
-
-        // 2) Load env vars
-        const dbUrl = process.env.DATABASE_URL;
-        if (!dbUrl) return res.status(500).json({ error: "DATABASE_URL not configured" });
-
-        const emailUser = process.env.EMAIL_USER;
-        const emailPass = process.env.EMAIL_PASS;
-        if (!emailUser || !emailPass) return res.status(500).json({ error: "EMAIL_USER or EMAIL_PASS not configured" });
-
-        const fromEmail = process.env.ALERT_FROM_EMAIL || `GoTravel Asia <${emailUser}>`;
-        const batchSize = Number(process.env.EMAIL_BATCH_SIZE || 50);
-
-        // 3) Connect to DB
-        connection = await createMySQLConnection(dbUrl);
-
-        // Auto-create emailQueue table if it doesn't exist
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS emailQueue (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                toEmail VARCHAR(320) NOT NULL,
-                subject VARCHAR(255) NOT NULL,
-                htmlContent TEXT NOT NULL,
-                status VARCHAR(20) NOT NULL DEFAULT 'pending',
-                attempts INT NOT NULL DEFAULT 0,
-                lastError TEXT NULL,
-                scheduledAt TIMESTAMP NULL,
-                sentAt TIMESTAMP NULL,
-                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )
-        `);
-
-        const db = drizzle(connection);
-
-        // 4) Pick pending items (scheduledAt is null OR scheduledAt <= now)
-        const now = new Date();
-        const pending = await db
-            .select()
-            .from(emailQueue)
-            .where(
-                and(
-                    eq(emailQueue.status, "pending"),
-                    or(isNull(emailQueue.scheduledAt), lte(emailQueue.scheduledAt, now))
-                )
-            )
-            .orderBy(asc(emailQueue.id))
-            .limit(batchSize);
-
-        if (pending.length === 0) {
-            return res.status(200).json({ message: "No pending emails." });
-        }
-
-        const transporter = nodemailer.createTransport({
-            host: "smtp-mail.outlook.com",
-            port: 587,
-            secure: false, // true for 465, false for other ports
-            auth: {
-                user: emailUser,
-                pass: emailPass,
-            },
-        });
-        const results: Array<{ id: number; ok: boolean; error?: string }> = [];
-
-        // 5) Send + mark
-        for (const row of pending) {
-            try {
-                await transporter.sendMail({
-                    from: fromEmail,
-                    to: row.toEmail,
-                    subject: row.subject,
-                    html: row.htmlContent,
-                });
-
-                await db
-                    .update(emailQueue)
-                    .set({ status: "sent", sentAt: new Date(), updatedAt: new Date(), lastError: null })
-                    .where(eq(emailQueue.id, row.id));
-
-                results.push({ id: row.id, ok: true });
-            } catch (e: any) {
-                const msg = e?.message || "send_failed";
-
-                // If attempt reaches max retries, we could set status='failed' permanently here.
-                // For now, we'll mark as failed so it can be manually reviewed or retried later.
-                await db
-                    .update(emailQueue)
-                    .set({
-                        status: row.attempts + 1 >= 3 ? "failed" : "pending_retry",
-                        attempts: row.attempts + 1,
-                        lastError: msg,
-                        updatedAt: new Date(),
-                    })
-                    .where(eq(emailQueue.id, row.id));
-
-                results.push({ id: row.id, ok: false, error: msg });
-            }
-        }
-
-        return res.status(200).json({
-            message: "Send alerts cron finished",
-            attempted: pending.length,
-            sent: results.filter((r) => r.ok).length,
-            failed: results.filter((r) => !r.ok).length,
-            results,
-        });
-    } catch (err: any) {
-        console.error("Cron send-alerts error:", err);
-        return res.status(500).json({ error: "Failed to process send-alerts", detail: err?.message });
-    } finally {
-        if (connection) await connection.end().catch(() => { });
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
+
+    const env = validateEnv(["DATABASE_URL", "EMAIL_USER", "EMAIL_PASS"]);
+    if (!env.ok) {
+      return res.status(500).json({ error: "Missing required env vars", missing: env.missing });
+    }
+
+    const emailUser = process.env.EMAIL_USER as string;
+    const emailPass = process.env.EMAIL_PASS as string;
+    const fromEmail = process.env.ALERT_FROM_EMAIL || `GoTravel Asia <${emailUser}>`;
+    const batchSize = Number(process.env.EMAIL_BATCH_SIZE || 50);
+    const maxAttempts = Number(process.env.EMAIL_MAX_ATTEMPTS || 3);
+    const retryDelayMinutes = Number(process.env.EMAIL_RETRY_DELAY_MINUTES || 15);
+
+    await ensureEmailQueueTable();
+    const dueItems = await getDueEmailQueueItems(batchSize, maxAttempts);
+
+    if (dueItems.length === 0) {
+      return res.status(200).json({ message: "No pending emails." });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp-mail.outlook.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+
+    const results: Array<{ id: number; ok: boolean; error?: string }> = [];
+
+    for (const row of dueItems) {
+      const claimed = await claimEmailQueueItem(row.id, row.attempts);
+      if (!claimed) continue;
+
+      try {
+        await transporter.sendMail({
+          from: fromEmail,
+          to: row.toEmail,
+          subject: row.subject,
+          html: row.htmlContent,
+        });
+
+        await markEmailQueueSent(row.id);
+
+        results.push({ id: row.id, ok: true });
+      } catch (e: any) {
+        const msg = e?.message || "send_failed";
+
+        await markEmailQueueAttemptFailed({
+          id: row.id,
+          attempts: row.attempts,
+          error: msg,
+          maxAttempts,
+          retryDelayMinutes,
+        });
+
+        results.push({ id: row.id, ok: false, error: msg });
+      }
+    }
+
+    return res.status(200).json({
+      message: "Send alerts cron finished",
+      attempted: dueItems.length,
+      sent: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+      results,
+    });
+  } catch (err: any) {
+    console.error("Cron send-alerts error:", err);
+    return res.status(500).json({ error: "Failed to process send-alerts", detail: err?.message });
+  }
 }
