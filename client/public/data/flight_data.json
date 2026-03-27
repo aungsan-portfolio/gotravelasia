@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-27 01:54",
-    "count": 6312,
+    "updated_at": "2026-03-27 07:01",
+    "count": 6318,
     "currency": "USD",
     "errors": 71
   },
@@ -47880,6 +47880,20 @@
     {
       "origin": "ICN",
       "destination": "RGN",
+      "price": 222.0,
+      "date": "2026-05-10",
+      "airline": "TW",
+      "airline_code": "TW",
+      "transfers": 1,
+      "flight_number": "101",
+      "found_at": "2026-03-27 07:00",
+      "fetchedAt": 1774594855682,
+      "provider": "tp",
+      "region": "Korea"
+    },
+    {
+      "origin": "ICN",
+      "destination": "RGN",
       "price": 283.0,
       "date": "2026-04-29",
       "airline": "MU",
@@ -76540,6 +76554,20 @@
     {
       "origin": "RGN",
       "destination": "SIN",
+      "price": 327.0,
+      "date": "2026-03-27",
+      "airline": "8M",
+      "airline_code": "8M",
+      "transfers": 2,
+      "flight_number": "390",
+      "found_at": "2026-03-27 07:00",
+      "fetchedAt": 1774594852287,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "RGN",
+      "destination": "SIN",
       "price": 334.25,
       "date": "2026-09-05",
       "airline": "China Southern Airlines",
@@ -81943,6 +81971,48 @@
     {
       "origin": "SIN",
       "destination": "CNX",
+      "price": 137.0,
+      "date": "2026-03-31",
+      "airline": "MH",
+      "airline_code": "MH",
+      "transfers": 1,
+      "flight_number": "602",
+      "found_at": "2026-03-27 07:00",
+      "fetchedAt": 1774594853683,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "CNX",
+      "price": 137.0,
+      "date": "2026-03-29",
+      "airline": "TR",
+      "airline_code": "TR",
+      "transfers": 0,
+      "flight_number": "674",
+      "found_at": "2026-03-27 07:00",
+      "fetchedAt": 1774594853683,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "CNX",
+      "price": 139.0,
+      "date": "2026-03-30",
+      "airline": "MH",
+      "airline_code": "MH",
+      "transfers": 1,
+      "flight_number": "610",
+      "found_at": "2026-03-27 07:00",
+      "fetchedAt": 1774594853683,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "CNX",
       "price": 148.0,
       "date": "2026-11-27",
       "airline": "MH",
@@ -81951,6 +82021,20 @@
       "flight_number": "602",
       "found_at": "2026-03-19 18:50",
       "fetchedAt": 1773946253395,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "CNX",
+      "price": 166.0,
+      "date": "2026-03-28",
+      "airline": "TR",
+      "airline_code": "TR",
+      "transfers": 0,
+      "flight_number": "680",
+      "found_at": "2026-03-27 07:00",
+      "fetchedAt": 1774594853683,
       "provider": "tp",
       "region": "SEA"
     },
