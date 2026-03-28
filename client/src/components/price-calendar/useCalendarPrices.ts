@@ -1,105 +1,174 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { addMonths, subMonths, endOfMonth } from "date-fns";
-import { fillGaps, computeThresholds } from "./priceCalendar.utils.js";
-import type { PriceMap, PriceEntry } from "./priceCalendar.utils.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { addMonths, subMonths, endOfMonth, format } from "date-fns";
+import { fillGaps, computeThresholds } from "./priceCalendar.utils";
+import type { PriceMap, PriceEntry } from "./priceCalendar.utils";
 
 type UseCalendarPricesProps = {
-    origin: string;
-    destination: string;
-    leftMonth: Date;
-    rightMonth: Date;
-    onCheapestPrice?: (price: number | null) => void;
+  origin: string;
+  destination: string;
+  leftMonth: Date;
+  rightMonth: Date;
+  onCheapestPrice?: (price: number | null) => void;
 };
 
-export function useCalendarPrices({
-    origin,
-    destination,
-    leftMonth,
-    rightMonth,
-    onCheapestPrice,
-}: UseCalendarPricesProps) {
-    const [priceMap, setPriceMap] = useState<PriceMap>({});
-    const [loading, setLoading] = useState(false);
+type CalendarPricesResponse = {
+  success?: boolean;
+  data?: Record<string, PriceEntry>;
+  currency?: string;
+};
 
-    // Temporary internal format helper
-    const formatYMD = (date: Date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        return `${y}-${m}`;
+async function fetchPricesForMonth(
+  origin: string,
+  destination: string,
+  month: string
+): Promise<PriceMap> {
+  if (!origin || !destination || origin === destination) return {};
+
+  try {
+    const params = new URLSearchParams({
+      origin,
+      destination,
+      month,
+      currency: "usd",
+    });
+
+    const response = await fetch(`/api/calendar-prices?${params.toString()}`);
+    if (!response.ok) return {};
+
+    const data = (await response.json()) as CalendarPricesResponse;
+    if (!data?.data || typeof data.data !== "object") return {};
+
+    const map: PriceMap = {};
+
+    Object.entries(data.data).forEach(([dateStr, entry]) => {
+      const typedEntry = entry as PriceEntry;
+      const price = Number(typedEntry.price || 0);
+
+      if (Number.isFinite(price) && price > 0) {
+        map[dateStr] = price;
+      }
+    });
+
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+export function useCalendarPrices({
+  origin,
+  destination,
+  leftMonth,
+  rightMonth,
+  onCheapestPrice,
+}: UseCalendarPricesProps) {
+  const [priceMap, setPriceMap] = useState<PriceMap>({});
+  const [loading, setLoading] = useState(false);
+
+  const leftStr = format(leftMonth, "yyyy-MM");
+  const rightStr = format(rightMonth, "yyyy-MM");
+  const prevStr = format(subMonths(leftMonth, 1), "yyyy-MM");
+  const nextStr = format(addMonths(rightMonth, 1), "yyyy-MM");
+
+  const loadPrices = useCallback(async () => {
+    if (!origin || !destination || origin === destination) {
+      setPriceMap({});
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const [prevPrices, leftPrices, rightPrices, nextPrices] = await Promise.all([
+        fetchPricesForMonth(origin, destination, prevStr),
+        fetchPricesForMonth(origin, destination, leftStr),
+        fetchPricesForMonth(origin, destination, rightStr),
+        fetchPricesForMonth(origin, destination, nextStr),
+      ]);
+
+      setPriceMap({
+        ...prevPrices,
+        ...leftPrices,
+        ...rightPrices,
+        ...nextPrices,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [origin, destination, prevStr, leftStr, rightStr, nextStr]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!origin || !destination || origin === destination) {
+        if (!cancelled) {
+          setPriceMap({});
+          setLoading(false);
+        }
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const [prevPrices, leftPrices, rightPrices, nextPrices] = await Promise.all([
+          fetchPricesForMonth(origin, destination, prevStr),
+          fetchPricesForMonth(origin, destination, leftStr),
+          fetchPricesForMonth(origin, destination, rightStr),
+          fetchPricesForMonth(origin, destination, nextStr),
+        ]);
+
+        if (cancelled) return;
+
+        setPriceMap({
+          ...prevPrices,
+          ...leftPrices,
+          ...rightPrices,
+          ...nextPrices,
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
-    const leftStr = formatYMD(leftMonth);
-    const rightStr = formatYMD(rightMonth);
-    const prevStr = formatYMD(subMonths(leftMonth, 1)); // Fetch 1 prev month to anchor gap fill
-    const nextStr = formatYMD(addMonths(rightMonth, 1)); // Fetch 1 next month to anchor gap fill
+    void run();
 
-    const fetchPrices = useCallback(
-        async (mo: string) => {
-            if (origin === destination) return {};
-            try {
-                const params = new URLSearchParams({ type: "calendar", origin, destination, month: mo, currency: "usd" });
-                const res = await fetch(`/api/flights?${params}`);
-                if (!res.ok) return {};
-                const data = await res.json();
-                if (!data.data) return {};
-                const map: PriceMap = {};
-                Object.entries(data.data).forEach(([dateStr, entry]) => {
-                    const e = entry as PriceEntry;
-                    const price = e.price || 0;
-                    if (price > 0) map[dateStr] = price;
-                });
-                return map;
-            } catch {
-                return {};
-            }
-        },
-        [origin, destination]
+    return () => {
+      cancelled = true;
+    };
+  }, [origin, destination, prevStr, leftStr, rightStr, nextStr]);
+
+  const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
+
+  const enrichedData = useMemo(() => {
+    return fillGaps(priceMap, leftMonth, endOfMonth(rightMonth));
+  }, [priceMap, leftMonth, rightMonth]);
+
+  const priceCount = useMemo(() => Object.keys(priceMap).length, [priceMap]);
+
+  const cheapestPrice = useMemo(() => {
+    const prices = Object.values(priceMap).filter(
+      (price) => Number.isFinite(price) && price > 0
     );
 
-    useEffect(() => {
-        if (origin === destination) { setPriceMap({}); return; }
-        let cancelled = false;
-        setLoading(true);
+    if (!prices.length) return null;
+    return Math.min(...prices);
+  }, [priceMap]);
 
-        // Parallel fetch
-        Promise.all([
-            fetchPrices(prevStr),
-            fetchPrices(leftStr),
-            fetchPrices(rightStr),
-            fetchPrices(nextStr),
-        ])
-            .then(([m0, m1, m2, m3]) => {
-                if (!cancelled) setPriceMap({ ...m0, ...m1, ...m2, ...m3 });
-            })
-            .catch(() => { /* individual fetchPrices already return {} on error */ })
-            .finally(() => { if (!cancelled) setLoading(false); });
+  useEffect(() => {
+    if (!onCheapestPrice) return;
+    onCheapestPrice(cheapestPrice);
+  }, [cheapestPrice, onCheapestPrice]);
 
-        return () => { cancelled = true; };
-    }, [origin, destination, leftStr, rightStr, prevStr, nextStr, fetchPrices]);
-
-    const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
-
-    useEffect(() => {
-        if (!onCheapestPrice) return;
-        const prices = Object.values(priceMap).filter((p) => Number.isFinite(p) && p > 0);
-        if (!prices.length) {
-            onCheapestPrice(null);
-            return;
-        }
-        onCheapestPrice(Math.min(...prices));
-    }, [priceMap, onCheapestPrice]);
-
-    const enrichedData = useMemo(() => {
-        return fillGaps(priceMap, leftMonth, endOfMonth(rightMonth));
-    }, [priceMap, leftMonth, rightMonth]);
-
-    const priceCount = Object.keys(priceMap).length;
-
-    return {
-        priceMap,
-        enrichedData,
-        loading,
-        thresholds,
-        priceCount,
-    };
+  return {
+    priceMap,
+    enrichedData,
+    loading,
+    thresholds,
+    priceCount,
+    cheapestPrice,
+    reloadPrices: loadPrices,
+  };
 }
