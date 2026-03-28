@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-28 06:53",
-    "count": 6246,
+    "updated_at": "2026-03-28 12:42",
+    "count": 6251,
     "currency": "USD",
     "errors": 71
   },
@@ -59585,6 +59585,34 @@
     },
     {
       "origin": "MDL",
+      "destination": "DPS",
+      "price": 381.0,
+      "date": "2026-04-17",
+      "airline": "8M",
+      "airline_code": "8M",
+      "transfers": 3,
+      "flight_number": "362",
+      "found_at": "2026-03-28 12:42",
+      "fetchedAt": 1774701759137,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MDL",
+      "destination": "DPS",
+      "price": 461.0,
+      "date": "2026-04-10",
+      "airline": "8M",
+      "airline_code": "8M",
+      "transfers": 3,
+      "flight_number": "374",
+      "found_at": "2026-03-28 12:42",
+      "fetchedAt": 1774701759137,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MDL",
       "destination": "HAN",
       "price": 283.0,
       "date": "2026-03-30",
@@ -77999,6 +78027,20 @@
     },
     {
       "origin": "SGN",
+      "destination": "RGN",
+      "price": 482.0,
+      "date": "2026-03-28",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 2,
+      "flight_number": "646",
+      "found_at": "2026-03-28 12:42",
+      "fetchedAt": 1774701752580,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SGN",
       "destination": "SIN",
       "price": 42.0,
       "date": "2026-09-30",
@@ -81020,6 +81062,20 @@
       "region": "SEA",
       "found_at": "2026-03-08 06:37",
       "fetchedAt": 1772951834785
+    },
+    {
+      "origin": "SIN",
+      "destination": "CNX",
+      "price": 110.0,
+      "date": "2026-07-13",
+      "airline": "MH",
+      "airline_code": "MH",
+      "transfers": 1,
+      "flight_number": "602",
+      "found_at": "2026-03-28 12:42",
+      "fetchedAt": 1774701751527,
+      "provider": "tp",
+      "region": "SEA"
     },
     {
       "origin": "SIN",
@@ -88205,6 +88261,20 @@
       "region": "SEA",
       "found_at": "2026-03-08 06:37",
       "fetchedAt": 1772951855646
+    },
+    {
+      "origin": "SIN",
+      "destination": "RGN",
+      "price": 598.0,
+      "date": "2026-03-28",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 1,
+      "flight_number": "3681",
+      "found_at": "2026-03-28 12:42",
+      "fetchedAt": 1774701751166,
+      "provider": "tp",
+      "region": "SEA"
     },
     {
       "origin": "SIN",
