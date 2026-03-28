@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-03-28 01:46",
-    "count": 6241,
+    "updated_at": "2026-03-28 06:53",
+    "count": 6246,
     "currency": "USD",
     "errors": 71
   },
@@ -42268,6 +42268,62 @@
     },
     {
       "origin": "HAN",
+      "destination": "KUL",
+      "price": 215.0,
+      "date": "2026-03-31",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 1,
+      "flight_number": "167",
+      "found_at": "2026-03-28 06:53",
+      "fetchedAt": 1774680797462,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "HAN",
+      "destination": "KUL",
+      "price": 253.0,
+      "date": "2026-03-30",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 2,
+      "flight_number": "457",
+      "found_at": "2026-03-28 06:53",
+      "fetchedAt": 1774680797462,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "HAN",
+      "destination": "KUL",
+      "price": 274.0,
+      "date": "2026-03-29",
+      "airline": "MH",
+      "airline_code": "MH",
+      "transfers": 0,
+      "flight_number": "753",
+      "found_at": "2026-03-28 06:53",
+      "fetchedAt": 1774680797462,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "HAN",
+      "destination": "KUL",
+      "price": 329.0,
+      "date": "2026-03-28",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 1,
+      "flight_number": "521",
+      "found_at": "2026-03-28 06:53",
+      "fetchedAt": 1774680797462,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "HAN",
       "destination": "RGN",
       "price": 103.0,
       "date": "2026-06-17",
@@ -66063,6 +66119,20 @@
       "provider": "amadeus",
       "is_amadeus": true,
       "is_estimated": true,
+      "region": "SEA"
+    },
+    {
+      "origin": "RGN",
+      "destination": "DAD",
+      "price": 259.0,
+      "date": "2026-03-29",
+      "airline": "MH",
+      "airline_code": "MH",
+      "transfers": 1,
+      "flight_number": "741",
+      "found_at": "2026-03-28 06:52",
+      "fetchedAt": 1774680760478,
+      "provider": "tp",
       "region": "SEA"
     },
     {
