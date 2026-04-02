@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-04-02 13:01",
-    "count": 6131,
+    "updated_at": "2026-04-02 18:50",
+    "count": 6134,
     "currency": "USD",
     "errors": 68
   },
@@ -58884,6 +58884,20 @@
     },
     {
       "origin": "MDL",
+      "destination": "MNL",
+      "price": 355.0,
+      "date": "2026-06-01",
+      "airline": "8M",
+      "airline_code": "8M",
+      "transfers": 1,
+      "flight_number": "0362",
+      "found_at": "2026-04-02 18:50",
+      "fetchedAt": 1775155840523,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "MDL",
       "destination": "RGN",
       "price": 105.0,
       "date": "2026-05-11",
@@ -83805,6 +83819,20 @@
     },
     {
       "origin": "SIN",
+      "destination": "HAN",
+      "price": 173.0,
+      "date": "2026-12-03",
+      "airline": "VN",
+      "airline_code": "VN",
+      "transfers": 1,
+      "flight_number": "656",
+      "found_at": "2026-04-02 18:50",
+      "fetchedAt": 1775155843835,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
       "destination": "HKT",
       "price": 66.0,
       "date": "2026-05-03",
@@ -87048,6 +87076,20 @@
       "flight_number": "812",
       "found_at": "2026-03-17 13:00",
       "fetchedAt": 1773752410464,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SIN",
+      "destination": "SGN",
+      "price": 129.0,
+      "date": "2026-12-03",
+      "airline": "VJ",
+      "airline_code": "VJ",
+      "transfers": 0,
+      "flight_number": "816",
+      "found_at": "2026-04-02 18:50",
+      "fetchedAt": 1775155843658,
       "provider": "tp",
       "region": "SEA"
     },
