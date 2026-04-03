@@ -53,6 +53,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
+export async function getUserByOpenId(openId: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 export async function getActivePriceAlerts() {
   const db = await getDb();
   if (!db) return [];
@@ -76,12 +86,34 @@ export async function updateAlertPrice(id: number, price: number) {
   }
 }
 
-export async function saveFlightPriceAlert(alert: InsertFlightPriceAlert) {
+export async function createPriceAlert(alert: InsertFlightPriceAlert): Promise<{ success: boolean; alreadyExists: boolean }> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    console.warn("[Database] Cannot create alert: database not available");
+    return { success: false, alreadyExists: false };
+  }
 
   try {
-    await db.insert(flightPriceAlerts).values(alert);
+    const existing = await db.select().from(flightPriceAlerts).where(
+      and(
+        eq(flightPriceAlerts.email, alert.email),
+        eq(flightPriceAlerts.origin, alert.origin),
+        eq(flightPriceAlerts.destination, alert.destination),
+        eq(flightPriceAlerts.departDate, alert.departDate),
+        eq(flightPriceAlerts.isActive, true)
+      )
+    ).limit(1);
+
+    if (existing.length > 0) {
+      return { success: true, alreadyExists: true };
+    }
+
+    await db.insert(flightPriceAlerts).values({
+      ...alert,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return { success: true, alreadyExists: false };
   } catch (error) {
     console.error("[Database] Failed to save flight price alert:", error);
     throw error;

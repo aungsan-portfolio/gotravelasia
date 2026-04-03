@@ -122,8 +122,7 @@ var init_destination_landing = __esm({
 
 // server/_core/app.ts
 import dotenv from "dotenv";
-import path2 from "path";
-import fs2 from "fs";
+import path3 from "path";
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
@@ -135,7 +134,7 @@ var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 
 // server/db.ts
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc, isNull, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 
 // drizzle/schema.ts
@@ -177,6 +176,20 @@ var flightPriceAlerts = mysqlTable("flightPriceAlerts", {
   // e.g. "RGN-BKK"
   source: varchar("source", { length: 20 }).default("track_button").notNull(),
   isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+});
+var emailQueue = mysqlTable("emailQueue", {
+  id: int("id").autoincrement().primaryKey(),
+  toEmail: varchar("toEmail", { length: 320 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  htmlContent: text("htmlContent").notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  // pending|processing|pending_retry|sent|failed
+  attempts: int("attempts").default(0).notNull(),
+  lastError: text("lastError"),
+  scheduledAt: timestamp("scheduledAt"),
+  sentAt: timestamp("sentAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
@@ -225,23 +238,6 @@ var hotelDeals = mysqlTable("hotelDeals", {
 });
 
 // server/db.ts
-import { or } from "drizzle-orm";
-
-// server/_core/env.ts
-var ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
-  isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-  amadeusId: process.env.AMADEUS_CLIENT_ID ?? "",
-  amadeusSecret: process.env.AMADEUS_CLIENT_SECRET ?? ""
-};
-
-// server/db.ts
 var _db = null;
 async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -264,39 +260,20 @@ async function upsertUser(user) {
     return;
   }
   try {
-    const values = {
-      openId: user.openId
-    };
-    const updateSet = {};
-    const textFields = ["name", "email", "loginMethod"];
-    const assignNullable = (field) => {
-      const value = user[field];
-      if (value === void 0) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-    textFields.forEach(assignNullable);
-    if (user.lastSignedIn !== void 0) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
+    const existing = await db.select().from(users).where(eq(users.openId, user.openId)).limit(1);
+    if (existing.length > 0) {
+      await db.update(users).set({
+        name: user.name,
+        email: user.email,
+        updatedAt: /* @__PURE__ */ new Date(),
+        lastSignedIn: /* @__PURE__ */ new Date()
+      }).where(eq(users.openId, user.openId));
+    } else {
+      await db.insert(users).values({
+        ...user,
+        role: user.role || "user"
+      });
     }
-    if (user.role !== void 0) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = "admin";
-      updateSet.role = "admin";
-    }
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = /* @__PURE__ */ new Date();
-    }
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = /* @__PURE__ */ new Date();
-    }
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet
-    });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -310,6 +287,25 @@ async function getUserByOpenId(openId) {
   }
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : void 0;
+}
+async function getActivePriceAlerts() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(flightPriceAlerts).where(eq(flightPriceAlerts.isActive, true));
+  } catch (err) {
+    console.error("[Database] Failed to get active alerts:", err);
+    return [];
+  }
+}
+async function updateAlertPrice(id, price) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(flightPriceAlerts).set({ lastNotifiedPrice: price, updatedAt: /* @__PURE__ */ new Date() }).where(eq(flightPriceAlerts.id, id));
+  } catch (err) {
+    console.error(`[Database] Failed to update alert price for ${id}:`, err);
+  }
 }
 async function createPriceAlert(alert) {
   const db = await getDb();
@@ -337,51 +333,111 @@ async function createPriceAlert(alert) {
     });
     return { success: true, alreadyExists: false };
   } catch (error) {
-    console.error("[Database] Failed to create price alert:", error);
+    console.error("[Database] Failed to save flight price alert:", error);
     throw error;
   }
 }
-async function getActivePriceAlerts() {
+async function saveSubscriber(values) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) throw new Error("Database not available");
   try {
-    return await db.select().from(flightPriceAlerts).where(eq(flightPriceAlerts.isActive, true));
-  } catch (err) {
-    console.error("[Database] Failed to get active alerts:", err);
-    return [];
-  }
-}
-async function updateAlertPrice(id, latestPrice) {
-  const db = await getDb();
-  if (!db) return;
-  try {
-    await db.update(flightPriceAlerts).set({ lastNotifiedPrice: latestPrice, updatedAt: /* @__PURE__ */ new Date() }).where(eq(flightPriceAlerts.id, id));
-  } catch (err) {
-    console.error("[Database] Failed to update alert price:", err);
-  }
-}
-async function saveSubscriber(email, source = "popup") {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot save subscriber: database not available");
-    return { success: false, alreadyExists: false };
-  }
-  try {
-    const existing = await db.select().from(subscribers).where(eq(subscribers.email, email)).limit(1);
+    const existing = await db.select().from(subscribers).where(eq(subscribers.email, values.email)).limit(1);
     if (existing.length > 0) {
       return { success: true, alreadyExists: true };
     }
     await db.insert(subscribers).values({
-      email,
-      source,
-      isActive: true,
-      createdAt: /* @__PURE__ */ new Date()
+      email: values.email,
+      source: values.source || "popup",
+      isActive: true
     });
     return { success: true, alreadyExists: false };
   } catch (error) {
     console.error("[Database] Failed to save subscriber:", error);
     throw error;
   }
+}
+async function ensureEmailQueueTable() {
+  const db = await getDb();
+  if (!db) return;
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS emailQueue (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      toEmail VARCHAR(320) NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      htmlContent TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'pending',
+      attempts INT NOT NULL DEFAULT 0,
+      lastError TEXT NULL,
+      scheduledAt TIMESTAMP NULL,
+      sentAt TIMESTAMP NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+}
+async function enqueueEmail(values) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.insert(emailQueue).values({
+    toEmail: values.toEmail,
+    subject: values.subject,
+    htmlContent: values.htmlContent,
+    status: "pending",
+    scheduledAt: values.scheduledAt ?? null,
+    attempts: 0,
+    createdAt: /* @__PURE__ */ new Date(),
+    updatedAt: /* @__PURE__ */ new Date()
+  });
+  return true;
+}
+async function getDueEmailQueueItems(batchSize, maxAttempts) {
+  const db = await getDb();
+  if (!db) return [];
+  const now = /* @__PURE__ */ new Date();
+  return db.select().from(emailQueue).where(
+    and(
+      or(eq(emailQueue.status, "pending"), eq(emailQueue.status, "pending_retry")),
+      lte(emailQueue.attempts, maxAttempts - 1),
+      or(isNull(emailQueue.scheduledAt), lte(emailQueue.scheduledAt, now))
+    )
+  ).orderBy(asc(emailQueue.id)).limit(batchSize);
+}
+async function claimEmailQueueItem(id, expectedAttempts) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.execute(sql`
+    UPDATE emailQueue
+    SET status = 'processing', updatedAt = NOW()
+    WHERE id = ${id}
+      AND status IN ('pending', 'pending_retry')
+      AND attempts = ${expectedAttempts}
+  `);
+  const affectedRows = Number(result?.[0]?.affectedRows ?? 0);
+  return affectedRows > 0;
+}
+async function markEmailQueueSent(id) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(emailQueue).set({
+    status: "sent",
+    sentAt: /* @__PURE__ */ new Date(),
+    lastError: null,
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq(emailQueue.id, id));
+}
+async function markEmailQueueAttemptFailed(params) {
+  const db = await getDb();
+  if (!db) return;
+  const nextAttempts = params.attempts + 1;
+  const hasAttemptsLeft = nextAttempts < params.maxAttempts;
+  const retryAt = hasAttemptsLeft ? new Date(Date.now() + params.retryDelayMinutes * 60 * 1e3) : null;
+  await db.update(emailQueue).set({
+    status: hasAttemptsLeft ? "pending_retry" : "failed",
+    attempts: nextAttempts,
+    scheduledAt: retryAt,
+    lastError: params.error,
+    updatedAt: /* @__PURE__ */ new Date()
+  }).where(eq(emailQueue.id, params.id));
 }
 
 // server/_core/cookies.ts
@@ -424,6 +480,22 @@ var ForbiddenError = (msg) => new HttpError(403, msg);
 import axios from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import { SignJWT, jwtVerify } from "jose";
+
+// server/_core/env.ts
+var ENV = {
+  appId: process.env.VITE_APP_ID ?? "",
+  cookieSecret: process.env.JWT_SECRET ?? "",
+  databaseUrl: process.env.DATABASE_URL ?? "",
+  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
+  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  isProduction: process.env.NODE_ENV === "production",
+  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
+  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  amadeusId: process.env.AMADEUS_CLIENT_ID ?? "",
+  amadeusSecret: process.env.AMADEUS_CLIENT_SECRET ?? ""
+};
+
+// server/_core/sdk.ts
 var isNonEmptyString = (value) => typeof value === "string" && value.length > 0;
 var EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 var GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -1925,88 +1997,243 @@ async function handler(req, res) {
 }
 
 // api/_lib/calendarPrices.ts
+import fs from "fs";
+import path from "path";
+
+// api/_lib/amadeusService.ts
+var AMADEUS_BASE = "https://api.amadeus.com";
+var AMADEUS_AUTH = "https://api.amadeus.com/v1/security/oauth2/token";
+var cachedToken = null;
+function getCredentials() {
+  const clientId = (typeof import.meta !== "undefined" && import.meta.env?.VITE_AMADEUS_CLIENT_ID) ?? process.env.VITE_AMADEUS_CLIENT_ID ?? process.env.AMADEUS_CLIENT_ID;
+  const clientSecret = (typeof import.meta !== "undefined" && import.meta.env?.VITE_AMADEUS_CLIENT_SECRET) ?? process.env.VITE_AMADEUS_CLIENT_SECRET ?? process.env.AMADEUS_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+  return { clientId, clientSecret };
+}
+async function getAccessToken() {
+  const creds = getCredentials();
+  if (!creds) return null;
+  if (cachedToken && Date.now() < cachedToken.expiresAt - 6e4) {
+    return cachedToken.token;
+  }
+  try {
+    const res = await fetch(AMADEUS_AUTH, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: creds.clientId,
+        client_secret: creds.clientSecret
+      })
+    });
+    if (!res.ok) return null;
+    const json2 = await res.json();
+    cachedToken = {
+      token: json2.access_token,
+      expiresAt: Date.now() + json2.expires_in * 1e3
+    };
+    return cachedToken.token;
+  } catch {
+    return null;
+  }
+}
+async function amFetch(path4, params) {
+  const token = await getAccessToken();
+  if (!token) return null;
+  const url = new URL(path4, AMADEUS_BASE);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      console.warn(`[Amadeus] ${path4} \u2192 ${res.status}`);
+      return null;
+    }
+    const json2 = await res.json();
+    return json2.data;
+  } catch (err) {
+    console.error(`[Amadeus] ${path4} fetch error:`, err);
+    return null;
+  }
+}
+async function searchFlightOffers(origin, destination, departureDate, opts) {
+  return amFetch("/v2/shopping/flight-offers", {
+    originLocationCode: origin,
+    destinationLocationCode: destination,
+    departureDate,
+    adults: String(opts?.adults ?? 1),
+    currencyCode: opts?.currencyCode ?? "THB",
+    max: String(opts?.max ?? 10),
+    ...opts?.nonStop ? { nonStop: "true" } : {}
+  });
+}
+
+// api/_lib/calendarPrices.ts
+function addPrice(merged, dateStr, price, entry, source = "legacy") {
+  if (!dateStr || price <= 0) return;
+  const current = merged[dateStr];
+  const sourcePriority = { v3: 1, bot: 2, legacy: 3, amadeus: 4 };
+  const getCurrentSource = (e) => {
+    if (e.is_v3) return "v3";
+    if (e.is_bot_data) return "bot";
+    if (e.is_amadeus) return "amadeus";
+    return "legacy";
+  };
+  const currentSource = current ? getCurrentSource(current) : null;
+  if (!current || sourcePriority[source] < sourcePriority[currentSource]) {
+    merged[dateStr] = {
+      ...entry,
+      price,
+      is_v3: source === "v3",
+      is_bot_data: source === "bot",
+      is_amadeus: source === "amadeus",
+      is_legacy_tp: source === "legacy"
+    };
+    return;
+  }
+  if (source === currentSource && price < (current.price ?? Number.POSITIVE_INFINITY)) {
+    merged[dateStr] = {
+      ...entry,
+      price,
+      is_v3: source === "v3",
+      is_bot_data: source === "bot",
+      is_amadeus: source === "amadeus",
+      is_legacy_tp: source === "legacy"
+    };
+  }
+}
+async function fetchAmadeusCalendarPrices(origin, destination, month, currency = "usd") {
+  try {
+    const [year, mon] = month.split("-").map(Number);
+    const daysInMonth = new Date(year, mon, 0).getDate();
+    const sampleDays = [5, 15, Math.min(25, daysInMonth)].filter((d) => d <= daysInMonth);
+    const sampleResults = await Promise.allSettled(
+      sampleDays.map(async (day) => {
+        const departureDate = `${year}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const offers = await searchFlightOffers(origin, destination, departureDate, {
+          currencyCode: currency.toUpperCase(),
+          max: 3,
+          nonStop: false
+        });
+        const cheapest = offers?.[0];
+        if (!cheapest) return null;
+        const price = Number.parseFloat(cheapest.price?.total || "0");
+        if (!Number.isFinite(price) || price <= 0) return null;
+        const segments = cheapest.itineraries?.[0]?.segments || [];
+        return {
+          date: departureDate,
+          price,
+          airline: cheapest.validatingAirlineCodes?.[0] || "",
+          transfers: Math.max(0, segments.length - 1)
+        };
+      })
+    );
+    const samplePrices = sampleResults.filter((r) => r.status === "fulfilled").map((r) => r.value).filter((v) => !!v && v.price > 0);
+    if (!samplePrices.length) return {};
+    const result = {};
+    for (const sp of samplePrices) {
+      result[sp.date] = {
+        price: sp.price,
+        origin,
+        destination,
+        airline: sp.airline,
+        departure_at: `${sp.date}T00:00:00`,
+        transfers: sp.transfers,
+        is_amadeus: true,
+        is_estimated_amadeus: false
+      };
+    }
+    for (const sp of samplePrices) {
+      const spDate = /* @__PURE__ */ new Date(`${sp.date}T00:00:00`);
+      for (let offset = -3; offset <= 3; offset++) {
+        if (offset === 0) continue;
+        const nearby = new Date(spDate);
+        nearby.setDate(nearby.getDate() + offset);
+        if (nearby.getMonth() + 1 !== mon || nearby.getFullYear() !== year) continue;
+        const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(nearby.getDate()).padStart(2, "0")}`;
+        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
+        const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
+        result[nearbyKey] = {
+          price: Math.round(sp.price * variance * 100) / 100,
+          origin,
+          destination,
+          airline: sp.airline,
+          departure_at: `${nearbyKey}T00:00:00`,
+          transfers: sp.transfers,
+          is_amadeus: true,
+          is_estimated_amadeus: true
+        };
+      }
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+function getBotJsonCandidatePaths() {
+  const cwd = process.cwd();
+  const maybeLambdaRoot = process.env.LAMBDA_TASK_ROOT || "/var/task";
+  return [
+    path.join(cwd, "client", "public", "data", "flight_data.json"),
+    path.join(cwd, "public", "data", "flight_data.json"),
+    path.join(maybeLambdaRoot, "client", "public", "data", "flight_data.json"),
+    path.join(maybeLambdaRoot, "public", "data", "flight_data.json")
+  ];
+}
+async function loadBotRoutes() {
+  for (const p of getBotJsonCandidatePaths()) {
+    if (!fs.existsSync(p)) continue;
+    const json2 = JSON.parse(fs.readFileSync(p, "utf-8"));
+    if (Array.isArray(json2?.routes)) return json2.routes;
+  }
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) {
+    try {
+      const response = await fetch(`https://${vercelUrl}/data/flight_data.json`, { signal: AbortSignal.timeout(3e3) });
+      if (response.ok) {
+        const json2 = await response.json();
+        if (Array.isArray(json2?.routes)) return json2.routes;
+      }
+    } catch {
+    }
+  }
+  return [];
+}
 async function handleCalendarPrices(req, res, params) {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
   if (!token) {
     res.status(500).json({ error: "API token not configured" });
     return;
   }
-  const { origin, destination, month, currency = "thb" } = params;
+  const { origin, destination, month, currency = "usd" } = params;
   if (!origin || !destination || !month) {
     res.status(400).json({ error: "Missing required params: origin, destination, month" });
     return;
   }
-  const cur = String(currency || "thb");
+  const cur = String(currency || "usd");
   const orig = String(origin);
   const dest = String(destination);
   const mo = String(month);
   const [yr, mn] = mo.split("-").map(Number);
   const nextDate = new Date(yr, mn, 1);
   const nextMo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
+  const tp = (queryParams, base) => fetch(`${base}?${new URLSearchParams({ token, ...queryParams })}`, { signal: AbortSignal.timeout(8e3) }).then((r) => r.ok ? r.json() : null);
   try {
-    let addPrice3 = function(dateStr, price, entry) {
-      if (!dateStr || price <= 0) return;
-      if (!merged[dateStr] || price < merged[dateStr].price) {
-        merged[dateStr] = { ...entry, price };
-      }
-    };
-    var addPrice2 = addPrice3;
-    const [v3Mo1, v3Mo2, calendarData, matrixData] = await Promise.allSettled([
-      fetch(
-        `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
-          token,
-          origin: orig,
-          destination: dest,
-          departure_at: mo,
-          sorting: "price",
-          limit: "30",
-          one_way: "true",
-          currency: cur
-        })}`,
-        { signal: AbortSignal.timeout(8e3) }
-      ).then((r) => r.ok ? r.json() : null),
-      fetch(
-        `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
-          token,
-          origin: orig,
-          destination: dest,
-          departure_at: nextMo,
-          sorting: "price",
-          limit: "30",
-          one_way: "true",
-          currency: cur
-        })}`,
-        { signal: AbortSignal.timeout(8e3) }
-      ).then((r) => r.ok ? r.json() : null),
-      fetch(
-        `https://api.travelpayouts.com/v1/prices/calendar?${new URLSearchParams({
-          token,
-          origin: orig,
-          destination: dest,
-          month: mo,
-          calendar_type: "departure_date",
-          currency: cur
-        })}`,
-        { signal: AbortSignal.timeout(8e3) }
-      ).then((r) => r.ok ? r.json() : null),
-      fetch(
-        `https://api.travelpayouts.com/v2/prices/month-matrix?${new URLSearchParams({
-          token,
-          origin: orig,
-          destination: dest,
-          month: mo,
-          currency: cur
-        })}`,
-        { signal: AbortSignal.timeout(8e3) }
-      ).then((r) => r.ok ? r.json() : null)
+    const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2] = await Promise.allSettled([
+      tp({ origin: orig, destination: dest, departure_at: mo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
+      tp({ origin: orig, destination: dest, departure_at: nextMo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
+      tp({ origin: orig, destination: dest, month: mo, calendar_type: "departure_date", currency: cur }, "https://api.travelpayouts.com/v1/prices/calendar"),
+      tp({ origin: orig, destination: dest, month: mo, currency: cur }, "https://api.travelpayouts.com/v2/prices/month-matrix"),
+      fetchAmadeusCalendarPrices(orig, dest, mo, cur),
+      fetchAmadeusCalendarPrices(orig, dest, nextMo, cur)
     ]);
     const merged = {};
-    for (const v3Result of [v3Mo1, v3Mo2]) {
-      const arr = v3Result.status === "fulfilled" && v3Result.value?.data;
+    for (const result of [v3Mo1, v3Mo2]) {
+      const arr = result.status === "fulfilled" && result.value?.data;
       if (Array.isArray(arr)) {
         for (const e of arr) {
-          const dateStr = e.departure_at?.split("T")[0];
-          addPrice3(dateStr, e.price || 0, {
+          addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
             origin: e.origin || orig,
             destination: e.destination || dest,
             airline: e.airline || "",
@@ -2014,21 +2241,36 @@ async function handleCalendarPrices(req, res, params) {
             return_at: e.return_at || "",
             transfers: e.transfers ?? 0,
             flight_number: e.flight_number || ""
-          });
+          }, "v3");
         }
+      }
+    }
+    const botRoutes = await loadBotRoutes();
+    for (const r of botRoutes) {
+      if (r.origin !== orig || r.destination !== dest) continue;
+      const dateStr = r.date;
+      if (dateStr && (dateStr.startsWith(mo) || dateStr.startsWith(nextMo))) {
+        addPrice(merged, dateStr, r.price || 0, {
+          origin: r.origin,
+          destination: r.destination,
+          airline: r.airline_code || r.airline || "",
+          departure_at: `${r.date}T00:00:00`,
+          transfers: r.transfers || 0,
+          flight_number: r.flight_num || ""
+        }, "bot");
       }
     }
     const cal = calendarData.status === "fulfilled" && calendarData.value?.data;
     if (cal && typeof cal === "object" && !Array.isArray(cal)) {
       for (const [dateStr, entry] of Object.entries(cal)) {
         const e = entry;
-        addPrice3(dateStr, e.price || 0, e);
+        addPrice(merged, dateStr, e.price || 0, e, "legacy");
       }
     }
     const matrix = matrixData.status === "fulfilled" && matrixData.value?.data;
     if (Array.isArray(matrix)) {
       for (const e of matrix) {
-        addPrice3(e.depart_date, e.value || e.price || 0, {
+        addPrice(merged, e.depart_date, e.value || e.price || 0, {
           origin: e.origin || orig,
           destination: e.destination || dest,
           price: e.value || e.price || 0,
@@ -2036,7 +2278,15 @@ async function handleCalendarPrices(req, res, params) {
           departure_at: e.departure_at || `${e.depart_date}T00:00:00`,
           return_at: e.return_date ? `${e.return_date}T00:00:00` : "",
           transfers: e.number_of_changes ?? 0
-        });
+        }, "legacy");
+      }
+    }
+    for (const result of [amadeusMo1, amadeusMo2]) {
+      const data = result.status === "fulfilled" ? result.value : null;
+      if (data && typeof data === "object") {
+        for (const [dateStr, entry] of Object.entries(data)) {
+          addPrice(merged, dateStr, entry.price || 0, entry, "amadeus");
+        }
       }
     }
     res.status(200).json({
@@ -2492,8 +2742,8 @@ var cheapPrices_default = router5;
 
 // server/routes/calendarPrices.ts
 import { Router as Router5 } from "express";
-import path from "path";
-import fs from "fs";
+import path2 from "path";
+import fs2 from "fs";
 
 // server/_core/amadeus.ts
 import Amadeus from "amadeus";
@@ -2525,7 +2775,7 @@ function getClient() {
 }
 var cache4 = /* @__PURE__ */ new Map();
 var CACHE_TTL4 = 60 * 60 * 1e3;
-async function fetchAmadeusCalendarPrices(origin, destination, month, currency = "USD") {
+async function fetchAmadeusCalendarPrices2(origin, destination, month, currency = "USD") {
   const amadeus = getClient();
   if (!amadeus) return {};
   const cacheKey = `${origin}-${destination}-${month}-${currency}`;
@@ -2634,7 +2884,7 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
 
 // server/routes/calendarPrices.ts
 var router6 = Router5();
-function addPrice(merged, dateStr, price, entry, fromBot = false, fromAmadeus = false) {
+function addPrice2(merged, dateStr, price, entry, fromBot = false, fromAmadeus = false) {
   if (!dateStr || price <= 0) return;
   const current = merged[dateStr];
   if (!current) {
@@ -2688,28 +2938,28 @@ router6.get(
         tp({ origin: orig, destination: dest, departure_at: nextMo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
         tp({ origin: orig, destination: dest, month: mo, calendar_type: "departure_date", currency: cur }, "https://api.travelpayouts.com/v1/prices/calendar"),
         tp({ origin: orig, destination: dest, month: mo, currency: cur }, "https://api.travelpayouts.com/v2/prices/month-matrix"),
-        fetchAmadeusCalendarPrices(orig, dest, mo, cur),
-        fetchAmadeusCalendarPrices(orig, dest, nextMo, cur)
+        fetchAmadeusCalendarPrices2(orig, dest, mo, cur),
+        fetchAmadeusCalendarPrices2(orig, dest, nextMo, cur)
       ]);
       const merged = {};
       for (const result2 of [amadeusMo1, amadeusMo2]) {
         const data = result2.status === "fulfilled" ? result2.value : null;
         if (data && typeof data === "object") {
           for (const [dateStr, entry] of Object.entries(data)) {
-            addPrice(merged, dateStr, entry.price || 0, entry, false, true);
+            addPrice2(merged, dateStr, entry.price || 0, entry, false, true);
           }
         }
       }
       try {
-        const botPath = path.join(process.cwd(), "client", "public", "data", "flight_data.json");
-        if (fs.existsSync(botPath)) {
-          const botData = JSON.parse(fs.readFileSync(botPath, "utf-8"));
+        const botPath = path2.join(process.cwd(), "client", "public", "data", "flight_data.json");
+        if (fs2.existsSync(botPath)) {
+          const botData = JSON.parse(fs2.readFileSync(botPath, "utf-8"));
           if (Array.isArray(botData.routes)) {
             for (const r of botData.routes) {
               if (r.origin === orig && r.destination === dest) {
                 const dateStr = r.date;
                 if (dateStr && (dateStr.startsWith(mo) || dateStr.startsWith(nextMo))) {
-                  addPrice(merged, dateStr, r.price || 0, {
+                  addPrice2(merged, dateStr, r.price || 0, {
                     origin: r.origin,
                     destination: r.destination,
                     airline: r.airline_code || r.airline || "",
@@ -2729,7 +2979,7 @@ router6.get(
         const arr = result2.status === "fulfilled" && result2.value?.data;
         if (Array.isArray(arr)) {
           for (const e of arr) {
-            addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
+            addPrice2(merged, e.departure_at?.split("T")[0], e.price || 0, {
               origin: e.origin || orig,
               destination: e.destination || dest,
               airline: e.airline || "",
@@ -2745,13 +2995,13 @@ router6.get(
       if (cal && typeof cal === "object" && !Array.isArray(cal)) {
         for (const [dateStr, entry] of Object.entries(cal)) {
           const e = entry;
-          addPrice(merged, dateStr, e.price || 0, e);
+          addPrice2(merged, dateStr, e.price || 0, e);
         }
       }
       const matrix = matrixData.status === "fulfilled" && matrixData.value?.data;
       if (Array.isArray(matrix)) {
         for (const e of matrix) {
-          addPrice(merged, e.depart_date, e.value || e.price || 0, {
+          addPrice2(merged, e.depart_date, e.value || e.price || 0, {
             origin: e.origin || orig,
             destination: e.destination || dest,
             price: e.value || e.price || 0,
@@ -2947,7 +3197,7 @@ var priceAlerts_default = router7;
 
 // server/routes/cron.ts
 import { Router as Router7 } from "express";
-import { Resend as Resend2 } from "resend";
+import nodemailer2 from "nodemailer";
 var router8 = Router7();
 router8.get("/check-price-alerts", async (req, res) => {
   try {
@@ -2960,11 +3210,14 @@ router8.get("/check-price-alerts", async (req, res) => {
       res.json({ message: "No active alerts to check." });
       return;
     }
-    const resendClient = process.env.RESEND_API_KEY ? new Resend2(process.env.RESEND_API_KEY) : null;
     const tpToken = process.env.TRAVELPAYOUTS_TOKEN;
+    if (!tpToken) {
+      res.status(500).json({ error: "TRAVELPAYOUTS_TOKEN not configured" });
+      return;
+    }
+    await ensureEmailQueueTable();
     const results = [];
     for (const alert of activeAlerts) {
-      if (!tpToken) break;
       const tpRes = await fetch(
         `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?token=${tpToken}&origin=${alert.origin}&destination=${alert.destination}&departure_at=${alert.departDate}&currency=${alert.currency}&one_way=${!alert.returnDate}`
       ).catch(() => null);
@@ -2976,27 +3229,24 @@ router8.get("/check-price-alerts", async (req, res) => {
       const threshold = referencePrice * 0.95;
       if (minPrice <= threshold) {
         const percent = Math.round((referencePrice - minPrice) / referencePrice * 100);
-        if (resendClient) {
-          await resendClient.emails.send({
-            from: "GoTravel Asia <onboarding@resend.dev>",
-            to: alert.email,
-            subject: `\u{1F525} Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
-            html: `
+        await enqueueEmail({
+          toEmail: alert.email,
+          subject: `\u{1F525} Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
+          htmlContent: `
               <div style="font-family:sans-serif;color:#1e293b;padding:20px;">
                 <h2 style="color:#5B0EA6;">Good news! Your flight price dropped.</h2>
                 <p>Route <strong>${alert.origin} \u2192 ${alert.destination}</strong> on <strong>${alert.departDate}</strong>
                 dropped from ${alert.currency} ${referencePrice} to <strong>${alert.currency} ${minPrice}</strong>.</p>
                 <p><a href="https://gotravel-asia.vercel.app/flights/results"
-                  style="background:#F5C518;color:#2D0558;padding:12px 24px;text-decoration:none;font-weight:bold;border-radius:8px;">
-                  View Deals
+                   style="background:#F5C518;color:#2D0558;padding:12px 24px;text-decoration:none;font-weight:bold;border-radius:8px;">
+                   View Deals
                 </a></p>
                 <hr style="margin-top:40px;border:none;border-top:1px solid #e2e8f0;"/>
                 <p style="font-size:11px;color:#94a3b8;">You subscribed to price alerts at GoTravel Asia.</p>
               </div>`
-          }).catch(console.error);
-        }
+        });
         await updateAlertPrice(alert.id, minPrice);
-        results.push({ id: alert.id, old: referencePrice, new: minPrice });
+        results.push({ id: alert.id, old: referencePrice, new: minPrice, queued: true });
       }
     }
     res.json({ message: "Cron finished", processedCount: results.length, results });
@@ -3005,15 +3255,80 @@ router8.get("/check-price-alerts", async (req, res) => {
     res.status(500).json({ error: "Failed to process cron job" });
   }
 });
+router8.get("/send-alerts", async (req, res) => {
+  try {
+    if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+    if (!emailUser || !emailPass) {
+      res.status(500).json({ error: "EMAIL_USER or EMAIL_PASS not configured" });
+      return;
+    }
+    const fromEmail = process.env.ALERT_FROM_EMAIL || `GoTravel Asia <${emailUser}>`;
+    const batchSize = Number(process.env.EMAIL_BATCH_SIZE || 50);
+    const maxAttempts = Number(process.env.EMAIL_MAX_ATTEMPTS || 3);
+    const retryDelayMinutes = Number(process.env.EMAIL_RETRY_DELAY_MINUTES || 15);
+    await ensureEmailQueueTable();
+    const dueItems = await getDueEmailQueueItems(batchSize, maxAttempts);
+    if (dueItems.length === 0) {
+      res.status(200).json({ message: "No pending emails." });
+      return;
+    }
+    const transporter = nodemailer2.createTransport({
+      host: "smtp-mail.outlook.com",
+      port: 587,
+      secure: false,
+      auth: { user: emailUser, pass: emailPass }
+    });
+    const results = [];
+    for (const row of dueItems) {
+      const claimed = await claimEmailQueueItem(row.id, row.attempts);
+      if (!claimed) continue;
+      try {
+        await transporter.sendMail({
+          from: fromEmail,
+          to: row.toEmail,
+          subject: row.subject,
+          html: row.htmlContent
+        });
+        await markEmailQueueSent(row.id);
+        results.push({ id: row.id, ok: true });
+      } catch (e) {
+        const msg = e?.message || "send_failed";
+        await markEmailQueueAttemptFailed({
+          id: row.id,
+          attempts: row.attempts,
+          error: msg,
+          maxAttempts,
+          retryDelayMinutes
+        });
+        results.push({ id: row.id, ok: false, error: msg });
+      }
+    }
+    res.status(200).json({
+      message: "Send alerts cron finished",
+      attempted: dueItems.length,
+      sent: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+      results
+    });
+  } catch (err) {
+    console.error("Cron send-alerts error:", err);
+    res.status(500).json({ error: "Failed to process send-alerts" });
+  }
+});
 var cron_default = router8;
 
 // server/_core/app.ts
-fs2.appendFileSync("server_debug.log", "[APP] Starting app.ts imports...\n");
+console.log("[APP] Starting app.ts imports...\n");
 dotenv.config();
-dotenv.config({ path: path2.resolve(process.cwd(), ".env.local"), override: true });
-fs2.appendFileSync("server_debug.log", "[APP] Environment loaded.\n");
-fs2.appendFileSync("server_debug.log", "[APP] Core deps & handlers loaded.\n");
-fs2.appendFileSync("server_debug.log", "[APP] All routes imported.\n");
+dotenv.config({ path: path3.resolve(process.cwd(), ".env.local"), override: true });
+console.log("[APP] Environment loaded.\n");
+console.log("[APP] Core deps & handlers loaded.\n");
+console.log("[APP] All routes imported.\n");
 var app = express();
 app.use((req, res, next) => {
   console.log(`[REQ] ${req.method} ${req.url}`);
@@ -3040,7 +3355,7 @@ app.use("/api/geo", handler3);
 app.use("/api/newsletter", handler4);
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
-fs2.appendFileSync("server_debug.log", "[APP] App setup complete, exporting app.\n");
+console.log("[APP] App setup complete, exporting app.\n");
 var app_default = app;
 
 // server/_core/api-entry.ts
