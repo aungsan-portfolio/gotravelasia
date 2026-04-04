@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-04-04 01:47",
-    "count": 6000,
+    "updated_at": "2026-04-04 06:54",
+    "count": 6001,
     "currency": "USD",
     "errors": 68
   },
@@ -15753,6 +15753,20 @@
       "flight_number": "200",
       "found_at": "2026-03-18 12:59",
       "fetchedAt": 1773838755676,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CGK",
+      "destination": "KUL",
+      "price": 55.0,
+      "date": "2026-07-02",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "354",
+      "found_at": "2026-04-04 06:54",
+      "fetchedAt": 1775285654244,
       "provider": "tp",
       "region": "SEA"
     },
