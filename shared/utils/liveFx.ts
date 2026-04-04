@@ -1,4 +1,5 @@
 import { FX_RATES, FxQuote } from "../config/fx.js";
+import { getStore } from "./store.js";
 
 type CacheEntry = {
   rate: number;
@@ -6,9 +7,10 @@ type CacheEntry = {
   asOf: string;
 };
 
-// Global in-memory cache
+// L1: Global in-memory cache (process-local)
 const fxCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+const CACHE_TTL_MS = CACHE_TTL_SECONDS * 1000;
 
 // Keeps track of ongoing requests to deduplicate concurrent calls
 const pendingRequests = new Map<string, Promise<number>>();
@@ -49,7 +51,7 @@ async function fetchLiveRate(base: string, quote: string): Promise<number> {
 }
 
 /**
- * Get the current exchange rate, prioritizing live fetch, then stale cache, then static fallback.
+ * Get the current exchange rate, prioritizing live fetch, then shared store, then local cache, then static fallback.
  */
 export async function getLiveFxRate(
   baseCurrency: string = "USD",
@@ -57,7 +59,8 @@ export async function getLiveFxRate(
 ): Promise<FxQuote> {
   const base = baseCurrency.toUpperCase();
   const quote = quoteCurrency.toUpperCase();
-  const cacheKey = `${base}-${quote}`;
+  const storeKey = `cache:fx:${base}-${quote}`;
+  const localKey = `${base}-${quote}`;
   
   const staticFallbackRate = FX_RATES[base]?.[quote] ?? 34; // standard fallback
   
@@ -72,37 +75,63 @@ export async function getLiveFxRate(
     };
   }
 
-  // 1. Check valid cache
-  const cached = fxCache.get(cacheKey);
   const now = Date.now();
-  if (cached && cached.expiresAt > now) {
+
+  // 1. Check L1 Cache (Process-local)
+  const l1Cached = fxCache.get(localKey);
+  if (l1Cached && l1Cached.expiresAt > now) {
     return {
       baseCurrency: base,
       quoteCurrency: quote,
-      rate: cached.rate,
-      source: "live", // It was live at the time of caching within valid TTL window
-      asOf: cached.asOf,
+      rate: l1Cached.rate,
+      source: "live",
+      asOf: l1Cached.asOf,
     };
   }
 
-  // 2. Fetch Live
+  // 2. Check L2 Cache (Shared Store)
+  const store = getStore();
+  try {
+    const l2Cached = await store.get<CacheEntry>(storeKey);
+    if (l2Cached && l2Cached.expiresAt > now) {
+      // Backfill L1
+      fxCache.set(localKey, l2Cached);
+      return {
+        baseCurrency: base,
+        quoteCurrency: quote,
+        rate: l2Cached.rate,
+        source: "live",
+        asOf: l2Cached.asOf,
+      };
+    }
+  } catch (err) {
+    console.warn(`[LiveFx] Shared store read failed for ${storeKey}`, err);
+  }
+
+  // 3. Fetch Live
   try {
     // Deduplicate concurrent requests
-    let fetchPromise = pendingRequests.get(cacheKey);
+    let fetchPromise = pendingRequests.get(localKey);
     if (!fetchPromise) {
       fetchPromise = fetchLiveRate(base, quote).finally(() => {
-        pendingRequests.delete(cacheKey);
+        pendingRequests.delete(localKey);
       });
-      pendingRequests.set(cacheKey, fetchPromise);
+      pendingRequests.set(localKey, fetchPromise);
     }
     
     const liveRate = await fetchPromise;
     const isoNow = new Date().toISOString();
-    
-    fxCache.set(cacheKey, {
+    const entry: CacheEntry = {
       rate: liveRate,
       expiresAt: now + CACHE_TTL_MS,
       asOf: isoNow,
+    };
+    
+    // Update L1
+    fxCache.set(localKey, entry);
+    // Update L2 (Background, soft-fail)
+    store.set(storeKey, entry, CACHE_TTL_SECONDS).catch(err => {
+        console.warn(`[LiveFx] Shared store write failed for ${storeKey}`, err);
     });
     
     return {
@@ -113,20 +142,20 @@ export async function getLiveFxRate(
       asOf: isoNow,
     };
   } catch (error) {
-    console.warn(`[LiveFx] Failed to fetch live rate for ${cacheKey}, falling back`, error);
+    console.warn(`[LiveFx] Failed to fetch live rate for ${localKey}, falling back`, error);
     
-    // 3. Stale cache fallback
-    if (cached) {
+    // 4. Stale cache fallback (L1)
+    if (l1Cached) {
       return {
         baseCurrency: base,
         quoteCurrency: quote,
-        rate: cached.rate,
+        rate: l1Cached.rate,
         source: "stale_cache",
-        asOf: cached.asOf,
+        asOf: l1Cached.asOf,
       };
     }
     
-    // 4. Static fallback
+    // 5. Static fallback
     return {
       baseCurrency: base,
       quoteCurrency: quote,

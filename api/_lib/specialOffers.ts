@@ -1,9 +1,7 @@
 // api/_lib/specialOffers.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
-
-const cache = new Map<string, { data: any; expiresAt: number }>();
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+import { getCached, setCache } from "./cache.js";
 
 export async function handleSpecialOffers(
     req: any,
@@ -21,9 +19,9 @@ export async function handleSpecialOffers(
     const currency = String(params.currency || "thb");
     const cacheKey = `special-offers-${origin}-${currency}`;
 
-    const cached = cache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-        res.status(200).json(cached.data);
+    const cached = await getCached(cacheKey);
+    if (cached) {
+        res.status(200).json(cached.data || cached); // Compatibility check
         return;
     }
 
@@ -54,7 +52,7 @@ export async function handleSpecialOffers(
         }
 
         const result = { success: true, data: offers };
-        cache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL });
+        await setCache(cacheKey, result);
         res.status(200).json(result);
     } catch (err) {
         console.error(err);

@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { rateLimit, calendarRateLimits } from "../middleware/rateLimit.js";
+import { rateLimit } from "../middleware/rateLimit.js";
 import { getCached, setCache } from "../utils/cache.js";
 import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
 import { getLiveFxRate } from "../../shared/utils/liveFx.js";
 
 const router = Router();
 
-router.get("/", rateLimit(calendarRateLimits, 60, 15 * 60 * 1000, "Too many requests"),
+router.get("/", rateLimit("cheap", 60, 15 * 60 * 1000, "Too many requests"),
   async (req: any, res: any) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
@@ -17,7 +17,7 @@ router.get("/", rateLimit(calendarRateLimits, 60, 15 * 60 * 1000, "Too many requ
       const currency = String(req.query.currency || "thb");
       const cacheKey = `cheap-${origin}-${currency}`;
       
-      const cached   = getCached(cacheKey);
+      const cached   = await getCached(cacheKey);
       if (cached) { res.set("Cache-Control", "public, max-age=1800"); res.json(cached); return; }
 
       const url = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
@@ -55,7 +55,7 @@ router.get("/", rateLimit(calendarRateLimits, 60, 15 * 60 * 1000, "Too many requ
       }
 
       const result = { success: true, data: mappedData, currency, fx };
-      setCache(cacheKey, result);
+      await setCache(cacheKey, result);
       res.set("Cache-Control", "public, max-age=1800");
       res.json(result);
     } catch (error) {

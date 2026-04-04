@@ -1,7 +1,7 @@
 import { Router }  from "express";
 import path        from "path";
 import fs          from "fs";
-import { rateLimit, calendarRateLimits } from "../middleware/rateLimit.js";
+import { rateLimit } from "../middleware/rateLimit.js";
 import { getCached, setCache }           from "../utils/cache.js";
 import { fetchAmadeusCalendarPrices }    from "../_core/amadeus.js";
 
@@ -11,7 +11,7 @@ import { addPrice, CalendarEntry } from "../../shared/flights/calendarLogic.js";
 import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
 import { getLiveFxRate } from "../../shared/utils/liveFx.js";
 
-router.get("/", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many requests"),
+router.get("/", rateLimit("calendar", 100, 15 * 60 * 1000, "Too many requests"),
   async (req: any, res: any) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
@@ -30,7 +30,7 @@ router.get("/", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many req
       }
 
       const cacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
-      const cached   = getCached(cacheKey);
+      const cached   = await getCached(cacheKey);
       if (cached) { res.set("Cache-Control", "public, max-age=3600"); res.json(cached); return; }
 
       const [yr, mn] = mo.split("-").map(Number);
@@ -135,7 +135,7 @@ router.get("/", rateLimit(calendarRateLimits, 100, 15 * 60 * 1000, "Too many req
       };
 
       const result = { success: true, data: merged, currency: cur, fx };
-      setCache(cacheKey, result);
+      await setCache(cacheKey, result);
       res.set("Cache-Control", "public, max-age=3600");
       res.json(result);
     } catch (error) {

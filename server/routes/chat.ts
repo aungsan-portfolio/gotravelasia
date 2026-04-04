@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { rateLimit, chatRateLimits } from "../middleware/rateLimit.js";
+import { rateLimit } from "../middleware/rateLimit.js";
 
 const router = Router();
 const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
-router.post("/", rateLimit(chatRateLimits, 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."),
+router.post("/", rateLimit("chat", 10, 60 * 60 * 1000, "Rate limit exceeded. Try again in one hour."),
   async (req: any, res: any) => {
     try {
       const { contents } = req.body;

@@ -4,6 +4,7 @@ import { searchFlightOffers } from "./amadeusService.js";
 import { addPrice, CalendarEntry } from "../../shared/flights/calendarLogic.js";
 import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
 import { getLiveFxRate } from "../../shared/utils/liveFx.js";
+import { getCached, setCache } from "./cache.js";
 
 type BotRoute = {
     origin: string;
@@ -165,6 +166,14 @@ export async function handleCalendarPrices(
         return;
     }
 
+    const cacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
+    const cached = await getCached(cacheKey);
+    if (cached) {
+        res.setHeader("X-Cache", "HIT");
+        res.status(200).json(cached);
+        return;
+    }
+
     const [yr, mn] = mo.split("-").map(Number);
     const nextDate = new Date(yr, mn, 1);
     const nextMo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
@@ -263,12 +272,15 @@ export async function handleCalendarPrices(
             baseCurrency: cur.toUpperCase(), quoteCurrency: "THB", rate: cur.toUpperCase() === "THB" ? 1 : 34, source: "fallback_static", asOf: null
         };
 
-        res.status(200).json({
+        const result = {
             success: true,
             data: merged,
             currency: cur,
             fx,
-        });
+        };
+
+        await setCache(cacheKey, result);
+        res.status(200).json(result);
     } catch (error) {
         console.error("Calendar prices error:", error);
         res.status(500).json({ error: "Failed to fetch calendar prices" });
