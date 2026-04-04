@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { addMonths, subMonths, endOfMonth, format } from "date-fns";
 import { fillGaps, computeThresholds } from "./priceCalendar.utils";
-import type { PriceMap, PriceEntry } from "./priceCalendar.utils";
+import type { PriceMap, RawPriceEntry, PriceEntry } from "./priceCalendar.utils";
+import type { FxQuote } from "@shared/config/fx";
 
 type UseCalendarPricesProps = {
   origin: string;
@@ -13,16 +14,17 @@ type UseCalendarPricesProps = {
 
 type CalendarPricesResponse = {
   success?: boolean;
-  data?: Record<string, PriceEntry>;
+  data?: Record<string, RawPriceEntry>;
   currency?: string;
+  fx?: FxQuote;
 };
 
 async function fetchPricesForMonth(
   origin: string,
   destination: string,
   month: string
-): Promise<PriceMap> {
-  if (!origin || !destination || origin === destination) return {};
+): Promise<{ map: PriceMap, fx?: FxQuote }> {
+  if (!origin || !destination || origin === destination) return { map: {} };
 
   try {
     const params = new URLSearchParams({
@@ -33,25 +35,27 @@ async function fetchPricesForMonth(
     });
 
     const response = await fetch(`/api/calendar-prices?${params.toString()}`);
-    if (!response.ok) return {};
+    if (!response.ok) return { map: {} };
 
     const data = (await response.json()) as CalendarPricesResponse;
-    if (!data?.data || typeof data.data !== "object") return {};
+    if (!data?.data || typeof data.data !== "object") return { map: {}, fx: data.fx };
 
     const map: PriceMap = {};
 
-    Object.entries(data.data).forEach(([dateStr, entry]) => {
-      const typedEntry = entry as PriceEntry;
-      const price = Number(typedEntry.price || 0);
+    const respCurrency = data.currency || "USD";
 
-      if (Number.isFinite(price) && price > 0) {
-        map[dateStr] = price;
+    Object.entries(data.data).forEach(([dateStr, entry]) => {
+      const typedEntry = entry as any; // Allow for injected currency if any
+      const amount = Number(typedEntry.price || 0);
+
+      if (Number.isFinite(amount) && amount > 0) {
+        map[dateStr] = { amount, currency: typedEntry.currency || respCurrency };
       }
     });
 
-    return map;
+    return { map, fx: data.fx };
   } catch {
-    return {};
+    return { map: {} };
   }
 }
 
@@ -63,6 +67,7 @@ export function useCalendarPrices({
   onCheapestPrice,
 }: UseCalendarPricesProps) {
   const [priceMap, setPriceMap] = useState<PriceMap>({});
+  const [fxQuote, setFxQuote] = useState<FxQuote | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   const leftStr = format(leftMonth, "yyyy-MM");
@@ -80,18 +85,21 @@ export function useCalendarPrices({
     setLoading(true);
 
     try {
-      const [prevPrices, leftPrices, rightPrices, nextPrices] = await Promise.all([
+      const [prev, left, right, next] = await Promise.all([
         fetchPricesForMonth(origin, destination, prevStr),
         fetchPricesForMonth(origin, destination, leftStr),
         fetchPricesForMonth(origin, destination, rightStr),
         fetchPricesForMonth(origin, destination, nextStr),
       ]);
 
+      const fx = left.fx || right.fx || prev.fx || next.fx;
+      if (fx) setFxQuote(fx);
+
       setPriceMap({
-        ...prevPrices,
-        ...leftPrices,
-        ...rightPrices,
-        ...nextPrices,
+        ...prev.map,
+        ...left.map,
+        ...right.map,
+        ...next.map,
       });
     } finally {
       setLoading(false);
@@ -113,7 +121,7 @@ export function useCalendarPrices({
       setLoading(true);
 
       try {
-        const [prevPrices, leftPrices, rightPrices, nextPrices] = await Promise.all([
+        const [prev, left, right, next] = await Promise.all([
           fetchPricesForMonth(origin, destination, prevStr),
           fetchPricesForMonth(origin, destination, leftStr),
           fetchPricesForMonth(origin, destination, rightStr),
@@ -122,11 +130,14 @@ export function useCalendarPrices({
 
         if (cancelled) return;
 
+        const fx = left.fx || right.fx || prev.fx || next.fx;
+        if (fx) setFxQuote(fx);
+
         setPriceMap({
-          ...prevPrices,
-          ...leftPrices,
-          ...rightPrices,
-          ...nextPrices,
+          ...prev.map,
+          ...left.map,
+          ...right.map,
+          ...next.map,
         });
       } finally {
         if (!cancelled) setLoading(false);
@@ -140,7 +151,7 @@ export function useCalendarPrices({
     };
   }, [origin, destination, prevStr, leftStr, rightStr, nextStr]);
 
-  const thresholds = useMemo(() => computeThresholds(priceMap), [priceMap]);
+  const thresholds = useMemo(() => computeThresholds(priceMap, "THB", fxQuote), [priceMap, fxQuote]);
 
   const enrichedData = useMemo(() => {
     return fillGaps(priceMap, leftMonth, endOfMonth(rightMonth));
@@ -150,11 +161,14 @@ export function useCalendarPrices({
 
   const cheapestPrice = useMemo(() => {
     const prices = Object.values(priceMap).filter(
-      (price) => Number.isFinite(price) && price > 0
+      (entry) => Number.isFinite(entry.amount) && entry.amount > 0
     );
 
     if (!prices.length) return null;
-    return Math.min(...prices);
+    
+    // We compare and return cheapest in the original currency, assuming homogenous currency per calendar
+    // In mixed currency cases, we'd need to convert to find min. Using THB as comparison base is safest.
+    return prices.reduce((min, cur) => (cur.amount < min.amount ? cur : min), prices[0]).amount;
   }, [priceMap]);
 
   useEffect(() => {
@@ -164,6 +178,7 @@ export function useCalendarPrices({
 
   return {
     priceMap,
+    fxQuote,
     enrichedData,
     loading,
     thresholds,

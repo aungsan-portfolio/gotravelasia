@@ -25,11 +25,12 @@ export interface Airport {
 }
 
 export type CabinCode = "Y" | "W" | "C" | "F";
-export type TripType = "return" | "one-way";
+import { type TripType, type NormalizedFlightSearchParams } from "@shared/flights/searchParams";
 export type FlexibilityType = "exact" | "3days" | "week" | "month";
 
 import { buildTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
 import { getDestinationByCode } from "@/data/destinationRegistry";
+import { normalizeSearchParams } from "@shared/flights/normalizeSearchParams";
 
 /**
  * Prevent double decoding of URL parameters (common with affiliate links).
@@ -45,33 +46,7 @@ export function safeDecodeParam(param: string): string {
     }
 }
 
-/**
- * Correctly parse trip details to prevent extra return row or date mismatches.
- */
-export function parseTripDetails(
-    tripType: string,
-    returnDateRaw: string | null
-): { isRoundTrip: boolean; returnDate: string | null } {
-    const type = safeDecodeParam(tripType).toLowerCase();
-    const isRoundTrip = type === "roundtrip" || type === "return";
-
-    let returnDate: string | null = null;
-
-    if (isRoundTrip && returnDateRaw) {
-        returnDate = safeDecodeParam(returnDateRaw);
-
-        // Validate/extract date if needed (handle ISO T separator)
-        if (returnDate && !/^\d{4}-\d{2}-\d{2}$/.test(returnDate)) {
-            const datePart = returnDate.split("T")[0];
-            if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-                returnDate = datePart;
-            }
-        }
-    }
-
-    return { isRoundTrip, returnDate };
-}
-
+// DELETED parseTripDetails in favor of normalizeSearchParams
 export interface FlightSearchState {
     // Core
     tripType: TripType;
@@ -123,7 +98,7 @@ export function useFlightSearch(): FlightSearchState {
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 export function FlightSearchProvider({ children }: { children: ReactNode }) {
-    const [tripType, setTripType] = useState<TripType>("return");
+    const [tripType, setTripType] = useState<TripType>("roundtrip");
     const [origin, setOriginRaw] = useState<Airport | null>(null);
     const [destination, setDestinationRaw] = useState<Airport | null>(null);
     const [departDate, setDepartDate] = useState("");
@@ -187,33 +162,35 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
         // If it looks like a standard query string inside the param:
         if (flightSearch.includes("origin=") && flightSearch.includes("destination=")) {
             const inner = new URLSearchParams(flightSearch);
-            const originCode = safeDecodeParam(inner.get("origin") || "");
-            const destCode = safeDecodeParam(inner.get("destination") || "");
-            const departAt = safeDecodeParam(inner.get("depart") || "");
-            const returnAtRaw = inner.get("return");
-            const tripTypeRaw = inner.get("tripType") || "return";
-            const cabinRaw = inner.get("cabin") || "Y";
-            const adultsRaw = inner.get("adults") || "1";
+            // Convert to a raw object
+            const rawObj: Record<string, string> = {};
+            inner.forEach((val, key) => rawObj[key] = safeDecodeParam(val));
 
-            const originRec = getDestinationByCode(originCode.toUpperCase());
-            const destRec = getDestinationByCode(destCode.toUpperCase());
+            const normalized = normalizeSearchParams(rawObj);
+
+            const originRec = getDestinationByCode(normalized.origin);
+            const destRec = getDestinationByCode(normalized.destination);
 
             if (originRec) setOriginRaw({ code: originRec.dest.code, name: originRec.dest.city, country: "" });
             if (destRec) setDestinationRaw({ code: destRec.dest.code, name: destRec.dest.city, country: "" });
 
-            if (departAt) {
-                const cleanDate = departAt.split("T")[0];
+            if (normalized.departDate) {
+                const cleanDate = normalized.departDate.split("T")[0];
                 if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) setDepartDate(cleanDate);
             }
 
-            const { isRoundTrip, returnDate } = parseTripDetails(tripTypeRaw, returnAtRaw);
-            setTripType(isRoundTrip ? "return" : "one-way");
-            if (returnDate) setReturnDateRaw(returnDate);
+            setTripType(normalized.tripType);
+            if (normalized.returnDate) setReturnDateRaw(normalized.returnDate);
+            else setReturnDateRaw("");
 
             // Cabin mapping
-            const cabinMap: Record<string, CabinCode> = { c: "C", w: "W", f: "F", "Y": "Y" };
-            setCabinClass(cabinMap[cabinRaw.toUpperCase()] || "Y");
-            setAdults(parseInt(adultsRaw) || 1);
+            const cabinRaw = inner.get("cabin") || normalized.cabinClass || "Y";
+            const cabinMap: Record<string, CabinCode> = { c: "C", w: "W", f: "F", "Y": "Y", "economy": "Y", "business": "C", "first": "F" };
+            setCabinClass(cabinMap[cabinRaw.toLowerCase()] || cabinMap[cabinRaw.toUpperCase()] || "Y");
+            
+            setAdults(normalized.adults);
+            if (normalized.children) setChildCount(normalized.children);
+            if (normalized.infants) setInfants(normalized.infants);
             
             return;
         }
@@ -230,8 +207,12 @@ export function FlightSearchProvider({ children }: { children: ReactNode }) {
         if (originRec) setOriginRaw({ code: originRec.dest.code, name: originRec.dest.city, country: "" });
         if (destRec) setDestinationRaw({ code: destRec.dest.code, name: destRec.dest.city, country: "" });
 
-        if (retDdMm) setTripType("return");
-        else setTripType("one-way");
+        if (retDdMm) {
+            setTripType("roundtrip");
+            // NOTE: the native regex doesn't capture the actual year, but logic exists elsewhere for it.
+        } else {
+            setTripType("oneway");
+        }
 
         const cabinMap: Record<string, CabinCode> = { c: "C", w: "W", f: "F" };
         setCabinClass(cabinMap[cabinSuffix.toLowerCase()] || "Y");

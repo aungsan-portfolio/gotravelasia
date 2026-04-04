@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, Calendar, Wifi } from "lucide-react";
 import type { Deal } from "@/hooks/useFlightData";
-import { USD_TO_THB_RATE } from "@/const";
+import { getDisplayPrice } from "@shared/utils/currency";
 import { formatTimeAgo } from "@/lib/timeAgo";
 
 // ── Lookup tables ─────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export function FlightCard({ deal, href, index = 0, variant = "carousel" }: Flig
   const originName = DEST_NAMES[deal.origin]                   ?? deal.origin;
   const airline    = AIRLINE_NAMES[deal.airline_code ?? deal.airline] ?? deal.airline;
   const imgSrc     = DEST_IMAGES[deal.destination]             ?? "/images/hero-travel.webp";
-  const thbPrice   = Math.round(deal.price * USD_TO_THB_RATE);
+  const thbPrice   = getDisplayPrice(deal.price, "USD", "THB");
   const stop       = getStopBadge(deal.transfers);
   const foundLabel = formatTimeAgo(deal.found_at);
   const flightNum  = deal.flight_number ?? deal.flight_num;

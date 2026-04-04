@@ -35,7 +35,7 @@ export function CalendarDropdown({
     todayDate: Date;
     onSelectDate: (d: Date | undefined) => void;
     onCheapestPrice: (p: number | null) => void;
-    tripType: "return" | "one-way";
+    tripType: "roundtrip" | "oneway";
     onSkipReturn: () => void;
 }) {
     const dialogRef = useRef<HTMLDivElement>(null);
@@ -94,7 +94,7 @@ export function CalendarDropdown({
                             </button>
                         ))}
 
-                        {tripType === "return" && calendarMode === "return" && (
+                        {tripType === "roundtrip" && calendarMode === "return" && (
                             <button type="button" onClick={onSkipReturn}
                                 className="px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors ml-auto">
                                 Skip return

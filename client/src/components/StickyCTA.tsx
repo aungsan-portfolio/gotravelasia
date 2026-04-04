@@ -15,7 +15,7 @@ export default function StickyCTA() {
   const lowestPrice = usePriceHint(
     ctx.origin?.code || "",
     ctx.destination?.code || "",
-    ctx.tripType === "return"
+    ctx.tripType === "roundtrip"
   );
 
   useEffect(() => {

@@ -34,7 +34,7 @@ export function useFlightWidgetState() {
     const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
     const [destination, setDestination] = useState("SIN");
 
-    const [tripType, setTripType] = useState<"return" | "one-way">("return");
+    const [tripType, setTripType] = useState<"roundtrip" | "oneway">("roundtrip");
 
     const [departDate, setDepartDate] = useState(today);
     const [returnDate, setReturnDate] = useState("");
@@ -170,7 +170,7 @@ export function useFlightWidgetState() {
                 setReturnDate("");
             }
 
-            if (tripType === "one-way") {
+            if (tripType === "oneway") {
                 setCalendarOpen(false);     // ✅ close for one-way
             } else {
                 setCalendarMode("return");  // return flow

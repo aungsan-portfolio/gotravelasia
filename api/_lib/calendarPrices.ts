@@ -1,22 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { searchFlightOffers } from "./amadeusService.js";
-
-type CalendarEntry = {
-    price?: number;
-    origin?: string;
-    destination?: string;
-    airline?: string;
-    departure_at?: string;
-    return_at?: string;
-    transfers?: number;
-    flight_number?: string;
-    is_bot_data?: boolean;
-    is_amadeus?: boolean;
-    is_estimated_amadeus?: boolean;
-    is_v3?: boolean;
-    is_legacy_tp?: boolean;
-};
+import { addPrice, CalendarEntry } from "../../shared/flights/calendarLogic.js";
+import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
+import { getLiveFxRate } from "../../shared/utils/liveFx.js";
 
 type BotRoute = {
     origin: string;
@@ -28,53 +15,6 @@ type BotRoute = {
     transfers?: number;
     flight_num?: string;
 };
-
-type PrioritySource = "v3" | "bot" | "legacy" | "amadeus";
-
-function addPrice(
-    merged: Record<string, CalendarEntry>,
-    dateStr: string,
-    price: number,
-    entry: CalendarEntry,
-    source: PrioritySource = "legacy"
-): void {
-    if (!dateStr || price <= 0) return;
-
-    const current = merged[dateStr];
-    const sourcePriority: Record<PrioritySource, number> = { v3: 1, bot: 2, legacy: 3, amadeus: 4 };
-    
-    const getCurrentSource = (e: CalendarEntry): PrioritySource => {
-        if (e.is_v3) return "v3";
-        if (e.is_bot_data) return "bot";
-        if (e.is_amadeus) return "amadeus";
-        return "legacy";
-    };
-
-    const currentSource = current ? getCurrentSource(current) : null;
-
-    if (!current || sourcePriority[source] < sourcePriority[currentSource!]) {
-        merged[dateStr] = { 
-            ...entry, 
-            price, 
-            is_v3: source === "v3", 
-            is_bot_data: source === "bot", 
-            is_amadeus: source === "amadeus",
-            is_legacy_tp: source === "legacy"
-        };
-        return;
-    }
-
-    if (source === currentSource && price < (current.price ?? Number.POSITIVE_INFINITY)) {
-        merged[dateStr] = { 
-            ...entry, 
-            price, 
-            is_v3: source === "v3", 
-            is_bot_data: source === "bot", 
-            is_amadeus: source === "amadeus",
-            is_legacy_tp: source === "legacy"
-        };
-    }
-}
 
 async function fetchAmadeusCalendarPrices(
     origin: string,
@@ -212,17 +152,18 @@ export async function handleCalendarPrices(
         return;
     }
 
-    const { origin, destination, month, currency = "usd" } = params;
+    const { month, currency = "usd" } = params;
+    const normalized = normalizeSearchParams(params);
 
-    if (!origin || !destination || !month) {
+    const orig = normalized.origin;
+    const dest = normalized.destination;
+    const mo = String(month);
+    const cur = String(currency || "usd");
+
+    if (!orig || !dest || !mo) {
         res.status(400).json({ error: "Missing required params: origin, destination, month" });
         return;
     }
-
-    const cur = String(currency || "usd");
-    const orig = String(origin);
-    const dest = String(destination);
-    const mo = String(month);
 
     const [yr, mn] = mo.split("-").map(Number);
     const nextDate = new Date(yr, mn, 1);
@@ -233,13 +174,14 @@ export async function handleCalendarPrices(
             .then((r) => (r.ok ? r.json() : null));
 
     try {
-        const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2] = await Promise.allSettled([
+        const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2, fxQuote] = await Promise.allSettled([
             tp({ origin: orig, destination: dest, departure_at: mo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
             tp({ origin: orig, destination: dest, departure_at: nextMo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
             tp({ origin: orig, destination: dest, month: mo, calendar_type: "departure_date", currency: cur }, "https://api.travelpayouts.com/v1/prices/calendar"),
             tp({ origin: orig, destination: dest, month: mo, currency: cur }, "https://api.travelpayouts.com/v2/prices/month-matrix"),
             fetchAmadeusCalendarPrices(orig, dest, mo, cur),
             fetchAmadeusCalendarPrices(orig, dest, nextMo, cur),
+            getLiveFxRate(cur, "THB"),
         ]);
 
         const merged: Record<string, CalendarEntry> = {};
@@ -252,6 +194,7 @@ export async function handleCalendarPrices(
                     addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
                         origin: e.origin || orig,
                         destination: e.destination || dest,
+                        currency: cur,
                         airline: e.airline || "",
                         departure_at: e.departure_at,
                         return_at: e.return_at || "",
@@ -271,6 +214,7 @@ export async function handleCalendarPrices(
                 addPrice(merged, dateStr, r.price || 0, {
                     origin: r.origin,
                     destination: r.destination,
+                    currency: cur,
                     airline: r.airline_code || r.airline || "",
                     departure_at: `${r.date}T00:00:00`,
                     transfers: r.transfers || 0,
@@ -284,6 +228,7 @@ export async function handleCalendarPrices(
         if (cal && typeof cal === "object" && !Array.isArray(cal)) {
             for (const [dateStr, entry] of Object.entries(cal)) {
                 const e = entry as CalendarEntry;
+                e.currency = cur;
                 addPrice(merged, dateStr, e.price || 0, e, "legacy");
             }
         }
@@ -294,7 +239,7 @@ export async function handleCalendarPrices(
                 addPrice(merged, e.depart_date, e.value || e.price || 0, {
                     origin: e.origin || orig,
                     destination: e.destination || dest,
-                    price: e.value || e.price || 0,
+                    currency: cur,
                     airline: e.airline || e.gate || "",
                     departure_at: e.departure_at || `${e.depart_date}T00:00:00`,
                     return_at: e.return_date ? `${e.return_date}T00:00:00` : "",
@@ -308,15 +253,21 @@ export async function handleCalendarPrices(
             const data = result.status === "fulfilled" ? result.value : null;
             if (data && typeof data === "object") {
                 for (const [dateStr, entry] of Object.entries(data as Record<string, CalendarEntry>)) {
+                    entry.currency = cur;
                     addPrice(merged, dateStr, entry.price || 0, entry, "amadeus");
                 }
             }
         }
 
+        const fx = fxQuote.status === "fulfilled" ? fxQuote.value : {
+            baseCurrency: cur.toUpperCase(), quoteCurrency: "THB", rate: cur.toUpperCase() === "THB" ? 1 : 34, source: "fallback_static", asOf: null
+        };
+
         res.status(200).json({
             success: true,
             data: merged,
             currency: cur,
+            fx,
         });
     } catch (error) {
         console.error("Calendar prices error:", error);

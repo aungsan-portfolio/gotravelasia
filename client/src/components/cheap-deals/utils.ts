@@ -1,5 +1,5 @@
 // ─── Pure utility functions ───────────────────────────────────────────────
-import { USD_TO_THB_RATE } from "@/const";
+import { getDisplayPrice } from "@shared/utils/currency";
 import type { Deal } from "@/hooks/useFlightData";
 import type { DestinationMeta } from "./destinations.js";
 import {
@@ -175,6 +175,6 @@ export function getDynamicBudget(deals: EnhancedDealCard[]): {
     if (deals.length === 0) return { budgetUsd: 140, budgetThb: 4900 };
     const maxUsd = Math.max(...deals.map(d => d.price));
     const budgetUsd = Math.ceil(maxUsd / 10) * 10;           // nearest $10
-    const budgetThb = Math.ceil((budgetUsd * USD_TO_THB_RATE) / 100) * 100; // nearest ฿100
+    const budgetThb = Math.ceil(getDisplayPrice(budgetUsd, "USD", "THB") / 100) * 100; // nearest ฿100
     return { budgetUsd, budgetThb };
 }

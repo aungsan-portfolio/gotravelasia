@@ -23,6 +23,8 @@ function useFlightStateFromUrl(): FlightSearchState {
       infants: Number(search.get("infants") || 0),
     },
     cabin: "economy",
+    currency: "THB",
+    locale: "en",
   }), [search]);
 }
 

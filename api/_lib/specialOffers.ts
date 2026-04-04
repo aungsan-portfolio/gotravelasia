@@ -1,5 +1,6 @@
 // api/_lib/specialOffers.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
 
 const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -15,7 +16,8 @@ export async function handleSpecialOffers(
         return;
     }
 
-    const origin = String(params.origin || "RGN");
+    const normalized = normalizeSearchParams(params);
+    const origin = normalized.origin || "RGN";
     const currency = String(params.currency || "thb");
     const cacheKey = `special-offers-${origin}-${currency}`;
 

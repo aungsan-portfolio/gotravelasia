@@ -1,5 +1,5 @@
 import { useState, useMemo, memo } from "react";
-import { USD_TO_THB_RATE } from "@/const";
+import { getDisplayPrice } from "@shared/utils/currency";
 import { useMultiCheapDeals } from "@/hooks/useFlightData";
 
 import {
@@ -40,14 +40,14 @@ export default memo(function CheapDealsCards() {
         if (allDeals.length === 0) return { topDeals: [] as EnhancedDealCard[], displayBudget: 0 };
 
         // Filter to affordable deals under the THB cap
-        const affordable = allDeals.filter(d => d.price * USD_TO_THB_RATE <= MAX_HOOK_THB);
+        const affordable = allDeals.filter(d => getDisplayPrice(d.price, "USD", "THB") <= MAX_HOOK_THB);
         let pool = affordable;
 
         // Fallback: if we don't have enough affordable deals to fill the grid (4 cards),
         // pull the cheapest from the remaining unaffordable deals to fill the gaps
         if (affordable.length < DEALS_TO_SHOW) {
             const unaffordable = allDeals
-                .filter(d => d.price * USD_TO_THB_RATE > MAX_HOOK_THB)
+                .filter(d => getDisplayPrice(d.price, "USD", "THB") > MAX_HOOK_THB)
                 .sort((a, b) => a.price - b.price);
 
             pool = [...affordable, ...unaffordable.slice(0, DEALS_TO_SHOW - affordable.length)];
@@ -76,7 +76,7 @@ export default memo(function CheapDealsCards() {
         result.sort((a, b) => a.price - b.price);
 
         // Dynamic budget in THB for the hook title
-        const budgetThb = Math.round(budget * USD_TO_THB_RATE);
+        const budgetThb = getDisplayPrice(budget, "USD", "THB");
 
         return { topDeals: result, displayBudget: budgetThb };
     }, [activeNiche, activeDeals, activeOrigins]);
@@ -136,7 +136,7 @@ export default memo(function CheapDealsCards() {
                             </span>
                             {" "}
                             <span className="text-[16px] sm:text-[18px] font-[600] text-[#667085]">
-                                ({formatPrice(cheapestDeal.price * USD_TO_THB_RATE, "THB")})
+                                ({formatPrice(getDisplayPrice(cheapestDeal.price, "USD", "THB"), "THB")})
                             </span>
                         </>
                     ) : (

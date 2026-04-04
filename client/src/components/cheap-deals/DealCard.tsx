@@ -1,7 +1,7 @@
 // ─── Single deal card sub-component ──────────────────────────────────────
 import { memo } from "react";
 import OptimizedImage from "@/seo/OptimizedImage";
-import { USD_TO_THB_RATE } from "@/const";
+import { getDisplayPrice } from "@shared/utils/currency";
 import type { EnhancedDealCard } from "./types";
 import {
     getPriceLabel,
@@ -80,7 +80,7 @@ export default memo(function DealCard({ deal }: DealCardProps) {
                             {formatPrice(deal.price, "USD")}
                         </span>
                         <span className="text-[15px] font-[600] text-[#667085] leading-none">
-                            ({formatPrice(deal.price * USD_TO_THB_RATE, "THB")})
+                            ({formatPrice(getDisplayPrice(deal.price, "USD", "THB"), "THB")})
                         </span>
                     </div>
                     <p className={`text-[12px] font-medium transition-colors ${isStale ? "text-amber-500" : "text-emerald-600"}`}>

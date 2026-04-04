@@ -127,7 +127,7 @@ export default function FlightAffiliateSearch({
     if (!departDate) {
       setDepartDate(todayPlus(14));
     }
-    if (tripType === "return" && !returnDate) {
+    if (tripType === "roundtrip" && !returnDate) {
         setReturnDate(todayPlus(21));
     }
   }, [origin, destination, departDate, returnDate, tripType, defaultOrigin, defaultDestination, setOrigin, setDestination, setDepartDate, setReturnDate]);
@@ -142,7 +142,7 @@ export default function FlightAffiliateSearch({
       originCode: origin.code,
       destinationCode: destination.code,
       departDate,
-      returnDate: tripType === "return" ? returnDate : undefined,
+      returnDate: tripType === "roundtrip" ? returnDate : undefined,
       adults,
       children,
       infants,
@@ -171,10 +171,10 @@ export default function FlightAffiliateSearch({
       nextErrors.push("Origin and destination cannot be the same.");
     }
     if (!departDate) nextErrors.push("Please select a departure date.");
-    if (tripType === "return" && !returnDate) {
+    if (tripType === "roundtrip" && !returnDate) {
       nextErrors.push("Please select a return date.");
     }
-    if (tripType === "return" && returnDate && departDate && returnDate < departDate) {
+    if (tripType === "roundtrip" && returnDate && departDate && returnDate < departDate) {
       nextErrors.push("Return date cannot be earlier than departure date.");
     }
     if (adults < 1) nextErrors.push("At least 1 adult is required.");
@@ -224,10 +224,10 @@ export default function FlightAffiliateSearch({
         <div className="mb-5 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setTripType("return")}
+            onClick={() => setTripType("roundtrip")}
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-bold transition",
-              tripType === "return"
+              tripType === "roundtrip"
                 ? "bg-indigo-600 text-white"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             )}
@@ -236,10 +236,10 @@ export default function FlightAffiliateSearch({
           </button>
           <button
             type="button"
-            onClick={() => setTripType("one-way")}
+            onClick={() => setTripType("oneway")}
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-bold transition",
-              tripType === "one-way"
+              tripType === "oneway"
                 ? "bg-indigo-600 text-white"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             )}
@@ -308,7 +308,7 @@ export default function FlightAffiliateSearch({
             </div>
           </div>
 
-          {tripType === "return" && (
+          {tripType === "roundtrip" && (
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
                 Return date

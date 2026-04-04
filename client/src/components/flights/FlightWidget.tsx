@@ -91,13 +91,13 @@ function FlightWidgetInner() {
 
                 {/* ═══ TRIP TYPE TOGGLE ═════════════════════════════════════ */}
                 <div className="flex gap-2 mb-3" role="radiogroup" aria-label="Trip type">
-                    {(["return", "one-way"] as const).map(t => (
+                    {(["roundtrip", "oneway"] as const).map(t => (
                         <button
                             key={t} type="button" role="radio"
                             aria-checked={s.tripType === t}
                             onClick={() => {
                                 s.setTripType(t);
-                                if (t === "one-way") s.setReturnDate("");
+                                if (t === "oneway") s.setReturnDate("");
                             }}
                             className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${s.tripType === t
                                 ? "text-white shadow-lg"
@@ -108,7 +108,7 @@ function FlightWidgetInner() {
                                 : { background: "transparent", border: `1.5px solid rgba(255,255,255,0.12)` }
                             }
                         >
-                            {t === "return" ? "↔ Return" : "→ One-way"}
+                            {t === "roundtrip" ? "↔ Return" : "→ One-way"}
                         </button>
                     ))}
                 </div>
@@ -116,7 +116,7 @@ function FlightWidgetInner() {
                 {/* ═══ INPUT GRID ════════════════════════════════════════════ */}
                 <div
                     role="group" aria-label="Flight search fields"
-                    className={`grid grid-cols-1 sm:grid-cols-2 ${s.tripType === "one-way"
+                    className={`grid grid-cols-1 sm:grid-cols-2 ${s.tripType === "oneway"
                         ? "lg:grid-cols-5"
                         : "lg:grid-cols-6"
                         } flex-1 rounded-xl lg:rounded-2xl overflow-hidden`}
@@ -193,8 +193,8 @@ function FlightWidgetInner() {
                         </div>
                     </button>
 
-                    {/* ── RETURN (hidden in one-way) ── */}
-                    {s.tripType === "return" && (
+                    {/* ── RETURN (hidden in oneway) ── */}
+                    {s.tripType === "roundtrip" && (
                         <button
                             type="button"
                             onClick={() => { s.setCalendarMode("return"); s.setCalendarOpen(true); }}

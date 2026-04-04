@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import OptimizedImage from "@/seo/OptimizedImage";
 import { ArrowRight, Plane, Tag } from "lucide-react";
 import { formatPrice } from "./utils";
-import { USD_TO_THB_RATE } from "@/const";
 import { buildTravelpayoutsResultsUrl } from "@/lib/travelpayouts";
 
 export default function SpecialOffers() {

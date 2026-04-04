@@ -12,7 +12,7 @@ import {
 } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePostHogEvent } from "@/hooks/usePostHogEvent";
-import { USD_TO_THB_RATE as USD_TO_THB } from "@/const";
+import { getDisplayPrice } from "@shared/utils/currency";
 import {
   type PriceTier,
   TIER_STYLES,
@@ -59,7 +59,7 @@ export default function PriceCalendar({
   const leftMonth = baseMonth;
   const rightMonth = addMonths(baseMonth, 1);
 
-  const { priceMap, loading, thresholds, enrichedData, priceCount } = useCalendarPrices({
+  const { priceMap, loading, thresholds, enrichedData, priceCount, fxQuote } = useCalendarPrices({
     origin,
     destination,
     leftMonth,
@@ -97,12 +97,12 @@ export default function PriceCalendar({
   );
 
   const cheapestDisplayPrice = useMemo(() => {
-    const values = Object.values(priceMap)
-      .filter((value) => Number.isFinite(value) && value > 0)
-      .map((value) => Math.round(value * USD_TO_THB));
+    const displayPrices = Object.values(priceMap)
+      .filter((entry) => Number.isFinite(entry.amount) && entry.amount > 0)
+      .map((entry) => getDisplayPrice(entry.amount, entry.currency, "THB", fxQuote));
 
-    if (values.length === 0) return null;
-    return Math.min(...values);
+    if (displayPrices.length === 0) return null;
+    return Math.min(...displayPrices);
   }, [priceMap]);
 
   const renderMonthGrid = (monthDate: Date, isNext = false) => {
@@ -166,11 +166,11 @@ export default function PriceCalendar({
 
                   const dateKey = format(cell, "yyyy-MM-dd");
                   const enriched = enrichedData[dateKey];
-                  const priceUsd = enriched ? enriched.price : null;
-                  const isEstimated = enriched ? enriched.isEstimated : false;
+                  const entry = enriched ? enriched : null;
+                  const isEstimated = entry ? entry.isEstimated : false;
 
                   const thbPrice =
-                    typeof priceUsd === "number" ? Math.round(priceUsd * USD_TO_THB) : null;
+                    entry ? getDisplayPrice(entry.amount, entry.currency, "THB", fxQuote) : null;
 
                   const tier: PriceTier =
                     thbPrice !== null ? getTier(thbPrice, thresholds) : "none";
@@ -237,7 +237,8 @@ export default function PriceCalendar({
                               origin,
                               destination,
                               date: format(cell, "yyyy-MM-dd"),
-                              price: priceUsd,
+                              amount: entry?.amount,
+                              currency: entry?.currency,
                               thb_price: thbPrice,
                               is_estimated: isEstimated,
                             });

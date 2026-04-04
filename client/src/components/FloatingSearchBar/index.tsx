@@ -65,7 +65,7 @@ export default function FloatingSearchBar() {
     const dateLabel = ctx.departDate
         ? format(new Date(ctx.departDate + "T00:00:00"), "EEE d MMM")
         : "Select date";
-    const dateSub = ctx.tripType === "return" && ctx.returnDate
+    const dateSub = ctx.tripType === "roundtrip" && ctx.returnDate
         ? "→ " + format(new Date(ctx.returnDate + "T00:00:00"), "d MMM")
         : "± flexible";
 
@@ -137,7 +137,7 @@ export default function FloatingSearchBar() {
                 <TripTypePill
                     openPanel={open}
                     togglePanel={toggle}
-                    tripType={ctx.tripType ?? "one-way"}
+                    tripType={ctx.tripType ?? "oneway"}
                     setTripType={ctx.setTripType as any}
                     setOpen={setOpen}
                 />

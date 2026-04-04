@@ -1,10 +1,10 @@
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
-/* ─── Currency Conversion ─── */
-export const USD_TO_THB_RATE = 34;
+import { formatCurrency, getDisplayPrice } from "@shared/utils/currency";
+
 export const formatTHB = (usdPrice: number) => {
-  const thbPrice = Math.round(usdPrice * USD_TO_THB_RATE);
-  return `฿${thbPrice.toLocaleString()}`;
+  const amount = getDisplayPrice(usdPrice, "USD", "THB");
+  return formatCurrency(amount, "THB");
 };
 
 // Generate login URL at runtime so redirect URI reflects the current origin.

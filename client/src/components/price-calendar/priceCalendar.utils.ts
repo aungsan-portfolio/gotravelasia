@@ -11,12 +11,13 @@ import {
   startOfDay,
   addDays,
 } from "date-fns";
-import { USD_TO_THB_RATE as USD_TO_THB } from "@/const";
+import { getDisplayPrice } from "@shared/utils/currency";
+import type { FxQuote } from "@shared/config/fx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-export type PriceEntry = {
+export type RawPriceEntry = {
   price: number;
   origin: string;
   destination: string;
@@ -28,7 +29,12 @@ export type PriceEntry = {
   expires_at?: string;
 };
 
-export type PriceMap = Record<string, number>;
+export type PriceEntry = {
+  amount: number;
+  currency: string;
+};
+
+export type PriceMap = Record<string, PriceEntry>;
 
 export type PriceTier = "cheapest" | "cheap" | "mid" | "expensive" | "none";
 
@@ -41,7 +47,8 @@ export type Thresholds = {
 export type EnrichedPriceMap = Record<
   string,
   {
-    price: number;
+    amount: number;
+    currency: string;
     isEstimated: boolean;
   }
 >;
@@ -138,15 +145,15 @@ export function buildCalendarGrid(year: number, month: number) {
   return cells;
 }
 
-export function computeThresholds(priceMap: PriceMap): Thresholds | null {
-  const thbPrices = Object.values(priceMap)
-    .map((usd) => Math.round(usd * USD_TO_THB))
+export function computeThresholds(priceMap: PriceMap, targetCurrency: string = "THB", fxQuote?: FxQuote): Thresholds | null {
+  const displayPrices = Object.values(priceMap)
+    .map((entry) => getDisplayPrice(entry.amount, entry.currency, targetCurrency, fxQuote))
     .filter((value) => Number.isFinite(value) && value > 0)
     .sort((a, b) => a - b);
 
-  if (thbPrices.length === 0) return null;
+  if (displayPrices.length === 0) return null;
 
-  const unique = [...new Set(thbPrices)];
+  const unique = [...new Set(displayPrices)];
   const min = unique[0];
   const max = unique[unique.length - 1];
 
@@ -175,11 +182,11 @@ export function computeThresholds(priceMap: PriceMap): Thresholds | null {
   };
 }
 
-export function getTier(thbPrice: number, thresholds: Thresholds | null): PriceTier {
+export function getTier(price: number, thresholds: Thresholds | null): PriceTier {
   if (!thresholds) return "none";
-  if (thbPrice <= thresholds.min) return "cheapest";
-  if (thbPrice <= thresholds.cheapMax) return "cheap";
-  if (thbPrice <= thresholds.midMax) return "mid";
+  if (price <= thresholds.min) return "cheapest";
+  if (price <= thresholds.cheapMax) return "cheap";
+  if (price <= thresholds.midMax) return "mid";
   return "expensive";
 }
 
@@ -201,7 +208,8 @@ export function fillGaps(
 
     if (priceMap[dateStr] !== undefined) {
       result[dateStr] = {
-        price: priceMap[dateStr],
+        amount: priceMap[dateStr].amount,
+        currency: priceMap[dateStr].currency,
         isEstimated: false,
       };
       current = addDays(current, 1);
@@ -238,11 +246,12 @@ export function fillGaps(
         const currentMs = current.getTime();
         const fraction = (currentMs - leftMs) / (rightMs - leftMs);
 
-        const estimatedPrice =
-          priceMap[leftDate] + (priceMap[rightDate] - priceMap[leftDate]) * fraction;
+        const estimatedAmount =
+          priceMap[leftDate].amount + (priceMap[rightDate].amount - priceMap[leftDate].amount) * fraction;
 
         result[dateStr] = {
-          price: estimatedPrice,
+          amount: estimatedAmount,
+          currency: priceMap[leftDate].currency,
           isEstimated: true,
         };
       }

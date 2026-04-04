@@ -38,7 +38,7 @@ router.post("/submit", async (req: any, res: any) => {
       return;
     }
 
-    const result = await saveSubscriber(email, source || "popup");
+    const result = await saveSubscriber({ email, source: source || "popup" });
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey && !result.alreadyExists) {
       new Resend(resendApiKey).emails.send({

@@ -1,5 +1,7 @@
 // api/_lib/cheapPrices.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
+import { getLiveFxRate } from "../../shared/utils/liveFx.js";
 
 const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -26,7 +28,8 @@ export async function handleCheapPrices(
         return;
     }
 
-    const origin = String(params.origin || "RGN");
+    const normalized = normalizeSearchParams(params);
+    const origin = normalized.origin || "RGN";
     const currency = String(params.currency || "thb");
     const cacheKey = `cheap-${origin}-${currency}`;
 
@@ -50,7 +53,9 @@ export async function handleCheapPrices(
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
+        const fxPromise = getLiveFxRate(currency, "THB");
         const response = await fetch(url, { signal: controller.signal });
+        const fx = await fxPromise;
         clearTimeout(timeoutId);
 
         if (!response.ok) {
@@ -77,7 +82,7 @@ export async function handleCheapPrices(
             });
         }
 
-        const result = { success: true, data: mappedData, currency };
+        const result = { success: true, data: mappedData, currency, fx };
         setCache(cacheKey, result);
         res.status(200).json(result);
     } catch (error) {

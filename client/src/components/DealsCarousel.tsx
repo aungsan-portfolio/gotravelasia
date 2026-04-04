@@ -1,10 +1,10 @@
 import { ArrowRight, Zap } from "lucide-react";
 import type { Deal } from "@/hooks/useFlightData";
-import { USD_TO_THB_RATE } from "@/const";
+import { convertPrice } from "@shared/utils/currency";
 import { FlightCard } from "@/components/FlightCard";
 
 const THB_THRESHOLD = 15000;
-const USD_THRESHOLD = THB_THRESHOLD / USD_TO_THB_RATE;
+const USD_THRESHOLD = convertPrice(THB_THRESHOLD, "THB", "USD");
 
 type DealsCarouselProps = {
   deals: Deal[];
