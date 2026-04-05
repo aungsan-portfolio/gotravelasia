@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-04-05 06:59",
-    "count": 5934,
+    "updated_at": "2026-04-05 12:44",
+    "count": 5936,
     "currency": "USD",
     "errors": 68
   },
@@ -73888,6 +73888,20 @@
     {
       "origin": "SGN",
       "destination": "KUL",
+      "price": 62.0,
+      "date": "2026-08-07",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "521",
+      "found_at": "2026-04-05 12:44",
+      "fetchedAt": 1775393061980,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SGN",
+      "destination": "KUL",
       "price": 63.0,
       "date": "2026-04-10",
       "airline": "AK",
@@ -74190,6 +74204,20 @@
       "flight_number": "525",
       "found_at": "2026-03-14 18:30",
       "fetchedAt": 1773513050505,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "SGN",
+      "destination": "KUL",
+      "price": 102.0,
+      "date": "2026-12-22",
+      "airline": "AK",
+      "airline_code": "AK",
+      "transfers": 0,
+      "flight_number": "525",
+      "found_at": "2026-04-05 12:44",
+      "fetchedAt": 1775393062099,
       "provider": "tp",
       "region": "SEA"
     },
