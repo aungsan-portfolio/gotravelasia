@@ -1,8 +1,8 @@
 import { memo } from "react";
-import type { HotelItem } from "@/types/hotels";
+import type { HotelResult } from "@shared/hotels/types";
 
 interface HotelMapPanelProps {
-  hotels: HotelItem[];
+  hotels: HotelResult[];
   selectedHotelId: string | null;
   hoveredHotelId: string | null;
   onSelectHotel: (hotelId: string) => void;
@@ -27,15 +27,15 @@ function HotelMapPanelComponent({
         <div className="flex-1 overflow-auto p-3">
           <div className="space-y-2">
             {hotels.map((hotel) => {
-              const isSelected = hotel.id === selectedHotelId;
-              const isHovered = hotel.id === hoveredHotelId;
+              const isSelected = hotel.hotelId === selectedHotelId;
+              const isHovered = hotel.hotelId === hoveredHotelId;
 
               return (
                 <button
-                  key={hotel.id}
+                  key={hotel.hotelId}
                   type="button"
-                  onClick={() => onSelectHotel(hotel.id)}
-                  onMouseEnter={() => onHoverHotel(hotel.id)}
+                  onClick={() => onSelectHotel(hotel.hotelId)}
+                  onMouseEnter={() => onHoverHotel(hotel.hotelId)}
                   onMouseLeave={() => onHoverHotel(null)}
                   className={[
                     "w-full rounded-lg border px-3 py-2 text-left text-sm transition",
@@ -47,7 +47,7 @@ function HotelMapPanelComponent({
                   ].join(" ")}
                 >
                   <p className="font-medium text-slate-900">{hotel.name}</p>
-                  <p className="text-xs text-slate-500">{hotel.location.area}</p>
+                  <p className="text-xs text-slate-500 line-clamp-1">{hotel.address}</p>
                 </button>
               );
             })}

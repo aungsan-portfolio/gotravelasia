@@ -1,4 +1,5 @@
 import type { NormalizedFlightSearchParams, TripType } from "./searchParams.js";
+import type { CabinClass } from "./types.js";
 
 /**
  * Normalizes raw flight search query parameters or state into a canonical typed shape.
@@ -58,6 +59,19 @@ export function normalizeSearchParams(raw: Record<string, any>): NormalizedFligh
   const childrenInt = parseInt(raw.children, 10);
   const infantsInt = parseInt(raw.infants, 10);
 
+  // Cabin mapping
+  const rawCabin = typeof raw.cabin === "string" ? raw.cabin : (typeof raw.cabinClass === "string" ? raw.cabinClass : "economy");
+  let cabinClass: CabinClass = "economy";
+  const normalizedCabin = rawCabin.toLowerCase();
+  
+  if (normalizedCabin === "premium" || normalizedCabin === "premium_economy") {
+    cabinClass = "premium";
+  } else if (normalizedCabin === "business") {
+    cabinClass = "business";
+  } else if (normalizedCabin === "first") {
+    cabinClass = "first";
+  }
+
   return {
     origin,
     destination,
@@ -67,6 +81,6 @@ export function normalizeSearchParams(raw: Record<string, any>): NormalizedFligh
     adults: Number.isFinite(adults) ? adults : 1,
     children: Number.isFinite(childrenInt) ? childrenInt : 0,
     infants: Number.isFinite(infantsInt) ? infantsInt : 0,
-    cabinClass: typeof raw.cabin === "string" ? raw.cabin : (typeof raw.cabinClass === "string" ? raw.cabinClass : "economy"),
+    cabinClass,
   };
 }

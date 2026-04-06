@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { sortHotels } from "@/lib/hotels/formatters";
-import { fetchMockHotels } from "@/lib/hotels/mockHotels";
-import type {
-  HotelFilterId,
-  HotelFilterOption,
-  HotelItem,
-  HotelResultsQuery,
-  HotelSort,
-} from "@/types/hotels";
+import { useLocation } from "wouter";
+import type { HotelFilterId, HotelFilterOption } from "@/types/hotels";
+import type { HotelResult, HotelSearchParams, HotelSearchResponse, HotelSort } from "@shared/hotels/types";
+import { buildHotelSearchParams } from "@shared/hotels/searchParams";
 
 export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
   { id: "free_breakfast", label: "Free breakfast", description: "Breakfast included" },
@@ -19,18 +14,18 @@ export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
 ];
 
 export const HOTEL_SORT_OPTIONS: Array<{ value: HotelSort; label: string }> = [
-  { value: "recommended", label: "Recommended" },
-  { value: "price_low_to_high", label: "Price: low to high" },
-  { value: "price_high_to_low", label: "Price: high to low" },
-  { value: "rating_high_to_low", label: "Rating" },
-  { value: "stars_high_to_low", label: "Stars" },
+  { value: "rank", label: "Recommended" },
+  { value: "price_asc", label: "Price: low to high" },
+  { value: "price_desc", label: "Price: high to low" },
+  { value: "review_desc", label: "Rating" },
+  { value: "stars_desc", label: "Stars" },
 ];
 
 interface UseHotelResultsStateValue {
   isLoading: boolean;
   errorMessage: string | null;
-  allHotels: HotelItem[];
-  visibleHotels: HotelItem[];
+  allHotels: HotelResult[];
+  visibleHotels: HotelResult[];
   sort: HotelSort;
   activeFilters: HotelFilterId[];
   selectedHotelId: string | null;
@@ -44,22 +39,22 @@ interface UseHotelResultsStateValue {
   setHoveredHotelId: (hotelId: string | null) => void;
 }
 
-function applyFilters(hotels: HotelItem[], activeFilters: HotelFilterId[]): HotelItem[] {
+function applyFilters(hotels: HotelResult[], activeFilters: HotelFilterId[]): HotelResult[] {
   return hotels.filter((hotel) =>
     activeFilters.every((filterId) => {
       switch (filterId) {
         case "free_breakfast":
-          return hotel.isFreeBreakfast;
+          return hotel.amenities.some(a => a.toLowerCase().includes("breakfast"));
         case "free_cancellation":
-          return hotel.isFreeCancellation;
+          return true; // Live API filters to be implemented
         case "pay_later":
-          return hotel.isPayLater;
+          return true; // Live API filters to be implemented
         case "highly_rated":
-          return hotel.review.score >= 8;
+          return hotel.reviewScore >= 8;
         case "budget":
-          return hotel.pricePerNight.amount < 100;
+          return hotel.lowestRate < 100;
         case "luxury":
-          return hotel.starRating >= 5;
+          return hotel.stars >= 5;
         default:
           return true;
       }
@@ -67,15 +62,16 @@ function applyFilters(hotels: HotelItem[], activeFilters: HotelFilterId[]): Hote
   );
 }
 
-export function useHotelResultsState(query: HotelResultsQuery): UseHotelResultsStateValue {
-  const [allHotels, setAllHotels] = useState<HotelItem[]>([]);
+export function useHotelResultsState(query: HotelSearchParams): UseHotelResultsStateValue {
+  const [allHotels, setAllHotels] = useState<HotelResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sort, setSort] = useState<HotelSort>("recommended");
+  const [sort, setSortState] = useState<HotelSort>(query.sort || "rank");
   const [activeFilters, setActiveFilters] = useState<HotelFilterId[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
   const [hoveredHotelId, setHoveredHotelId] = useState<string | null>(null);
   const requestIdRef = useRef(0);
+  const [_, setLocation] = useLocation();
 
   const loadHotels = useCallback(
     async (signal?: AbortSignal) => {
@@ -84,7 +80,14 @@ export function useHotelResultsState(query: HotelResultsQuery): UseHotelResultsS
       setErrorMessage(null);
 
       try {
-        const response = await fetchMockHotels(query, signal);
+        const queryParams = buildHotelSearchParams(query);
+        const resp = await fetch(`/api/hotels/search?${queryParams.toString()}`, { signal });
+        
+        if (!resp.ok) {
+          throw new Error("Unable to load hotel results.");
+        }
+        const response = (await resp.json()) as HotelSearchResponse;
+        
         if (requestId !== requestIdRef.current) {
           return;
         }
@@ -118,9 +121,8 @@ export function useHotelResultsState(query: HotelResultsQuery): UseHotelResultsS
   }, [loadHotels]);
 
   const visibleHotels = useMemo(() => {
-    const filtered = applyFilters(allHotels, activeFilters);
-    return sortHotels(filtered, sort);
-  }, [allHotels, activeFilters, sort]);
+    return applyFilters(allHotels, activeFilters);
+  }, [allHotels, activeFilters]);
 
   useEffect(() => {
     if (!visibleHotels.length) {
@@ -129,10 +131,10 @@ export function useHotelResultsState(query: HotelResultsQuery): UseHotelResultsS
     }
 
     setSelectedHotelId((current) => {
-      if (current && visibleHotels.some((hotel) => hotel.id === current)) {
+      if (current && visibleHotels.some((hotel) => hotel.hotelId === current)) {
         return current;
       }
-      return visibleHotels[0]?.id ?? null;
+      return visibleHotels[0]?.hotelId ?? null;
     });
   }, [visibleHotels]);
 
@@ -151,6 +153,12 @@ export function useHotelResultsState(query: HotelResultsQuery): UseHotelResultsS
   const retry = useCallback(() => {
     void loadHotels();
   }, [loadHotels]);
+
+  const setSort = useCallback((newSort: HotelSort) => {
+    setSortState(newSort);
+    const newParams = buildHotelSearchParams({ ...query, sort: newSort });
+    setLocation(`/hotels?${newParams.toString()}`);
+  }, [query, setLocation]);
 
   return {
     isLoading,

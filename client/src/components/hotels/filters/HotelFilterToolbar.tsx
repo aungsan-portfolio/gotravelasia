@@ -3,7 +3,8 @@ import {
   HOTEL_FILTER_OPTIONS,
   HOTEL_SORT_OPTIONS,
 } from "@/features/hotels/results/useHotelResultsState";
-import type { HotelFilterId, HotelSort } from "@/types/hotels";
+import type { HotelFilterId } from "@/types/hotels";
+import type { HotelSort } from "@shared/hotels/types";
 
 interface HotelFilterToolbarProps {
   sort: HotelSort;

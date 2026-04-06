@@ -1,9 +1,9 @@
 import { memo } from "react";
 import { HotelCard } from "@/components/hotels/results/HotelCard";
-import type { HotelItem } from "@/types/hotels";
+import type { HotelResult } from "@shared/hotels/types";
 
 interface HotelResultsListProps {
-  hotels: HotelItem[];
+  hotels: HotelResult[];
   checkIn: string;
   checkOut: string;
   selectedHotelId: string | null;
@@ -33,12 +33,12 @@ function HotelResultsListComponent({
     <section className="space-y-4" aria-live="polite">
       {hotels.map((hotel) => (
         <HotelCard
-          key={hotel.id}
+          key={hotel.hotelId}
           hotel={hotel}
           checkIn={checkIn}
           checkOut={checkOut}
-          isSelected={hotel.id === selectedHotelId}
-          isHovered={hotel.id === hoveredHotelId}
+          isSelected={hotel.hotelId === selectedHotelId}
+          isHovered={hotel.hotelId === hoveredHotelId}
           onSelect={onSelectHotel}
           onHover={onHoverHotel}
         />

@@ -4,6 +4,7 @@ import { setCors, parseRequest } from "../_lib/http.js";
 import { handleCalendarPrices } from "../_lib/calendarPrices.js";
 import { handleCheapPrices }    from "../_lib/cheapPrices.js";
 import { handleSpecialOffers }  from "../_lib/specialOffers.js";
+import { searchFlights }        from "../../server/flights/searchFlights.js";
 
 export default async function handler(req: any, res: any) {
   if (setCors(req, res)) return;
@@ -20,10 +21,12 @@ export default async function handler(req: any, res: any) {
       return handleCheapPrices(req, res, params);
     case "special-offers":
       return handleSpecialOffers(req, res, params);
+    case "search":
+      return res.status(200).json(await searchFlights(params));
     default:
       return res.status(400).json({
         error: "Invalid type",
-        valid: ["calendar", "cheap", "special-offers"],
+        valid: ["calendar", "cheap", "special-offers", "search"],
       });
   }
 }

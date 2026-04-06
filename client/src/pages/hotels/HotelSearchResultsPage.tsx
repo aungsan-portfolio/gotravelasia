@@ -1,20 +1,15 @@
-import { useMemo } from "react";
+import { useSearch } from "wouter";
 import { HotelFilterToolbar } from "@/components/hotels/filters/HotelFilterToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { useHotelResultsState } from "@/features/hotels/results/useHotelResultsState";
-import type { HotelResultsQuery } from "@/types/hotels";
-
-const DEFAULT_QUERY: HotelResultsQuery = {
-  destinationLabel: "Bangkok, Thailand",
-  checkIn: "2026-04-20",
-  checkOut: "2026-04-24",
-  guests: 2,
-  rooms: 1,
-};
+import { parseHotelSearchParams } from "@shared/hotels/searchParams";
+import { getCityName } from "@/lib/cities";
 
 export default function HotelSearchResultsPage() {
-  const query = useMemo<HotelResultsQuery>(() => DEFAULT_QUERY, []);
+  const searchString = useSearch();
+  const query = parseHotelSearchParams(searchString);
+  const cityName = getCityName(query.city);
 
   const {
     isLoading,
@@ -39,7 +34,7 @@ export default function HotelSearchResultsPage() {
         <header className="mb-5 rounded-xl bg-white p-4 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">Hotel Search Results</h1>
           <p className="mt-1 text-slate-600">
-            {query.destinationLabel} · {query.checkIn} to {query.checkOut} · {query.guests} guests · {query.rooms} room
+            {cityName} · {query.checkIn} to {query.checkOut} · {query.adults} guests · {query.rooms} room
             {query.rooms > 1 ? "s" : ""}
           </p>
         </header>
@@ -88,7 +83,7 @@ export default function HotelSearchResultsPage() {
             </div>
             <div className="min-w-0">
               <HotelMapPanel
-                hotels={visibleHotels.filter((hotel) => hotel.location.coordinates)}
+                hotels={visibleHotels.filter((hotel) => hotel.coordinates && !hotel.coordinates.isFallback)}
                 selectedHotelId={selectedHotelId}
                 hoveredHotelId={hoveredHotelId}
                 onSelectHotel={setSelectedHotelId}
