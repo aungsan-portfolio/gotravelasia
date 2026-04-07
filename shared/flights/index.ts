@@ -5,3 +5,5 @@ export * from "./flightScoring.js";
 export * from "./searchParams.js";
 export * from "./normalizeSearchParams.js";
 export * from "./calendarLogic.js";
+export * from "./flightFilters.js";
+export * from "./flightSorting.js";

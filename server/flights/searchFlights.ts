@@ -1,5 +1,6 @@
 import { normalizeSearchParams } from "../../shared/flights/normalizeSearchParams.js";
 import { scoreFlights } from "../../shared/flights/flightScoring.js";
+import { sortFlights } from "../../shared/flights/flightSorting.js";
 import { FlightSchema } from "../../shared/flights/types.js";
 import { searchAmadeusFlightOffers } from "../_core/amadeus.js";
 import { normalizeAmadeusOffers } from "./adapters/amadeus.js";
@@ -50,30 +51,27 @@ export async function searchFlights(raw: RawSearchInput) {
     return true;
   });
 
-  const LIMIT = 30; // P2 Payload Payload Limiting
-  const best = scoreFlights(validFlights);
-  const cheapest = [...best].sort((a, b) => a.price.total - b.price.total);
+  const LIMIT = 30;
+  const BUCKET_LIMIT = 15;
 
-  function totalTripMinutes(flight: any) {
-    return (
-      (flight.outbound?.totalDurationMinutes || 0) +
-      (flight.return?.totalDurationMinutes || 0)
-    );
-  }
+  const scoredFlights = scoreFlights(validFlights);
 
-  const fastest = [...best].sort((a, b) => totalTripMinutes(a) - totalTripMinutes(b));
+  const bestFlights = sortFlights(scoredFlights, "smartMix");
+  const cheapestFlights = sortFlights(scoredFlights, "cheapest");
+  const fastestFlights = sortFlights(scoredFlights, "fastest");
 
-  const flightsLimited = best.slice(0, LIMIT);
+  const bestLimited = bestFlights.slice(0, LIMIT);
 
   return {
     success: true,
-    flights: flightsLimited,
-    best: flightsLimited,
-    cheapest: cheapest.slice(0, 15),
-    fastest: fastest.slice(0, 15),
+    flights: bestLimited,
+    best: bestLimited,
+    cheapest: cheapestFlights.slice(0, BUCKET_LIMIT),
+    fastest: fastestFlights.slice(0, BUCKET_LIMIT),
     meta: {
       provider: "amadeus",
-      count: flightsLimited.length,
+      count: bestLimited.length,
+      returnedCount: bestLimited.length,
       rawOfferCount: Array.isArray(offers) ? offers.length : 0,
       searchedAt: new Date().toISOString(),
       currency,

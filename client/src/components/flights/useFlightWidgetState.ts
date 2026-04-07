@@ -9,6 +9,8 @@ import { recentSearches, type RecentSearchRecord } from "./flightWidget.recent.j
 import { usePriceHint } from "@/hooks/useFlightData";
 import { persistSearchToSession } from "@/lib/detectRouteFromContext";
 
+export const ENABLE_LOCAL_RESULTS = false; // Use local Flight Search Hook instead of redirecting (false for PROD)
+
 const flightSearchSchema = z
     .object({
         origin: z.string().min(1),
@@ -182,7 +184,7 @@ export function useFlightWidgetState() {
     }, [calendarMode, returnDate, tripType]);
 
     const handleSearch = useCallback(() => {
-        if (!validateSearch()) return;
+        if (!validateSearch()) return false;
 
         recentSearches.save({
             origin,
@@ -198,10 +200,15 @@ export function useFlightWidgetState() {
 
         if (posthog.__loaded) posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate, flexibility: ctx.flexibility });
 
+        if (ENABLE_LOCAL_RESULTS) {
+            return true;
+        }
+
         const urls = ctx.buildSearchURL();
         if (urls) {
             window.location.href = urls.travelpayouts;
         }
+        return false;
     }, [validateSearch, origin, destination, departDate, returnDate, lowestPrice, calendarCheapestPrice, ctx]);
 
     const handleTripComSearch = useCallback(() => {
