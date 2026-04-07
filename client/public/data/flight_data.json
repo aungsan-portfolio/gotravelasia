@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-04-07 13:09",
-    "count": 5845,
+    "updated_at": "2026-04-07 18:56",
+    "count": 5847,
     "currency": "USD",
     "errors": 68
   },
@@ -59501,6 +59501,20 @@
     {
       "origin": "RGN",
       "destination": "CCU",
+      "price": 152.0,
+      "date": "2026-04-23",
+      "airline": "8M",
+      "airline_code": "8M",
+      "transfers": 0,
+      "flight_number": "607",
+      "found_at": "2026-04-07 18:56",
+      "fetchedAt": 1775588205288,
+      "provider": "tp",
+      "region": "India"
+    },
+    {
+      "origin": "RGN",
+      "destination": "CCU",
       "price": 180.0,
       "date": "2026-05-11",
       "airline": "FD",
@@ -59509,6 +59523,20 @@
       "flight_number": "252",
       "found_at": "2026-03-26 13:02",
       "fetchedAt": 1774530149581,
+      "provider": "tp",
+      "region": "India"
+    },
+    {
+      "origin": "RGN",
+      "destination": "CCU",
+      "price": 231.0,
+      "date": "2026-04-22",
+      "airline": "8M",
+      "airline_code": "8M",
+      "transfers": 1,
+      "flight_number": "382",
+      "found_at": "2026-04-07 18:56",
+      "fetchedAt": 1775588205288,
       "provider": "tp",
       "region": "India"
     },
