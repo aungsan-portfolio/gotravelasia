@@ -1,4 +1,4 @@
-import { eq, and, asc, isNull, lte, or, sql } from "drizzle-orm";
+import { eq, and, asc, isNull, lte, or, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers, destinations, emailQueue } from "../drizzle/schema.js";
 import { ENV } from "./_core/env.js";
@@ -83,6 +83,21 @@ export async function updateAlertPrice(id: number, price: number) {
       .where(eq(flightPriceAlerts.id, id));
   } catch (err) {
     console.error(`[Database] Failed to update alert price for ${id}:`, err);
+  }
+}
+
+export async function touchPriceAlerts(ids: number[]) {
+  if (!ids.length) return;
+
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    await db.update(flightPriceAlerts)
+      .set({ updatedAt: new Date() })
+      .where(inArray(flightPriceAlerts.id, ids));
+  } catch (err) {
+    console.error("[Database] Failed to touch price alerts:", err);
   }
 }
 

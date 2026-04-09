@@ -8,13 +8,25 @@ import {
   getDueEmailQueueItems,
   markEmailQueueAttemptFailed,
   markEmailQueueSent,
+  touchPriceAlerts,
   updateAlertPrice,
 } from "../db.js";
 
 const router = Router();
+let emailQueueReady = false;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+function isAlertStale(updatedAt: Date | string | null | undefined, staleMinutes: number) {
+  if (!updatedAt) return true;
+  const updatedMs = new Date(updatedAt).getTime();
+  if (!Number.isFinite(updatedMs)) return true;
+  return Date.now() - updatedMs >= staleMinutes * 60_000;
+}
 
 router.get("/check-price-alerts", async (req: any, res: any) => {
   try {
+    const startedAt = Date.now();
     if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
       res.status(401).json({ error: "Unauthorized" }); return;
     }
@@ -27,17 +39,42 @@ router.get("/check-price-alerts", async (req: any, res: any) => {
       res.status(500).json({ error: "TRAVELPAYOUTS_TOKEN not configured" }); return;
     }
 
-    await ensureEmailQueueTable();
-    const results: any[] = [];
+    if (!emailQueueReady) {
+      await ensureEmailQueueTable();
+      emailQueueReady = true;
+    }
 
-    for (const alert of activeAlerts) {
+    const staleMinutes = clamp(Number(process.env.PRICE_ALERT_STALE_MINUTES || 360), 15, 1440);
+    const workerCount = clamp(Number(process.env.PRICE_ALERT_WORKERS || 2), 1, 3);
+    const maxAlertsPerRun = clamp(Number(process.env.PRICE_ALERT_MAX_ALERTS_PER_RUN || 30), 1, 100);
+    const staleAlerts = activeAlerts.filter((alert) => isAlertStale(alert.updatedAt, staleMinutes)).slice(0, maxAlertsPerRun);
+
+    if (staleAlerts.length === 0) {
+      res.status(200).json({
+        message: "No stale alerts to check.",
+        activeAlerts: activeAlerts.length,
+        durationMs: Date.now() - startedAt,
+      });
+      return;
+    }
+
+    const touchedAlertIds: number[] = [];
+    const results: any[] = [];
+    const queue = [...staleAlerts];
+    async function worker() {
+      while (queue.length) {
+        const alert = queue.shift();
+        if (!alert) return;
       const tpRes = await fetch(
         `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?token=${tpToken}&origin=${alert.origin}&destination=${alert.destination}&departure_at=${alert.departDate}&currency=${alert.currency}&one_way=${!alert.returnDate}`
       ).catch(() => null);
       if (!tpRes?.ok) continue;
 
       const tpData = await tpRes.json();
-      if (!tpData?.data?.length) continue;
+      if (!tpData?.data?.length) {
+        touchedAlertIds.push(alert.id);
+        continue;
+      }
 
       const minPrice       = Math.min(...tpData.data.map((d: any) => d.price));
       const referencePrice = alert.lastNotifiedPrice || alert.targetPrice;
@@ -60,15 +97,28 @@ router.get("/check-price-alerts", async (req: any, res: any) => {
                 </a></p>
                 <hr style="margin-top:40px;border:none;border-top:1px solid #e2e8f0;"/>
                 <p style="font-size:11px;color:#94a3b8;">You subscribed to price alerts at GoTravel Asia.</p>
-              </div>`,
+               </div>`,
         });
 
         await updateAlertPrice(alert.id, minPrice);
         results.push({ id: alert.id, old: referencePrice, new: minPrice, queued: true });
+      } else {
+        touchedAlertIds.push(alert.id);
       }
     }
+    }
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    await touchPriceAlerts(touchedAlertIds);
 
-    res.json({ message: "Cron finished", processedCount: results.length, results });
+    const durationMs = Date.now() - startedAt;
+    console.info("[cron/check-price-alerts]", {
+      durationMs,
+      activeAlerts: activeAlerts.length,
+      checkedAlerts: staleAlerts.length,
+      queuedAlerts: results.length,
+      workerCount,
+    });
+    res.json({ message: "Cron finished", processedCount: results.length, checkedAlerts: staleAlerts.length, durationMs, results });
   } catch (err) {
     console.error("Cron error:", err);
     res.status(500).json({ error: "Failed to process cron job" });

@@ -8,6 +8,8 @@ import {
   markEmailQueueSent,
 } from "../../server/db.js";
 
+let emailQueueTableReady = false;
+
 function validateEnv(required: string[]) {
   const missing = required.filter((name) => !process.env[name]);
   return {
@@ -18,6 +20,7 @@ function validateEnv(required: string[]) {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    const startedAt = Date.now();
     const authHeader = req.headers.authorization;
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -35,7 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const maxAttempts = Number(process.env.EMAIL_MAX_ATTEMPTS || 3);
     const retryDelayMinutes = Number(process.env.EMAIL_RETRY_DELAY_MINUTES || 15);
 
-    await ensureEmailQueueTable();
+    if (!emailQueueTableReady) {
+      await ensureEmailQueueTable();
+      emailQueueTableReady = true;
+    }
     const dueItems = await getDueEmailQueueItems(batchSize, maxAttempts);
 
     if (dueItems.length === 0) {
@@ -84,11 +90,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    const durationMs = Date.now() - startedAt;
+    console.info("[cron/send-alerts] completed", {
+      durationMs,
+      dueItems: dueItems.length,
+      sent: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+    });
+
     return res.status(200).json({
       message: "Send alerts cron finished",
       attempted: dueItems.length,
       sent: results.filter((r) => r.ok).length,
       failed: results.filter((r) => !r.ok).length,
+      durationMs,
       results,
     });
   } catch (err: any) {

@@ -1,9 +1,12 @@
 name: Update Flight Prices
 
 on:
-  schedule:
-    - cron: '0 */6 * * *'
   workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: "Commit generated data back to main (use sparingly)"
+        type: boolean
+        default: false
 
 jobs:
   update-prices:
@@ -44,6 +47,7 @@ jobs:
         run: python scripts/validate_json.py
 
       - name: Commit and Push
+        if: ${{ github.event.inputs.commit_changes == 'true' }}
         run: |
           git config user.name "GoTravel Price Bot"
           git config user.email "bot@gotravel.asia"
@@ -63,6 +67,10 @@ jobs:
           git fetch origin main
           git rebase -X theirs origin/main
           git push origin main
+
+      - name: Skip commit loop by default
+        if: ${{ github.event.inputs.commit_changes != 'true' }}
+        run: echo "Manual run completed without committing generated files."
 
       - name: Notify on failure
         if: failure()
