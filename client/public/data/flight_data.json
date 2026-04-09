@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-04-09 01:49",
-    "count": 5705,
+    "updated_at": "2026-04-09 07:15",
+    "count": 5706,
     "currency": "USD",
     "errors": 68
   },
@@ -13639,6 +13639,20 @@
       "flight_number": "3693",
       "found_at": "2026-03-23 18:46",
       "fetchedAt": 1774291579737,
+      "provider": "tp",
+      "region": "SEA"
+    },
+    {
+      "origin": "CEB",
+      "destination": "KUL",
+      "price": 55.0,
+      "date": "2026-12-03",
+      "airline": "FY",
+      "airline_code": "FY",
+      "transfers": 0,
+      "flight_number": "3693",
+      "found_at": "2026-04-09 07:15",
+      "fetchedAt": 1775718936959,
       "provider": "tp",
       "region": "SEA"
     },
