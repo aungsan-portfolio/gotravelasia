@@ -134,7 +134,7 @@ var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 
 // server/db.ts
-import { eq, and, asc, isNull, lte, or, sql } from "drizzle-orm";
+import { eq, and, asc, isNull, lte, or, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 
 // drizzle/schema.ts
@@ -305,6 +305,16 @@ async function updateAlertPrice(id, price) {
     await db.update(flightPriceAlerts).set({ lastNotifiedPrice: price, updatedAt: /* @__PURE__ */ new Date() }).where(eq(flightPriceAlerts.id, id));
   } catch (err) {
     console.error(`[Database] Failed to update alert price for ${id}:`, err);
+  }
+}
+async function touchPriceAlerts(ids) {
+  if (!ids.length) return;
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(flightPriceAlerts).set({ updatedAt: /* @__PURE__ */ new Date() }).where(inArray(flightPriceAlerts.id, ids));
+  } catch (err) {
+    console.error("[Database] Failed to touch price alerts:", err);
   }
 }
 async function createPriceAlert(alert) {
@@ -753,6 +763,9 @@ function registerOAuthRoutes(app2) {
   });
 }
 
+// server/routers.ts
+import { z as z4 } from "zod";
+
 // server/_core/systemRouter.ts
 import { z } from "zod";
 
@@ -895,9 +908,6 @@ var systemRouter = router({
     };
   })
 });
-
-// server/routers.ts
-import { z as z3 } from "zod";
 
 // server/transport.ts
 function mockSchedules(from, to) {
@@ -1203,16 +1213,1326 @@ var destinationRouter = router({
   })
 });
 
+// shared/flights/normalizeSearchParams.ts
+function normalizeSearchParams(raw) {
+  const origin = typeof raw.origin === "string" ? raw.origin.toUpperCase() : "";
+  let destination = typeof raw.destination === "string" ? raw.destination : void 0;
+  if (!destination) destination = typeof raw.to === "string" ? raw.to : void 0;
+  if (!destination) destination = typeof raw.arrival === "string" ? raw.arrival : void 0;
+  destination = destination ? destination.toUpperCase() : "";
+  let rawTripType = typeof raw.tripType === "string" ? raw.tripType.toLowerCase() : void 0;
+  if (!rawTripType) rawTripType = typeof raw.type === "string" ? raw.type.toLowerCase() : void 0;
+  let tripType = "roundtrip";
+  if (rawTripType === "oneway" || rawTripType === "one-way" || rawTripType === "single" || rawTripType === "one_way") {
+    tripType = "oneway";
+  } else if (rawTripType === "roundtrip" || rawTripType === "return" || rawTripType === "round-trip" || rawTripType === "round_trip" || rawTripType === "both") {
+    tripType = "roundtrip";
+  } else if (raw.returnDate || raw.return_date) {
+    tripType = "roundtrip";
+  } else if (raw.departDate && !raw.returnDate && !raw.return_date) {
+    tripType = "oneway";
+  }
+  const departDate = typeof raw.departDate === "string" ? raw.departDate : typeof raw.depart_date === "string" ? raw.depart_date : "";
+  let returnDate = typeof raw.returnDate === "string" ? raw.returnDate : typeof raw.return_date === "string" ? raw.return_date : void 0;
+  if (tripType === "oneway") {
+    returnDate = void 0;
+  } else if (tripType === "roundtrip" && !returnDate) {
+  }
+  const adults = parseInt(raw.adults, 10);
+  const childrenInt = parseInt(raw.children, 10);
+  const infantsInt = parseInt(raw.infants, 10);
+  const rawCabin = typeof raw.cabin === "string" ? raw.cabin : typeof raw.cabinClass === "string" ? raw.cabinClass : "economy";
+  let cabinClass = "economy";
+  const normalizedCabin = rawCabin.toLowerCase();
+  if (normalizedCabin === "premium" || normalizedCabin === "premium_economy") {
+    cabinClass = "premium";
+  } else if (normalizedCabin === "business") {
+    cabinClass = "business";
+  } else if (normalizedCabin === "first") {
+    cabinClass = "first";
+  }
+  return {
+    origin,
+    destination,
+    departDate,
+    returnDate,
+    tripType,
+    adults: Number.isFinite(adults) ? adults : 1,
+    children: Number.isFinite(childrenInt) ? childrenInt : 0,
+    infants: Number.isFinite(infantsInt) ? infantsInt : 0,
+    cabinClass
+  };
+}
+
+// shared/flights/types.ts
+import { z as z3 } from "zod";
+var DEFAULT_WEIGHTS = {
+  price: 0.32,
+  duration: 0.22,
+  stops: 0.16,
+  departureTime: 0.08,
+  airline: 0.08,
+  risk: 0.1,
+  baggage: 0.04
+};
+var AirportSchema = z3.object({
+  iataCode: z3.string().min(3).max(3),
+  name: z3.string().min(1),
+  city: z3.string().min(1),
+  country: z3.string().min(1),
+  terminal: z3.string().optional(),
+  timeZone: z3.string().optional()
+});
+var FlightSegmentSchema = z3.object({
+  id: z3.string().min(1),
+  departure: z3.object({
+    airport: AirportSchema,
+    localTime: z3.string().min(1),
+    utcTime: z3.string().optional()
+  }),
+  arrival: z3.object({
+    airport: AirportSchema,
+    localTime: z3.string().min(1),
+    utcTime: z3.string().optional()
+  }),
+  airline: z3.string().min(1),
+  marketingAirline: z3.string().optional(),
+  operatingAirline: z3.string().optional(),
+  flightNumber: z3.string().min(1),
+  aircraft: z3.string().optional(),
+  durationMinutes: z3.number().int().positive(),
+  cabinClass: z3.enum(["economy", "premium", "business", "first"])
+});
+var LayoverSchema = z3.object({
+  airport: AirportSchema,
+  durationMinutes: z3.number().int().nonnegative(),
+  isSelfTransfer: z3.boolean(),
+  requiresTerminalChange: z3.boolean().optional(),
+  requiresAirportChange: z3.boolean().optional(),
+  riskLevel: z3.enum(["low", "medium", "high"]),
+  warning: z3.string().optional()
+});
+var LayoverInsightSchema = z3.object({
+  layoverCount: z3.number().int().nonnegative(),
+  longestLayoverMinutes: z3.number().int().nonnegative().optional(),
+  shortestLayoverMinutes: z3.number().int().nonnegative().optional(),
+  overnightLayoverCount: z3.number().int().nonnegative().optional(),
+  highRiskLayoverCount: z3.number().int().nonnegative().optional(),
+  confidence: z3.number().min(0).max(1),
+  summary: z3.string().optional()
+});
+var PriceTrendAnalysisSchema = z3.object({
+  trend: z3.enum(["down", "stable", "up", "unknown"]),
+  confidence: z3.number().min(0).max(1),
+  changeAmount: z3.number().optional(),
+  changePercent: z3.number().optional(),
+  referencePrice: z3.number().positive().optional(),
+  referenceCurrency: z3.string().min(3).max(3).optional(),
+  observedAt: z3.string().optional(),
+  note: z3.string().optional()
+});
+var FlightLegSchema = z3.object({
+  segments: z3.array(FlightSegmentSchema).min(1),
+  totalDurationMinutes: z3.number().int().positive(),
+  layovers: z3.array(LayoverSchema)
+});
+var FlightSchema = z3.object({
+  id: z3.string().min(1),
+  type: z3.enum(["oneway", "roundtrip", "hacker"]),
+  outbound: FlightLegSchema,
+  return: FlightLegSchema.optional(),
+  price: z3.object({
+    total: z3.number().positive(),
+    currency: z3.string().min(3).max(3),
+    baseFare: z3.number().nonnegative().optional(),
+    taxes: z3.number().nonnegative().optional(),
+    originalTotal: z3.number().positive().optional(),
+    originalCurrency: z3.string().min(3).max(3).optional()
+  }),
+  totalStops: z3.number().int().nonnegative(),
+  warnings: z3.array(z3.string()),
+  isSelfTransfer: z3.boolean(),
+  bookingProvider: z3.string().optional(),
+  sourceType: z3.enum(["amadeus", "travelpayouts", "bot_json", "cache", "manual", "unknown"]).optional(),
+  deepLink: z3.string().optional(),
+  validatingAirline: z3.string().optional(),
+  baggageIncluded: z3.boolean().optional(),
+  refundable: z3.boolean().optional(),
+  mixedCabin: z3.boolean().optional(),
+  lastUpdatedAt: z3.string().optional()
+});
+var EnrichedFlightSchema = FlightSchema.extend({
+  layoverInsight: LayoverInsightSchema.optional(),
+  priceTrend: PriceTrendAnalysisSchema.optional(),
+  intelligenceVersion: z3.string().optional()
+});
+
+// shared/flights/stats.ts
+function sanitize(numbers) {
+  return numbers.filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+}
+function getMedian(numbers) {
+  const sorted = sanitize(numbers);
+  if (sorted.length === 0) return 0;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+function getPercentile(numbers, percentile) {
+  const sorted = sanitize(numbers);
+  if (sorted.length === 0) return 0;
+  if (percentile <= 0) return sorted[0];
+  if (percentile >= 100) return sorted[sorted.length - 1];
+  const index = percentile / 100 * (sorted.length - 1);
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sorted[lower];
+  const weight = index - lower;
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+function getP95(numbers) {
+  return getPercentile(numbers, 95);
+}
+function clamp01(value) {
+  if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
+}
+function normalizeLowerIsBetter(value, values) {
+  const clean = sanitize(values);
+  if (clean.length === 0) return 0.5;
+  const min = clean[0];
+  const p95 = getP95(clean);
+  const denom = p95 - min || 1;
+  return clamp01(1 - (value - min) / denom);
+}
+
+// shared/flights/layoverAnalysis.ts
+function getTotalJourneyMinutes(flight) {
+  return flight.outbound.totalDurationMinutes + (flight.return?.totalDurationMinutes ?? 0);
+}
+function getAllLayovers(flight) {
+  return [...flight.outbound.layovers, ...flight.return?.layovers ?? []];
+}
+function compareByLowerPriceThenDuration(a, b) {
+  if (a.price.total !== b.price.total) return a.price.total - b.price.total;
+  return getTotalJourneyMinutes(a) - getTotalJourneyMinutes(b);
+}
+function findBestComparableDirectFlight(targetFlight, comparableFlights) {
+  const directOptions = comparableFlights.filter((flight) => flight.id !== targetFlight.id && flight.totalStops === 0).sort(compareByLowerPriceThenDuration);
+  return directOptions[0] ?? null;
+}
+function findBestComparableLowerStopFlight(targetFlight, comparableFlights) {
+  const lowerStopOptions = comparableFlights.filter(
+    (flight) => flight.id !== targetFlight.id && Number.isFinite(flight.totalStops) && flight.totalStops >= 0 && flight.totalStops < targetFlight.totalStops
+  ).sort(compareByLowerPriceThenDuration);
+  return lowerStopOptions[0] ?? null;
+}
+function getLayoverBurdenMinutes(flight) {
+  const layovers = getAllLayovers(flight);
+  let burden = 0;
+  for (const layover of layovers) {
+    if (layover.isSelfTransfer) burden += 75;
+    if (layover.requiresTerminalChange) burden += 35;
+    if (layover.requiresAirportChange) burden += 90;
+    if (layover.riskLevel === "high") burden += 70;
+    else if (layover.riskLevel === "medium") burden += 30;
+  }
+  return burden;
+}
+function formatDuration(minutes) {
+  const safeMinutes = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const mins = safeMinutes % 60;
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}
+function formatMoney(value) {
+  const rounded = Math.round(value);
+  return `$${rounded.toLocaleString("en-US")}`;
+}
+function analyzeLayoverWorthIt(targetFlight, comparableFlights) {
+  if (targetFlight.totalStops <= 0) {
+    return {
+      isWorthIt: false,
+      moneySaved: 0,
+      timeAddedMinutes: 0,
+      savingsPerHour: 0,
+      reason: "Target itinerary is not layover-heavy.",
+      confidence: 0.35
+    };
+  }
+  const directBaseline = findBestComparableDirectFlight(targetFlight, comparableFlights);
+  const lowerStopBaseline = findBestComparableLowerStopFlight(targetFlight, comparableFlights);
+  const baseline = directBaseline ?? lowerStopBaseline;
+  if (!baseline) {
+    return {
+      isWorthIt: false,
+      moneySaved: 0,
+      timeAddedMinutes: 0,
+      savingsPerHour: 0,
+      reason: "No lower-stop baseline was available for a fair comparison.",
+      confidence: 0.25
+    };
+  }
+  const moneySaved = Number((baseline.price.total - targetFlight.price.total).toFixed(2));
+  const rawTimeAddedMinutes = getTotalJourneyMinutes(targetFlight) - getTotalJourneyMinutes(baseline);
+  const riskBurdenMinutes = getLayoverBurdenMinutes(targetFlight);
+  const effectiveTimeAddedMinutes = Math.max(0, rawTimeAddedMinutes) + riskBurdenMinutes;
+  const savingsPerHour = effectiveTimeAddedMinutes > 0 ? Number((moneySaved / (effectiveTimeAddedMinutes / 60)).toFixed(2)) : Number(moneySaved.toFixed(2));
+  if (moneySaved <= 0) {
+    return {
+      isWorthIt: false,
+      moneySaved,
+      timeAddedMinutes: effectiveTimeAddedMinutes,
+      savingsPerHour,
+      reason: "Layover itinerary is not cheaper than lower-stop alternatives.",
+      confidence: 0.9
+    };
+  }
+  const hasSevereTransferPenalty = getAllLayovers(targetFlight).some(
+    (layover) => layover.isSelfTransfer || layover.requiresAirportChange
+  );
+  if (effectiveTimeAddedMinutes >= 600 && moneySaved < 250) {
+    return {
+      isWorthIt: false,
+      moneySaved,
+      timeAddedMinutes: effectiveTimeAddedMinutes,
+      savingsPerHour,
+      reason: `Adds ${formatDuration(effectiveTimeAddedMinutes)} for only ${formatMoney(moneySaved)} in savings.`,
+      confidence: 0.85
+    };
+  }
+  if (hasSevereTransferPenalty && moneySaved < 150) {
+    return {
+      isWorthIt: false,
+      moneySaved,
+      timeAddedMinutes: effectiveTimeAddedMinutes,
+      savingsPerHour,
+      reason: "Transfer complexity is too high relative to the available savings.",
+      confidence: 0.8
+    };
+  }
+  const isStrongSavingsForBurden = savingsPerHour >= 40 && moneySaved >= 50 || savingsPerHour >= 25 && moneySaved >= 80 && effectiveTimeAddedMinutes <= 480 || effectiveTimeAddedMinutes <= 90 && moneySaved >= 60;
+  if (isStrongSavingsForBurden) {
+    return {
+      isWorthIt: true,
+      moneySaved,
+      timeAddedMinutes: effectiveTimeAddedMinutes,
+      savingsPerHour,
+      reason: `Saves ${formatMoney(moneySaved)} with a manageable added burden of ${formatDuration(
+        effectiveTimeAddedMinutes
+      )}.`,
+      confidence: clamp01(0.62 + Math.min(0.25, moneySaved / 800))
+    };
+  }
+  return {
+    isWorthIt: false,
+    moneySaved,
+    timeAddedMinutes: effectiveTimeAddedMinutes,
+    savingsPerHour,
+    reason: "Savings are real, but not strong enough relative to added layover burden.",
+    confidence: clamp01(0.45 + Math.min(0.2, effectiveTimeAddedMinutes / 1200))
+  };
+}
+
+// shared/flights/priceTrend.ts
+function sanitizeHistoricalPoints(points = []) {
+  return points.filter((point) => Number.isFinite(point.price) && point.price > 0);
+}
+function calculateDispersionRatio(prices, median) {
+  if (!prices.length || median <= 0) return 0;
+  const variance = prices.reduce((acc, price) => acc + (price - median) ** 2, 0) / prices.length;
+  const stdev = Math.sqrt(variance);
+  return stdev / median;
+}
+function computeConfidenceScore(input) {
+  const sizeSignal = Math.min(1, input.sampleSize / 12);
+  const stabilitySignal = clamp01(1 - input.dispersionRatio);
+  let confidence = 0.2 + sizeSignal * 0.45 + stabilitySignal * 0.35;
+  if (input.usedFallback) confidence *= 0.55;
+  return Number(clamp01(confidence).toFixed(2));
+}
+function classifyPricePosition(currentPrice, historicalMin, historicalMedian) {
+  if (currentPrice < historicalMin) return "below_min";
+  if (currentPrice <= historicalMin * 1.03) return "near_min";
+  if (currentPrice <= historicalMedian * 0.95) return "below_median";
+  if (currentPrice <= historicalMedian * 1.05) return "near_median";
+  if (currentPrice <= historicalMedian * 1.2) return "above_median";
+  return "far_above_median";
+}
+function buildTrendChartPoints(historicalPoints, currentPrice) {
+  const points = historicalPoints.slice(-24).map((point, index) => ({
+    label: point.observedAt ? point.observedAt.slice(0, 10) : `H${index + 1}`,
+    price: Number(point.price.toFixed(2))
+  }));
+  points.push({
+    label: "Now",
+    price: Number(currentPrice.toFixed(2))
+  });
+  return points;
+}
+function fallbackHeuristicForecast(input) {
+  const departurePressure = input.daysToDeparture ?? 30;
+  if (departurePressure <= 7) {
+    return {
+      recommendation: "buy_now",
+      confidence: 0.34,
+      reason: "Limited history; departure is close, so waiting may be riskier.",
+      forecastDelta: void 0
+    };
+  }
+  if (departurePressure >= 45) {
+    return {
+      recommendation: "neutral",
+      confidence: 0.28,
+      reason: "Limited history and long horizon; monitor prices before committing.",
+      forecastDelta: void 0
+    };
+  }
+  return {
+    recommendation: "neutral",
+    confidence: 0.3,
+    reason: "Historical price depth is insufficient for a reliable directional call.",
+    forecastDelta: void 0
+  };
+}
+function estimateForecastDelta(prices) {
+  if (prices.length < 4) return void 0;
+  const lookback = prices.slice(-6);
+  const first = lookback[0];
+  const last = lookback[lookback.length - 1];
+  const stepDelta = (last - first) / (lookback.length - 1);
+  const coarseDelta = stepDelta * 3;
+  if (!Number.isFinite(coarseDelta)) return void 0;
+  return Number(coarseDelta.toFixed(2));
+}
+function analyzePriceTrend(input) {
+  const historicalPoints = sanitizeHistoricalPoints(input.historicalPrices);
+  const currentPrice = Number(input.currentPrice.toFixed(2));
+  if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
+    return {
+      recommendation: "neutral",
+      confidence: 0,
+      reason: "Current price is invalid for trend analysis.",
+      currentPrice
+    };
+  }
+  if (historicalPoints.length < 3) {
+    const fallback = fallbackHeuristicForecast(input);
+    return {
+      ...fallback,
+      currentPrice
+    };
+  }
+  const historicalPrices = historicalPoints.map((point) => point.price);
+  const historicalMin = Number(Math.min(...historicalPrices).toFixed(2));
+  const historicalMedian = Number(getMedian(historicalPrices).toFixed(2));
+  const dispersionRatio = calculateDispersionRatio(historicalPrices, historicalMedian);
+  const forecastDelta = estimateForecastDelta(historicalPrices);
+  const position = classifyPricePosition(currentPrice, historicalMin, historicalMedian);
+  let recommendation = "neutral";
+  let reason = "Price is in a typical range compared with observed history.";
+  if (position === "below_min" || position === "near_min" || position === "below_median") {
+    recommendation = "buy_now";
+    reason = "Current price is near the lower end of historical observations.";
+  } else if (position === "far_above_median" || position === "above_median" && typeof forecastDelta === "number" && forecastDelta <= 0) {
+    recommendation = "wait";
+    reason = "Current price is elevated relative to history with potential downside.";
+  }
+  const confidence = computeConfidenceScore({
+    sampleSize: historicalPoints.length,
+    dispersionRatio,
+    usedFallback: false
+  });
+  const trend = typeof forecastDelta !== "number" ? "unknown" : forecastDelta < -2 ? "down" : forecastDelta > 2 ? "up" : "stable";
+  return {
+    recommendation,
+    confidence,
+    reason,
+    currentPrice,
+    historicalMin,
+    historicalMedian,
+    forecastDelta,
+    points: buildTrendChartPoints(historicalPoints, currentPrice),
+    analysis: {
+      trend,
+      confidence,
+      changeAmount: forecastDelta,
+      changePercent: typeof forecastDelta === "number" && currentPrice > 0 ? Number((forecastDelta / currentPrice * 100).toFixed(2)) : void 0,
+      referencePrice: historicalMedian,
+      referenceCurrency: input.currency,
+      note: reason
+    }
+  };
+}
+
+// shared/flights/dealTags.ts
+var PRIMARY_TAG_PRIORITY = [
+  "great_deal",
+  "price_drop",
+  "red_eye_saver",
+  "eco_friendly",
+  "worth_it",
+  "best",
+  "great",
+  "typical",
+  "expensive"
+];
+function getPriceStats(allFlights) {
+  const prices = allFlights.map((f) => f.price.total).filter((p) => Number.isFinite(p) && p > 0);
+  if (!prices.length) return null;
+  return {
+    prices,
+    median: getMedian(prices),
+    min: Math.min(...prices)
+  };
+}
+function isRedEyeDeparture(flight) {
+  const localIso = flight.outbound.segments[0]?.departure.localTime;
+  if (!localIso) return false;
+  const hour = new Date(localIso).getHours();
+  return hour >= 22 || hour < 5;
+}
+function computeRelativePricePosition(flight, allFlights) {
+  const stats = getPriceStats(allFlights);
+  if (!stats) {
+    return { ratioToMedian: 1, savingsVsMedian: 0, isCheapest: false };
+  }
+  const ratioToMedian = flight.price.total / stats.median;
+  const savingsVsMedian = (stats.median - flight.price.total) / stats.median;
+  return {
+    ratioToMedian,
+    savingsVsMedian,
+    isCheapest: flight.price.total <= stats.min
+  };
+}
+function isEcoFriendlyHeuristic(flight, allFlights) {
+  const durations = allFlights.map((f) => f.outbound.totalDurationMinutes).filter((d) => Number.isFinite(d) && d > 0);
+  const medianDuration = durations.length ? getMedian(durations) : flight.outbound.totalDurationMinutes;
+  const isReasonablyEfficientDuration = flight.outbound.totalDurationMinutes <= medianDuration * 1.1;
+  return flight.totalStops <= 1 && !flight.isSelfTransfer && isReasonablyEfficientDuration;
+}
+function getCompatibilityTag(flight, allFlights) {
+  const stats = getPriceStats(allFlights);
+  if (!stats) return "typical";
+  if (flight.price.total <= stats.min) return "best";
+  if (flight.price.total <= stats.median * 0.85) return "great";
+  if (flight.price.total <= stats.median * 1.15) return "typical";
+  return "expensive";
+}
+function hasSupportedPriceDropSignal(flight, context) {
+  const series = context?.historicalSeriesByFlightId?.[flight.id];
+  const simplePoint = context?.historicalPriceByFlightId?.[flight.id];
+  if (!series && !simplePoint) return false;
+  const historicalPrices = series ? series : [{ price: simplePoint.previousTotal, observedAt: simplePoint.observedAt }];
+  const result = analyzePriceTrend({
+    currentPrice: flight.price.total,
+    currency: flight.price.currency,
+    historicalPrices
+  });
+  const isBuySignal = result.recommendation === "buy_now";
+  const isHistoricalDrop = result.currentPrice < (result.historicalMedian ?? result.currentPrice);
+  if (!series && simplePoint) {
+    const dropRatio = (simplePoint.previousTotal - flight.price.total) / simplePoint.previousTotal;
+    const confidence = simplePoint.confidence ?? 0.5;
+    return dropRatio >= 0.05 && confidence >= 0.5;
+  }
+  return isBuySignal && isHistoricalDrop && result.confidence >= 0.4;
+}
+function hasWorthItSignal(flight, allFlights, context) {
+  if (!context?.layoverAnalysisSupported) return false;
+  const analysis = analyzeLayoverWorthIt(flight, allFlights);
+  return analysis.isWorthIt;
+}
+function getDealTags(flight, allFlights, context) {
+  const tags = [];
+  const { savingsVsMedian } = computeRelativePricePosition(flight, allFlights);
+  if (savingsVsMedian >= 0.18) {
+    tags.push("great_deal");
+  }
+  if (isEcoFriendlyHeuristic(flight, allFlights)) {
+    tags.push("eco_friendly");
+  }
+  if (hasSupportedPriceDropSignal(flight, context)) {
+    tags.push("price_drop");
+  }
+  if (isRedEyeDeparture(flight) && savingsVsMedian >= 0.12) {
+    tags.push("red_eye_saver");
+  }
+  if (hasWorthItSignal(flight, allFlights, context)) {
+    tags.push("worth_it");
+  }
+  tags.push(getCompatibilityTag(flight, allFlights));
+  return [...new Set(tags)];
+}
+function getPrimaryDealTag(tags) {
+  for (const tag of PRIMARY_TAG_PRIORITY) {
+    if (tags.includes(tag)) return tag;
+  }
+  return "typical";
+}
+
+// shared/flights/flightScoring.ts
+function getDepartureHourScore(localIso) {
+  if (!localIso) return 0.6;
+  const date = new Date(localIso);
+  const hour = date.getHours();
+  if (hour >= 7 && hour <= 11) return 1;
+  if (hour >= 12 && hour <= 17) return 0.9;
+  if (hour >= 18 && hour <= 21) return 0.75;
+  if (hour >= 5 && hour < 7) return 0.65;
+  return 0.35;
+}
+function getAirlineScore(flight) {
+  const airline = (flight.validatingAirline || flight.outbound.segments[0]?.airline || "").toUpperCase();
+  const preferred = /* @__PURE__ */ new Set(["SQ", "TG", "MH", "CX", "QR", "EK", "JL", "NH"]);
+  const acceptable = /* @__PURE__ */ new Set(["FD", "AK", "TR", "VZ", "SL", "OD", "PR", "VN"]);
+  if (preferred.has(airline)) return 0.95;
+  if (acceptable.has(airline)) return 0.75;
+  if (airline) return 0.6;
+  return 0.5;
+}
+function getStopsScore(stops) {
+  if (stops <= 0) return 1;
+  if (stops === 1) return 0.75;
+  if (stops === 2) return 0.45;
+  return 0.2;
+}
+function getLayoverPenalty(layovers) {
+  if (!layovers.length) return 0;
+  let penalty = 0;
+  for (const layover of layovers) {
+    if (layover.riskLevel === "high") penalty += 0.55;
+    else if (layover.riskLevel === "medium") penalty += 0.25;
+    if (layover.isSelfTransfer) penalty += 0.15;
+    if (layover.requiresTerminalChange) penalty += 0.1;
+    if (layover.requiresAirportChange) penalty += 0.4;
+  }
+  return Math.min(0.9, penalty);
+}
+function getRiskScore(flight) {
+  const outboundPenalty = getLayoverPenalty(flight.outbound.layovers);
+  const returnPenalty = flight.return ? getLayoverPenalty(flight.return.layovers) : 0;
+  const totalPenalty = Math.min(0.95, outboundPenalty + returnPenalty);
+  let score = 1 - totalPenalty;
+  if (flight.isSelfTransfer) score -= 0.08;
+  if (flight.mixedCabin) score -= 0.05;
+  return clamp01(score);
+}
+function getBaggageScore(flight) {
+  if (flight.baggageIncluded === true) return 1;
+  if (flight.baggageIncluded === false) return 0.55;
+  return 0.7;
+}
+function calculateSmartMixScore(flight, allFlights, customWeights = {}) {
+  const weights = { ...DEFAULT_WEIGHTS, ...customWeights };
+  const prices = allFlights.map((f) => f.price.total);
+  const durations = allFlights.map((f) => f.outbound.totalDurationMinutes);
+  const priceScore = normalizeLowerIsBetter(flight.price.total, prices);
+  const durationScore = normalizeLowerIsBetter(
+    flight.outbound.totalDurationMinutes,
+    durations
+  );
+  const stopsScore = getStopsScore(flight.totalStops);
+  const timeScore = getDepartureHourScore(flight.outbound.segments[0]?.departure.localTime);
+  const airlineScore = getAirlineScore(flight);
+  const riskScore = getRiskScore(flight);
+  const baggageScore = getBaggageScore(flight);
+  const weighted = priceScore * weights.price + durationScore * weights.duration + stopsScore * weights.stops + timeScore * weights.departureTime + airlineScore * weights.airline + riskScore * weights.risk + baggageScore * weights.baggage;
+  const totalWeight = weights.price + weights.duration + weights.stops + weights.departureTime + weights.airline + weights.risk + weights.baggage;
+  const finalScore = totalWeight > 0 ? weighted / totalWeight : weighted;
+  const tags = getDealTags(flight, allFlights);
+  return {
+    ...flight,
+    score: Number(finalScore.toFixed(4)),
+    priceScore: Number(priceScore.toFixed(4)),
+    durationScore: Number(durationScore.toFixed(4)),
+    stopsScore: Number(stopsScore.toFixed(4)),
+    timeScore: Number(timeScore.toFixed(4)),
+    airlineScore: Number(airlineScore.toFixed(4)),
+    riskScore: Number(riskScore.toFixed(4)),
+    baggageScore: Number(baggageScore.toFixed(4)),
+    dealTag: getPrimaryDealTag(tags)
+  };
+}
+function scoreFlights(flights, customWeights = {}) {
+  return flights.map((flight) => calculateSmartMixScore(flight, flights, customWeights)).sort((a, b) => b.score - a.score);
+}
+
+// shared/flights/flightSorting.ts
+var BEST_VALUE_PRICE_WEIGHT = 0.6;
+var BEST_VALUE_DURATION_WEIGHT = 0.4;
+function sortFlights(flights, sortBy) {
+  if (!Array.isArray(flights) || flights.length <= 1) return [...flights ?? []];
+  switch (sortBy) {
+    case "smartMix":
+      return sortBySmartMix(flights);
+    case "cheapest":
+      return sortByNumeric(flights, (flight) => flight.price.total, "asc");
+    case "fastest":
+      return sortByNumeric(flights, getTotalTripMinutes, "asc");
+    case "earliest":
+      return sortByNumeric(flights, getFirstDepartureSortValue, "asc");
+    case "latest":
+      return sortByNumeric(flights, getFirstDepartureSortValue, "desc");
+    case "bestValue":
+      return sortByBestValue(flights);
+    default:
+      return [...flights];
+  }
+}
+function getTotalTripMinutes(flight) {
+  const outbound = toSafeNonNegativeNumber(flight.outbound.totalDurationMinutes);
+  const inbound = toSafeNonNegativeNumber(flight.return?.totalDurationMinutes ?? 0);
+  return outbound + inbound;
+}
+function getFirstDepartureSortValue(flight) {
+  return getIsoSortValue(flight.outbound.segments[0]?.departure.localTime);
+}
+function sortByNumeric(flights, selector, direction = "asc") {
+  return flights.map((flight, index) => ({ flight, index })).sort((a, b) => {
+    const rawA = selector(a.flight);
+    const rawB = selector(b.flight);
+    const aValid = Number.isFinite(rawA);
+    const bValid = Number.isFinite(rawB);
+    if (!aValid && !bValid) return a.index - b.index;
+    if (!aValid) return 1;
+    if (!bValid) return -1;
+    const delta = direction === "asc" ? rawA - rawB : rawB - rawA;
+    if (delta !== 0) return delta;
+    return a.index - b.index;
+  }).map((entry) => entry.flight);
+}
+function sortBySmartMix(flights) {
+  const hasAnyScore = flights.some(
+    (flight) => typeof flight.score === "number" && Number.isFinite(flight.score)
+  );
+  if (!hasAnyScore) return [...flights];
+  return sortByNumeric(
+    flights,
+    (flight) => typeof flight.score === "number" && Number.isFinite(flight.score) ? flight.score : Number.NaN,
+    "desc"
+  );
+}
+function sortByBestValue(flights) {
+  if (flights.length <= 1) return [...flights];
+  const validPrices = flights.map((flight) => flight.price.total).filter((value) => Number.isFinite(value));
+  const validDurations = flights.map(getTotalTripMinutes).filter((value) => Number.isFinite(value));
+  if (!validPrices.length || !validDurations.length) {
+    return [...flights];
+  }
+  const minPrice = Math.min(...validPrices);
+  const maxPrice = Math.max(...validPrices);
+  const minDuration = Math.min(...validDurations);
+  const maxDuration = Math.max(...validDurations);
+  return sortByNumeric(
+    flights,
+    (flight) => {
+      const price = flight.price.total;
+      const duration = getTotalTripMinutes(flight);
+      if (!Number.isFinite(price) || !Number.isFinite(duration)) {
+        return Number.NaN;
+      }
+      const normalizedPrice = normalizeAscending(price, minPrice, maxPrice);
+      const normalizedDuration = normalizeAscending(
+        duration,
+        minDuration,
+        maxDuration
+      );
+      return normalizedPrice * BEST_VALUE_PRICE_WEIGHT + normalizedDuration * BEST_VALUE_DURATION_WEIGHT;
+    },
+    "asc"
+  );
+}
+function normalizeAscending(value, min, max) {
+  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max)) {
+    return Number.NaN;
+  }
+  if (max === min) return 0;
+  return (value - min) / (max - min);
+}
+function getIsoSortValue(localIso) {
+  if (!localIso) return Number.NaN;
+  const match = localIso.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+  );
+  if (!match) return Number.NaN;
+  const [, year, month, day, hour, minute] = match;
+  return Number(`${year}${month}${day}${hour}${minute}`);
+}
+function toSafeNonNegativeNumber(value) {
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return value;
+}
+
+// server/_core/amadeus.ts
+import Amadeus from "amadeus";
+var client = null;
+var initFailed = false;
+function getClient() {
+  if (initFailed) return null;
+  if (client) return client;
+  const clientId = process.env.AMADEUS_CLIENT_ID;
+  const clientSecret = process.env.AMADEUS_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    console.warn("[Amadeus] Credentials not configured, skipping");
+    initFailed = true;
+    return null;
+  }
+  try {
+    client = new Amadeus({
+      clientId,
+      clientSecret,
+      hostname: process.env.AMADEUS_HOSTNAME || "test"
+    });
+    console.log("[Amadeus] Client initialized successfully");
+    return client;
+  } catch (err) {
+    console.error("[Amadeus] Init failed:", err);
+    initFailed = true;
+    return null;
+  }
+}
+var cache = /* @__PURE__ */ new Map();
+var CACHE_TTL = 60 * 60 * 1e3;
+async function fetchAmadeusCalendarPrices(origin, destination, month, currency = "USD") {
+  const amadeus = getClient();
+  if (!amadeus) return {};
+  const cacheKey = `${origin}-${destination}-${month}-${currency}`;
+  const cached2 = cache.get(cacheKey);
+  if (cached2 && Date.now() - cached2.ts < CACHE_TTL) {
+    console.log(`[Amadeus] Cache hit: ${cacheKey}`);
+    return cached2.data;
+  }
+  try {
+    const [year, mon] = month.split("-").map(Number);
+    const daysInMonth = new Date(year, mon, 0).getDate();
+    const sampleDays = [5, 15, Math.min(25, daysInMonth)];
+    const sampleDates = sampleDays.filter((d) => d <= daysInMonth).map(
+      (d) => `${year}-${String(mon).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+    );
+    const results = await Promise.allSettled(
+      sampleDates.map(async (departureDate) => {
+        try {
+          const response = await amadeus.shopping.flightOffersSearch.get({
+            originLocationCode: origin,
+            destinationLocationCode: destination,
+            departureDate,
+            adults: 1,
+            currencyCode: currency.toUpperCase(),
+            nonStop: false,
+            max: 3
+          });
+          if (response?.data?.length > 0) {
+            const offer = response.data[0];
+            const price = parseFloat(offer.price?.total || "0");
+            const airline = offer.validatingAirlineCodes?.[0] || "";
+            const segments = offer.itineraries?.[0]?.segments || [];
+            const transfers = Math.max(0, segments.length - 1);
+            return {
+              date: departureDate,
+              price,
+              airline,
+              transfers,
+              currencyCode: offer.price?.currency || currency.toUpperCase()
+            };
+          }
+          return null;
+        } catch (err) {
+          if (err?.response?.statusCode !== 400) {
+            console.warn(
+              `[Amadeus] ${departureDate}:`,
+              err?.response?.result?.errors?.[0]?.detail || err.message
+            );
+          }
+          return null;
+        }
+      })
+    );
+    const samplePrices = [];
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value && r.value.price > 0) {
+        samplePrices.push(r.value);
+      }
+    }
+    if (samplePrices.length === 0) {
+      console.log(`[Amadeus] No prices found for ${origin}\u2192${destination} (${month})`);
+      cache.set(cacheKey, { data: {}, ts: Date.now() });
+      return {};
+    }
+    const result = {};
+    for (const sp of samplePrices) {
+      result[sp.date] = {
+        price: sp.price,
+        origin,
+        destination,
+        airline: sp.airline,
+        departure_at: `${sp.date}T00:00:00`,
+        transfers: sp.transfers,
+        is_amadeus: true,
+        is_estimated_amadeus: false
+      };
+    }
+    for (const sp of samplePrices) {
+      const spDate = /* @__PURE__ */ new Date(`${sp.date}T00:00:00`);
+      for (let offset = -3; offset <= 3; offset++) {
+        if (offset === 0) continue;
+        const nearby = new Date(spDate);
+        nearby.setDate(nearby.getDate() + offset);
+        if (nearby.getMonth() + 1 !== mon || nearby.getFullYear() !== year) continue;
+        const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(
+          nearby.getDate()
+        ).padStart(2, "0")}`;
+        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
+        const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
+        result[nearbyKey] = {
+          price: Math.round(sp.price * variance * 100) / 100,
+          origin,
+          destination,
+          airline: sp.airline,
+          departure_at: `${nearbyKey}T00:00:00`,
+          transfers: sp.transfers,
+          is_amadeus: true,
+          is_estimated_amadeus: true
+        };
+      }
+    }
+    const realCount = samplePrices.length;
+    const totalCount = Object.keys(result).length;
+    console.log(
+      `[Amadeus] ${origin}\u2192${destination} (${month}): ${realCount} real + ${totalCount - realCount} interpolated = ${totalCount} prices`
+    );
+    cache.set(cacheKey, { data: result, ts: Date.now() });
+    return result;
+  } catch (error) {
+    console.error(
+      "[Amadeus] Fetch error:",
+      error?.response?.result?.errors?.[0]?.detail || error.message
+    );
+    return {};
+  }
+}
+function toAmadeusTravelClass(cabinClass) {
+  if (!cabinClass) return void 0;
+  switch (cabinClass) {
+    case "economy":
+      return "ECONOMY";
+    case "premium_economy":
+      return "PREMIUM_ECONOMY";
+    case "business":
+      return "BUSINESS";
+    case "first":
+      return "FIRST";
+    default:
+      return void 0;
+  }
+}
+async function searchAmadeusFlightOffers(params) {
+  const amadeus = getClient();
+  if (!amadeus) return [];
+  try {
+    const request = {
+      originLocationCode: params.origin,
+      destinationLocationCode: params.destination,
+      departureDate: params.departDate,
+      adults: params.adults || 1,
+      children: params.children || 0,
+      infants: params.infants || 0,
+      currencyCode: (params.currency || "USD").toUpperCase(),
+      nonStop: params.nonStopOnly ?? false,
+      max: 20
+    };
+    if (params.tripType === "roundtrip" && params.returnDate) {
+      request.returnDate = params.returnDate;
+    }
+    const travelClass = toAmadeusTravelClass(params.cabinClass);
+    if (travelClass) {
+      request.travelClass = travelClass;
+    }
+    const response = await amadeus.shopping.flightOffersSearch.get(request);
+    return Array.isArray(response?.data) ? response.data : [];
+  } catch (error) {
+    console.error(
+      "[Amadeus] Flight offers error:",
+      error?.response?.result?.errors?.[0]?.detail || error.message
+    );
+    return [];
+  }
+}
+
+// server/flights/adapters/amadeus.ts
+import { randomUUID } from "node:crypto";
+
+// shared/flights/airportMct.ts
+var DEFAULT_MCT = {
+  domestic: 45,
+  international: 90,
+  terminalChange: 45,
+  airportChange: 180,
+  immigrationBuffer: 30
+};
+var AIRPORT_MCT_CONFIG = {
+  BKK: { domestic: 45, international: 110, terminalChange: 75, airportChange: 180, immigrationBuffer: 45 },
+  DMK: { domestic: 35, international: 85, terminalChange: 60, airportChange: 180, immigrationBuffer: 30 },
+  SIN: { domestic: 30, international: 55, terminalChange: 35, airportChange: 180, immigrationBuffer: 25 },
+  KUL: { domestic: 40, international: 80, terminalChange: 50, airportChange: 180, immigrationBuffer: 35 },
+  SGN: { domestic: 40, international: 90, terminalChange: 60, airportChange: 180, immigrationBuffer: 40 },
+  HAN: { domestic: 45, international: 95, terminalChange: 65, airportChange: 180, immigrationBuffer: 45 },
+  MNL: { domestic: 50, international: 100, terminalChange: 70, airportChange: 180, immigrationBuffer: 50 },
+  HKT: { domestic: 35, international: 70, terminalChange: 45, airportChange: 180, immigrationBuffer: 30 },
+  CNX: { domestic: 30, international: 75, terminalChange: 50, airportChange: 180, immigrationBuffer: 35 },
+  RGN: { domestic: 40, international: 90, terminalChange: 60, airportChange: 180, immigrationBuffer: 45 },
+  LHR: { domestic: 50, international: 120, terminalChange: 110, airportChange: 210, immigrationBuffer: 60 },
+  DXB: { domestic: 45, international: 95, terminalChange: 70, airportChange: 180, immigrationBuffer: 40 }
+};
+function getAirportMctConfig(airportCode) {
+  return AIRPORT_MCT_CONFIG[airportCode.toUpperCase()] ?? DEFAULT_MCT;
+}
+function getMinimumConnectionTime(params) {
+  const {
+    airportCode,
+    isInternational = true,
+    hasTerminalChange = false,
+    hasAirportChange = false,
+    isSelfTransfer = false
+  } = params;
+  const config = getAirportMctConfig(airportCode);
+  let mct = isInternational ? config.international : config.domestic;
+  if (hasTerminalChange) mct += config.terminalChange;
+  if (hasAirportChange) mct += config.airportChange;
+  if (isSelfTransfer) mct += config.immigrationBuffer + 30;
+  return Math.max(mct, 45);
+}
+function classifyLayoverRisk(params) {
+  const required = getMinimumConnectionTime(params);
+  const actual = params.layoverMinutes;
+  if (actual < required) return "high";
+  if (actual < required + 45) return "medium";
+  return "low";
+}
+
+// server/flights/adapters/amadeus.ts
+function toAirport(iataCode, terminal) {
+  return {
+    iataCode: iataCode || "",
+    name: iataCode || "",
+    city: iataCode || "",
+    country: "",
+    terminal
+  };
+}
+function diffMinutes(aIso, bIso) {
+  if (!aIso || !bIso) return 0;
+  const a = (/* @__PURE__ */ new Date(aIso + "Z")).getTime();
+  const b = (/* @__PURE__ */ new Date(bIso + "Z")).getTime();
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+  return Math.max(0, Math.round((b - a) / 6e4));
+}
+function isoDurationToMinutes(input) {
+  if (!input) return 0;
+  const m = input.match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!m) return 0;
+  const days = Number(m[1] || 0);
+  const hours = Number(m[2] || 0);
+  const mins = Number(m[3] || 0);
+  return days * 1440 + hours * 60 + mins;
+}
+function toCabinClass(value) {
+  const normalized = (value || "").toUpperCase();
+  switch (normalized) {
+    case "ECONOMY":
+      return "economy";
+    case "PREMIUM_ECONOMY":
+      return "premium";
+    case "BUSINESS":
+      return "business";
+    case "FIRST":
+      return "first";
+    default:
+      return "economy";
+  }
+}
+function detectMixedCabin(travelerPricings) {
+  const firstTraveler = Array.isArray(travelerPricings) ? travelerPricings[0] : null;
+  const fareDetails = firstTraveler?.fareDetailsBySegment;
+  if (!Array.isArray(fareDetails) || fareDetails.length === 0) return false;
+  const cabins = new Set(
+    fareDetails.map((f) => String(f?.cabin || "").toUpperCase()).filter(Boolean)
+  );
+  return cabins.size > 1;
+}
+function getFareDetailForSegment(travelerPricings, segmentId) {
+  const firstTraveler = Array.isArray(travelerPricings) ? travelerPricings[0] : null;
+  const fareDetails = firstTraveler?.fareDetailsBySegment;
+  if (!Array.isArray(fareDetails)) return void 0;
+  return fareDetails.find((f) => f.segmentId === segmentId);
+}
+function buildLeg(itinerary, travelerPricings) {
+  const rawSegments = Array.isArray(itinerary?.segments) ? itinerary.segments : [];
+  const segments = rawSegments.map((seg, index) => {
+    const fareDetail = getFareDetailForSegment(travelerPricings, seg.id);
+    return {
+      id: seg.id || `${seg.carrierCode || "XX"}-${seg.number || index}`,
+      departure: {
+        airport: toAirport(seg.departure?.iataCode || "", seg.departure?.terminal),
+        localTime: seg.departure?.at || ""
+      },
+      arrival: {
+        airport: toAirport(seg.arrival?.iataCode || "", seg.arrival?.terminal),
+        localTime: seg.arrival?.at || ""
+      },
+      airline: seg.carrierCode || "",
+      marketingAirline: seg.carrierCode || "",
+      operatingAirline: seg.operating?.carrierCode || seg.carrierCode || "",
+      flightNumber: seg.number || "",
+      aircraft: seg.aircraft?.code || "",
+      durationMinutes: isoDurationToMinutes(seg.duration),
+      cabinClass: toCabinClass(fareDetail?.cabin)
+    };
+  });
+  const layovers = [];
+  for (let i = 0; i < segments.length - 1; i += 1) {
+    const current = segments[i];
+    const next = segments[i + 1];
+    const layoverMinutes = diffMinutes(
+      current.arrival.localTime,
+      next.departure.localTime
+    );
+    const sameAirport = current.arrival.airport.iataCode === next.departure.airport.iataCode;
+    const requiresTerminalChange = Boolean(current.arrival.airport.terminal) && Boolean(next.departure.airport.terminal) && current.arrival.airport.terminal !== next.departure.airport.terminal;
+    const requiresAirportChange = !sameAirport;
+    const riskLevel = classifyLayoverRisk({
+      airportCode: next.departure.airport.iataCode,
+      layoverMinutes,
+      isInternational: true,
+      hasTerminalChange: requiresTerminalChange,
+      hasAirportChange: requiresAirportChange,
+      isSelfTransfer: false
+    });
+    let warning;
+    if (requiresAirportChange) {
+      warning = "Airport change connection";
+    } else if (layoverMinutes < 90) {
+      warning = "Tight connection";
+    }
+    layovers.push({
+      airport: next.departure.airport,
+      durationMinutes: layoverMinutes,
+      isSelfTransfer: false,
+      requiresTerminalChange,
+      requiresAirportChange,
+      riskLevel,
+      warning
+    });
+  }
+  return {
+    segments,
+    totalDurationMinutes: isoDurationToMinutes(itinerary?.duration),
+    layovers
+  };
+}
+function extractBaggageIncluded(travelerPricings) {
+  if (!Array.isArray(travelerPricings) || travelerPricings.length === 0) {
+    return void 0;
+  }
+  for (const traveler of travelerPricings) {
+    const details = traveler?.fareDetailsBySegment;
+    if (!Array.isArray(details)) continue;
+    for (const detail of details) {
+      const qty = detail?.includedCheckedBags?.quantity;
+      if (typeof qty === "number") {
+        if (qty > 0) return true;
+      }
+    }
+  }
+  return false;
+}
+function collectWarnings(outbound, inbound) {
+  const warnings = [
+    ...outbound.layovers.map((l) => l.warning).filter((value) => Boolean(value)),
+    ...inbound?.layovers.map((l) => l.warning).filter((value) => Boolean(value)) || []
+  ];
+  return [...new Set(warnings)];
+}
+function normalizeAmadeusOffer(offer) {
+  const outbound = buildLeg(offer.itineraries?.[0], offer.travelerPricings);
+  const inbound = offer.itineraries?.[1] ? buildLeg(offer.itineraries[1], offer.travelerPricings) : void 0;
+  const baggageIncluded = extractBaggageIncluded(offer.travelerPricings);
+  const total = Number(offer.price?.total || 0);
+  const base = Number(offer.price?.base || 0);
+  return {
+    id: offer.id || randomUUID(),
+    type: inbound ? "roundtrip" : "oneway",
+    outbound,
+    return: inbound,
+    price: {
+      total,
+      currency: offer.price?.currency || "USD",
+      baseFare: Number.isFinite(base) ? base : void 0,
+      taxes: Number.isFinite(total) && Number.isFinite(base) ? total - base : void 0
+    },
+    totalStops: Math.max(0, outbound.segments.length - 1) + (inbound ? Math.max(0, inbound.segments.length - 1) : 0),
+    warnings: collectWarnings(outbound, inbound),
+    isSelfTransfer: false,
+    bookingProvider: "amadeus",
+    sourceType: "amadeus",
+    validatingAirline: offer.validatingAirlineCodes?.[0],
+    baggageIncluded,
+    refundable: offer.pricingOptions?.refundableFare ?? void 0,
+    mixedCabin: detectMixedCabin(offer.travelerPricings),
+    lastUpdatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+function normalizeAmadeusOffers(offers) {
+  if (!Array.isArray(offers)) return [];
+  return offers.map(normalizeAmadeusOffer).filter((flight) => flight.price.total > 0);
+}
+
+// server/flights/searchFlights.ts
+var searchCache = /* @__PURE__ */ new Map();
+var inflightSearches = /* @__PURE__ */ new Map();
+var CACHE_TTL_MS = 45e3;
+var MAX_OFFERS_TO_SCORE = 80;
+var MAX_RESULTS = 30;
+var MAX_BUCKET_RESULTS = 15;
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+function parseSearchContext(raw) {
+  const params = normalizeSearchParams(raw);
+  const currency = typeof raw.currency === "string" && raw.currency.trim() ? raw.currency.toUpperCase() : "USD";
+  const nonStopOnly = raw.nonStopOnly === true || raw.nonStopOnly === "true" || raw.nonStopOnly === "1";
+  return { params, currency, nonStopOnly };
+}
+async function buildFlightSearchResult(raw) {
+  const startedAt = Date.now();
+  const { params, currency, nonStopOnly } = parseSearchContext(raw);
+  if (!params.origin || !params.destination || !params.departDate) {
+    return {
+      success: false,
+      error: "Missing required search params",
+      flights: [],
+      best: [],
+      cheapest: [],
+      fastest: [],
+      meta: {
+        provider: "amadeus",
+        count: 0,
+        searchedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        durationMs: Date.now() - startedAt
+      }
+    };
+  }
+  const offers = await searchAmadeusFlightOffers({
+    ...params,
+    currency,
+    nonStopOnly
+  });
+  const normalized = normalizeAmadeusOffers(offers);
+  const scoreLimit = clamp(Number(process.env.FLIGHT_SEARCH_MAX_OFFERS || MAX_OFFERS_TO_SCORE), 20, 120);
+  const normalizedLimited = normalized.slice(0, scoreLimit);
+  let droppedInvalid = 0;
+  const validFlights = normalizedLimited.filter((flight) => {
+    const parsed = FlightSchema.safeParse(flight);
+    if (!parsed.success) {
+      droppedInvalid += 1;
+      return false;
+    }
+    return true;
+  });
+  const scoredFlights = scoreFlights(validFlights);
+  const bestFlights = sortFlights(scoredFlights, "smartMix");
+  const cheapestFlights = sortFlights(scoredFlights, "cheapest");
+  const fastestFlights = sortFlights(scoredFlights, "fastest");
+  const bestLimited = bestFlights.slice(0, MAX_RESULTS);
+  const durationMs = Date.now() - startedAt;
+  return {
+    success: true,
+    flights: bestLimited,
+    best: bestLimited,
+    cheapest: cheapestFlights.slice(0, MAX_BUCKET_RESULTS),
+    fastest: fastestFlights.slice(0, MAX_BUCKET_RESULTS),
+    meta: {
+      provider: "amadeus",
+      count: bestLimited.length,
+      returnedCount: bestLimited.length,
+      rawOfferCount: Array.isArray(offers) ? offers.length : 0,
+      normalizedOfferCount: normalized.length,
+      consideredOfferCount: normalizedLimited.length,
+      validOfferCount: validFlights.length,
+      droppedInvalidOfferCount: droppedInvalid,
+      searchedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      durationMs,
+      currency,
+      params: {
+        ...params,
+        nonStopOnly
+      }
+    }
+  };
+}
+async function searchFlights(raw) {
+  const { params, currency, nonStopOnly } = parseSearchContext(raw);
+  const cacheKey = JSON.stringify({ ...params, currency, nonStopOnly });
+  const now = Date.now();
+  const cached2 = searchCache.get(cacheKey);
+  if (cached2 && cached2.expiresAt > now) {
+    return {
+      ...cached2.value,
+      meta: {
+        ...cached2.value.meta,
+        cacheHit: true
+      }
+    };
+  }
+  const running = inflightSearches.get(cacheKey);
+  if (running) return running;
+  const task = buildFlightSearchResult(raw).then((result) => {
+    searchCache.set(cacheKey, { value: result, expiresAt: Date.now() + CACHE_TTL_MS });
+    return {
+      ...result,
+      meta: {
+        ...result.meta,
+        cacheHit: false
+      }
+    };
+  }).finally(() => {
+    inflightSearches.delete(cacheKey);
+    if (searchCache.size > 200) {
+      const oldestKey = searchCache.keys().next().value;
+      if (oldestKey) searchCache.delete(oldestKey);
+    }
+  });
+  inflightSearches.set(cacheKey, task);
+  return task;
+}
+
 // server/routers.ts
+var flightSearchInput = z4.object({
+  origin: z4.string().min(3).max(3),
+  destination: z4.string().min(3).max(3),
+  departDate: z4.string().min(10).max(10),
+  returnDate: z4.string().optional(),
+  tripType: z4.enum(["oneway", "roundtrip"]).optional(),
+  adults: z4.coerce.number().int().min(1).max(9).optional(),
+  children: z4.coerce.number().int().min(0).max(8).optional(),
+  infants: z4.coerce.number().int().min(0).max(4).optional(),
+  travelClass: z4.string().optional(),
+  currency: z4.string().min(3).max(3).optional(),
+  nonStopOnly: z4.coerce.boolean().optional()
+});
 var flightsRouter = router({
-  airportSearch: publicProcedure.input(z3.object({ query: z3.string().min(1).max(50) })).query(async ({ input }) => {
+  airportSearch: publicProcedure.input(z4.object({ query: z4.string().min(1).max(50) })).query(async ({ input }) => {
     const q = input.query.trim();
     if (q.length < 2) return [];
     return await searchAmadeusLocations(q);
+  }),
+  searchResults: publicProcedure.input(flightSearchInput).query(async ({ input }) => {
+    return await searchFlights(input);
   })
 });
 var appRouter = router({
-  // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   destination: destinationRouter,
   flights: flightsRouter,
@@ -1230,24 +2550,18 @@ var appRouter = router({
   }),
   transport: router({
     search: publicProcedure.input(
-      z3.object({
-        from: z3.string(),
-        to: z3.string(),
-        date: z3.string()
+      z4.object({
+        from: z4.string(),
+        to: z4.string(),
+        date: z4.string()
       })
     ).query(async ({ input }) => {
       return await searchTransport(input);
     }),
-    popularRoutes: publicProcedure.input(z3.object({ destination: z3.string() })).query(({ input }) => {
+    popularRoutes: publicProcedure.input(z4.object({ destination: z4.string() })).query(({ input }) => {
       return getPopularRoutes(input.destination);
     })
   })
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
 });
 
 // server/_core/context.ts
@@ -1429,13 +2743,13 @@ var TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID ?? "";
 var KLOOK_ID = process.env.KLOOK_PARTNER_ID ?? "";
 var EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
 var PAGE_SIZE = 20;
-var cache = /* @__PURE__ */ new Map();
+var cache2 = /* @__PURE__ */ new Map();
 var warnedMessages = /* @__PURE__ */ new Set();
 async function cached(key, fn, ttlSeconds) {
-  const hit = cache.get(key);
+  const hit = cache2.get(key);
   if (hit && Date.now() < hit.exp) return hit.val;
   const val = await fn();
-  cache.set(key, { val, exp: Date.now() + ttlSeconds * 1e3 });
+  cache2.set(key, { val, exp: Date.now() + ttlSeconds * 1e3 });
   return val;
 }
 function safeWarnOnce(message) {
@@ -2068,42 +3382,313 @@ async function searchFlightOffers(origin, destination, departureDate, opts) {
     ...opts?.nonStop ? { nonStop: "true" } : {}
   });
 }
+async function searchCheapestDates(origin, destination) {
+  return amFetch("/v1/shopping/flight-dates", { origin, destination });
+}
 
-// api/_lib/calendarPrices.ts
-function addPrice(merged, dateStr, price, entry, source = "legacy") {
-  if (!dateStr || price <= 0) return;
+// shared/flights/calendarLogic.ts
+var SOURCE_PRIORITY = {
+  v3: 1,
+  bot: 2,
+  legacy: 3,
+  amadeus: 4
+};
+function getCurrentSource(e) {
+  if (e.is_v3) return "v3";
+  if (e.is_bot_data) return "bot";
+  if (e.is_amadeus) return "amadeus";
+  if (e.is_legacy_tp) return "legacy";
+  return "legacy";
+}
+function addPrice(merged, dateStr, price, entry, source) {
+  if (!dateStr || price <= 0 || !Number.isFinite(price)) return;
   const current = merged[dateStr];
-  const sourcePriority = { v3: 1, bot: 2, legacy: 3, amadeus: 4 };
-  const getCurrentSource = (e) => {
-    if (e.is_v3) return "v3";
-    if (e.is_bot_data) return "bot";
-    if (e.is_amadeus) return "amadeus";
-    return "legacy";
-  };
   const currentSource = current ? getCurrentSource(current) : null;
-  if (!current || sourcePriority[source] < sourcePriority[currentSource]) {
-    merged[dateStr] = {
-      ...entry,
-      price,
-      is_v3: source === "v3",
-      is_bot_data: source === "bot",
-      is_amadeus: source === "amadeus",
-      is_legacy_tp: source === "legacy"
-    };
+  const newEntry = {
+    ...entry,
+    price,
+    is_v3: source === "v3",
+    is_bot_data: source === "bot",
+    is_legacy_tp: source === "legacy",
+    is_amadeus: source === "amadeus"
+  };
+  if (!current || SOURCE_PRIORITY[source] < SOURCE_PRIORITY[currentSource]) {
+    merged[dateStr] = newEntry;
     return;
   }
   if (source === currentSource && price < (current.price ?? Number.POSITIVE_INFINITY)) {
-    merged[dateStr] = {
-      ...entry,
-      price,
-      is_v3: source === "v3",
-      is_bot_data: source === "bot",
-      is_amadeus: source === "amadeus",
-      is_legacy_tp: source === "legacy"
+    merged[dateStr] = newEntry;
+  }
+}
+
+// shared/config/fx.ts
+var FX_RATES = {
+  USD: { THB: 34 },
+  THB: { USD: 1 / 34 }
+};
+
+// shared/utils/store.ts
+import { Redis } from "@upstash/redis";
+var MemoryStore = class {
+  cache = /* @__PURE__ */ new Map();
+  rateLimits = /* @__PURE__ */ new Map();
+  async get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt < Date.now()) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.value;
+  }
+  async set(key, value, ttlSeconds) {
+    const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1e3 : Number.MAX_SAFE_INTEGER;
+    this.cache.set(key, { value, expiresAt });
+  }
+  async delete(key) {
+    this.cache.delete(key);
+  }
+  async increment(key, windowMs) {
+    const now = Date.now();
+    const existing = this.rateLimits.get(key);
+    if (!existing || existing.resetAt <= now) {
+      const entry = { count: 1, resetAt: now + windowMs };
+      this.rateLimits.set(key, entry);
+      return entry;
+    }
+    existing.count++;
+    return existing;
+  }
+};
+var RedisStore = class {
+  client;
+  constructor(url, token) {
+    this.client = new Redis({ url, token });
+  }
+  async get(key) {
+    try {
+      return await this.client.get(key);
+    } catch (e) {
+      console.error("[RedisStore:get] Error:", e);
+      return null;
+    }
+  }
+  async set(key, value, ttlSeconds) {
+    try {
+      if (ttlSeconds) {
+        await this.client.set(key, value, { ex: ttlSeconds });
+      } else {
+        await this.client.set(key, value);
+      }
+    } catch (e) {
+      console.error("[RedisStore:set] Error:", e);
+    }
+  }
+  async delete(key) {
+    try {
+      await this.client.del(key);
+    } catch (e) {
+      console.error("[RedisStore:delete] Error:", e);
+    }
+  }
+  async increment(key, windowMs) {
+    try {
+      const count = await this.client.incr(key);
+      if (count === 1) {
+        await this.client.pexpire(key, windowMs);
+      }
+      const ttl = await this.client.pttl(key);
+      const now = Date.now();
+      return {
+        count,
+        resetAt: now + (ttl > 0 ? ttl : windowMs)
+      };
+    } catch (e) {
+      console.error("[RedisStore:increment] Error:", e);
+      return { count: 1, resetAt: Date.now() + windowMs };
+    }
+  }
+};
+var store = null;
+var IS_PROD = process.env.NODE_ENV === "production" || !!process.env.VERCEL_URL;
+function getStore() {
+  if (store) return store;
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (url && token) {
+    if (IS_PROD) {
+      console.log("[Store] Initializing SharedStore (Production KV/Redis)");
+    } else {
+      console.log("[Store] Initializing SharedStore (Development Shared)");
+    }
+    store = new RedisStore(url, token);
+  } else {
+    if (IS_PROD) {
+      console.warn("[Store] WARNING: Shared Store configuration missing in production! Falling back to process-local MemoryStore (Non-persistent).");
+    } else {
+      console.log("[Store] Initializing MemoryStore (Local Development)");
+    }
+    store = new MemoryStore();
+  }
+  return store;
+}
+
+// shared/utils/liveFx.ts
+var fxCache = /* @__PURE__ */ new Map();
+var CACHE_TTL_SECONDS = 24 * 60 * 60;
+var CACHE_TTL_MS2 = CACHE_TTL_SECONDS * 1e3;
+var pendingRequests = /* @__PURE__ */ new Map();
+async function fetchLiveRate(base, quote) {
+  const url = `https://open.er-api.com/v6/latest/${base.toUpperCase()}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      throw new Error(`FX API responded with status ${res.status}`);
+    }
+    const data = await res.json();
+    if (data.result !== "success" || typeof data.rates !== "object") {
+      throw new Error("Invalid FX API response format");
+    }
+    const rate = data.rates[quote.toUpperCase()];
+    if (typeof rate !== "number" || rate <= 0) {
+      throw new Error(`Invalid rate received for ${quote}`);
+    }
+    return rate;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+async function getLiveFxRate(baseCurrency = "USD", quoteCurrency = "THB") {
+  const base = baseCurrency.toUpperCase();
+  const quote = quoteCurrency.toUpperCase();
+  const storeKey = `cache:fx:${base}-${quote}`;
+  const localKey = `${base}-${quote}`;
+  const staticFallbackRate = FX_RATES[base]?.[quote] ?? 34;
+  if (base === quote) {
+    return {
+      baseCurrency: base,
+      quoteCurrency: quote,
+      rate: 1,
+      source: "fallback_static",
+      asOf: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  const now = Date.now();
+  const l1Cached = fxCache.get(localKey);
+  if (l1Cached && l1Cached.expiresAt > now) {
+    return {
+      baseCurrency: base,
+      quoteCurrency: quote,
+      rate: l1Cached.rate,
+      source: "live",
+      asOf: l1Cached.asOf
+    };
+  }
+  const store2 = getStore();
+  try {
+    const l2Cached = await store2.get(storeKey);
+    if (l2Cached && l2Cached.expiresAt > now) {
+      fxCache.set(localKey, l2Cached);
+      return {
+        baseCurrency: base,
+        quoteCurrency: quote,
+        rate: l2Cached.rate,
+        source: "live",
+        asOf: l2Cached.asOf
+      };
+    }
+  } catch (err) {
+    console.warn(`[LiveFx] Shared store read failed for ${storeKey}`, err);
+  }
+  try {
+    let fetchPromise = pendingRequests.get(localKey);
+    if (!fetchPromise) {
+      fetchPromise = fetchLiveRate(base, quote).finally(() => {
+        pendingRequests.delete(localKey);
+      });
+      pendingRequests.set(localKey, fetchPromise);
+    }
+    const liveRate = await fetchPromise;
+    const isoNow = (/* @__PURE__ */ new Date()).toISOString();
+    const entry = {
+      rate: liveRate,
+      expiresAt: now + CACHE_TTL_MS2,
+      asOf: isoNow
+    };
+    fxCache.set(localKey, entry);
+    store2.set(storeKey, entry, CACHE_TTL_SECONDS).catch((err) => {
+      console.warn(`[LiveFx] Shared store write failed for ${storeKey}`, err);
+    });
+    return {
+      baseCurrency: base,
+      quoteCurrency: quote,
+      rate: liveRate,
+      source: "live",
+      asOf: isoNow
+    };
+  } catch (error) {
+    console.warn(`[LiveFx] Failed to fetch live rate for ${localKey}, falling back`, error);
+    if (l1Cached) {
+      return {
+        baseCurrency: base,
+        quoteCurrency: quote,
+        rate: l1Cached.rate,
+        source: "stale_cache",
+        asOf: l1Cached.asOf
+      };
+    }
+    return {
+      baseCurrency: base,
+      quoteCurrency: quote,
+      rate: staticFallbackRate,
+      source: "fallback_static",
+      asOf: null
     };
   }
 }
-async function fetchAmadeusCalendarPrices(origin, destination, month, currency = "usd") {
+
+// api/_lib/cache.ts
+var l1Cache = /* @__PURE__ */ new Map();
+var CACHE_TTL_SECONDS2 = 30 * 60;
+var CACHE_TTL_MS3 = CACHE_TTL_SECONDS2 * 1e3;
+async function getCached(key) {
+  const now = Date.now();
+  const entry = l1Cache.get(key);
+  if (entry && entry.expiresAt > now) {
+    console.log(`[Cache:L1:HIT] ${key}`);
+    return entry.data;
+  }
+  try {
+    const store2 = getStore();
+    const sharedValue = await store2.get(key);
+    if (sharedValue) {
+      console.log(`[Cache:L2:HIT] ${key}`);
+      l1Cache.set(key, { data: sharedValue, expiresAt: now + CACHE_TTL_MS3 });
+      return sharedValue;
+    }
+    console.log(`[Cache:L2:MISS] ${key}`);
+  } catch (err) {
+    console.error(`[API:Cache] L2 read failed for ${key}:`, err);
+  }
+  return null;
+}
+async function setCache(key, data) {
+  const expiresAt = Date.now() + CACHE_TTL_MS3;
+  l1Cache.set(key, { data, expiresAt });
+  try {
+    const store2 = getStore();
+    await store2.set(key, data, CACHE_TTL_SECONDS2);
+  } catch (err) {
+    console.error(`[API:Cache] L2 write failed for ${key}:`, err);
+  }
+}
+
+// api/_lib/calendarPrices.ts
+async function fetchAmadeusCalendarPrices2(origin, destination, month, currency = "usd") {
   try {
     const [year, mon] = month.split("-").map(Number);
     const daysInMonth = new Date(year, mon, 0).getDate();
@@ -2206,36 +3791,46 @@ async function handleCalendarPrices(req, res, params) {
     res.status(500).json({ error: "API token not configured" });
     return;
   }
-  const { origin, destination, month, currency = "usd" } = params;
-  if (!origin || !destination || !month) {
+  const { month, currency = "usd" } = params;
+  const normalized = normalizeSearchParams(params);
+  const orig = normalized.origin;
+  const dest = normalized.destination;
+  const mo = String(month);
+  const cur = String(currency || "usd");
+  if (!orig || !dest || !mo) {
     res.status(400).json({ error: "Missing required params: origin, destination, month" });
     return;
   }
-  const cur = String(currency || "usd");
-  const orig = String(origin);
-  const dest = String(destination);
-  const mo = String(month);
+  const cacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
+  const cached2 = await getCached(cacheKey);
+  if (cached2) {
+    res.setHeader("X-Cache", "HIT");
+    res.status(200).json(cached2);
+    return;
+  }
   const [yr, mn] = mo.split("-").map(Number);
   const nextDate = new Date(yr, mn, 1);
   const nextMo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
   const tp = (queryParams, base) => fetch(`${base}?${new URLSearchParams({ token, ...queryParams })}`, { signal: AbortSignal.timeout(8e3) }).then((r) => r.ok ? r.json() : null);
   try {
-    const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2] = await Promise.allSettled([
+    const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2, fxQuote] = await Promise.allSettled([
       tp({ origin: orig, destination: dest, departure_at: mo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
       tp({ origin: orig, destination: dest, departure_at: nextMo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
       tp({ origin: orig, destination: dest, month: mo, calendar_type: "departure_date", currency: cur }, "https://api.travelpayouts.com/v1/prices/calendar"),
       tp({ origin: orig, destination: dest, month: mo, currency: cur }, "https://api.travelpayouts.com/v2/prices/month-matrix"),
-      fetchAmadeusCalendarPrices(orig, dest, mo, cur),
-      fetchAmadeusCalendarPrices(orig, dest, nextMo, cur)
+      fetchAmadeusCalendarPrices2(orig, dest, mo, cur),
+      fetchAmadeusCalendarPrices2(orig, dest, nextMo, cur),
+      getLiveFxRate(cur, "THB")
     ]);
     const merged = {};
-    for (const result of [v3Mo1, v3Mo2]) {
-      const arr = result.status === "fulfilled" && result.value?.data;
+    for (const result2 of [v3Mo1, v3Mo2]) {
+      const arr = result2.status === "fulfilled" && result2.value?.data;
       if (Array.isArray(arr)) {
         for (const e of arr) {
           addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
             origin: e.origin || orig,
             destination: e.destination || dest,
+            currency: cur,
             airline: e.airline || "",
             departure_at: e.departure_at,
             return_at: e.return_at || "",
@@ -2253,6 +3848,7 @@ async function handleCalendarPrices(req, res, params) {
         addPrice(merged, dateStr, r.price || 0, {
           origin: r.origin,
           destination: r.destination,
+          currency: cur,
           airline: r.airline_code || r.airline || "",
           departure_at: `${r.date}T00:00:00`,
           transfers: r.transfers || 0,
@@ -2264,6 +3860,7 @@ async function handleCalendarPrices(req, res, params) {
     if (cal && typeof cal === "object" && !Array.isArray(cal)) {
       for (const [dateStr, entry] of Object.entries(cal)) {
         const e = entry;
+        e.currency = cur;
         addPrice(merged, dateStr, e.price || 0, e, "legacy");
       }
     }
@@ -2273,7 +3870,7 @@ async function handleCalendarPrices(req, res, params) {
         addPrice(merged, e.depart_date, e.value || e.price || 0, {
           origin: e.origin || orig,
           destination: e.destination || dest,
-          price: e.value || e.price || 0,
+          currency: cur,
           airline: e.airline || e.gate || "",
           departure_at: e.departure_at || `${e.depart_date}T00:00:00`,
           return_at: e.return_date ? `${e.return_date}T00:00:00` : "",
@@ -2281,19 +3878,30 @@ async function handleCalendarPrices(req, res, params) {
         }, "legacy");
       }
     }
-    for (const result of [amadeusMo1, amadeusMo2]) {
-      const data = result.status === "fulfilled" ? result.value : null;
+    for (const result2 of [amadeusMo1, amadeusMo2]) {
+      const data = result2.status === "fulfilled" ? result2.value : null;
       if (data && typeof data === "object") {
         for (const [dateStr, entry] of Object.entries(data)) {
+          entry.currency = cur;
           addPrice(merged, dateStr, entry.price || 0, entry, "amadeus");
         }
       }
     }
-    res.status(200).json({
+    const fx = fxQuote.status === "fulfilled" ? fxQuote.value : {
+      baseCurrency: cur.toUpperCase(),
+      quoteCurrency: "THB",
+      rate: cur.toUpperCase() === "THB" ? 1 : 34,
+      source: "fallback_static",
+      asOf: null
+    };
+    const result = {
       success: true,
       data: merged,
-      currency: cur
-    });
+      currency: cur,
+      fx
+    };
+    await setCache(cacheKey, result);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Calendar prices error:", error);
     res.status(500).json({ error: "Failed to fetch calendar prices" });
@@ -2301,27 +3909,17 @@ async function handleCalendarPrices(req, res, params) {
 }
 
 // api/_lib/cheapPrices.ts
-var cache2 = /* @__PURE__ */ new Map();
-var CACHE_TTL = 30 * 60 * 1e3;
-function getCached(key) {
-  const entry = cache2.get(key);
-  if (entry && entry.expiresAt > Date.now()) return entry.data;
-  cache2.delete(key);
-  return null;
-}
-function setCache(key, data) {
-  cache2.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
-}
 async function handleCheapPrices(req, res, params) {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
   if (!token) {
     res.status(500).json({ error: "API token not configured" });
     return;
   }
-  const origin = String(params.origin || "RGN");
+  const normalized = normalizeSearchParams(params);
+  const origin = normalized.origin || "RGN";
   const currency = String(params.currency || "thb");
   const cacheKey = `cheap-${origin}-${currency}`;
-  const cached2 = getCached(cacheKey);
+  const cached2 = await getCached(cacheKey);
   if (cached2) {
     res.status(200).json(cached2);
     return;
@@ -2338,7 +3936,9 @@ async function handleCheapPrices(req, res, params) {
     })}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8e3);
+    const fxPromise = getLiveFxRate(currency, "THB");
     const response = await fetch(url, { signal: controller.signal });
+    const fx = await fxPromise;
     clearTimeout(timeoutId);
     if (!response.ok) {
       res.status(502).json({ error: "Upstream API error" });
@@ -2361,8 +3961,8 @@ async function handleCheapPrices(req, res, params) {
         };
       });
     }
-    const result = { success: true, data: mappedData, currency };
-    setCache(cacheKey, result);
+    const result = { success: true, data: mappedData, currency, fx };
+    await setCache(cacheKey, result);
     res.status(200).json(result);
   } catch (error) {
     console.error("Cheap prices error:", error);
@@ -2371,20 +3971,19 @@ async function handleCheapPrices(req, res, params) {
 }
 
 // api/_lib/specialOffers.ts
-var cache3 = /* @__PURE__ */ new Map();
-var CACHE_TTL2 = 60 * 60 * 1e3;
 async function handleSpecialOffers(req, res, params) {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
   if (!token) {
     res.status(500).json({ error: "Missing token" });
     return;
   }
-  const origin = String(params.origin || "RGN");
+  const normalized = normalizeSearchParams(params);
+  const origin = normalized.origin || "RGN";
   const currency = String(params.currency || "thb");
   const cacheKey = `special-offers-${origin}-${currency}`;
-  const cached2 = cache3.get(cacheKey);
-  if (cached2 && cached2.expiresAt > Date.now()) {
-    res.status(200).json(cached2.data);
+  const cached2 = await getCached(cacheKey);
+  if (cached2) {
+    res.status(200).json(cached2.data || cached2);
     return;
   }
   const fetchOffers = async (orig) => {
@@ -2411,7 +4010,7 @@ async function handleSpecialOffers(req, res, params) {
       }
     }
     const result = { success: true, data: offers };
-    cache3.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL2 });
+    await setCache(cacheKey, result);
     res.status(200).json(result);
   } catch (err) {
     console.error(err);
@@ -2432,10 +4031,12 @@ async function handler2(req, res) {
       return handleCheapPrices(req, res, params);
     case "special-offers":
       return handleSpecialOffers(req, res, params);
+    case "search":
+      return res.status(200).json(await searchFlights(params));
     default:
       return res.status(400).json({
         error: "Invalid type",
-        valid: ["calendar", "cheap", "special-offers"]
+        valid: ["calendar", "cheap", "special-offers", "search"]
       });
   }
 }
@@ -2556,6 +4157,376 @@ async function handler4(req, res) {
   }
 }
 
+// shared/flights/priceIntelligence.validation.ts
+import { z as z5 } from "zod";
+var IATA = /^[A-Z]{3}$/;
+var ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+var BaseSchema = z5.object({
+  origin: z5.string().transform((v) => v.trim().toUpperCase()).refine((v) => IATA.test(v), "Invalid origin IATA"),
+  destination: z5.string().transform((v) => v.trim().toUpperCase()).refine((v) => IATA.test(v), "Invalid destination IATA"),
+  departStartDate: z5.string().refine((v) => ISO_DATE.test(v), "Invalid departStartDate"),
+  departEndDate: z5.string().refine((v) => ISO_DATE.test(v), "Invalid departEndDate"),
+  returnDate: z5.string().refine((v) => ISO_DATE.test(v), "Invalid returnDate").optional(),
+  cabin: z5.enum(["economy", "premium", "business", "first"]).optional(),
+  adults: z5.coerce.number().int().min(1).max(9).optional(),
+  children: z5.coerce.number().int().min(0).max(8).optional(),
+  infants: z5.coerce.number().int().min(0).max(4).optional(),
+  currency: z5.string().default("USD").transform((v) => v.trim().toUpperCase()).refine((v) => /^[A-Z]{3}$/.test(v), "Invalid currency")
+});
+function validatePriceCalendarRequest(input) {
+  const parsed = BaseSchema.superRefine((v, ctx) => {
+    if (v.origin === v.destination) {
+      ctx.addIssue({ code: "custom", message: "Origin and destination must differ", path: ["destination"] });
+    }
+    if (v.departEndDate < v.departStartDate) {
+      ctx.addIssue({ code: "custom", message: "departEndDate must be >= departStartDate", path: ["departEndDate"] });
+    }
+    const daySpan = Math.floor((Date.parse(v.departEndDate) - Date.parse(v.departStartDate)) / 864e5) + 1;
+    if (daySpan < 1 || daySpan > 62) {
+      ctx.addIssue({ code: "custom", message: "Date range must be between 1 and 62 days", path: ["departEndDate"] });
+    }
+    if (v.returnDate && v.returnDate < v.departStartDate) {
+      ctx.addIssue({ code: "custom", message: "returnDate must be >= departStartDate", path: ["returnDate"] });
+    }
+  }).safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid request" };
+  }
+  return { ok: true, data: parsed.data };
+}
+function validatePriceTrendRequest(input) {
+  const parsed = BaseSchema.extend({
+    windowDays: z5.coerce.number().int().min(3).max(30).optional()
+  }).safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid request" };
+  }
+  const data = parsed.data;
+  if (data.departEndDate < data.departStartDate) {
+    return { ok: false, message: "departEndDate must be >= departStartDate" };
+  }
+  return { ok: true, data };
+}
+
+// shared/flights/priceIntelligence.cacheKey.ts
+function norm(v) {
+  return (v ?? "").trim().toUpperCase();
+}
+function buildPriceCalendarCacheKey(req) {
+  return [
+    "price-calendar:v1",
+    norm(req.origin),
+    norm(req.destination),
+    req.departStartDate,
+    req.departEndDate,
+    req.returnDate ?? "-",
+    req.cabin ?? "-",
+    String(req.adults ?? 1),
+    String(req.children ?? 0),
+    String(req.infants ?? 0),
+    norm(req.currency ?? "USD")
+  ].join(":");
+}
+function buildPriceTrendCacheKey(req) {
+  return [
+    "price-trend:v1",
+    norm(req.origin),
+    norm(req.destination),
+    req.departStartDate,
+    req.departEndDate,
+    req.returnDate ?? "-",
+    norm(req.currency ?? "USD"),
+    String(req.windowDays ?? 7)
+  ].join(":");
+}
+
+// api/_lib/price-intelligence/sourceOrchestrator.ts
+var inflight = /* @__PURE__ */ new Map();
+async function fetchWithTimeout(fn, timeoutMs) {
+  let timer = null;
+  try {
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("TIMEOUT")), timeoutMs);
+    });
+    const data = await Promise.race([fn(), timeoutPromise]);
+    return { ok: true, data };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown_error";
+    return { ok: false, timedOut: message === "TIMEOUT", error: message };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+async function fetchAmadeusRecords(input) {
+  const response = await fetchWithTimeout(
+    () => searchCheapestDates(input.origin, input.destination),
+    4e3
+  );
+  if (!response.ok || !response.data) {
+    return { source: "amadeus", ok: false, records: [], error: response.ok ? "no_data" : response.error, timedOut: response.ok ? false : response.timedOut };
+  }
+  const records = [];
+  for (const item of response.data) {
+    const amount = Number.parseFloat(item.price?.total ?? "0");
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    records.push({
+      date: item.departureDate,
+      amount,
+      currency: input.currency ?? "USD",
+      source: "amadeus"
+    });
+  }
+  return { source: "amadeus", ok: true, records };
+}
+async function fetchTravelPayoutsRecords(input) {
+  const qs = new URLSearchParams({
+    origin: input.origin,
+    destination: input.destination,
+    month: input.departStartDate.slice(0, 7),
+    currency: (input.currency ?? "USD").toLowerCase()
+  });
+  const response = await fetchWithTimeout(
+    async () => {
+      const res = await fetch(`${process.env.INTERNAL_BASE_URL ?? ""}/api/calendar-prices?${qs.toString()}`);
+      if (!res.ok) throw new Error(`travelpayouts_proxy_${res.status}`);
+      return res.json();
+    },
+    4500
+  );
+  if (!response.ok || !response.data?.data) {
+    return { source: "travelpayouts", ok: false, records: [], error: response.ok ? "no_data" : response.error, timedOut: response.ok ? false : response.timedOut };
+  }
+  const records = [];
+  for (const [date, entry] of Object.entries(response.data.data)) {
+    const amount = entry.price ?? 0;
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    records.push({
+      date,
+      amount,
+      currency: (entry.currency ?? input.currency ?? "USD").toUpperCase(),
+      source: "travelpayouts"
+    });
+  }
+  return { source: "travelpayouts", ok: true, records };
+}
+async function fetchCalendarSources(input, dedupKey) {
+  if (inflight.has(dedupKey)) return inflight.get(dedupKey);
+  const promise = (async () => {
+    const [tp, amadeus] = await Promise.all([
+      fetchTravelPayoutsRecords(input),
+      fetchAmadeusRecords(input)
+    ]);
+    return [tp, amadeus];
+  })();
+  inflight.set(dedupKey, promise);
+  try {
+    return await promise;
+  } finally {
+    inflight.delete(dedupKey);
+  }
+}
+
+// api/_lib/price-intelligence/calendarNormalize.ts
+var PRECEDENCE = {
+  travelpayouts: 1,
+  bot_json: 2,
+  amadeus: 3
+};
+function confidenceFor(source, estimated) {
+  if (estimated) return { score: 0.45, level: "low", reason: "Estimated from seasonality" };
+  if (source === "travelpayouts") return { score: 0.9, level: "high", reason: "Live TP data" };
+  if (source === "bot_json") return { score: 0.75, level: "medium", reason: "Bot historical data" };
+  return { score: 0.6, level: "medium", reason: "Amadeus fallback live data" };
+}
+function pickWinningRecord(current, candidate) {
+  if (!current) return candidate;
+  const currentP = PRECEDENCE[current.source] ?? 99;
+  const candidateP = PRECEDENCE[candidate.source] ?? 99;
+  if (candidateP < currentP) return candidate;
+  if (candidateP > currentP) return current;
+  return candidate.amount < current.amount ? candidate : current;
+}
+function normalizeCalendarWithPrecedence(request, sourceResults) {
+  const byDate = /* @__PURE__ */ new Map();
+  for (const sourceResult of sourceResults) {
+    if (!sourceResult.ok) continue;
+    for (const record of sourceResult.records) {
+      if (record.date < request.departStartDate || record.date > request.departEndDate) continue;
+      byDate.set(record.date, pickWinningRecord(byDate.get(record.date), record));
+    }
+  }
+  const out = [];
+  for (let d = /* @__PURE__ */ new Date(`${request.departStartDate}T00:00:00Z`); d <= /* @__PURE__ */ new Date(`${request.departEndDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
+    const date = d.toISOString().slice(0, 10);
+    const best = byDate.get(date);
+    if (!best) continue;
+    const estimated = !!best.estimated;
+    out.push({
+      date,
+      amount: Math.round(best.amount),
+      currency: best.currency,
+      kind: estimated ? "estimated" : "live",
+      confidence: confidenceFor(best.source, estimated),
+      provenance: {
+        source: best.source === "travelpayouts" ? "travelpayouts_v3" : best.source === "amadeus" ? "amadeus" : "bot_json",
+        precedence: PRECEDENCE[best.source] ?? 99,
+        fetchedAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      estimation: {
+        estimated,
+        interpolated: false,
+        seasonalityWeighted: estimated
+      }
+    });
+  }
+  return out;
+}
+
+// api/_lib/price-intelligence/estimationEngine.ts
+function monthWeight(month) {
+  const peak = /* @__PURE__ */ new Set([6, 7, 8, 12]);
+  const shoulder = /* @__PURE__ */ new Set([4, 5, 9, 10, 11]);
+  if (peak.has(month)) return 1.12;
+  if (shoulder.has(month)) return 1.04;
+  return 0.95;
+}
+function fillMissingWithSeasonality(input, startDate, endDate) {
+  const map = new Map(input.map((p) => [p.date, p]));
+  const liveValues = input.filter((p) => p.kind === "live").map((p) => p.amount);
+  const baseline = liveValues.length ? liveValues.reduce((a, b) => a + b, 0) / liveValues.length : 0;
+  const out = [];
+  for (let d = /* @__PURE__ */ new Date(`${startDate}T00:00:00Z`); d <= /* @__PURE__ */ new Date(`${endDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
+    const date = d.toISOString().slice(0, 10);
+    const existing = map.get(date);
+    if (existing) {
+      out.push(existing);
+      continue;
+    }
+    if (baseline <= 0) {
+      out.push({
+        date,
+        amount: 0,
+        currency: input[0]?.currency ?? "USD",
+        kind: "fallback",
+        confidence: { score: 0.2, level: "low", reason: "No baseline data" },
+        provenance: { source: "none", precedence: 99 },
+        estimation: { estimated: true, seasonalityWeighted: false, interpolated: false }
+      });
+      continue;
+    }
+    const month = d.getUTCMonth() + 1;
+    const estimatedAmount = Math.round(baseline * monthWeight(month));
+    out.push({
+      date,
+      amount: estimatedAmount,
+      currency: input[0]?.currency ?? "USD",
+      kind: "estimated",
+      confidence: { score: 0.45, level: "low", reason: "Seasonality-weighted estimate" },
+      provenance: { source: "none", precedence: 98 },
+      estimation: { estimated: true, seasonalityWeighted: true, interpolated: false }
+    });
+  }
+  return out;
+}
+
+// api/_lib/price-intelligence/calendarService.ts
+var TTL_SECONDS = 300;
+async function getPriceCalendar(request) {
+  const key = buildPriceCalendarCacheKey(request);
+  const cached2 = await getCached(key);
+  if (cached2) {
+    return {
+      ...cached2,
+      cache: { ...cached2.cache, hit: true }
+    };
+  }
+  const sources = await fetchCalendarSources(request, key);
+  const sourceSuccesses = sources.filter((s) => s.ok).length;
+  const normalized = normalizeCalendarWithPrecedence(request, sources);
+  const points = fillMissingWithSeasonality(normalized, request.departStartDate, request.departEndDate);
+  const response = {
+    request,
+    points,
+    fallback: {
+      used: sourceSuccesses === 0 || points.every((p) => p.kind !== "live"),
+      reason: sourceSuccesses === 0 ? "source_error" : points.every((p) => p.kind !== "live") ? "no_live_data" : void 0,
+      fallbackSource: points.some((p) => p.kind === "estimated") ? "none" : void 0
+    },
+    cache: { key, hit: false, ttlSeconds: TTL_SECONDS },
+    meta: {
+      generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      sourceTimeoutMs: 4500,
+      sourceFailures: sources.filter((s) => !s.ok).length,
+      sourceSuccesses
+    }
+  };
+  await setCache(key, response);
+  return response;
+}
+
+// api/_lib/price-intelligence/trendDeriver.ts
+function rollingAverage(values, idx, window) {
+  const from = Math.max(0, idx - window + 1);
+  const slice = values.slice(from, idx + 1);
+  if (!slice.length) return 0;
+  return Math.round(slice.reduce((a, b) => a + b, 0) / slice.length);
+}
+function deriveTrendPoints(calendarPoints, windowDays = 7) {
+  const sorted = [...calendarPoints].sort((a, b) => a.date.localeCompare(b.date));
+  const amounts = sorted.map((p) => p.amount);
+  return sorted.map((p, idx) => {
+    const prev = idx > 0 ? sorted[idx - 1].amount : p.amount;
+    return {
+      date: p.date,
+      amount: p.amount,
+      currency: p.currency,
+      deltaFromPrevious: p.amount - prev,
+      rollingAverage: rollingAverage(amounts, idx, windowDays),
+      kind: p.kind,
+      confidence: p.confidence
+    };
+  });
+}
+
+// api/_lib/price-intelligence/trendService.ts
+var TTL_SECONDS2 = 300;
+async function getPriceTrend(request) {
+  const key = buildPriceTrendCacheKey(request);
+  const cached2 = await getCached(key);
+  if (cached2) {
+    return { ...cached2, cache: { ...cached2.cache, hit: true } };
+  }
+  const calendar = await getPriceCalendar({
+    ...request,
+    cabin: void 0,
+    adults: void 0,
+    children: void 0,
+    infants: void 0
+  });
+  const points = deriveTrendPoints(calendar.points, request.windowDays ?? 7);
+  const values = points.map((p) => p.amount).filter((n) => n > 0);
+  const average = values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0;
+  const summary = {
+    direction: points.length < 2 ? "flat" : points[points.length - 1].rollingAverage > points[0].rollingAverage ? "up" : points[points.length - 1].rollingAverage < points[0].rollingAverage ? "down" : "flat",
+    average,
+    min: values.length ? Math.min(...values) : null,
+    max: values.length ? Math.max(...values) : null
+  };
+  const response = {
+    request,
+    points,
+    summary,
+    fallback: calendar.fallback,
+    cache: { key, hit: false, ttlSeconds: TTL_SECONDS2 },
+    meta: {
+      generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      derivedFromCalendar: true
+    }
+  };
+  await setCache(key, response);
+  return response;
+}
+
 // server/middleware/csp.ts
 var cspOpen = (_req, res, next) => {
   res.setHeader(
@@ -2613,28 +4584,31 @@ var destinationLanding_default = router3;
 import { Router as Router3 } from "express";
 
 // server/middleware/rateLimit.ts
-var chatRateLimits = /* @__PURE__ */ new Map();
-var calendarRateLimits = /* @__PURE__ */ new Map();
 function getClientIp(req) {
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string") return forwarded.split(",")[0]?.trim() || "unknown";
   return req.ip || req.socket.remoteAddress || "unknown";
 }
-function rateLimit(store, max, windowMs, msg) {
-  return (req, res, next) => {
-    const ip = getClientIp(req);
-    const now = Date.now();
-    const existing = store.get(ip);
-    if (!existing || existing.resetAt <= now) {
-      store.set(ip, { count: 1, resetAt: now + windowMs });
-      return next();
+function rateLimit(namespace, max, windowMs, msg) {
+  return async (req, res, next) => {
+    try {
+      const ip = getClientIp(req);
+      const key = `ratelimit:${namespace}:${ip}`;
+      const store2 = getStore();
+      const { count, resetAt } = await store2.increment(key, windowMs);
+      res.setHeader("X-RateLimit-Limit", String(max));
+      res.setHeader("X-RateLimit-Remaining", String(Math.max(0, max - count)));
+      res.setHeader("X-RateLimit-Reset", String(Math.ceil(resetAt / 1e3)));
+      if (count > max) {
+        console.warn(`[RateLimit:Hit] ${key} - count: ${count}/${max}`);
+        res.status(429).json({ error: msg, retryAfter: Math.ceil((resetAt - Date.now()) / 1e3) });
+        return;
+      }
+      next();
+    } catch (err) {
+      console.error("[RateLimit:Error] Fallback to allow:", err);
+      next();
     }
-    if (existing.count >= max) {
-      res.status(429).json({ error: msg });
-      return;
-    }
-    existing.count++;
-    next();
   };
 }
 
@@ -2643,7 +4617,7 @@ var router4 = Router3();
 var MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
 router4.post(
   "/",
-  rateLimit(chatRateLimits, 10, 60 * 60 * 1e3, "Rate limit exceeded. Try again in one hour."),
+  rateLimit("chat", 10, 60 * 60 * 1e3, "Rate limit exceeded. Try again in one hour."),
   async (req, res) => {
     try {
       const { contents } = req.body;
@@ -2687,23 +4661,36 @@ var chat_default = router4;
 import { Router as Router4 } from "express";
 
 // server/utils/cache.ts
-var priceCache = /* @__PURE__ */ new Map();
-var CACHE_TTL3 = 30 * 60 * 1e3;
-function getCached2(key) {
-  const entry = priceCache.get(key);
-  if (entry && entry.expiresAt > Date.now()) return entry.data;
-  priceCache.delete(key);
-  return null;
+var CACHE_TTL_SECONDS3 = 30 * 60;
+async function getCached2(key) {
+  try {
+    const store2 = getStore();
+    const data = await store2.get(key);
+    if (data) {
+      console.log(`[Cache:HIT] ${key}`);
+      return data;
+    }
+    console.log(`[Cache:MISS] ${key}`);
+    return null;
+  } catch (err) {
+    console.error(`[Cache:Error] getCached failed for ${key}:`, err);
+    return null;
+  }
 }
-function setCache2(key, data) {
-  priceCache.set(key, { data, expiresAt: Date.now() + CACHE_TTL3 });
+async function setCache2(key, data) {
+  try {
+    const store2 = getStore();
+    await store2.set(key, data, CACHE_TTL_SECONDS3);
+  } catch (err) {
+    console.error(`[Cache:Error] setCache failed for ${key}:`, err);
+  }
 }
 
 // server/routes/cheapPrices.ts
 var router5 = Router4();
 router5.get(
   "/",
-  rateLimit(calendarRateLimits, 60, 15 * 60 * 1e3, "Too many requests"),
+  rateLimit("cheap", 60, 15 * 60 * 1e3, "Too many requests"),
   async (req, res) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
@@ -2711,29 +4698,55 @@ router5.get(
         res.status(500).json({ error: "API token not configured" });
         return;
       }
-      const origin = String(req.query.origin || "RGN");
-      const currency = String(req.query.currency || "usd");
+      const normalized = normalizeSearchParams(req.query);
+      const origin = normalized.origin || "RGN";
+      const currency = String(req.query.currency || "thb");
       const cacheKey = `cheap-${origin}-${currency}`;
-      const cached2 = getCached2(cacheKey);
+      const cached2 = await getCached2(cacheKey);
       if (cached2) {
         res.set("Cache-Control", "public, max-age=1800");
         res.json(cached2);
         return;
       }
-      const response = await fetch(
-        `https://api.travelpayouts.com/v1/prices/cheap?${new URLSearchParams({ token, origin, currency, page: "1" })}`,
-        { signal: AbortSignal.timeout(8e3) }
-      );
+      const url = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
+        token,
+        origin,
+        currency,
+        limit: "30",
+        sorting: "price",
+        market: "th",
+        unique: "false"
+      })}`;
+      const fxPromise = getLiveFxRate(currency, "THB");
+      const response = await fetch(url, { signal: AbortSignal.timeout(8e3) });
+      const fx = await fxPromise;
       if (!response.ok) {
         res.status(502).json({ error: "Upstream API error" });
         return;
       }
       const data = await response.json();
-      const result = { success: true, data: data.data || {}, currency };
-      setCache2(cacheKey, result);
+      const mappedData = {};
+      if (data.success && Array.isArray(data.data)) {
+        data.data.forEach((deal, index) => {
+          const dest = deal.destination;
+          if (!mappedData[dest]) {
+            mappedData[dest] = {};
+          }
+          mappedData[dest][String(index)] = {
+            price: deal.price,
+            airline: deal.airline,
+            departure_at: deal.departure_at,
+            number_of_changes: deal.transfers,
+            flight_number: deal.flight_number
+          };
+        });
+      }
+      const result = { success: true, data: mappedData, currency, fx };
+      await setCache2(cacheKey, result);
       res.set("Cache-Control", "public, max-age=1800");
       res.json(result);
     } catch (error) {
+      console.error("Cheap prices error:", error);
       res.status(500).json({ error: "Failed to fetch cheap prices" });
     }
   }
@@ -2744,168 +4757,10 @@ var cheapPrices_default = router5;
 import { Router as Router5 } from "express";
 import path2 from "path";
 import fs2 from "fs";
-
-// server/_core/amadeus.ts
-import Amadeus from "amadeus";
-var client = null;
-var initFailed = false;
-function getClient() {
-  if (initFailed) return null;
-  if (client) return client;
-  const clientId = process.env.AMADEUS_CLIENT_ID;
-  const clientSecret = process.env.AMADEUS_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    console.warn("[Amadeus] Credentials not configured, skipping");
-    initFailed = true;
-    return null;
-  }
-  try {
-    client = new Amadeus({
-      clientId,
-      clientSecret,
-      hostname: process.env.AMADEUS_HOSTNAME || "test"
-    });
-    console.log("[Amadeus] Client initialized successfully");
-    return client;
-  } catch (err) {
-    console.error("[Amadeus] Init failed:", err);
-    initFailed = true;
-    return null;
-  }
-}
-var cache4 = /* @__PURE__ */ new Map();
-var CACHE_TTL4 = 60 * 60 * 1e3;
-async function fetchAmadeusCalendarPrices2(origin, destination, month, currency = "USD") {
-  const amadeus = getClient();
-  if (!amadeus) return {};
-  const cacheKey = `${origin}-${destination}-${month}-${currency}`;
-  const cached2 = cache4.get(cacheKey);
-  if (cached2 && Date.now() - cached2.ts < CACHE_TTL4) {
-    console.log(`[Amadeus] Cache hit: ${cacheKey}`);
-    return cached2.data;
-  }
-  try {
-    const [year, mon] = month.split("-").map(Number);
-    const daysInMonth = new Date(year, mon, 0).getDate();
-    const sampleDays = [5, 15, Math.min(25, daysInMonth)];
-    const sampleDates = sampleDays.filter((d) => d <= daysInMonth).map((d) => `${year}-${String(mon).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
-    const results = await Promise.allSettled(
-      sampleDates.map(async (departureDate) => {
-        try {
-          const response = await amadeus.shopping.flightOffersSearch.get({
-            originLocationCode: origin,
-            destinationLocationCode: destination,
-            departureDate,
-            adults: 1,
-            currencyCode: currency.toUpperCase(),
-            nonStop: false,
-            max: 3
-            // Get top 3 cheapest for better price range
-          });
-          if (response?.data?.length > 0) {
-            const offer = response.data[0];
-            const price = parseFloat(offer.price?.total || "0");
-            const airline = offer.validatingAirlineCodes?.[0] || "";
-            const segments = offer.itineraries?.[0]?.segments || [];
-            const transfers = Math.max(0, segments.length - 1);
-            return {
-              date: departureDate,
-              price,
-              airline,
-              transfers,
-              currencyCode: offer.price?.currency || currency.toUpperCase()
-            };
-          }
-          return null;
-        } catch (err) {
-          if (err?.response?.statusCode !== 400) {
-            console.warn(`[Amadeus] ${departureDate}:`, err?.response?.result?.errors?.[0]?.detail || err.message);
-          }
-          return null;
-        }
-      })
-    );
-    const samplePrices = [];
-    for (const r of results) {
-      if (r.status === "fulfilled" && r.value && r.value.price > 0) {
-        samplePrices.push(r.value);
-      }
-    }
-    if (samplePrices.length === 0) {
-      console.log(`[Amadeus] No prices found for ${origin}\u2192${destination} (${month})`);
-      cache4.set(cacheKey, { data: {}, ts: Date.now() });
-      return {};
-    }
-    const result = {};
-    for (const sp of samplePrices) {
-      result[sp.date] = {
-        price: sp.price,
-        origin,
-        destination,
-        airline: sp.airline,
-        departure_at: `${sp.date}T00:00:00`,
-        transfers: sp.transfers,
-        is_amadeus: true,
-        is_estimated_amadeus: false
-      };
-    }
-    for (const sp of samplePrices) {
-      const spDate = /* @__PURE__ */ new Date(sp.date + "T00:00:00");
-      for (let offset = -3; offset <= 3; offset++) {
-        if (offset === 0) continue;
-        const nearby = new Date(spDate);
-        nearby.setDate(nearby.getDate() + offset);
-        if (nearby.getMonth() + 1 !== mon || nearby.getFullYear() !== year) continue;
-        const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(nearby.getDate()).padStart(2, "0")}`;
-        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
-        const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
-        result[nearbyKey] = {
-          price: Math.round(sp.price * variance * 100) / 100,
-          origin,
-          destination,
-          airline: sp.airline,
-          departure_at: `${nearbyKey}T00:00:00`,
-          transfers: sp.transfers,
-          is_amadeus: true,
-          is_estimated_amadeus: true
-        };
-      }
-    }
-    const realCount = samplePrices.length;
-    const totalCount = Object.keys(result).length;
-    console.log(`[Amadeus] ${origin}\u2192${destination} (${month}): ${realCount} real + ${totalCount - realCount} interpolated = ${totalCount} prices`);
-    cache4.set(cacheKey, { data: result, ts: Date.now() });
-    return result;
-  } catch (error) {
-    console.error("[Amadeus] Fetch error:", error?.response?.result?.errors?.[0]?.detail || error.message);
-    return {};
-  }
-}
-
-// server/routes/calendarPrices.ts
 var router6 = Router5();
-function addPrice2(merged, dateStr, price, entry, fromBot = false, fromAmadeus = false) {
-  if (!dateStr || price <= 0) return;
-  const current = merged[dateStr];
-  if (!current) {
-    merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: fromAmadeus };
-    return;
-  }
-  if (fromAmadeus && !current.is_amadeus) {
-    merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: fromAmadeus };
-  } else if (fromAmadeus && current.is_amadeus && price < current.price) {
-    merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: fromAmadeus };
-  } else if (!fromAmadeus && !current.is_amadeus) {
-    if (fromBot && !current.is_bot_data) {
-      merged[dateStr] = { ...entry, price, is_bot_data: true, is_amadeus: false };
-    } else if (fromBot === !!current.is_bot_data && price < current.price) {
-      merged[dateStr] = { ...entry, price, is_bot_data: fromBot, is_amadeus: false };
-    }
-  }
-}
 router6.get(
   "/",
-  rateLimit(calendarRateLimits, 100, 15 * 60 * 1e3, "Too many requests"),
+  rateLimit("calendar", 100, 15 * 60 * 1e3, "Too many requests"),
   async (req, res) => {
     try {
       const token = process.env.TRAVELPAYOUTS_TOKEN;
@@ -2913,17 +4768,18 @@ router6.get(
         res.status(500).json({ error: "API token not configured" });
         return;
       }
-      const { origin, destination, month, currency } = req.query;
-      if (!origin || !destination || !month) {
+      const { month, currency } = req.query;
+      const normalized = normalizeSearchParams(req.query);
+      const orig = normalized.origin;
+      const dest = normalized.destination;
+      const mo = String(month);
+      const cur = String(currency || "usd");
+      if (!orig || !dest || !mo) {
         res.status(400).json({ error: "Missing required params: origin, destination, month" });
         return;
       }
-      const cur = String(currency || "usd");
-      const orig = String(origin);
-      const dest = String(destination);
-      const mo = String(month);
       const cacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
-      const cached2 = getCached2(cacheKey);
+      const cached2 = await getCached2(cacheKey);
       if (cached2) {
         res.set("Cache-Control", "public, max-age=3600");
         res.json(cached2);
@@ -2933,20 +4789,30 @@ router6.get(
       const nextDate = new Date(yr, mn, 1);
       const nextMo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
       const tp = (params, base) => fetch(`${base}?${new URLSearchParams({ token, ...params })}`, { signal: AbortSignal.timeout(8e3) }).then((r) => r.ok ? r.json() : null);
-      const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2] = await Promise.allSettled([
+      const [v3Mo1, v3Mo2, calendarData, matrixData, amadeusMo1, amadeusMo2, fxQuote] = await Promise.allSettled([
         tp({ origin: orig, destination: dest, departure_at: mo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
         tp({ origin: orig, destination: dest, departure_at: nextMo, sorting: "price", limit: "30", one_way: "true", currency: cur }, "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"),
         tp({ origin: orig, destination: dest, month: mo, calendar_type: "departure_date", currency: cur }, "https://api.travelpayouts.com/v1/prices/calendar"),
         tp({ origin: orig, destination: dest, month: mo, currency: cur }, "https://api.travelpayouts.com/v2/prices/month-matrix"),
-        fetchAmadeusCalendarPrices2(orig, dest, mo, cur),
-        fetchAmadeusCalendarPrices2(orig, dest, nextMo, cur)
+        fetchAmadeusCalendarPrices(orig, dest, mo, cur),
+        fetchAmadeusCalendarPrices(orig, dest, nextMo, cur),
+        getLiveFxRate(cur, "THB")
       ]);
       const merged = {};
-      for (const result2 of [amadeusMo1, amadeusMo2]) {
-        const data = result2.status === "fulfilled" ? result2.value : null;
-        if (data && typeof data === "object") {
-          for (const [dateStr, entry] of Object.entries(data)) {
-            addPrice2(merged, dateStr, entry.price || 0, entry, false, true);
+      for (const result2 of [v3Mo1, v3Mo2]) {
+        const arr = result2.status === "fulfilled" && result2.value?.data;
+        if (Array.isArray(arr)) {
+          for (const e of arr) {
+            addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
+              origin: e.origin || orig,
+              destination: e.destination || dest,
+              currency: cur,
+              airline: e.airline || "",
+              departure_at: e.departure_at,
+              return_at: e.return_at || "",
+              transfers: e.transfers ?? 0,
+              flight_number: e.flight_number || ""
+            }, "v3");
           }
         }
       }
@@ -2959,14 +4825,15 @@ router6.get(
               if (r.origin === orig && r.destination === dest) {
                 const dateStr = r.date;
                 if (dateStr && (dateStr.startsWith(mo) || dateStr.startsWith(nextMo))) {
-                  addPrice2(merged, dateStr, r.price || 0, {
+                  addPrice(merged, dateStr, r.price || 0, {
                     origin: r.origin,
                     destination: r.destination,
+                    currency: cur,
                     airline: r.airline_code || r.airline || "",
                     departure_at: `${r.date}T00:00:00`,
                     transfers: r.transfers || 0,
                     flight_number: r.flight_num || ""
-                  }, true);
+                  }, "bot");
                 }
               }
             }
@@ -2975,45 +4842,46 @@ router6.get(
       } catch (err) {
         console.error("Bot JSON load error:", err);
       }
-      for (const result2 of [v3Mo1, v3Mo2]) {
-        const arr = result2.status === "fulfilled" && result2.value?.data;
-        if (Array.isArray(arr)) {
-          for (const e of arr) {
-            addPrice2(merged, e.departure_at?.split("T")[0], e.price || 0, {
-              origin: e.origin || orig,
-              destination: e.destination || dest,
-              airline: e.airline || "",
-              departure_at: e.departure_at,
-              return_at: e.return_at || "",
-              transfers: e.transfers ?? 0,
-              flight_number: e.flight_number || ""
-            });
-          }
-        }
-      }
       const cal = calendarData.status === "fulfilled" && calendarData.value?.data;
       if (cal && typeof cal === "object" && !Array.isArray(cal)) {
         for (const [dateStr, entry] of Object.entries(cal)) {
           const e = entry;
-          addPrice2(merged, dateStr, e.price || 0, e);
+          e.currency = cur;
+          addPrice(merged, dateStr, e.price || 0, e, "legacy");
         }
       }
       const matrix = matrixData.status === "fulfilled" && matrixData.value?.data;
       if (Array.isArray(matrix)) {
         for (const e of matrix) {
-          addPrice2(merged, e.depart_date, e.value || e.price || 0, {
+          addPrice(merged, e.depart_date, e.value || e.price || 0, {
             origin: e.origin || orig,
             destination: e.destination || dest,
-            price: e.value || e.price || 0,
+            currency: cur,
             airline: e.airline || e.gate || "",
             departure_at: e.departure_at || `${e.depart_date}T00:00:00`,
             return_at: e.return_date ? `${e.return_date}T00:00:00` : "",
             transfers: e.number_of_changes ?? 0
-          });
+          }, "legacy");
         }
       }
-      const result = { success: true, data: merged, currency: cur };
-      setCache2(cacheKey, result);
+      for (const result2 of [amadeusMo1, amadeusMo2]) {
+        const data = result2.status === "fulfilled" ? result2.value : null;
+        if (data && typeof data === "object") {
+          for (const [dateStr, entry] of Object.entries(data)) {
+            entry.currency = cur;
+            addPrice(merged, dateStr, entry.price || 0, entry, "amadeus");
+          }
+        }
+      }
+      const fx = fxQuote.status === "fulfilled" ? fxQuote.value : {
+        baseCurrency: cur.toUpperCase(),
+        quoteCurrency: "THB",
+        rate: cur.toUpperCase() === "THB" ? 1 : 34,
+        source: "fallback_static",
+        asOf: null
+      };
+      const result = { success: true, data: merged, currency: cur, fx };
+      await setCache2(cacheKey, result);
       res.set("Cache-Control", "public, max-age=3600");
       res.json(result);
     } catch (error) {
@@ -3024,8 +4892,34 @@ router6.get(
 );
 var calendarPrices_default = router6;
 
-// server/routes/priceAlerts.ts
+// server/routes/flightsSearch.ts
 import { Router as Router6 } from "express";
+var router7 = Router6();
+router7.get("/", async (req, res) => {
+  try {
+    const result = await searchFlights(req.query);
+    res.json(result);
+  } catch (error) {
+    console.error("[FlightsSearch] error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to search flights",
+      flights: [],
+      best: [],
+      cheapest: [],
+      fastest: [],
+      meta: {
+        provider: "amadeus",
+        count: 0,
+        searchedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    });
+  }
+});
+var flightsSearch_default = router7;
+
+// server/routes/priceAlerts.ts
+import { Router as Router7 } from "express";
 import { Resend } from "resend";
 
 // server/utils/email.ts
@@ -3134,8 +5028,8 @@ function buildWelcomeEmailHtml(email) {
 }
 
 // server/routes/priceAlerts.ts
-var router7 = Router6();
-router7.post("/subscribe", async (req, res) => {
+var router8 = Router7();
+router8.post("/subscribe", async (req, res) => {
   try {
     const { email, origin, destination, departDate, returnDate, currentPrice, currency } = req.body;
     if (!email || !origin || !destination || !departDate) {
@@ -3157,7 +5051,7 @@ router7.post("/subscribe", async (req, res) => {
     res.status(500).json({ error: "Failed to create price alert" });
   }
 });
-router7.post("/submit", async (req, res) => {
+router8.post("/submit", async (req, res) => {
   try {
     const { email, source, origin, destination, departDate, currentPrice, currency } = req.body;
     if (!email) {
@@ -3178,7 +5072,7 @@ router7.post("/submit", async (req, res) => {
       res.json({ success: true, flow: "auto-saved", alreadyExists: result2.alreadyExists });
       return;
     }
-    const result = await saveSubscriber(email, source || "popup");
+    const result = await saveSubscriber({ email, source: source || "popup" });
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey && !result.alreadyExists) {
       new Resend(resendApiKey).emails.send({
@@ -3193,14 +5087,23 @@ router7.post("/submit", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-var priceAlerts_default = router7;
+var priceAlerts_default = router8;
 
 // server/routes/cron.ts
-import { Router as Router7 } from "express";
+import { Router as Router8 } from "express";
 import nodemailer2 from "nodemailer";
-var router8 = Router7();
-router8.get("/check-price-alerts", async (req, res) => {
+var router9 = Router8();
+var emailQueueReady = false;
+var clamp2 = (value, min, max) => Math.min(max, Math.max(min, value));
+function isAlertStale(updatedAt, staleMinutes) {
+  if (!updatedAt) return true;
+  const updatedMs = new Date(updatedAt).getTime();
+  if (!Number.isFinite(updatedMs)) return true;
+  return Date.now() - updatedMs >= staleMinutes * 6e4;
+}
+router9.get("/check-price-alerts", async (req, res) => {
   try {
+    const startedAt = Date.now();
     if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -3215,24 +5118,47 @@ router8.get("/check-price-alerts", async (req, res) => {
       res.status(500).json({ error: "TRAVELPAYOUTS_TOKEN not configured" });
       return;
     }
-    await ensureEmailQueueTable();
+    if (!emailQueueReady) {
+      await ensureEmailQueueTable();
+      emailQueueReady = true;
+    }
+    const staleMinutes = clamp2(Number(process.env.PRICE_ALERT_STALE_MINUTES || 360), 15, 1440);
+    const workerCount = clamp2(Number(process.env.PRICE_ALERT_WORKERS || 2), 1, 3);
+    const maxAlertsPerRun = clamp2(Number(process.env.PRICE_ALERT_MAX_ALERTS_PER_RUN || 30), 1, 100);
+    const staleAlerts = activeAlerts.filter((alert) => isAlertStale(alert.updatedAt, staleMinutes)).slice(0, maxAlertsPerRun);
+    if (staleAlerts.length === 0) {
+      res.status(200).json({
+        message: "No stale alerts to check.",
+        activeAlerts: activeAlerts.length,
+        durationMs: Date.now() - startedAt
+      });
+      return;
+    }
+    const touchedAlertIds = [];
     const results = [];
-    for (const alert of activeAlerts) {
-      const tpRes = await fetch(
-        `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?token=${tpToken}&origin=${alert.origin}&destination=${alert.destination}&departure_at=${alert.departDate}&currency=${alert.currency}&one_way=${!alert.returnDate}`
-      ).catch(() => null);
-      if (!tpRes?.ok) continue;
-      const tpData = await tpRes.json();
-      if (!tpData?.data?.length) continue;
-      const minPrice = Math.min(...tpData.data.map((d) => d.price));
-      const referencePrice = alert.lastNotifiedPrice || alert.targetPrice;
-      const threshold = referencePrice * 0.95;
-      if (minPrice <= threshold) {
-        const percent = Math.round((referencePrice - minPrice) / referencePrice * 100);
-        await enqueueEmail({
-          toEmail: alert.email,
-          subject: `\u{1F525} Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
-          htmlContent: `
+    const queue = [...staleAlerts];
+    async function worker() {
+      while (queue.length) {
+        const alert = queue.shift();
+        if (!alert) return;
+        const tpRes = await fetch(
+          `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?token=${tpToken}&origin=${alert.origin}&destination=${alert.destination}&departure_at=${alert.departDate}&currency=${alert.currency}&one_way=${!alert.returnDate}`
+        ).catch(() => null);
+        if (!tpRes?.ok) continue;
+        const tpData = await tpRes.json();
+        if (!tpData?.data?.length) {
+          touchedAlertIds.push(alert.id);
+          continue;
+        }
+        const minPrice = Math.min(...tpData.data.map((d) => d.price));
+        const referencePrice = alert.lastNotifiedPrice || alert.targetPrice;
+        const threshold = referencePrice * 0.95;
+        if (minPrice <= threshold) {
+          const percent = Math.round((referencePrice - minPrice) / referencePrice * 100);
+          await enqueueEmail({
+            toEmail: alert.email,
+            subject: `\u{1F525} Price Drop Alert: ${alert.origin} to ${alert.destination} (-${percent}%)`,
+            htmlContent: `
               <div style="font-family:sans-serif;color:#1e293b;padding:20px;">
                 <h2 style="color:#5B0EA6;">Good news! Your flight price dropped.</h2>
                 <p>Route <strong>${alert.origin} \u2192 ${alert.destination}</strong> on <strong>${alert.departDate}</strong>
@@ -3243,19 +5169,32 @@ router8.get("/check-price-alerts", async (req, res) => {
                 </a></p>
                 <hr style="margin-top:40px;border:none;border-top:1px solid #e2e8f0;"/>
                 <p style="font-size:11px;color:#94a3b8;">You subscribed to price alerts at GoTravel Asia.</p>
-              </div>`
-        });
-        await updateAlertPrice(alert.id, minPrice);
-        results.push({ id: alert.id, old: referencePrice, new: minPrice, queued: true });
+               </div>`
+          });
+          await updateAlertPrice(alert.id, minPrice);
+          results.push({ id: alert.id, old: referencePrice, new: minPrice, queued: true });
+        } else {
+          touchedAlertIds.push(alert.id);
+        }
       }
     }
-    res.json({ message: "Cron finished", processedCount: results.length, results });
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    await touchPriceAlerts(touchedAlertIds);
+    const durationMs = Date.now() - startedAt;
+    console.info("[cron/check-price-alerts]", {
+      durationMs,
+      activeAlerts: activeAlerts.length,
+      checkedAlerts: staleAlerts.length,
+      queuedAlerts: results.length,
+      workerCount
+    });
+    res.json({ message: "Cron finished", processedCount: results.length, checkedAlerts: staleAlerts.length, durationMs, results });
   } catch (err) {
     console.error("Cron error:", err);
     res.status(500).json({ error: "Failed to process cron job" });
   }
 });
-router8.get("/send-alerts", async (req, res) => {
+router9.get("/send-alerts", async (req, res) => {
   try {
     if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
       res.status(401).json({ error: "Unauthorized" });
@@ -3320,7 +5259,7 @@ router8.get("/send-alerts", async (req, res) => {
     res.status(500).json({ error: "Failed to process send-alerts" });
   }
 });
-var cron_default = router8;
+var cron_default = router9;
 
 // server/_core/app.ts
 console.log("[APP] Starting app.ts imports...\n");
@@ -3343,6 +5282,7 @@ app.use("/api/destination-landing", destinationLanding_default);
 app.use("/api/chat", chat_default);
 app.use("/api/cheap-prices", cheapPrices_default);
 app.use("/api/calendar-prices", calendarPrices_default);
+app.use("/api/flights/search", flightsSearch_default);
 app.use("/api/hotels/search", searchHotels);
 app.use("/api/autocomplete/hotels", searchAutocompleteHotels);
 app.use("/api/frontdoor/prices", searchFrontDoorPrices);
@@ -3350,10 +5290,38 @@ app.use("/api/price-alerts", priceAlerts_default);
 app.use("/api/alerts", priceAlerts_default);
 app.use("/api/cron", cron_default);
 app.use("/api/auth", handler);
+app.get("/api/flights/price-calendar", async (req, res) => {
+  const validation = validatePriceCalendarRequest(req.query);
+  if (!validation.ok) return res.status(400).json({ error: { code: "BAD_REQUEST", message: validation.message } });
+  try {
+    const response = await getPriceCalendar(validation.data);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("price-calendar route error", error);
+    return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Failed to fetch price calendar" } });
+  }
+});
+app.get("/api/flights/price-trend", async (req, res) => {
+  const validation = validatePriceTrendRequest(req.query);
+  if (!validation.ok) return res.status(400).json({ error: { code: "BAD_REQUEST", message: validation.message } });
+  try {
+    const response = await getPriceTrend(validation.data);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("price-trend route error", error);
+    return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Failed to fetch price trend" } });
+  }
+});
 app.use("/api/flights", handler2);
 app.use("/api/geo", handler3);
 app.use("/api/newsletter", handler4);
-app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
+app.use(
+  "/api/trpc",
+  createExpressMiddleware({
+    router: appRouter,
+    createContext
+  })
+);
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
 console.log("[APP] App setup complete, exporting app.\n");
 var app_default = app;
