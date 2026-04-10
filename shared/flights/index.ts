@@ -7,3 +7,11 @@ export * from "./normalizeSearchParams.js";
 export * from "./calendarLogic.js";
 export * from "./flightFilters.js";
 export * from "./flightSorting.js";
+
+export * from "./priceCalendar.types.js";
+export * from "./priceTrend.types.js";
+export * from "./priceIntelligence.validation.js";
+export * from "./priceIntelligence.cacheKey.js";
+export * from "./dealTags.js";
+export * from "./layoverAnalysis.js";
+export * from "./priceTrend.js";

@@ -460,7 +460,7 @@ function FlightWidgetInner() {
                                                         {idx === 0 ? "🥇 SmartMix #1" : `#${idx + 1}`}
                                                     </span>
                                                     <span className="text-white/80 text-sm font-medium">Source: amadeus</span>
-                                                    <span className="text-white text-sm">| Stops: {flight.totalStops}</span>
+                                                    <span className="text-white text-sm">| Stops: {'totalPrice' in flight ? ((flight as any).outbound.totalStops + (flight as any).inbound.totalStops) : (flight as any).totalStops}</span>
                                                 </div>
                                                 <div className="text-xs text-white/50 font-mono mt-1 w-48 truncate" title={flight.id}>
                                                     ID: {flight.id}
@@ -470,7 +470,7 @@ function FlightWidgetInner() {
                                             {/* Price / Score */}
                                             <div className="flex flex-col md:items-end text-left md:text-right">
                                                 <div className="text-xl font-black" style={{ color: "#a0f0b0" }}>
-                                                    {flight.price.total} {flight.price.currency}
+                                                    {'totalPrice' in flight ? (flight as any).totalPrice : (flight as any).price.total} {'totalPrice' in flight ? 'USD' : (flight as any).price.currency}
                                                 </div>
                                                 {typeof (flight as any).score === "number" && (
                                                     <div className="text-xs font-bold" style={{ color: B.gold }}>

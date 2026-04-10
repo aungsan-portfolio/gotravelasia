@@ -8,6 +8,7 @@ import { detectOriginAirport } from "./flightWidget.geo.js";
 import { recentSearches, type RecentSearchRecord } from "./flightWidget.recent.js";
 import { usePriceHint } from "@/hooks/useFlightData";
 import { persistSearchToSession } from "@/lib/detectRouteFromContext";
+import { useFlightWidgetPriceIntelligence } from "@/hooks/useFlightWidgetPriceIntelligence";
 
 export const ENABLE_LOCAL_RESULTS = false; // Use local Flight Search Hook instead of redirecting (false for PROD)
 
@@ -55,6 +56,7 @@ export function useFlightWidgetState() {
     const [calendarMode, setCalendarMode] = useState<"depart" | "return">("depart");
 
     const [calendarCheapestPrice, setCalendarCheapestPrice] = useState<number | null>(null);
+    const [committedSearchTs, setCommittedSearchTs] = useState<number>(0);
 
     const paxTriggerRef = useRef<HTMLButtonElement>(null);
     const doneButtonRef = useRef<HTMLButtonElement>(null);
@@ -144,6 +146,15 @@ export function useFlightWidgetState() {
     }, [returnDate]);
 
     const lowestPrice = usePriceHint(origin, destination, !!returnDate);
+
+    // Non-visual bridge: runs only after user commits search.
+    const priceIntelligence = useFlightWidgetPriceIntelligence({
+        committed: committedSearchTs > 0,
+        origin,
+        destination,
+        departDate,
+        returnDate: returnDate || undefined,
+    });
     const displayPrice = lowestPrice || calendarCheapestPrice;
 
     const validateSearch = useCallback(() => {
@@ -199,6 +210,8 @@ export function useFlightWidgetState() {
         persistSearchToSession(origin, destination, departDate);
 
         if (posthog.__loaded) posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate, flexibility: ctx.flexibility });
+
+        setCommittedSearchTs(Date.now());
 
         if (ENABLE_LOCAL_RESULTS) {
             return true;
@@ -256,6 +269,7 @@ export function useFlightWidgetState() {
         lowestPrice,
         calendarCheapestPrice,
         setCalendarCheapestPrice,
+        priceIntelligence,
 
         paxTriggerRef,
         doneButtonRef,

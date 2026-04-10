@@ -1,12 +1,12 @@
 import type {
-  DealTag,
   Flight,
   Layover,
   ScoredFlight,
   ScoringWeights,
 } from "./types.js";
 import { DEFAULT_WEIGHTS } from "./types.js";
-import { normalizeLowerIsBetter, clamp01, getMedian } from "./stats.js";
+import { normalizeLowerIsBetter, clamp01 } from "./stats.js";
+import { getDealTags, getPrimaryDealTag } from "./dealTags.js";
 
 function getDepartureHourScore(localIso?: string): number {
   if (!localIso) return 0.6;
@@ -76,19 +76,6 @@ function getBaggageScore(flight: Flight): number {
   return 0.7;
 }
 
-function assignDealTag(flight: Flight, allFlights: Flight[]): DealTag {
-  const prices = allFlights.map((f) => f.price.total).filter((p) => Number.isFinite(p) && p > 0);
-  if (!prices.length) return "typical";
-
-  const median = getMedian(prices);
-  const min = Math.min(...prices);
-
-  if (flight.price.total <= min) return "best";
-  if (flight.price.total <= median * 0.85) return "great";
-  if (flight.price.total <= median * 1.15) return "typical";
-  return "expensive";
-}
-
 export function calculateSmartMixScore(
   flight: Flight,
   allFlights: Flight[],
@@ -130,6 +117,8 @@ export function calculateSmartMixScore(
 
   const finalScore = totalWeight > 0 ? weighted / totalWeight : weighted;
 
+  const tags = getDealTags(flight, allFlights);
+
   return {
     ...flight,
     score: Number(finalScore.toFixed(4)),
@@ -140,7 +129,7 @@ export function calculateSmartMixScore(
     airlineScore: Number(airlineScore.toFixed(4)),
     riskScore: Number(riskScore.toFixed(4)),
     baggageScore: Number(baggageScore.toFixed(4)),
-    dealTag: assignDealTag(flight, allFlights),
+    dealTag: getPrimaryDealTag(tags),
   };
 }
 

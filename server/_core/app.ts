@@ -20,6 +20,10 @@ import handleAuth from "../../api/_handlers/auth.js";
 import handleFlights from "../../api/_handlers/flights.js";
 import handleGeo from "../../api/_handlers/geo.js";
 import handleNewsletter from "../../api/_handlers/newsletter.js";
+import { validatePriceCalendarRequest, validatePriceTrendRequest } from "../../shared/flights/priceIntelligence.validation.js";
+import { getPriceCalendar } from "../../api/_lib/price-intelligence/calendarService.js";
+import { getPriceTrend } from "../../api/_lib/price-intelligence/trendService.js";
+
 console.log("[APP] Core deps & handlers loaded.\n");
 
 // ─── Middleware ─────────────────────────────────────────────────
@@ -70,6 +74,31 @@ app.use("/api/price-alerts", priceAlertsRouter);
 app.use("/api/alerts", priceAlertsRouter);
 app.use("/api/cron", cronRouter);
 app.use("/api/auth", handleAuth as any);
+
+app.get("/api/flights/price-calendar", async (req, res) => {
+  const validation = validatePriceCalendarRequest(req.query as Record<string, unknown>);
+  if (!validation.ok) return res.status(400).json({ error: { code: "BAD_REQUEST", message: validation.message } });
+  try {
+    const response = await getPriceCalendar(validation.data);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("price-calendar route error", error);
+    return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Failed to fetch price calendar" } });
+  }
+});
+
+app.get("/api/flights/price-trend", async (req, res) => {
+  const validation = validatePriceTrendRequest(req.query as Record<string, unknown>);
+  if (!validation.ok) return res.status(400).json({ error: { code: "BAD_REQUEST", message: validation.message } });
+  try {
+    const response = await getPriceTrend(validation.data);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("price-trend route error", error);
+    return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Failed to fetch price trend" } });
+  }
+});
+
 app.use("/api/flights", handleFlights as any);
 app.use("/api/geo", handleGeo as any);
 app.use("/api/newsletter", handleNewsletter as any);
