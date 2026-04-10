@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export type DealTag = "best" | "great" | "typical" | "expensive";
+export type DealTag =
+  | "best"
+  | "great"
+  | "typical"
+  | "expensive"
+  | "great_deal"
+  | "eco_friendly"
+  | "price_drop"
+  | "red_eye_saver"
+  | "worth_it";
 export type CabinClass = "economy" | "premium" | "business" | "first";
 export type TripKind = "oneway" | "roundtrip" | "hacker";
 export type RiskLevel = "low" | "medium" | "high";
@@ -19,8 +28,8 @@ export interface FlightSegment {
   id: string;
   departure: {
     airport: Airport;
-    localTime: string;   // local ISO string
-    utcTime?: string;    // optional normalized UTC ISO string
+    localTime: string; // local ISO string
+    utcTime?: string; // optional normalized UTC ISO string
   };
   arrival: {
     airport: Airport;
@@ -46,6 +55,16 @@ export interface Layover {
   warning?: string;
 }
 
+export interface LayoverInsight {
+  layoverCount: number;
+  longestLayoverMinutes?: number;
+  shortestLayoverMinutes?: number;
+  overnightLayoverCount?: number;
+  highRiskLayoverCount?: number;
+  confidence: number;
+  summary?: string;
+}
+
 export interface PriceInfo {
   total: number;
   currency: string;
@@ -53,6 +72,17 @@ export interface PriceInfo {
   taxes?: number;
   originalTotal?: number;
   originalCurrency?: string;
+}
+
+export interface PriceTrendAnalysis {
+  trend: "down" | "stable" | "up" | "unknown";
+  confidence: number;
+  changeAmount?: number;
+  changePercent?: number;
+  referencePrice?: number;
+  referenceCurrency?: string;
+  observedAt?: string;
+  note?: string;
 }
 
 export interface FlightLeg {
@@ -81,6 +111,12 @@ export interface Flight {
   mixedCabin?: boolean;
 
   lastUpdatedAt?: string;
+}
+
+export interface EnrichedFlight extends Flight {
+  layoverInsight?: LayoverInsight;
+  priceTrend?: PriceTrendAnalysis;
+  intelligenceVersion?: string;
 }
 
 export interface ScoringWeights {
@@ -155,6 +191,27 @@ export const LayoverSchema = z.object({
   warning: z.string().optional(),
 });
 
+export const LayoverInsightSchema = z.object({
+  layoverCount: z.number().int().nonnegative(),
+  longestLayoverMinutes: z.number().int().nonnegative().optional(),
+  shortestLayoverMinutes: z.number().int().nonnegative().optional(),
+  overnightLayoverCount: z.number().int().nonnegative().optional(),
+  highRiskLayoverCount: z.number().int().nonnegative().optional(),
+  confidence: z.number().min(0).max(1),
+  summary: z.string().optional(),
+});
+
+export const PriceTrendAnalysisSchema = z.object({
+  trend: z.enum(["down", "stable", "up", "unknown"]),
+  confidence: z.number().min(0).max(1),
+  changeAmount: z.number().optional(),
+  changePercent: z.number().optional(),
+  referencePrice: z.number().positive().optional(),
+  referenceCurrency: z.string().min(3).max(3).optional(),
+  observedAt: z.string().optional(),
+  note: z.string().optional(),
+});
+
 export const FlightLegSchema = z.object({
   segments: z.array(FlightSegmentSchema).min(1),
   totalDurationMinutes: z.number().int().positive(),
@@ -187,4 +244,11 @@ export const FlightSchema = z.object({
   lastUpdatedAt: z.string().optional(),
 });
 
+export const EnrichedFlightSchema = FlightSchema.extend({
+  layoverInsight: LayoverInsightSchema.optional(),
+  priceTrend: PriceTrendAnalysisSchema.optional(),
+  intelligenceVersion: z.string().optional(),
+});
+
 export type FlightInput = z.infer<typeof FlightSchema>;
+export type EnrichedFlightInput = z.infer<typeof EnrichedFlightSchema>;

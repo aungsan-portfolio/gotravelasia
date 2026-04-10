@@ -10,6 +10,8 @@ import type { Dispatch, SetStateAction } from "react";
 import type {
   Flight,
 } from "../../../shared/flights/types.js";
+import type { HackerFareCombination } from "../../../shared/flights/hackerFare.js";
+import { findHackerFares } from "../../../shared/flights/hackerFare.js";
 
 import { applyFlightFilters } from "../../../shared/flights/flightFilters.js";
 import type { FlightFilterInput } from "../../../shared/flights/flightFilters.js";
@@ -36,6 +38,8 @@ export interface FlightSearchMeta {
   };
 }
 
+export type SearchResultItem = Flight | HackerFareCombination;
+
 // ─────────────────────────────────────────────────────────────
 // Hook options
 // ─────────────────────────────────────────────────────────────
@@ -54,17 +58,16 @@ export interface UseFlightSearchOptions {
 // Hook result
 // ─────────────────────────────────────────────────────────────
 export interface UseFlightSearchResult {
-  // Raw server data
   rawFlights: Flight[];
+  hackerFareFlights: HackerFareCombination[];
   meta: FlightSearchMeta | null;
 
-  // Derived UI data
-  flights: Flight[];
+  flights: SearchResultItem[];
+  normalFlights: Flight[];
   bestFlights: Flight[];
   cheapestFlights: Flight[];
   fastestFlights: Flight[];
 
-  // Local filtering / sorting controls
   filters: FlightFilterInput;
   sortBy: FlightSortOption;
   setFilters: Dispatch<SetStateAction<FlightFilterInput>>;
@@ -72,22 +75,25 @@ export interface UseFlightSearchResult {
   resetFilters: () => void;
   resetSortBy: () => void;
 
-  // Search actions
   refetch: () => Promise<void>;
   clearSearch: () => void;
 
-  // UI state
   loading: boolean;
   error: string | null;
   searchedAt: string | null;
   hasSearched: boolean;
   isEmpty: boolean;
+  cheapestProtectedRoundTripPrice: number | null;
 }
 
 interface SearchApiSuccess {
   success: true;
   flights?: Flight[];
   meta?: FlightSearchMeta;
+  hackerFareCandidates?: {
+    outbound?: Flight[];
+    inbound?: Flight[];
+  };
 }
 
 interface SearchApiFailure {
@@ -158,6 +164,34 @@ function buildSearchParams(options: UseFlightSearchOptions): URLSearchParams {
   return params;
 }
 
+function getFlightPrice(flight: Flight): number {
+  const value = Number((flight as any)?.price?.total);
+  return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
+}
+
+function sortMergedResults(
+  normalFlights: Flight[],
+  hackerFareFlights: HackerFareCombination[],
+  sortBy: FlightSortOption
+): SearchResultItem[] {
+  const sortedNormal = sortFlights(normalFlights, sortBy);
+
+  const sortedHacker = [...hackerFareFlights].sort((a, b) => {
+    if (sortBy === "cheapest") return a.totalPrice - b.totalPrice;
+    if (sortBy === "fastest") return a.airTravelMinutes - b.airTravelMinutes;
+    return b.score - a.score || a.totalPrice - b.totalPrice;
+  });
+
+  const recommendedSafeHackers = sortedHacker.filter(
+    (item) => item.isRecommended && item.riskLevel !== "high"
+  );
+  const otherHackers = sortedHacker.filter(
+    (item) => !(item.isRecommended && item.riskLevel !== "high")
+  );
+
+  return [...sortedNormal, ...recommendedSafeHackers, ...otherHackers];
+}
+
 // ─────────────────────────────────────────────────────────────
 // Hook
 // ─────────────────────────────────────────────────────────────
@@ -165,6 +199,13 @@ export function useFlightSearch(
   options: UseFlightSearchOptions
 ): UseFlightSearchResult {
   const [rawFlights, setRawFlights] = useState<Flight[]>([]);
+  const [hackerFareCandidates, setHackerFareCandidates] = useState<{
+    outbound: Flight[];
+    inbound: Flight[];
+  }>({
+    outbound: [],
+    inbound: [],
+  });
   const [meta, setMeta] = useState<FlightSearchMeta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -198,6 +239,7 @@ export function useFlightSearch(
       setLoading(false);
       setError(validationError);
       setRawFlights([]);
+      setHackerFareCandidates({ outbound: [], inbound: [] });
       setMeta(null);
       setSearchedAt(null);
       return;
@@ -249,8 +291,18 @@ export function useFlightSearch(
       const nextFlights = Array.isArray(data.flights) ? data.flights : [];
       const nextMeta = data.meta ?? null;
       const nextSearchedAt = data.meta?.searchedAt ?? null;
+      const nextOutboundCandidates = Array.isArray(data.hackerFareCandidates?.outbound)
+        ? data.hackerFareCandidates?.outbound
+        : [];
+      const nextInboundCandidates = Array.isArray(data.hackerFareCandidates?.inbound)
+        ? data.hackerFareCandidates?.inbound
+        : [];
 
       setRawFlights(nextFlights);
+      setHackerFareCandidates({
+        outbound: nextOutboundCandidates,
+        inbound: nextInboundCandidates,
+      });
       setMeta(nextMeta);
       setSearchedAt(nextSearchedAt);
       setError(null);
@@ -271,6 +323,7 @@ export function useFlightSearch(
 
       setError(message);
       setRawFlights([]);
+      setHackerFareCandidates({ outbound: [], inbound: [] });
       setMeta(null);
       setSearchedAt(null);
     } finally {
@@ -298,25 +351,64 @@ export function useFlightSearch(
     };
   }, [performSearch, options.enabled]);
 
-  const flights = useMemo(() => {
+  const normalFlights = useMemo(() => {
     if (!rawFlights.length) return [];
     const filtered = applyFlightFilters(rawFlights, filters);
     return sortFlights(filtered, sortBy);
   }, [rawFlights, filters, sortBy]);
 
+  const cheapestProtectedRoundTripPrice = useMemo(() => {
+    if (!rawFlights.length || !options.returnDate) return null;
+
+    const prices = rawFlights
+      .map(getFlightPrice)
+      .filter((value) => Number.isFinite(value));
+
+    return prices.length ? Math.min(...prices) : null;
+  }, [rawFlights, options.returnDate]);
+
+  const hackerFareFlights = useMemo(() => {
+    if (!options.returnDate) return [];
+
+    const outboundFlights = hackerFareCandidates.outbound ?? [];
+    const inboundFlights = hackerFareCandidates.inbound ?? [];
+
+    if (!outboundFlights.length || !inboundFlights.length) {
+      return [];
+    }
+
+    return findHackerFares(outboundFlights, inboundFlights, {
+      limit: 20,
+      minScore: 55,
+      minDestinationStayMinutes: 180,
+      strictAirportMatch: true,
+      cheapestProtectedRoundTripPrice:
+        cheapestProtectedRoundTripPrice ?? undefined,
+      candidatePoolSize: 25,
+    });
+  }, [
+    options.returnDate,
+    hackerFareCandidates,
+    cheapestProtectedRoundTripPrice,
+  ]);
+
+  const flights = useMemo(() => {
+    return sortMergedResults(normalFlights, hackerFareFlights, sortBy);
+  }, [normalFlights, hackerFareFlights, sortBy]);
+
   const bestFlights = useMemo(
-    () => sortFlights(rawFlights, "smartMix"),
-    [rawFlights]
+    () => sortFlights(normalFlights, "smartMix"),
+    [normalFlights]
   );
 
   const cheapestFlights = useMemo(
-    () => sortFlights(rawFlights, "cheapest"),
-    [rawFlights]
+    () => sortFlights(normalFlights, "cheapest"),
+    [normalFlights]
   );
 
   const fastestFlights = useMemo(
-    () => sortFlights(rawFlights, "fastest"),
-    [rawFlights]
+    () => sortFlights(normalFlights, "fastest"),
+    [normalFlights]
   );
 
   const refetch = useCallback(async (): Promise<void> => {
@@ -336,6 +428,7 @@ export function useFlightSearch(
     requestIdRef.current += 1;
 
     setRawFlights([]);
+    setHackerFareCandidates({ outbound: [], inbound: [] });
     setMeta(null);
     setError(null);
     setSearchedAt(null);
@@ -349,9 +442,11 @@ export function useFlightSearch(
 
   return {
     rawFlights,
+    hackerFareFlights,
     meta,
 
     flights,
+    normalFlights,
     bestFlights,
     cheapestFlights,
     fastestFlights,
@@ -371,6 +466,7 @@ export function useFlightSearch(
     searchedAt,
     hasSearched,
     isEmpty,
+    cheapestProtectedRoundTripPrice,
   };
 }
 
