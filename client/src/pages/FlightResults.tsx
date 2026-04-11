@@ -1,3 +1,4 @@
+/** @deprecated `/flights/results` is served by `pages/flights/WhiteLabelResultsBridge.tsx`. */
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
 import { StaysSection } from "@/components/flights/stays-section";

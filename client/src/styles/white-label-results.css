@@ -1,0 +1,294 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --gta-gold: #f5a623;
+  --gta-gold-dark: #d4881a;
+  --gta-plum: #24103a;
+  --gta-plum-dark: #160b26;
+  --gta-purple: #5b0fa8;
+  --gta-navy: #00162b;
+  --gta-gray-50: #f5f7fa;
+  --gta-gray-200: #dde2ec;
+  --gta-white: #ffffff;
+  --tpwl-font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --tpwl-main-text: #00162b;
+  --tpwl-search-result-background: #f5f7fa;
+  --tpwl-search-form-background: #24103a;
+  --tpwl-headline-text: #ffffff;
+  --tpwl-links: #f5a623;
+}
+
+.tpwl-page,
+.tpwl-page * {
+  box-sizing: border-box;
+}
+
+.tpwl-page {
+  font-family: var(--tpwl-font-family), sans-serif;
+  color: var(--gta-navy);
+  background: linear-gradient(180deg, #11081d 0 180px, var(--gta-gray-50) 180px 100%);
+}
+
+.tpwl-page a {
+  color: var(--gta-gold);
+  text-decoration: none;
+}
+
+.tpwl-page a:hover {
+  color: var(--gta-gold-dark);
+}
+
+.tpwl-page .tpwl-logo-header,
+.tpwl-page .tpwl-search-header,
+.tpwl-page .tpwl-widgets__wrapper,
+.tpwl-page a[href*='travelpayouts']:not(.gta-logo) {
+  display: none !important;
+}
+
+.tpwl-page .tpwl-main {
+  background: transparent !important;
+  min-height: 60vh;
+  padding-top: 14px;
+}
+
+.tpwl-page .tpwl-tickets__wrapper {
+  display: block !important;
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  padding: 10px 24px 0 !important;
+}
+
+.tpwl-page .tpwl__content {
+  max-width: 1280px;
+  min-width: 976px;
+}
+
+.tpwl-page [class*='buy'],
+.tpwl-page [class*='Buy'],
+.tpwl-page [class*='book'],
+.tpwl-page [class*='Book'],
+.tpwl-page [class*='select'],
+.tpwl-page [class*='Select'],
+.tpwl-page [class*='BuyButton'] {
+  background: var(--gta-gold) !important;
+  color: #2a1602 !important;
+  font-weight: 800 !important;
+  border: none !important;
+}
+
+.tpwl-page [class*='buy']:hover,
+.tpwl-page [class*='select']:hover {
+  background: var(--gta-gold-dark) !important;
+}
+
+.gta-results-shell {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), #f5f7fa 160px);
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.gta-results-cross-sell {
+  margin: 20px auto 0;
+  display: grid;
+  gap: 12px;
+  max-width: 1280px;
+  padding: 0 16px;
+}
+
+.gta-results-card {
+  background: #ffffff;
+  border: 1px solid rgba(28, 19, 48, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+  color: #25163d;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.gta-results-card:hover {
+  border-color: rgba(91, 15, 168, 0.3);
+  box-shadow: 0 10px 24px rgba(36, 16, 58, 0.12);
+  transform: translateY(-1px);
+}
+
+.gta-results-card__eyebrow {
+  color: rgba(36, 16, 58, 0.65);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.gta-results-card__title {
+  margin-top: 8px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #201332;
+}
+
+.gta-results-card__copy {
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(32, 19, 50, 0.72);
+}
+
+.gta-explore {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 24px 56px;
+}
+
+.gta-explore__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.gta-explore__title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--gta-navy);
+}
+
+.gta-explore__link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gta-purple);
+}
+
+.gta-dest-grid,
+#tpwl-widget-weedles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.gta-dest-card {
+  background: var(--gta-white);
+  border: 1.5px solid var(--gta-gray-200);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 110px;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.gta-dest-card:hover {
+  border-color: var(--gta-purple);
+  box-shadow: 0 6px 20px rgba(91, 15, 168, 0.12);
+  transform: translateY(-2px);
+}
+
+.gta-dest-card__iata {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--gta-purple);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.gta-dest-card__city {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gta-navy);
+  margin-top: 3px;
+}
+
+.gta-dest-card__country {
+  font-size: 11px;
+  color: #8f9bb3;
+  margin-top: 1px;
+}
+
+.gta-dest-card__cta {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gta-gold-dark);
+  margin-top: 10px;
+}
+
+.tpwl-widget-weedle {
+  display: flex;
+  justify-content: center;
+  min-height: 110px;
+}
+
+.gta-skel {
+  background: var(--gta-white);
+  border: 1.5px solid var(--gta-gray-200);
+  border-radius: 10px;
+  min-height: 110px;
+  animation: skel 1.4s ease-in-out infinite;
+}
+
+@keyframes skel {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.tpwl-page .tpwl-footer__wrapper {
+  background: linear-gradient(180deg, var(--gta-plum), var(--gta-plum-dark)) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  padding: 32px 24px !important;
+  font-size: 13px !important;
+}
+
+.tpwl-page .tpwl-footer__links a {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.tpwl-page .tpwl-footer__links a:hover {
+  color: var(--gta-gold) !important;
+  text-decoration: none !important;
+}
+
+@media (min-width: 1024px) {
+  .gta-results-cross-sell {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .tpwl-page .tpwl__content {
+    max-width: unset;
+    min-width: unset;
+  }
+
+  .gta-dest-grid,
+  #tpwl-widget-weedles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tpwl-page .tpwl-tickets__wrapper {
+    padding: 8px 12px 0 !important;
+  }
+
+  .gta-results-cross-sell {
+    margin-top: 14px;
+    padding: 0 12px;
+  }
+
+  .gta-results-card {
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .gta-explore {
+    padding: 24px 12px 40px;
+  }
+
+  .gta-dest-grid,
+  #tpwl-widget-weedles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
