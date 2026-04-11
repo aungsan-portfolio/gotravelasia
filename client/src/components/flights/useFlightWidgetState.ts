@@ -57,28 +57,81 @@ export function useFlightWidgetState() {
 
     const [calendarCheapestPrice, setCalendarCheapestPrice] = useState<number | null>(null);
     const [committedSearchTs, setCommittedSearchTs] = useState<number>(0);
-    const [committedPriceQuery, setCommittedPriceQuery] = useState<{
-        origin: string;
-        destination: string;
-        departDate: string;
-        returnDate?: string;
-    } | null>(null);
+    const [committedPriceQuery, setCommittedPriceQuery] = useState({
+        origin: DEFAULT_ORIGIN,
+        destination: "SIN",
+        departDate: today,
+        returnDate: "" as string | undefined,
+    });
 
     const paxTriggerRef = useRef<HTMLButtonElement>(null);
     const doneButtonRef = useRef<HTMLButtonElement>(null);
     const hasOpenedPax = useRef(false);
 
-    // ... (context sync useEffect)
+    // context sync
+    useEffect(() => {
+        const originAirport = AIRPORT_MAP.get(origin) ?? null;
+        const destAirport = AIRPORT_MAP.get(destination) ?? null;
+        ctx.setOrigin(originAirport ? { code: originAirport.code, name: originAirport.name, country: originAirport.country } : null);
+        ctx.setDestination(destAirport ? { code: destAirport.code, name: destAirport.name, country: destAirport.country } : null);
+        ctx.setDepartDate(departDate);
+        ctx.setReturnDate(returnDate);
+        ctx.setTripType(tripType);
+        ctx.setAdults(adults);
+        ctx.setChildCount(children);
+        ctx.setInfants(infants);
+        ctx.setCabinClass(cabinClass);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [origin, destination, departDate, returnDate, tripType, adults, children, infants, cabinClass]); // Omit ctx to prevent infinite loops
 
-    // ... (geo-detect useEffect)
+    const geoDetected = useRef(false);
 
-    // ... (swap callback useEffect)
+    // geo-detect (run strictly ONCE)
+    useEffect(() => {
+        if (geoDetected.current) return;
+        setDetectingLocation(true);
+        detectOriginAirport().then(code => {
+            if (code) setOrigin(code);
+            setDetectingLocation(false);
+            geoDetected.current = true;
+        });
+    }, []);
 
-    // ... (infant clamp useEffect)
+    // Swap callback ref sync
+    useEffect(() => {
+        ctx.registerSwapCallback(() => {
+            // No-op for now as we manage local state
+        });
+    }, [ctx]);
 
-    // ... (esc close useEffect)
+    // Ensure infants <= adults
+    useEffect(() => {
+        if (infants > adults) setInfants(adults);
+    }, [adults, infants]);
 
-    // ... (pax focus management useEffect)
+    // Keyboard accessibility: ESC to close dropdowns
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setCalendarOpen(false);
+                setOpenPax(false);
+            }
+        };
+        window.addEventListener("keydown", handleEsc);
+        return () => window.removeEventListener("keydown", handleEsc);
+    }, []);
+
+    // Focus management for Pax menu
+    useEffect(() => {
+        if (!openPax) return;
+        hasOpenedPax.current = true;
+        const r1 = requestAnimationFrame(() => requestAnimationFrame(() => doneButtonRef.current?.focus()));
+        return () => cancelAnimationFrame(r1);
+    }, [openPax]);
+
+    useEffect(() => {
+        if (!openPax && hasOpenedPax.current) paxTriggerRef.current?.focus();
+    }, [openPax]);
 
     const departDateObj = useMemo(() => {
         const d = new Date(departDate + "T00:00:00");
@@ -93,18 +146,13 @@ export function useFlightWidgetState() {
 
     const lowestPrice = usePriceHint(origin, destination, !!returnDate);
 
-    const committedOrigin = committedPriceQuery?.origin ?? "";
-    const committedDestination = committedPriceQuery?.destination ?? "";
-    const committedDepartDate = committedPriceQuery?.departDate ?? "";
-    const committedReturnDate = committedPriceQuery?.returnDate;
-
-    // Non-visual bridge: runs only after explicit user commit.
+    // Non-visual bridge: runs only after user commits search.
     const priceIntelligence = useFlightWidgetPriceIntelligence({
-        committed: committedSearchTs > 0 && committedOrigin.length > 0,
-        origin: committedOrigin,
-        destination: committedDestination,
-        departDate: committedDepartDate,
-        returnDate: committedReturnDate,
+        committed: committedSearchTs > 0,
+        origin: committedPriceQuery.origin,
+        destination: committedPriceQuery.destination,
+        departDate: committedPriceQuery.departDate,
+        returnDate: committedPriceQuery.returnDate,
     });
     const displayPrice = lowestPrice || calendarCheapestPrice;
 
@@ -162,35 +210,24 @@ export function useFlightWidgetState() {
 
         if (posthog.__loaded) posthog.capture("search_flights_clicked", { origin, destination, departDate, returnDate, flexibility: ctx.flexibility });
 
-        const committedAt = Date.now();
         setCommittedPriceQuery({
             origin,
             destination,
             departDate,
             returnDate: returnDate || undefined,
         });
-        setCommittedSearchTs(committedAt);
+        setCommittedSearchTs(Date.now());
 
         if (ENABLE_LOCAL_RESULTS) {
             return true;
         }
-
-        // SYNC STATE TO CONTEXT BEFORE BUILDING URL
-        ctx.setOrigin({ code: origin, name: origin, country: "" });
-        ctx.setDestination({ code: destination, name: destination, country: "" });
-        ctx.setDepartDate(departDate);
-        ctx.setReturnDate(returnDate || "");
-        ctx.setAdults(adults);
-        ctx.setChildCount(children);
-        ctx.setInfants(infants);
-        ctx.setCabinClass(cabinClass);
 
         const urls = ctx.buildSearchURL();
         if (urls) {
             window.location.href = urls.travelpayouts;
         }
         return false;
-    }, [validateSearch, origin, destination, departDate, returnDate, adults, children, infants, cabinClass, lowestPrice, calendarCheapestPrice, ctx]);
+    }, [validateSearch, origin, destination, departDate, returnDate, lowestPrice, calendarCheapestPrice, ctx]);
 
     const handleTripComSearch = useCallback(() => {
         if (!validateSearch()) return;
