@@ -46,6 +46,9 @@ import { TrackPricesButton } from "./TrackPricesButton";
 import { CABIN_OPTIONS, AIRPORT_MAP, B, cellBorder, cellFocus, labelStyle } from "./flightWidget.data";
 import { FlightWidgetErrorBoundary } from "./FlightWidgetErrorBoundary";
 import { PassengerMenu } from "./PassengerMenu";
+import { buildFlightPriceIntelligenceViewModel } from "./priceIntelligence.viewModel";
+import { FlightPriceIntelligenceSummary } from "./FlightPriceIntelligenceSummary";
+import { FlightPriceIntelligenceState } from "./FlightPriceIntelligenceState";
 import type { RecentSearchRecord } from "./flightWidget.recent";
 import type { FlexibilityType } from "@/contexts/FlightSearchContext";
 
@@ -120,6 +123,11 @@ function FlightWidgetInner() {
         s.setDepartDate(rec.departDate);
         s.setReturnDate(rec.returnDate);
     }, [s]);
+
+    const priceIntelligenceVm = buildFlightPriceIntelligenceViewModel(
+        s.priceIntelligence.calendar,
+        s.priceIntelligence.trend,
+    );
 
     return (
         <div id="mainWidget" className="w-full max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
@@ -391,6 +399,9 @@ function FlightWidgetInner() {
                         Compare on Trip.com
                     </button>
                 </div>
+
+                <FlightPriceIntelligenceSummary vm={priceIntelligenceVm} />
+                <FlightPriceIntelligenceState vm={priceIntelligenceVm} />
 
                 {/* ═══ FORM ERROR ═══════════════════════════════════════════ */}
                 {s.formError && (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PriceTrendResponse } from "@shared/flights/priceTrend.types";
 
 type Input = {
@@ -12,55 +12,95 @@ type Input = {
   enabled?: boolean;
 };
 
+function hasText(value: string | undefined): value is string {
+  return Boolean(value && value.trim().length > 0);
+}
+
 export function usePriceTrend(input: Input) {
   const [data, setData] = useState<PriceTrendResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestSeq = useRef(0);
 
-  const stableKey = useMemo(() => {
-    if (!input.enabled) return "disabled";
-    return [
-      input.origin,
-      input.destination,
-      input.departStartDate,
-      input.departEndDate,
-      input.returnDate ?? "",
-      input.currency ?? "USD",
-      String(input.windowDays ?? 7),
-    ].join(":");
+  const normalized = useMemo(() => {
+    const origin = input.origin.trim().toUpperCase();
+    const destination = input.destination.trim().toUpperCase();
+    const departStartDate = input.departStartDate.trim();
+    const departEndDate = input.departEndDate.trim();
+    const returnDate = input.returnDate?.trim() || "";
+    const currency = (input.currency ?? "USD").trim().toUpperCase();
+    const windowDays = input.windowDays ?? 7;
+    const enabled = Boolean(input.enabled);
+    const validCore = hasText(origin) && hasText(destination) && hasText(departStartDate) && hasText(departEndDate);
+
+    return {
+      enabled,
+      canFetch: enabled && validCore,
+      origin,
+      destination,
+      departStartDate,
+      departEndDate,
+      returnDate,
+      currency,
+      windowDays,
+    };
   }, [input.origin, input.destination, input.departStartDate, input.departEndDate, input.returnDate, input.currency, input.windowDays, input.enabled]);
 
+  const stableKey = useMemo(() => {
+    if (!normalized.canFetch) return "disabled";
+    return [
+      normalized.origin,
+      normalized.destination,
+      normalized.departStartDate,
+      normalized.departEndDate,
+      normalized.returnDate,
+      normalized.currency,
+      String(normalized.windowDays),
+    ].join(":");
+  }, [normalized]);
+
   useEffect(() => {
-    if (!input.enabled) return;
-    if (!input.origin || !input.destination || !input.departStartDate || !input.departEndDate) return;
+    if (!normalized.canFetch) {
+      setLoading(false);
+      return;
+    }
 
     const ctrl = new AbortController();
+    const seq = ++requestSeq.current;
     setLoading(true);
     setError(null);
 
     const qs = new URLSearchParams({
-      origin: input.origin,
-      destination: input.destination,
-      departStartDate: input.departStartDate,
-      departEndDate: input.departEndDate,
-      currency: input.currency ?? "USD",
-      windowDays: String(input.windowDays ?? 7),
+      origin: normalized.origin,
+      destination: normalized.destination,
+      departStartDate: normalized.departStartDate,
+      departEndDate: normalized.departEndDate,
+      currency: normalized.currency,
+      windowDays: String(normalized.windowDays),
     });
-    if (input.returnDate) qs.set("returnDate", input.returnDate);
+    if (hasText(normalized.returnDate)) qs.set("returnDate", normalized.returnDate);
 
     fetch(`/api/flights/price-trend?${qs.toString()}`, { signal: ctrl.signal })
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP_${res.status}`);
         return res.json() as Promise<PriceTrendResponse>;
       })
-      .then(setData)
-      .catch((e) => {
-        if (e?.name !== "AbortError") setError("Failed to fetch price trend");
+      .then((nextData) => {
+        if (requestSeq.current !== seq) return;
+        setData(nextData);
       })
-      .finally(() => setLoading(false));
+      .catch((e: unknown) => {
+        if ((e as { name?: string } | null)?.name === "AbortError") return;
+        if (requestSeq.current !== seq) return;
+        setError("Failed to fetch price trend");
+      })
+      .finally(() => {
+        if (requestSeq.current !== seq) return;
+        setLoading(false);
+      });
 
     return () => ctrl.abort();
-  }, [stableKey]);
+  }, [stableKey, normalized]);
 
   return { data, loading, error };
 }
