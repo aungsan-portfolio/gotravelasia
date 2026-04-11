@@ -175,12 +175,22 @@ export function useFlightWidgetState() {
             return true;
         }
 
+        // SYNC STATE TO CONTEXT BEFORE BUILDING URL
+        ctx.setOrigin({ code: origin, name: origin, country: "" });
+        ctx.setDestination({ code: destination, name: destination, country: "" });
+        ctx.setDepartDate(departDate);
+        ctx.setReturnDate(returnDate || "");
+        ctx.setAdults(adults);
+        ctx.setChildCount(children);
+        ctx.setInfants(infants);
+        ctx.setCabinClass(cabinClass);
+
         const urls = ctx.buildSearchURL();
         if (urls) {
             window.location.href = urls.travelpayouts;
         }
         return false;
-    }, [validateSearch, origin, destination, departDate, returnDate, lowestPrice, calendarCheapestPrice, ctx]);
+    }, [validateSearch, origin, destination, departDate, returnDate, adults, children, infants, cabinClass, lowestPrice, calendarCheapestPrice, ctx]);
 
     const handleTripComSearch = useCallback(() => {
         if (!validateSearch()) return;

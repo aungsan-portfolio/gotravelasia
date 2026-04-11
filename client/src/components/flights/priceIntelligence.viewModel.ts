@@ -33,8 +33,9 @@ export interface FlightPriceIntelligenceViewModel {
 }
 
 function pickCheapestPoint(points: PricePoint[]): PricePoint | null {
-  if (!points.length) return null;
-  return points.reduce<PricePoint>((best, point) => (point.amount < best.amount ? point : best), points[0]);
+  const validPoints = points.filter((p) => p.amount > 0);
+  if (!validPoints.length) return null;
+  return validPoints.reduce<PricePoint>((best, point) => (point.amount < best.amount ? point : best), validPoints[0]);
 }
 
 export function buildFlightPriceIntelligenceViewModel(
