@@ -78,9 +78,9 @@ export function MobileSummaryPill({ state: propState, onClick }: Props) {
       data-testid="mobile-summary-pill"
       data-mobile-summary-pill="true"
       aria-label="Modify search"
-      className="MobileSummaryPill fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex flex-col items-center rounded-2xl bg-slate-950/90 px-4 py-2.5 text-center text-white shadow-2xl backdrop-blur-md transition-all active:scale-95 md:hidden"
+      className="MobileSummaryPill fixed bottom-5 left-1/2 z-40 -translate-x-1/2 flex flex-col items-center rounded-full border border-white/20 bg-[#1A102D]/85 px-5 py-2.5 text-center text-white shadow-[0_16px_32px_rgba(9,6,16,0.45)] backdrop-blur-xl transition-all active:scale-95 md:hidden"
     >
-      <div className="flex items-center gap-1.5 text-xs font-bold tracking-tight">
+      <div className="flex items-center gap-2 text-[12px] font-semibold tracking-[0.01em]">
         <span>{origin} – {destination}</span>
         <span className="text-white/40">|</span>
         <span>{depart}{ret ? `–${ret}` : ""}</span>
@@ -93,7 +93,7 @@ export function MobileSummaryPill({ state: propState, onClick }: Props) {
           {total}
         </span>
       </div>
-      <div className="mt-0.5 text-[10px] uppercase tracking-widest text-white/50 font-black">
+      <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-white/60">
         Modify search
       </div>
     </button>
