@@ -155,8 +155,82 @@ const plugins = [
     ? [vitePluginManusDebugCollector()]
     : [
         VitePWA({
-          selfDestroying: true,
+          injectRegister: "auto",
           registerType: "autoUpdate",
+          workbox: {
+            clientsClaim: true,
+            skipWaiting: true,
+            navigateFallback: "/index.html",
+            navigateFallbackDenylist: [/^\/api\//, /^\/12go-widget\.html/],
+            cleanupOutdatedCaches: true,
+            maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+            globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,json}"],
+            globIgnores: ["**/data/flight_data.json"],
+            runtimeCaching: [
+              {
+                urlPattern: ({ url }: { url: URL }) =>
+                  url.hostname === "hotellook.com" ||
+                  url.hostname === "www.travelpayouts.com" ||
+                  url.hostname === "autocomplete.travelpayouts.com" ||
+                  url.hostname.endsWith("tpx.gr"),
+                handler: "NetworkOnly",
+              },
+              {
+                urlPattern: /^https:\/\/api\.travelpayouts\.com\/.*/i,
+                handler: "NetworkFirst",
+                options: {
+                  cacheName: "flight-api-cache",
+                  expiration: {
+                    maxEntries: 50,
+                    maxAgeSeconds: 60 * 60,
+                  },
+                },
+              },
+              {
+                urlPattern: /\/data\/transport\.json$/,
+                handler: "CacheFirst",
+                options: {
+                  cacheName: "transport-data",
+                  expiration: {
+                    maxEntries: 5,
+                    maxAgeSeconds: 60 * 60 * 24,
+                  },
+                },
+              },
+              {
+                urlPattern: /\/data\/flight_data\.json$/,
+                handler: "StaleWhileRevalidate",
+                options: {
+                  cacheName: "flight-data-cache",
+                  expiration: {
+                    maxEntries: 2,
+                    maxAgeSeconds: 60 * 60 * 24,
+                  },
+                },
+              },
+            ],
+          },
+          manifest: {
+            name: "GoTravel Asia",
+            short_name: "GoTravel",
+            description: "Best flight deals across Southeast Asia",
+            theme_color: "#11081D",
+            background_color: "#11081D",
+            display: "standalone",
+            start_url: "/",
+            icons: [
+              {
+                src: "/icons/icon-192.png",
+                sizes: "192x192",
+                type: "image/png",
+              },
+              {
+                src: "/icons/icon-512.png",
+                sizes: "512x512",
+                type: "image/png",
+              },
+            ],
+          },
         }),
       ]),
 ];
