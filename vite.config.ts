@@ -208,8 +208,8 @@ const plugins = [
       name: "GoTravel Asia",
       short_name: "GoTravel",
       description: "Best flight deals across Southeast Asia",
-      theme_color: "#0f172a",
-      background_color: "#0f172a",
+      theme_color: "#11081D",
+      background_color: "#11081D",
       display: "standalone",
       start_url: "/",
       icons: [
