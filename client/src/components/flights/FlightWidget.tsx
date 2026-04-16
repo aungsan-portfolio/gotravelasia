@@ -49,6 +49,7 @@ import { PassengerMenu } from "./PassengerMenu";
 import { buildFlightPriceIntelligenceViewModel } from "./priceIntelligence.viewModel";
 import { FlightPriceIntelligenceSummary } from "./FlightPriceIntelligenceSummary";
 import { FlightPriceIntelligenceState } from "./FlightPriceIntelligenceState";
+import { LocalFlightResultsPanel } from "./LocalFlightResultsPanel";
 import type { RecentSearchRecord } from "./flightWidget.recent";
 import type { FlexibilityType } from "@/contexts/FlightSearchContext";
 
@@ -80,13 +81,17 @@ function FlightWidgetInner() {
 
     const {
         flights,
-        bestFlights,
-        cheapestFlights,
-        fastestFlights,
         loading,
         error,
         isEmpty,
-        refetch
+        refetch,
+        filters,
+        sortBy,
+        setFilters,
+        setSortBy,
+        resetFilters,
+        resetSortBy,
+        rawFlights,
     } = useFlightSearch(
         committedSearch || { 
             origin: "", 
@@ -418,84 +423,21 @@ function FlightWidgetInner() {
                 {/* ═══ RECENT SEARCHES ══════════════════════════════════════ */}
                 <RecentSearchesPanel onReSearch={handleReSearch} />
 
-                {/* ═══ VISUAL TEST: LOCAL SEARCH RESULTS ════════════════════ */}
-                {committedSearch && (
-                    <div className="mt-8 animate-in fade-in slide-in-from-bottom-4">
-                        <div className="flex items-center justify-between p-4 rounded-t-2xl" style={{ background: "rgba(255,255,255,0.08)" }}>
-                            <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                                <Plane className="w-5 h-5" style={{ color: B.gold }} />
-                                API Live Results ({flights.length})
-                            </h3>
-                            <button 
-                                onClick={() => refetch()} 
-                                disabled={loading}
-                                className="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors disabled:opacity-50"
-                                style={{ background: "rgba(255,255,255,0.1)", color: B.white }}
-                            >
-                                {loading ? "Refreshing..." : "Refresh"}
-                            </button>
-                        </div>
-                        
-                        <div className="p-4 rounded-b-2xl overflow-hidden" style={{ background: "rgba(20,20,30,0.4)", border: `1px solid rgba(255,255,255,0.1)`, borderTop: "none" }}>
-                            {loading && flights.length === 0 && (
-                                <div className="py-12 text-center text-white/50 animate-pulse">
-                                    Scouring the skies for the best deals...
-                                </div>
-                            )}
-
-                            {error && (
-                                <div className="p-4 rounded-xl text-red-200" style={{ background: "rgba(255,0,0,0.15)" }}>
-                                    <h4 className="font-bold flex items-center gap-2"><AlertTriangle className="w-4 h-4"/> Search Error</h4>
-                                    <p className="text-sm mt-1">{error}</p>
-                                </div>
-                            )}
-
-                            {isEmpty && !error && (
-                                <div className="py-12 text-center text-white/50">
-                                    No flights found for this route.
-                                </div>
-                            )}
-
-                            {flights.length > 0 && (
-                                <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-                                    {flights.map((flight, idx) => (
-                                        <div 
-                                            key={flight.id}
-                                            className="p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all hover:bg-white/5"
-                                            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
-                                        >
-                                            {/* Flight info */}
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{ background: B.gold, color: B.purpleDeep }}>
-                                                        {idx === 0 ? "🥇 SmartMix #1" : `#${idx + 1}`}
-                                                    </span>
-                                                    <span className="text-white/80 text-sm font-medium">Source: amadeus</span>
-                                                    <span className="text-white text-sm">| Stops: {'totalPrice' in flight ? ((flight as any).outbound.totalStops + (flight as any).inbound.totalStops) : (flight as any).totalStops}</span>
-                                                </div>
-                                                <div className="text-xs text-white/50 font-mono mt-1 w-48 truncate" title={flight.id}>
-                                                    ID: {flight.id}
-                                                </div>
-                                            </div>
-
-                                            {/* Price / Score */}
-                                            <div className="flex flex-col md:items-end text-left md:text-right">
-                                                <div className="text-xl font-black" style={{ color: "#a0f0b0" }}>
-                                                    {'totalPrice' in flight ? (flight as any).totalPrice : (flight as any).price.total} {'totalPrice' in flight ? 'USD' : (flight as any).price.currency}
-                                                </div>
-                                                {typeof (flight as any).score === "number" && (
-                                                    <div className="text-xs font-bold" style={{ color: B.gold }}>
-                                                        Score: {(flight as any).score.toFixed(1)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
+                <LocalFlightResultsPanel
+                    committedSearch={committedSearch}
+                    flights={flights}
+                    loading={loading}
+                    error={error}
+                    isEmpty={isEmpty}
+                    refetch={refetch}
+                    filters={filters}
+                    sortBy={sortBy}
+                    setFilters={setFilters}
+                    setSortBy={setSortBy}
+                    resetFilters={resetFilters}
+                    resetSortBy={resetSortBy}
+                    rawFlightsCount={rawFlights.length}
+                />
             </div>
         </div>
     );

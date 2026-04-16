@@ -7,7 +7,7 @@ import { DateRangeField } from "./DateRangeField";
 import { PaxCabinField } from "./PaxCabinField";
 import { SearchSubmitButton } from "./SearchSubmitButton";
 import { MobileSummaryPill } from "../results/MobileSummaryPill";
-import { useFlightSearch } from "@/features/flights/search/useFlightSearch";
+import { useWhiteLabelFlightSearch } from "@/features/flights/search/useWhiteLabelFlightSearch";
 import type { FlightSearchState } from "@/features/flights/search/flightSearch.types";
 import HotelsSearchForm from "@/components/hotels/HotelsSearchForm";
 
@@ -56,7 +56,7 @@ function GtaLogo() {
 }
 
 export function CompactFlightToolbar({ initialState, showBranding = true }: Props) {
-  const { state, actions } = useFlightSearch(initialState);
+  const { state, actions } = useWhiteLabelFlightSearch(initialState);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<SearchTab>("flights");
   const [isSubmitting, setIsSubmitting] = useState(false);

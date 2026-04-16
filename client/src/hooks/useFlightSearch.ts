@@ -1,3 +1,11 @@
+/**
+ * Canonical live API results hook for flight search.
+ *
+ * NOTE: This hook powers inline/live search results (API + in-memory filtering/sorting).
+ * Do not confuse it with the white-label form redirect hook under
+ * `features/flights/search/useWhiteLabelFlightSearch.ts`.
+ */
+
 import {
   useState,
   useMemo,

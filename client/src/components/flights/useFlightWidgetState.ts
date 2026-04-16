@@ -10,7 +10,12 @@ import { usePriceHint } from "@/hooks/useFlightData";
 import { persistSearchToSession } from "@/lib/detectRouteFromContext";
 import { useFlightWidgetPriceIntelligence } from "@/hooks/useFlightWidgetPriceIntelligence";
 
-export const ENABLE_LOCAL_RESULTS = false; // Use local Flight Search Hook instead of redirecting (false for PROD)
+/**
+ * Toggle between live inline results vs redirect flow.
+ * - true: `handleSearch()` returns true and FlightWidget renders local API results panel.
+ * - false: `handleSearch()` performs redirect via white-label URL and returns false.
+ */
+export const ENABLE_LOCAL_RESULTS = false;
 
 const flightSearchSchema = z
     .object({
@@ -193,6 +198,11 @@ export function useFlightWidgetState() {
         }
     }, [calendarMode, returnDate, tripType]);
 
+    /**
+     * Boolean return semantics:
+     * - true  => caller should execute local in-memory results flow (no redirect).
+     * - false => redirect flow has been triggered (or validation failed).
+     */
     const handleSearch = useCallback(() => {
         if (!validateSearch()) return false;
 
