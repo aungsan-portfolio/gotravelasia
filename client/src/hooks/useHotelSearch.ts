@@ -3,7 +3,9 @@ import { useLocation } from "wouter";
 
 import type { HotelFilterId, HotelFilterOption } from "@/types/hotels";
 import type {
+  HotelOutboundLinks,
   HotelResult,
+  HotelSearchMeta,
   HotelSearchParams,
   HotelSearchResponse,
   HotelSort,
@@ -30,6 +32,9 @@ export const HOTEL_SORT_OPTIONS: Array<{ value: HotelSort; label: string }> = [
 export interface UseHotelSearchResult {
   isLoading: boolean;
   errorMessage: string | null;
+  data: HotelSearchResponse | null;
+  meta: HotelSearchMeta | null;
+  affiliateLinks: HotelOutboundLinks | null;
   allHotels: HotelResult[];
   visibleHotels: HotelResult[];
   sort: HotelSort;
@@ -37,7 +42,10 @@ export interface UseHotelSearchResult {
   selectedHotelId: string | null;
   hoveredHotelId: string | null;
   totalFound: number;
+  currentPage: number;
+  totalPages: number;
   setSort: (value: HotelSort) => void;
+  setPage: (value: number) => void;
   toggleFilter: (filterId: HotelFilterId) => void;
   clearFilters: () => void;
   retry: () => void;
@@ -53,11 +61,9 @@ function applyFilters(hotels: HotelResult[], activeFilters: HotelFilterId[]): Ho
           return hotel.amenities.some((a) => a.toLowerCase().includes("breakfast"));
 
         case "free_cancellation":
-          // Phase 1 keeps this as a placeholder until the API returns normalized policy data.
           return true;
 
         case "pay_later":
-          // Phase 1 keeps this as a placeholder until the API returns normalized payment-policy data.
           return true;
 
         case "highly_rated":
@@ -78,16 +84,9 @@ function applyFilters(hotels: HotelResult[], activeFilters: HotelFilterId[]): Ho
 
 /**
  * Canonical hotel search hook.
- *
- * Responsibilities:
- * - fetch hotel results from the existing /api/hotels/search endpoint
- * - keep URL-backed sort changes canonical
- * - manage client-side filter state
- * - manage selected / hovered hotel state for list + map UI
- *
- * This is the hook new hotel result work should build on top of.
  */
 export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
+  const [data, setData] = useState<HotelSearchResponse | null>(null);
   const [allHotels, setAllHotels] = useState<HotelResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -121,6 +120,7 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
           return;
         }
 
+        setData(payload);
         setAllHotels(payload.hotels);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -134,6 +134,7 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
         setErrorMessage(
           error instanceof Error ? error.message : "Unable to load hotel results.",
         );
+        setData(null);
         setAllHotels([]);
       } finally {
         if (requestId === requestIdRef.current) {
@@ -193,7 +194,20 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
       setSortState(newSort);
       const newParams = buildHotelSearchParams({
         ...query,
+        page: 1,
         sort: newSort,
+      });
+      setLocation(`/hotels?${newParams.toString()}`);
+    },
+    [query, setLocation],
+  );
+
+  const setPage = useCallback(
+    (newPage: number) => {
+      const safePage = Math.max(1, newPage);
+      const newParams = buildHotelSearchParams({
+        ...query,
+        page: safePage,
       });
       setLocation(`/hotels?${newParams.toString()}`);
     },
@@ -203,6 +217,9 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
   return {
     isLoading,
     errorMessage,
+    data,
+    meta: data?.meta ?? null,
+    affiliateLinks: data?.affiliateLinks ?? null,
     allHotels,
     visibleHotels,
     sort,
@@ -210,7 +227,10 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
     selectedHotelId,
     hoveredHotelId,
     totalFound: visibleHotels.length,
+    currentPage: data?.meta.page ?? query.page,
+    totalPages: data?.meta.totalPages ?? 1,
     setSort,
+    setPage,
     toggleFilter,
     clearFilters,
     retry,

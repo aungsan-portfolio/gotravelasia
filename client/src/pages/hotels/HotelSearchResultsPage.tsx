@@ -14,13 +14,17 @@ export default function HotelSearchResultsPage() {
   const {
     isLoading,
     errorMessage,
+    affiliateLinks,
     visibleHotels,
     sort,
     activeFilters,
     selectedHotelId,
     hoveredHotelId,
     totalFound,
+    currentPage,
+    totalPages,
     setSort,
+    setPage,
     toggleFilter,
     clearFilters,
     retry,
@@ -76,6 +80,7 @@ export default function HotelSearchResultsPage() {
         </header>
 
         <HotelResultsPanel
+          cityName={cityName}
           isLoading={isLoading}
           errorMessage={errorMessage}
           hotels={visibleHotels}
@@ -86,7 +91,11 @@ export default function HotelSearchResultsPage() {
           selectedHotelId={selectedHotelId}
           hoveredHotelId={hoveredHotelId}
           totalFound={totalFound}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          affiliateLinks={affiliateLinks}
           onSortChange={setSort}
+          onPageChange={setPage}
           onToggleFilter={toggleFilter}
           onClearFilters={clearFilters}
           onRetry={retry}
