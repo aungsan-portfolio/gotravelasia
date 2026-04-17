@@ -1,4 +1,5 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
+import { List, Map } from "lucide-react";
 
 import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToolbar";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
@@ -25,6 +26,8 @@ interface HotelResultsPanelProps {
   onHoverHotel: (hotelId: string | null) => void;
 }
 
+type MobileResultsView = "list" | "map";
+
 function HotelResultsPanelComponent({
   isLoading,
   errorMessage,
@@ -43,6 +46,8 @@ function HotelResultsPanelComponent({
   onSelectHotel,
   onHoverHotel,
 }: HotelResultsPanelProps) {
+  const [mobileView, setMobileView] = useState<MobileResultsView>("list");
+
   const mappedHotels = useMemo(
     () => hotels.filter((hotel) => hotel.coordinates && !hotel.coordinates.isFallback),
     [hotels],
@@ -81,29 +86,67 @@ function HotelResultsPanelComponent({
       )}
 
       {!isLoading && !errorMessage && (
-        <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="min-w-0">
-            <HotelResultsList
-              hotels={hotels}
-              checkIn={checkIn}
-              checkOut={checkOut}
-              selectedHotelId={selectedHotelId}
-              hoveredHotelId={hoveredHotelId}
-              onSelectHotel={(hotelId) => onSelectHotel(hotelId)}
-              onHoverHotel={onHoverHotel}
-            />
+        <>
+          <div className="mt-4 lg:hidden">
+            <div className="inline-flex w-full rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setMobileView("list")}
+                className={[
+                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
+                  mobileView === "list"
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-700 hover:bg-slate-50",
+                ].join(" ")}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <List className="h-4 w-4" />
+                  List
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMobileView("map")}
+                className={[
+                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
+                  mobileView === "map"
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-700 hover:bg-slate-50",
+                ].join(" ")}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Map className="h-4 w-4" />
+                  Map
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="min-w-0">
-            <HotelMapPanel
-              hotels={mappedHotels}
-              selectedHotelId={selectedHotelId}
-              hoveredHotelId={hoveredHotelId}
-              onSelectHotel={(hotelId) => onSelectHotel(hotelId)}
-              onHoverHotel={onHoverHotel}
-            />
+          <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className={mobileView === "list" ? "min-w-0" : "hidden min-w-0 lg:block"}>
+              <HotelResultsList
+                hotels={hotels}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                selectedHotelId={selectedHotelId}
+                hoveredHotelId={hoveredHotelId}
+                onSelectHotel={(hotelId) => onSelectHotel(hotelId)}
+                onHoverHotel={onHoverHotel}
+              />
+            </div>
+
+            <div className={mobileView === "map" ? "min-w-0" : "hidden min-w-0 lg:block"}>
+              <HotelMapPanel
+                hotels={mappedHotels}
+                selectedHotelId={selectedHotelId}
+                hoveredHotelId={hoveredHotelId}
+                onSelectHotel={(hotelId) => onSelectHotel(hotelId)}
+                onHoverHotel={onHoverHotel}
+              />
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
