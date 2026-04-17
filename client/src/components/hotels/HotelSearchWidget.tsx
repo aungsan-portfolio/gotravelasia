@@ -54,7 +54,7 @@ export default function HotelSearchWidget() {
         />
         <button
           onClick={handleSearch}
-          className="flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 font-bold text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 active:scale-95"
+          className="flex h-full min-h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 font-bold text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 active:scale-95"
         >
           <span>🔍</span> Search Hotels
         </button>

@@ -33,20 +33,26 @@ export default function HotelSearchBox({ value, onSelect, placeholder = "Where a
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full">
-      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+    <div ref={containerRef} className="relative h-full w-full">
+      <div 
+        className="flex h-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 cursor-text"
+        onClick={() => containerRef.current?.querySelector('input')?.focus()}
+      >
         <span className="text-xl">🔍</span>
-        <input
-          type="text"
-          className="w-full bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
-          placeholder={placeholder}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setIsOpen(true);
-          }}
-          onFocus={() => setIsOpen(true)}
-        />
+        <div className="flex-1 text-left pt-0.5">
+          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Destination</p>
+          <input
+            type="text"
+            className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal"
+            placeholder={placeholder}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIsOpen(true);
+            }}
+            onFocus={() => setIsOpen(true)}
+          />
+        </div>
       </div>
 
       {isOpen && (query.length >= 2) && (

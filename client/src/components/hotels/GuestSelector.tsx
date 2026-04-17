@@ -26,14 +26,14 @@ export default function GuestSelector({ value, onChange }: Props) {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="relative h-full w-full">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98]"
+        className="flex h-full w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98]"
       >
         <span className="text-xl">👥</span>
-        <div className="text-left">
+        <div className="text-left pt-0.5">
           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Guests & Rooms</p>
           <p className="text-sm font-semibold text-gray-900">
             {value.adults} Adults · {value.rooms} Room{value.rooms > 1 ? 's' : ''}
