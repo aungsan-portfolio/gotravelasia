@@ -1,7 +1,6 @@
 import { useSearch } from "wouter";
-import { HotelFilterToolbar } from "@/components/hotels/filters/HotelFilterToolbar";
-import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
-import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
+
+import { HotelResultsPanel } from "@/components/hotels/results/HotelResultsPanel";
 import { useHotelResultsState } from "@/features/hotels/results/useHotelResultsState";
 import { parseHotelSearchParams } from "@shared/hotels/searchParams";
 import { getCityName } from "@/lib/cities";
@@ -39,59 +38,24 @@ export default function HotelSearchResultsPage() {
           </p>
         </header>
 
-        <HotelFilterToolbar
+        <HotelResultsPanel
+          isLoading={isLoading}
+          errorMessage={errorMessage}
+          hotels={visibleHotels}
+          checkIn={query.checkIn}
+          checkOut={query.checkOut}
           sort={sort}
           activeFilters={activeFilters}
+          selectedHotelId={selectedHotelId}
+          hoveredHotelId={hoveredHotelId}
+          totalFound={totalFound}
           onSortChange={setSort}
           onToggleFilter={toggleFilter}
           onClearFilters={clearFilters}
-          totalFound={totalFound}
+          onRetry={retry}
+          onSelectHotel={setSelectedHotelId}
+          onHoverHotel={setHoveredHotelId}
         />
-
-        {isLoading && (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-            Loading hotels…
-          </div>
-        )}
-
-        {!!errorMessage && !isLoading && (
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800">
-            <p className="font-semibold">Couldn&apos;t load hotels.</p>
-            <p className="mt-1 text-sm">{errorMessage}</p>
-            <button
-              type="button"
-              onClick={retry}
-              className="mt-3 rounded-md bg-rose-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-800"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {!isLoading && !errorMessage && (
-          <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0">
-              <HotelResultsList
-                hotels={visibleHotels}
-                checkIn={query.checkIn}
-                checkOut={query.checkOut}
-                selectedHotelId={selectedHotelId}
-                hoveredHotelId={hoveredHotelId}
-                onSelectHotel={setSelectedHotelId}
-                onHoverHotel={setHoveredHotelId}
-              />
-            </div>
-            <div className="min-w-0">
-              <HotelMapPanel
-                hotels={visibleHotels.filter((hotel) => hotel.coordinates && !hotel.coordinates.isFallback)}
-                selectedHotelId={selectedHotelId}
-                hoveredHotelId={hoveredHotelId}
-                onSelectHotel={setSelectedHotelId}
-                onHoverHotel={setHoveredHotelId}
-              />
-            </div>
-          </div>
-        )}
       </div>
     </main>
   );
