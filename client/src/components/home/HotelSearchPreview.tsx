@@ -2,7 +2,7 @@ import HotelSearchWidget from '@/components/hotels/HotelSearchWidget';
 
 export default function HotelSearchPreview() {
   return (
-    <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-2xl">
+    <div className="relative w-full overflow-visible rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-2xl">
       <div className="mb-4">
         <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest">Modernized Hotel Search</h3>
         <p className="text-xs text-white/40">Find the best deals across Southeast Asia</p>

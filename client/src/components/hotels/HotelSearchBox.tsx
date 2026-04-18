@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import { Search } from "lucide-react";
 import { useAutocomplete } from "../../hooks/useAutocomplete";
 import { AutocompleteSuggestion, LocationType } from "../../types/hotel-search.types";
+import { resolveSupportedHotelCity } from "@/features/hotels/frontdoor/hotelFrontDoor.mapping";
 
 const LOCATION_ICONS: Record<string, string> = {
   [LocationType.HOTEL]:        "🏨",
@@ -10,17 +12,32 @@ const LOCATION_ICONS: Record<string, string> = {
   [LocationType.NEIGHBORHOOD]: "📍",
 };
 
+interface SelectionPayload {
+  suggestion: AutocompleteSuggestion;
+  citySlug: string | null;
+}
+
 interface Props {
-  value:       string;
-  onSelect:    (suggestion: AutocompleteSuggestion) => void;
+  value: string;
+  onSelect: (payload: SelectionPayload) => void;
+  onInputChange: (value: string) => void;
   placeholder?: string;
 }
 
-export default function HotelSearchBox({ value, onSelect, placeholder = "Where are you going?" }: Props) {
+export default function HotelSearchBox({
+  value,
+  onSelect,
+  onInputChange,
+  placeholder = "Where are you going?",
+}: Props) {
   const [query, setQuery] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const { suggestions, isLoading } = useAutocomplete(query);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -38,7 +55,7 @@ export default function HotelSearchBox({ value, onSelect, placeholder = "Where a
         className="flex h-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 cursor-text"
         onClick={() => containerRef.current?.querySelector('input')?.focus()}
       >
-        <span className="text-xl">🔍</span>
+        <Search className="h-4 w-4 text-gray-500" aria-hidden="true" />
         <div className="flex-1 text-left pt-0.5">
           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Destination</p>
           <input
@@ -47,8 +64,10 @@ export default function HotelSearchBox({ value, onSelect, placeholder = "Where a
             placeholder={placeholder}
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value);
+              const nextQuery = e.target.value;
+              setQuery(nextQuery);
               setIsOpen(true);
+              onInputChange(nextQuery);
             }}
             onFocus={() => setIsOpen(true)}
           />
@@ -66,10 +85,11 @@ export default function HotelSearchBox({ value, onSelect, placeholder = "Where a
             <ul className="max-h-[320px] overflow-y-auto py-2">
               {suggestions.map((s) => (
                 <li
-                  key={s.locationId}
+                  key={`${s.locationId}-${s.displayName}`}
                   className="flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors hover:bg-gray-50"
                   onClick={() => {
-                    onSelect(s);
+                    const citySlug = resolveSupportedHotelCity({ suggestion: s, label: s.displayName });
+                    onSelect({ suggestion: s, citySlug });
                     setQuery(s.displayName);
                     setIsOpen(false);
                   }}

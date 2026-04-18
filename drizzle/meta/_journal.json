@@ -15,6 +15,13 @@
       "when": 1773997106894,
       "tag": "0001_tan_timeslip",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1776009229469,
+      "tag": "0002_tan_millenium_guard",
+      "breakpoints": true
     }
   ]
 }

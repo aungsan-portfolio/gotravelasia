@@ -4,6 +4,7 @@
  */
 
 import { HotelSearchParams, PageType } from "../types/hotel-search.types";
+import { buildHotelSearchParams as buildSharedParams } from "../../../shared/hotels/searchParams";
 
 export function buildHotelSearchUrl(params: HotelSearchParams): string {
   const searchParams = new URLSearchParams();
@@ -17,6 +18,19 @@ export function buildHotelSearchUrl(params: HotelSearchParams): string {
   searchParams.set("children", params.guests.children.toString());
   
   return `/hotels/search?${searchParams.toString()}`;
+}
+
+export function buildCanonicalHotelSearchUrl(city: string, checkIn: string, checkOut: string, adults: number, rooms: number): string {
+  const params = buildSharedParams({
+    city,
+    checkIn,
+    checkOut,
+    adults,
+    rooms,
+    page: 1,
+    sort: 'rank'
+  });
+  return `/hotels/search?${params.toString()}`;
 }
 
 export function buildHotelDetailUrl(hotelId: string, params: HotelSearchParams): string {

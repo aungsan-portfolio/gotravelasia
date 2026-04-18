@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Users } from "lucide-react";
 import { GuestConfig } from "../../types/hotel-search.types";
 
 interface Props {
@@ -10,8 +11,12 @@ export default function GuestSelector({ value, onChange }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const totalGuests = value.adults + value.children;
+  const showRoomWarning = value.rooms > totalGuests;
+
   const update = (key: keyof GuestConfig, delta: number) => {
-    const newVal = Math.max(key === "rooms" ? 1 : 0, value[key] + delta);
+    const min = key === "rooms" || key === "adults" ? 1 : 0;
+    const newVal = Math.max(min, value[key] + delta);
     onChange({ ...value, [key]: newVal });
   };
 
@@ -48,7 +53,11 @@ export default function GuestSelector({ value, onChange }: Props) {
             <Control label="Adults" value={value.adults} onMinus={() => update("adults", -1)} onPlus={() => update("adults", 1)} />
             <Control label="Children" value={value.children} onMinus={() => update("children", -1)} onPlus={() => update("children", 1)} />
           </div>
+          {showRoomWarning && (
+            <p className="mt-3 text-xs text-amber-600">Rooms exceed total guests.</p>
+          )}
           <button
+            type="button"
             onClick={() => setIsOpen(false)}
             className="mt-6 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition-transform active:scale-95"
           >
@@ -60,14 +69,14 @@ export default function GuestSelector({ value, onChange }: Props) {
   );
 }
 
-function Control({ label, value, onMinus, onPlus }: any) {
+function Control({ label, value, onMinus, onPlus }: { label: string; value: number; onMinus: () => void; onPlus: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm font-medium text-gray-700">{label}</span>
       <div className="flex items-center gap-4">
-        <button onClick={onMinus} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">-</button>
+        <button type="button" onClick={onMinus} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">-</button>
         <span className="w-4 text-center text-sm font-bold">{value}</span>
-        <button onClick={onPlus} className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100">+</button>
+        <button type="button" onClick={onPlus} className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100">+</button>
       </div>
     </div>
   );

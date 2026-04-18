@@ -1,0 +1,226 @@
+[
+  {
+    "id": 1,
+    "slug": "china",
+    "type": "country",
+    "name": "China",
+    "iataCode": null,
+    "countryCode": "CN",
+    "primaryAirports": [
+      "PEK",
+      "PVG",
+      "CAN",
+      "KMG",
+      "CTU",
+      "SZX"
+    ],
+    "cities": [
+      {
+        "code": "PEK",
+        "name": "Beijing"
+      },
+      {
+        "code": "PVG",
+        "name": "Shanghai"
+      },
+      {
+        "code": "CAN",
+        "name": "Guangzhou"
+      },
+      {
+        "code": "KMG",
+        "name": "Kunming"
+      },
+      {
+        "code": "CTU",
+        "name": "Chengdu"
+      },
+      {
+        "code": "SZX",
+        "name": "Shenzhen"
+      }
+    ],
+    "capital": "beijing",
+    "weatherData": null,
+    "priceRatio": 1.8,
+    "highlights": "Great Wall of China, Forbidden City Beijing, West Lake Hangzhou, Li River Guilin, Giant Panda Base Chengdu",
+    "climate": "Diverse — from subtropical south to cold-temperate north. Best travel window: spring (Apr–May) or autumn (Sep–Oct).",
+    "createdAt": "2026-03-13T05:02:04.000Z",
+    "updatedAt": "2026-03-13T05:02:04.000Z"
+  },
+  {
+    "id": 2,
+    "slug": "japan",
+    "type": "country",
+    "name": "Japan",
+    "iataCode": null,
+    "countryCode": "JP",
+    "primaryAirports": [
+      "NRT",
+      "KIX",
+      "NGO",
+      "FUK",
+      "CTS"
+    ],
+    "cities": [
+      {
+        "code": "NRT",
+        "name": "Tokyo"
+      },
+      {
+        "code": "KIX",
+        "name": "Osaka"
+      },
+      {
+        "code": "NGO",
+        "name": "Nagoya"
+      },
+      {
+        "code": "FUK",
+        "name": "Fukuoka"
+      },
+      {
+        "code": "CTS",
+        "name": "Sapporo"
+      }
+    ],
+    "capital": "tokyo",
+    "weatherData": null,
+    "priceRatio": 2.2,
+    "highlights": "Mount Fuji, Fushimi Inari Shrine Kyoto, Shibuya Crossing Tokyo, Osaka Castle, Hiroshima Peace Memorial",
+    "climate": "Temperate with four distinct seasons. Cherry blossom in spring (Mar–Apr) and fall foliage (Oct–Nov) are peak travel seasons.",
+    "createdAt": "2026-03-13T05:02:05.000Z",
+    "updatedAt": "2026-03-13T05:02:05.000Z"
+  },
+  {
+    "id": 3,
+    "slug": "vietnam",
+    "type": "country",
+    "name": "Vietnam",
+    "iataCode": null,
+    "countryCode": "VN",
+    "primaryAirports": [
+      "SGN",
+      "HAN",
+      "DAD"
+    ],
+    "cities": [
+      {
+        "code": "SGN",
+        "name": "Ho Chi Minh City"
+      },
+      {
+        "code": "HAN",
+        "name": "Hanoi"
+      },
+      {
+        "code": "DAD",
+        "name": "Da Nang"
+      }
+    ],
+    "capital": "hanoi",
+    "weatherData": null,
+    "priceRatio": 0.9,
+    "highlights": "Ha Long Bay, Hoi An Ancient Town, Cu Chi Tunnels, Phong Nha Caves, Mekong Delta",
+    "climate": "Tropical monsoon. South is warm year-round; north has a cool winter (Nov–Feb). Best: Nov–Apr.",
+    "createdAt": "2026-03-13T05:02:05.000Z",
+    "updatedAt": "2026-03-13T05:02:05.000Z"
+  },
+  {
+    "id": 4,
+    "slug": "indonesia",
+    "type": "country",
+    "name": "Indonesia",
+    "iataCode": null,
+    "countryCode": "ID",
+    "primaryAirports": [
+      "DPS",
+      "CGK",
+      "SUB",
+      "UPG"
+    ],
+    "cities": [
+      {
+        "code": "DPS",
+        "name": "Bali (Denpasar)"
+      },
+      {
+        "code": "CGK",
+        "name": "Jakarta"
+      },
+      {
+        "code": "SUB",
+        "name": "Surabaya"
+      },
+      {
+        "code": "UPG",
+        "name": "Makassar"
+      }
+    ],
+    "capital": "jakarta",
+    "weatherData": null,
+    "priceRatio": 1.1,
+    "highlights": "Ubud Rice Terraces, Borobudur Temple, Komodo Island, Raja Ampat, Mount Bromo",
+    "climate": "Tropical with wet (Nov–Mar) and dry (Apr–Oct) seasons. Bali is best Apr–Sep.",
+    "createdAt": "2026-03-13T05:02:05.000Z",
+    "updatedAt": "2026-03-13T05:02:05.000Z"
+  },
+  {
+    "id": 5,
+    "slug": "cambodia",
+    "type": "country",
+    "name": "Cambodia",
+    "iataCode": null,
+    "countryCode": "KH",
+    "primaryAirports": [
+      "PNH",
+      "REP"
+    ],
+    "cities": [
+      {
+        "code": "PNH",
+        "name": "Phnom Penh"
+      },
+      {
+        "code": "REP",
+        "name": "Siem Reap"
+      }
+    ],
+    "capital": "phnom-penh",
+    "weatherData": null,
+    "priceRatio": 0.85,
+    "highlights": "Angkor Wat, Royal Palace Phnom Penh, Tonle Sap Lake, Kampot Pepper Farms, Koh Rong Island",
+    "climate": "Tropical monsoon. Dry season (Nov–Apr) is the best time to visit Angkor Wat.",
+    "createdAt": "2026-03-13T05:02:05.000Z",
+    "updatedAt": "2026-03-13T05:02:05.000Z"
+  },
+  {
+    "id": 6,
+    "slug": "laos",
+    "type": "country",
+    "name": "Laos",
+    "iataCode": null,
+    "countryCode": "LA",
+    "primaryAirports": [
+      "VTE",
+      "LPQ"
+    ],
+    "cities": [
+      {
+        "code": "VTE",
+        "name": "Vientiane"
+      },
+      {
+        "code": "LPQ",
+        "name": "Luang Prabang"
+      }
+    ],
+    "capital": "vientiane",
+    "weatherData": null,
+    "priceRatio": 0.75,
+    "highlights": "Kuang Si Falls, Luang Prabang Night Market, Pak Ou Caves, Vang Vieng Blue Lagoon, That Luang Stupa",
+    "climate": "Tropical with distinct wet (May–Oct) and dry (Nov–Apr) seasons. Best visit: Nov–Feb.",
+    "createdAt": "2026-03-13T05:02:05.000Z",
+    "updatedAt": "2026-03-13T05:02:05.000Z"
+  }
+]
