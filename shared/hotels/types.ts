@@ -7,6 +7,7 @@ export type HotelSort =
   | "stars_desc"
   | "review_desc";
 export type HotelSearchSource = "agoda" | "mock";
+export type HotelViewMode = "list" | "map";
 
 export interface HotelSearchParams {
   city: string;

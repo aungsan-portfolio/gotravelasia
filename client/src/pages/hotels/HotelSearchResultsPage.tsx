@@ -1,16 +1,14 @@
 import { useMemo } from "react";
-import { useSearch } from "wouter";
 import { HotelFilterToolbar } from "@/components/hotels/filters/HotelFilterToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
-import { useHotelResultsState } from "@/features/hotels/results/useHotelResultsState";
-import { parseHotelSearchParams } from "@shared/hotels/searchParams";
+import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
+import { useHotelRouteState } from "./useHotelRouteState";
 
 export default function HotelSearchResultsPage() {
-  const searchString = useSearch();
-  const query = parseHotelSearchParams(searchString);
+  const { query, routeMode, routeMeta } = useHotelRouteState();
   const cityName = getCityName(query.city);
 
   const {
@@ -28,7 +26,7 @@ export default function HotelSearchResultsPage() {
     retry,
     setSelectedHotelId,
     setHoveredHotelId,
-  } = useHotelResultsState(query);
+  } = useHotelSearch(query, { routeMode, routeMeta });
 
   const mappedHotels = useMemo(
     () =>

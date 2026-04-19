@@ -11,6 +11,7 @@ import type {
   HotelSort,
 } from "@shared/hotels/types";
 import { buildHotelSearchParams } from "@shared/hotels/searchParams";
+import { buildHotelRouteUrl, type HotelRouteMeta } from "@/lib/hotels/buildHotelRouteUrl";
 
 export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
   { id: "free_breakfast", label: "Free breakfast", description: "Breakfast included" },
@@ -28,6 +29,11 @@ export const HOTEL_SORT_OPTIONS: Array<{ value: HotelSort; label: string }> = [
   { value: "review_desc", label: "Rating" },
   { value: "stars_desc", label: "Stars" },
 ];
+
+export interface UseHotelSearchOptions {
+  routeMode?: "canonical" | "legacy";
+  routeMeta?: HotelRouteMeta | null;
+}
 
 export interface UseHotelSearchResult {
   isLoading: boolean;
@@ -85,7 +91,10 @@ function applyFilters(hotels: HotelResult[], activeFilters: HotelFilterId[]): Ho
 /**
  * Canonical hotel search hook.
  */
-export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
+export function useHotelSearch(
+  query: HotelSearchParams,
+  options: UseHotelSearchOptions = {},
+): UseHotelSearchResult {
   const [data, setData] = useState<HotelSearchResponse | null>(null);
   const [allHotels, setAllHotels] = useState<HotelResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,6 +103,9 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
   const [activeFilters, setActiveFilters] = useState<HotelFilterId[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
   const [hoveredHotelId, setHoveredHotelId] = useState<string | null>(null);
+
+  const routeMode = options.routeMode ?? "legacy";
+  const routeMeta = options.routeMeta ?? null;
 
   const requestIdRef = useRef(0);
   const [, setLocation] = useLocation();
@@ -192,26 +204,29 @@ export function useHotelSearch(query: HotelSearchParams): UseHotelSearchResult {
   const setSort = useCallback(
     (newSort: HotelSort) => {
       setSortState(newSort);
-      const newParams = buildHotelSearchParams({
-        ...query,
-        page: 1,
-        sort: newSort,
-      });
-      setLocation(`/hotels?${newParams.toString()}`);
+      setLocation(
+        buildHotelRouteUrl({
+          query: { ...query, page: 1, sort: newSort },
+          routeMode,
+          routeMeta,
+        }),
+      );
     },
-    [query, setLocation],
+    [query, routeMeta, routeMode, setLocation],
   );
 
   const setPage = useCallback(
     (newPage: number) => {
       const safePage = Math.max(1, newPage);
-      const newParams = buildHotelSearchParams({
-        ...query,
-        page: safePage,
-      });
-      setLocation(`/hotels?${newParams.toString()}`);
+      setLocation(
+        buildHotelRouteUrl({
+          query: { ...query, page: safePage },
+          routeMode,
+          routeMeta,
+        }),
+      );
     },
-    [query, setLocation],
+    [query, routeMeta, routeMode, setLocation],
   );
 
   return {

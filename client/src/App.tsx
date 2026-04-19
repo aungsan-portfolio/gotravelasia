@@ -64,6 +64,7 @@ function Router() {
         <Route path="/flights/to/:slug" component={DestinationLandingPage} />
 
         {/* Path-based Hotel Routes (SEO Growth) */}
+        <Route path="/hotels/:destination/:checkIn/:checkOut/:party" component={HotelsPage} />
         <Route path="/hotels" component={HotelsPage} />
         <Route path="/transport" component={TransportPage} />
         <Route path="/hotels/:city" component={DestinationLandingPage} />
