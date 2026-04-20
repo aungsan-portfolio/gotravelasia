@@ -31,6 +31,7 @@ interface HotelResultsPanelProps {
   onRetry: () => void;
   onSelectHotel: (hotelId: string | null) => void;
   onHoverHotel: (hotelId: string | null) => void;
+  city?: string;
 }
 
 type MobileResultsView = "list" | "map";
@@ -57,6 +58,7 @@ function HotelResultsPanelComponent({
   onRetry,
   onSelectHotel,
   onHoverHotel,
+  city,
 }: HotelResultsPanelProps) {
   const [mobileView, setMobileView] = useState<MobileResultsView>("list");
 
@@ -189,6 +191,9 @@ function HotelResultsPanelComponent({
                 hoveredHotelId={hoveredHotelId}
                 onSelectHotel={(hotelId) => onSelectHotel(hotelId)}
                 onHoverHotel={onHoverHotel}
+                city={city || cityName}
+                checkIn={checkIn}
+                checkOut={checkOut}
               />
             </div>
           </div>

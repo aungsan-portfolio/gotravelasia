@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useRoute } from "wouter";
 
 import { HotelDetailAmenities } from "@/components/hotels/detail/HotelDetailAmenities";
@@ -9,6 +9,7 @@ import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
 import { buildHotelRouteUrl } from "@/lib/hotels/buildHotelRouteUrl";
 import { formatStayNights } from "@/lib/hotels/formatters";
+import { trackHotelDetailView } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 
 export default function HotelDetailPage() {
@@ -34,6 +35,22 @@ export default function HotelDetailPage() {
   }, [allHotels, match, params?.hotelId]);
 
   const cityName = getCityName(query.city);
+  const hotelResultPosition = hotel?.rankingPosition;
+
+  useEffect(() => {
+    if (isLoading || errorMessage || !hotel) {
+      return;
+    }
+
+    trackHotelDetailView({
+      hotelId: hotel.hotelId,
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      sort: query.sort,
+      resultPosition: hotel.rankingPosition,
+    });
+  }, [errorMessage, hotel, isLoading, query.checkIn, query.checkOut, query.city, query.sort]);
 
   if (!match || !params?.hotelId) {
     return (
@@ -122,7 +139,14 @@ export default function HotelDetailPage() {
                 checkIn={query.checkIn}
                 checkOut={query.checkOut}
               />
-              <HotelDetailBookingCard hotel={hotel} />
+              <HotelDetailBookingCard
+                hotel={hotel}
+                city={query.city}
+                checkIn={query.checkIn}
+                checkOut={query.checkOut}
+                sort={query.sort}
+                resultPosition={hotelResultPosition}
+              />
             </div>
           </div>
         )}

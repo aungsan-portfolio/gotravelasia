@@ -1,11 +1,46 @@
 import type { HotelResult } from "@shared/hotels/types";
+import { buildOutboundDealUrl } from "@/lib/hotels/buildOutboundDealUrl";
+import { trackHotelBookClick } from "@/lib/hotels/tracking";
 
 interface HotelDetailBookingCardProps {
   hotel: HotelResult;
+  city?: string;
+  checkIn?: string;
+  checkOut?: string;
+  sort?: string;
+  resultPosition?: number;
 }
 
-export function HotelDetailBookingCard({ hotel }: HotelDetailBookingCardProps) {
-  const agodaUrl = hotel.outboundLinks?.agoda;
+export function HotelDetailBookingCard({
+  hotel,
+  city,
+  checkIn,
+  checkOut,
+  sort,
+  resultPosition,
+}: HotelDetailBookingCardProps) {
+  const agodaUrl = buildOutboundDealUrl({
+    baseUrl: hotel.outboundLinks?.agoda,
+    provider: "agoda",
+    hotelId: hotel.hotelId,
+    city,
+    checkIn,
+    checkOut,
+    sort,
+    resultPosition,
+  });
+
+  const handleBookClick = () => {
+    trackHotelBookClick({
+      hotelId: hotel.hotelId,
+      city,
+      checkIn,
+      checkOut,
+      sort,
+      resultPosition,
+      provider: "agoda",
+    });
+  };
 
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -15,11 +50,12 @@ export function HotelDetailBookingCard({ hotel }: HotelDetailBookingCardProps) {
       {agodaUrl ? (
         <a
           href={agodaUrl}
+          onClick={handleBookClick}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
         >
-          Book on Agoda
+          Book on Agoda (opens external site)
         </a>
       ) : (
         <button

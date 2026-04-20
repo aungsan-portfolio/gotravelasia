@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { HotelFilterToolbar } from "@/components/hotels/filters/HotelFilterToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
@@ -7,6 +7,7 @@ import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResults
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
 import { buildHotelDetailUrl } from "@/lib/hotels/buildHotelDetailUrl";
+import { trackHotelSearchView, trackHotelSelect } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 
@@ -45,6 +46,16 @@ export default function HotelSearchResultsPage() {
   );
 
   const openHotelDetail = (hotelId: string) => {
+    const selectedHotel = visibleHotels.find((hotel) => hotel.hotelId === hotelId);
+
+    trackHotelSelect({
+      hotelId,
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      resultPosition: selectedHotel?.rankingPosition,
+    });
+
     setLocation(
       buildHotelDetailUrl({
         hotelId,
@@ -52,6 +63,25 @@ export default function HotelSearchResultsPage() {
       }),
     );
   };
+
+  useEffect(() => {
+    if (isLoading || errorMessage) {
+      return;
+    }
+
+    const filters =
+      activeFilters.length > 0
+        ? { active: [...activeFilters].sort() }
+        : undefined;
+
+    trackHotelSearchView({
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      sort,
+      filters,
+    });
+  }, [activeFilters, errorMessage, isLoading, query.checkIn, query.checkOut, query.city, sort]);
 
   return (
     <main className="min-h-screen bg-slate-100">
@@ -123,6 +153,9 @@ export default function HotelSearchResultsPage() {
                 bounds={bounds}
                 onSelectHotel={setSelectedHotelId}
                 onHoverHotel={setHoveredHotelId}
+                city={query.city}
+                checkIn={query.checkIn}
+                checkOut={query.checkOut}
               />
             </div>
           </div>

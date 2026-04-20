@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import { MapPin, Navigation } from "lucide-react";
 
 import type { HotelResult } from "@shared/hotels/types";
+import { trackHotelMarkerClick } from "@/lib/hotels/tracking";
 
 import { generateMapMarkers } from "@/features/hotels/mapView/markers";
 import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
@@ -13,6 +14,9 @@ interface HotelMapPanelProps {
   bounds?: MarkerBounds | null;
   onSelectHotel: (hotelId: string) => void;
   onHoverHotel: (hotelId: string | null) => void;
+  city?: string;
+  checkIn?: string;
+  checkOut?: string;
 }
 
 function HotelMapPanelComponent({
@@ -22,6 +26,9 @@ function HotelMapPanelComponent({
   bounds,
   onSelectHotel,
   onHoverHotel,
+  city,
+  checkIn,
+  checkOut,
 }: HotelMapPanelProps) {
   const markers = useMemo(
     () =>
@@ -62,7 +69,16 @@ function HotelMapPanelComponent({
                   <button
                     key={marker.hotelId}
                     type="button"
-                    onClick={() => onSelectHotel(marker.hotelId)}
+                    onClick={() => {
+                      trackHotelMarkerClick({
+                        hotelId: marker.hotelId,
+                        city,
+                        checkIn,
+                        checkOut,
+                        resultPosition: hotel?.rankingPosition,
+                      });
+                      onSelectHotel(marker.hotelId);
+                    }}
                     onMouseEnter={() => onHoverHotel(marker.hotelId)}
                     onMouseLeave={() => onHoverHotel(null)}
                     className={[
