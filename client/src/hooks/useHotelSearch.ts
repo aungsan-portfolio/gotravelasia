@@ -11,6 +11,7 @@ import type {
   HotelSort,
 } from "@shared/hotels/types";
 import { buildHotelSearchParams } from "@shared/hotels/searchParams";
+import { applyHotelFilters } from "@/lib/hotels/filterEngine";
 import { buildHotelRouteUrl, type HotelRouteMeta } from "@/lib/hotels/buildHotelRouteUrl";
 
 export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
@@ -55,34 +56,6 @@ export interface UseHotelSearchResult {
   retry: () => void;
 }
 
-function applyFilters(hotels: HotelResult[], activeFilters: HotelFilterId[]): HotelResult[] {
-  return hotels.filter((hotel) =>
-    activeFilters.every((filterId) => {
-      switch (filterId) {
-        case "free_breakfast":
-          return hotel.amenities.some((a) => a.toLowerCase().includes("breakfast"));
-
-        case "free_cancellation":
-          return true;
-
-        case "pay_later":
-          return true;
-
-        case "highly_rated":
-          return hotel.reviewScore >= 8;
-
-        case "budget":
-          return hotel.lowestRate < 100;
-
-        case "luxury":
-          return hotel.stars >= 5;
-
-        default:
-          return true;
-      }
-    }),
-  );
-}
 
 /**
  * Canonical hotel search hook.
@@ -162,7 +135,7 @@ export function useHotelSearch(
   }, [query.sort]);
 
   const visibleHotels = useMemo(() => {
-    return applyFilters(allHotels, activeFilters);
+    return applyHotelFilters({ hotels: allHotels, quickFilters: activeFilters });
   }, [allHotels, activeFilters]);
 
   const toggleFilter = useCallback((filterId: HotelFilterId) => {

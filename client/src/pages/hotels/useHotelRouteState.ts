@@ -20,73 +20,76 @@ interface HotelRouteState {
 }
 
 const KNOWN_QUERY_KEYS = new Set(["city", "checkIn", "checkOut", "adults", "rooms", "page", "sort"]);
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Custom hook to manage hotel route state, supporting both 
+ * Custom hook to manage hotel route state, supporting both
  * canonical path-based URLs and legacy query-string URLs.
  */
 export function useHotelRouteState(): HotelRouteState {
   const [pathname] = useLocation();
   const searchString = useSearch();
 
-  return useMemo(() => {
-    // 1. Prepare legacy fallback
-    const legacyQuery = parseHotelSearchParams(searchString);
+  return useMemo(() => resolveHotelRouteState(pathname, searchString), [pathname, searchString]);
+}
 
-    // 2. Attempt to parse as canonical path
-    const canonicalParts = parseCanonicalPath(pathname);
-    if (!canonicalParts) {
-      return {
-        query: legacyQuery,
-        routeMode: "legacy",
-        routeMeta: null,
-      };
+export function resolveHotelRouteState(pathname: string, searchString: string): HotelRouteState {
+  // 1. Prepare legacy fallback
+  const legacyQuery = parseHotelSearchParams(searchString);
+
+  // 2. Attempt to parse as canonical path
+  const canonicalParts = parseCanonicalPath(pathname);
+  if (!canonicalParts) {
+    return {
+      query: legacyQuery,
+      routeMode: "legacy",
+      routeMeta: null,
+    };
+  }
+
+  try {
+    const rawQueryParams = new URLSearchParams(searchString);
+    const mergedParams = new URLSearchParams(rawQueryParams);
+
+    // Resolve city slug from the canonical label/pid
+    const city = resolveCitySlug(canonicalParts.destinationLabel, canonicalParts.placeId);
+
+    mergedParams.set("city", city || "");
+    mergedParams.set("checkIn", canonicalParts.checkIn);
+    mergedParams.set("checkOut", canonicalParts.checkOut);
+
+    if (canonicalParts.adults != null) {
+      mergedParams.set("adults", String(canonicalParts.adults));
+    }
+    if (canonicalParts.rooms != null) {
+      mergedParams.set("rooms", String(canonicalParts.rooms));
     }
 
-    try {
-      const rawQueryParams = new URLSearchParams(searchString);
-      const mergedParams = new URLSearchParams(rawQueryParams);
-
-      // Resolve city slug from the canonical label/pid
-      const city = resolveCitySlug(canonicalParts.destinationLabel, canonicalParts.placeId);
-      
-      mergedParams.set("city", city || "");
-      mergedParams.set("checkIn", canonicalParts.checkIn);
-      mergedParams.set("checkOut", canonicalParts.checkOut);
-      
-      if (canonicalParts.adults != null) {
-        mergedParams.set("adults", String(canonicalParts.adults));
+    // Extract extra query params (tracking, etc.)
+    const extraQuery: Record<string, string> = {};
+    for (const [key, value] of rawQueryParams.entries()) {
+      if (!KNOWN_QUERY_KEYS.has(key)) {
+        extraQuery[key] = value;
       }
-      if (canonicalParts.rooms != null) {
-        mergedParams.set("rooms", String(canonicalParts.rooms));
-      }
-
-      // Extract extra query params (tracking, etc.)
-      const extraQuery: Record<string, string> = {};
-      for (const [key, value] of rawQueryParams.entries()) {
-        if (!KNOWN_QUERY_KEYS.has(key)) {
-          extraQuery[key] = value;
-        }
-      }
-
-      return {
-        query: parseHotelSearchParams(mergedParams),
-        routeMode: "canonical",
-        routeMeta: {
-          destinationLabel: canonicalParts.destinationLabel,
-          placeId: canonicalParts.placeId,
-          view: canonicalParts.view,
-          extraQuery: Object.keys(extraQuery).length ? extraQuery : undefined,
-        },
-      };
-    } catch {
-      return {
-        query: legacyQuery,
-        routeMode: "legacy",
-        routeMeta: null,
-      };
     }
-  }, [pathname, searchString]);
+
+    return {
+      query: parseHotelSearchParams(mergedParams),
+      routeMode: "canonical",
+      routeMeta: {
+        destinationLabel: canonicalParts.destinationLabel,
+        placeId: canonicalParts.placeId,
+        view: canonicalParts.view,
+        extraQuery: Object.keys(extraQuery).length ? extraQuery : undefined,
+      },
+    };
+  } catch {
+    return {
+      query: legacyQuery,
+      routeMode: "legacy",
+      routeMeta: null,
+    };
+  }
 }
 
 /**
@@ -103,6 +106,10 @@ function parseCanonicalPath(pathname: string) {
     const checkIn = decodeURIComponent(segments[2]);
     const checkOut = decodeURIComponent(segments[3]);
     const partySegment = decodeURIComponent(segments[4]);
+
+    if (!ISO_DATE_RE.test(checkIn) || !ISO_DATE_RE.test(checkOut)) {
+      return null;
+    }
 
     // Match destination and optional placeId (supports -p and -pid)
     const destinationMatch = destinationSegment.match(/^(.*?)(?:-pid?(\d+))?$/i);
@@ -136,9 +143,9 @@ function parseCanonicalPath(pathname: string) {
  */
 function resolveCitySlug(destinationLabel: string | undefined, placeId?: string) {
   if (!destinationLabel) return undefined;
-  
+
   const cities = getHotelCities();
-  
+
   // 1. Try by Place ID (Agoda match)
   if (placeId) {
     const numericId = Number.parseInt(placeId, 10);
@@ -146,12 +153,12 @@ function resolveCitySlug(destinationLabel: string | undefined, placeId?: string)
     if (match) return match.slug;
   }
 
-  const normalize = (val: string) => 
+  const normalize = (val: string) =>
     val.toLowerCase()
-       .normalize("NFKD")
-       .replace(/[\u0300-\u036f]/g, "")
-       .replace(/[^a-z0-9]+/g, " ")
-       .trim();
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
 
   const normalized = normalize(destinationLabel);
   if (!normalized) return undefined;
