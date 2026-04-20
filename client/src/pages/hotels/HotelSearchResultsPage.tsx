@@ -28,6 +28,7 @@ export default function HotelSearchResultsPage() {
   const {
     selectedHotelId,
     hoveredHotelId,
+    bounds,
     setSelectedHotelId,
     setHoveredHotelId,
   } = useHotelMapView(visibleHotels);
@@ -106,6 +107,7 @@ export default function HotelSearchResultsPage() {
                 hotels={mappedHotels}
                 selectedHotelId={selectedHotelId}
                 hoveredHotelId={hoveredHotelId}
+                bounds={bounds}
                 onSelectHotel={setSelectedHotelId}
                 onHoverHotel={setHoveredHotelId}
               />
