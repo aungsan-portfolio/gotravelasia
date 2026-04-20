@@ -2,7 +2,9 @@ import type { Request, Response } from "express";
 import { getCityBySlug, type City } from "../../shared/hotels/cities.js";
 import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams.js";
 import type {
+  HotelCoordinatesConfidence,
   HotelOutboundLinks,
+  HotelPriceDisplay,
   HotelResult,
   HotelSearchResponse,
   HotelSort,
@@ -191,6 +193,9 @@ function buildAffiliateLinks(
 }
 
 function buildFallbackCoordinates(city: City, index: number) {
+  if (!Number.isFinite(city.lat) || !Number.isFinite(city.lng)) {
+    return undefined;
+  }
   // TEMPORARY FALLBACK STRATEGY: until upstream hotel-level lat/lng is consistently available,
   // spread missing-coordinate hotels in a deterministic ring around the destination center.
   const angle = (index * 137.5 * Math.PI) / 180;
@@ -206,6 +211,153 @@ function buildFallbackCoordinates(city: City, index: number) {
   };
 }
 
+function asNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function asPositiveFiniteNumber(value: unknown): number | undefined {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function normalizeNeighborhood(rawHotel: any): string | undefined {
+  return (
+    asNonEmptyString(rawHotel.areaName) ??
+    asNonEmptyString(rawHotel.district) ??
+    asNonEmptyString(rawHotel.neighborhood) ??
+    asNonEmptyString(rawHotel.zone) ??
+    asNonEmptyString(rawHotel.location?.district) ??
+    asNonEmptyString(rawHotel.location?.neighborhood)
+  );
+}
+
+function normalizeBreakfastIncluded(rawHotel: any): boolean | undefined {
+  if (typeof rawHotel.breakfastIncluded === "boolean") {
+    return rawHotel.breakfastIncluded;
+  }
+  if (typeof rawHotel.mealPlan?.breakfastIncluded === "boolean") {
+    return rawHotel.mealPlan.breakfastIncluded;
+  }
+  if (typeof rawHotel.boardBasis?.breakfastIncluded === "boolean") {
+    return rawHotel.boardBasis.breakfastIncluded;
+  }
+
+  const planText =
+    asNonEmptyString(rawHotel.mealPlan) ??
+    asNonEmptyString(rawHotel.mealPlanName) ??
+    asNonEmptyString(rawHotel.boardBasis) ??
+    asNonEmptyString(rawHotel.boardType);
+  if (!planText) return undefined;
+
+  const normalized = planText.toLowerCase();
+  if (!/\bbreakfast\b/.test(normalized)) return undefined;
+  if (
+    /\b(no breakfast|without breakfast|breakfast excluded|room only)\b/.test(
+      normalized
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function normalizeFreeCancellation(rawHotel: any): boolean | undefined {
+  if (typeof rawHotel.freeCancellation === "boolean") {
+    return rawHotel.freeCancellation;
+  }
+  if (typeof rawHotel.cancellation?.freeCancellation === "boolean") {
+    return rawHotel.cancellation.freeCancellation;
+  }
+  if (typeof rawHotel.refundable === "boolean") {
+    return rawHotel.refundable;
+  }
+  if (typeof rawHotel.isRefundable === "boolean") {
+    return rawHotel.isRefundable;
+  }
+
+  const policyText =
+    asNonEmptyString(rawHotel.cancellationType) ??
+    asNonEmptyString(rawHotel.cancellationPolicy) ??
+    asNonEmptyString(rawHotel.ratePlan?.cancellationPolicy) ??
+    asNonEmptyString(rawHotel.refundType);
+  if (!policyText) return undefined;
+
+  const normalized = policyText.toLowerCase();
+  if (
+    /\bnon[- ]?refundable\b/.test(normalized) ||
+    /\bno free cancellation\b/.test(normalized)
+  ) {
+    return false;
+  }
+  if (
+    /\bfree cancellation\b/.test(normalized) ||
+    /\bfully refundable\b/.test(normalized)
+  ) {
+    return true;
+  }
+  return undefined;
+}
+
+function deriveCoordinatesConfidence(
+  hasExactCoordinates: boolean,
+  hasFallbackCoordinates: boolean
+): HotelCoordinatesConfidence {
+  if (hasExactCoordinates) return "exact";
+  if (hasFallbackCoordinates) return "fallback";
+  return "missing";
+}
+
+function calculateStayNights(checkIn: string, checkOut: string): number {
+  const checkInDate = new Date(`${checkIn}T00:00:00Z`);
+  const checkOutDate = new Date(`${checkOut}T00:00:00Z`);
+  const msPerNight = 24 * 60 * 60 * 1000;
+  const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / msPerNight);
+  return nights > 0 ? nights : 0;
+}
+
+function formatMoney(amount: number, currency?: string): string {
+  if (!Number.isFinite(amount) || amount < 0) return "";
+  if (currency) {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      // Currency code can occasionally be invalid from upstream payloads.
+    }
+  }
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
+    amount
+  );
+}
+
+function buildPriceDisplay(
+  lowestRate: number,
+  currency: string | undefined,
+  nights: number
+): HotelPriceDisplay | undefined {
+  if (!Number.isFinite(lowestRate) || lowestRate <= 0) return undefined;
+  const nightly = formatMoney(lowestRate, currency);
+  if (!nightly) return undefined;
+
+  const priceDisplay: HotelPriceDisplay = {
+    priceLabel: `${nightly} / night`,
+  };
+
+  if (nights > 0) {
+    const total = formatMoney(lowestRate * nights, currency);
+    if (total) {
+      priceDisplay.totalStayEstimateLabel = `${total} total (${nights} ${nights === 1 ? "night" : "nights"})`;
+    }
+  }
+
+  return priceDisplay;
+}
+
 function normalizeHotel(
   rawHotel: any,
   city: City,
@@ -214,7 +366,8 @@ function normalizeHotel(
   adults: number,
   rooms: number,
   fallbackLinks: HotelOutboundLinks,
-  index: number
+  index: number,
+  page: number
 ): HotelResult {
   const hotelId = String(
     rawHotel.hotelId ??
@@ -290,10 +443,30 @@ function normalizeHotel(
       rawHotel.coordinates?.lng ??
       rawHotel.location?.lng
   );
-  const coordinates =
-    Number.isFinite(lat) && Number.isFinite(lng)
-      ? { lat, lng }
-      : buildFallbackCoordinates(city, index);
+  const hasExactCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
+  const fallbackCoordinates = buildFallbackCoordinates(city, index);
+  const coordinates = hasExactCoordinates ? { lat, lng } : fallbackCoordinates;
+  const hasFallbackCoordinates = !hasExactCoordinates && Boolean(fallbackCoordinates);
+  const coordinatesConfidence = deriveCoordinatesConfidence(
+    hasExactCoordinates,
+    hasFallbackCoordinates
+  );
+  const rankingPosition =
+    asPositiveFiniteNumber(rawHotel.rankingPosition) ??
+    asPositiveFiniteNumber(rawHotel.rank) ??
+    asPositiveFiniteNumber(rawHotel.ranking) ??
+    (page - 1) * PAGE_SIZE +
+      index +
+      1;
+  const currency = asNonEmptyString(rawHotel.currency) ?? asNonEmptyString(rawHotel.price?.currency);
+  const neighborhood = normalizeNeighborhood(rawHotel);
+  const breakfastIncluded = normalizeBreakfastIncluded(rawHotel);
+  const freeCancellation = normalizeFreeCancellation(rawHotel);
+  const priceDisplay = buildPriceDisplay(
+    lowestRate,
+    currency,
+    calculateStayNights(checkIn, checkOut)
+  );
 
   return {
     hotelId,
@@ -309,10 +482,15 @@ function normalizeHotel(
     imageUrl,
     amenities,
     lowestRate,
-    currency: rawHotel.currency ?? rawHotel.price?.currency,
-    rankingPosition: Number(rawHotel.rankingPosition ?? index + 1),
+    currency,
+    rankingPosition,
     coordinates,
     outboundLinks,
+    neighborhood,
+    breakfastIncluded,
+    freeCancellation,
+    coordinatesConfidence,
+    priceDisplay,
   };
 }
 
@@ -614,7 +792,8 @@ export async function searchHotels(req: any, res: any) {
           normalized.adults,
           normalized.rooms,
           affiliateLinks,
-          index
+          index,
+          normalized.page
         )
       ),
       normalized.sort

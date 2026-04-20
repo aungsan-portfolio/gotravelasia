@@ -34,6 +34,13 @@ export interface HotelCoordinates {
   isFallback?: boolean;
 }
 
+export type HotelCoordinatesConfidence = "exact" | "fallback" | "missing";
+
+export interface HotelPriceDisplay {
+  priceLabel?: string;
+  totalStayEstimateLabel?: string;
+}
+
 export interface HotelResult {
   hotelId: string;
   name: string;
@@ -48,6 +55,11 @@ export interface HotelResult {
   rankingPosition?: number;
   coordinates?: HotelCoordinates;
   outboundLinks?: HotelOutboundLinks;
+  neighborhood?: string;
+  breakfastIncluded?: boolean;
+  freeCancellation?: boolean;
+  coordinatesConfidence?: HotelCoordinatesConfidence;
+  priceDisplay?: HotelPriceDisplay;
 }
 
 export interface HotelSearchMeta {
