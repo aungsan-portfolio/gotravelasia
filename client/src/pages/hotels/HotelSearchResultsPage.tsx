@@ -6,6 +6,7 @@ import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResults
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
 import { useHotelRouteState } from "./useHotelRouteState";
+import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 
 export default function HotelSearchResultsPage() {
   const { query, routeMode, routeMeta } = useHotelRouteState();
@@ -17,16 +18,19 @@ export default function HotelSearchResultsPage() {
     visibleHotels,
     sort,
     activeFilters,
-    selectedHotelId,
-    hoveredHotelId,
     totalFound,
     setSort,
     toggleFilter,
     clearFilters,
     retry,
+  } = useHotelSearch(query, { routeMode, routeMeta });
+
+  const {
+    selectedHotelId,
+    hoveredHotelId,
     setSelectedHotelId,
     setHoveredHotelId,
-  } = useHotelSearch(query, { routeMode, routeMeta });
+  } = useHotelMapView(visibleHotels);
 
   const mappedHotels = useMemo(
     () =>

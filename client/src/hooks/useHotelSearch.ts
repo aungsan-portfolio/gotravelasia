@@ -45,8 +45,6 @@ export interface UseHotelSearchResult {
   visibleHotels: HotelResult[];
   sort: HotelSort;
   activeFilters: HotelFilterId[];
-  selectedHotelId: string | null;
-  hoveredHotelId: string | null;
   totalFound: number;
   currentPage: number;
   totalPages: number;
@@ -55,8 +53,6 @@ export interface UseHotelSearchResult {
   toggleFilter: (filterId: HotelFilterId) => void;
   clearFilters: () => void;
   retry: () => void;
-  setSelectedHotelId: (hotelId: string | null) => void;
-  setHoveredHotelId: (hotelId: string | null) => void;
 }
 
 function applyFilters(hotels: HotelResult[], activeFilters: HotelFilterId[]): HotelResult[] {
@@ -101,8 +97,6 @@ export function useHotelSearch(
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sort, setSortState] = useState<HotelSort>(query.sort || "rank");
   const [activeFilters, setActiveFilters] = useState<HotelFilterId[]>([]);
-  const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
-  const [hoveredHotelId, setHoveredHotelId] = useState<string | null>(null);
 
   const routeMode = options.routeMode ?? "legacy";
   const routeMeta = options.routeMeta ?? null;
@@ -171,20 +165,6 @@ export function useHotelSearch(
     return applyFilters(allHotels, activeFilters);
   }, [allHotels, activeFilters]);
 
-  useEffect(() => {
-    if (!visibleHotels.length) {
-      setSelectedHotelId(null);
-      return;
-    }
-
-    setSelectedHotelId((current) => {
-      if (current && visibleHotels.some((hotel) => hotel.hotelId === current)) {
-        return current;
-      }
-      return visibleHotels[0]?.hotelId ?? null;
-    });
-  }, [visibleHotels]);
-
   const toggleFilter = useCallback((filterId: HotelFilterId) => {
     setActiveFilters((current) =>
       current.includes(filterId)
@@ -239,8 +219,6 @@ export function useHotelSearch(
     visibleHotels,
     sort,
     activeFilters,
-    selectedHotelId,
-    hoveredHotelId,
     totalFound: visibleHotels.length,
     currentPage: data?.meta.page ?? query.page,
     totalPages: data?.meta.totalPages ?? 1,
@@ -249,8 +227,6 @@ export function useHotelSearch(
     toggleFilter,
     clearFilters,
     retry,
-    setSelectedHotelId,
-    setHoveredHotelId,
   };
 }
 
