@@ -178,6 +178,7 @@ function HotelResultsPanelComponent({
                 hoveredHotelId={hoveredHotelId}
                 onSelectHotel={(hotelId) => onSelectHotel(hotelId)}
                 onHoverHotel={onHoverHotel}
+                onOpenHotelDetail={(hotelId) => onSelectHotel(hotelId)}
               />
             </div>
 

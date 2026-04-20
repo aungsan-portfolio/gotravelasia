@@ -1,16 +1,19 @@
 import { useMemo } from "react";
+import { useLocation } from "wouter";
 import { HotelFilterToolbar } from "@/components/hotels/filters/HotelFilterToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
+import { buildHotelDetailUrl } from "@/lib/hotels/buildHotelDetailUrl";
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 
 export default function HotelSearchResultsPage() {
   const { query, routeMode, routeMeta } = useHotelRouteState();
   const cityName = getCityName(query.city);
+  const [, setLocation] = useLocation();
 
   const {
     isLoading,
@@ -40,6 +43,15 @@ export default function HotelSearchResultsPage() {
       ),
     [visibleHotels],
   );
+
+  const openHotelDetail = (hotelId: string) => {
+    setLocation(
+      buildHotelDetailUrl({
+        hotelId,
+        query,
+      }),
+    );
+  };
 
   return (
     <main className="min-h-screen bg-slate-100">
@@ -100,6 +112,7 @@ export default function HotelSearchResultsPage() {
                 hoveredHotelId={hoveredHotelId}
                 onSelectHotel={setSelectedHotelId}
                 onHoverHotel={setHoveredHotelId}
+                onOpenHotelDetail={openHotelDetail}
               />
             </div>
             <div className="min-w-0">

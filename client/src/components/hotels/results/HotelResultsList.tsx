@@ -10,6 +10,7 @@ interface HotelResultsListProps {
   hoveredHotelId: string | null;
   onSelectHotel: (hotelId: string) => void;
   onHoverHotel: (hotelId: string | null) => void;
+  onOpenHotelDetail: (hotelId: string) => void;
 }
 
 function HotelResultsListComponent({
@@ -20,6 +21,7 @@ function HotelResultsListComponent({
   hoveredHotelId,
   onSelectHotel,
   onHoverHotel,
+  onOpenHotelDetail,
 }: HotelResultsListProps) {
   if (!hotels.length) {
     return (
@@ -41,6 +43,7 @@ function HotelResultsListComponent({
           isHovered={hotel.hotelId === hoveredHotelId}
           onSelect={onSelectHotel}
           onHover={onHoverHotel}
+          onOpenDetail={onOpenHotelDetail}
         />
       ))}
     </section>

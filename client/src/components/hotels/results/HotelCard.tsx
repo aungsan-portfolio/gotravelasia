@@ -18,6 +18,7 @@ interface HotelCardProps {
   isHovered: boolean;
   onSelect: (hotelId: string) => void;
   onHover: (hotelId: string | null) => void;
+  onOpenDetail: (hotelId: string) => void;
 }
 
 function HotelCardComponent({
@@ -28,11 +29,17 @@ function HotelCardComponent({
   isHovered,
   onSelect,
   onHover,
+  onOpenDetail,
 }: HotelCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
   const explanation = useMemo(() => getPrimaryHotelExplanation(hotel), [hotel]);
+
+  const handleOpen = () => {
+    onSelect(hotel.hotelId);
+    onOpenDetail(hotel.hotelId);
+  };
 
   return (
     <article
@@ -49,7 +56,7 @@ function HotelCardComponent({
     >
       <button
         type="button"
-        onClick={() => onSelect(hotel.hotelId)}
+        onClick={handleOpen}
         className="grid w-full grid-cols-1 text-left md:grid-cols-[220px_1fr]"
       >
         <div className="h-48 bg-slate-100 md:h-full">
@@ -79,6 +86,18 @@ function HotelCardComponent({
             </span>
           </div>
 
+          <div className="flex items-center gap-2 text-sm text-slate-700">
+            <span className="rounded bg-indigo-600 px-2 py-0.5 font-semibold text-white">
+              {hotel.reviewScore?.toFixed(1) || "New"}
+            </span>
+            <span>
+              {hotel.reviewScore ? formatReviewLabel(hotel.reviewScore) : "No rating"}
+            </span>
+            <span className="text-slate-500">
+              ({hotel.reviewCount?.toLocaleString() || 0} reviews)
+            </span>
+          </div>
+
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((badge) => (
@@ -92,16 +111,6 @@ function HotelCardComponent({
               ))}
             </div>
           )}
-
-          <div className="flex items-center gap-2 text-sm text-slate-700">
-            <span className="rounded bg-indigo-600 px-2 py-0.5 font-semibold text-white">
-              {hotel.reviewScore?.toFixed(1) || "New"}
-            </span>
-            <span>{hotel.reviewScore ? formatReviewLabel(hotel.reviewScore) : "No rating"}</span>
-            <span className="text-slate-500">
-              ({hotel.reviewCount?.toLocaleString() || 0} reviews)
-            </span>
-          </div>
 
           {explanation && (
             <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
@@ -126,23 +135,8 @@ function HotelCardComponent({
             </div>
 
             <div className="text-right">
-              {hotel.outboundLinks ? (
-                <div className="mb-1 flex justify-end gap-1">
-                  {hotel.outboundLinks.agoda && (
-                    <a
-                      href={hotel.outboundLinks.agoda}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View on Agoda
-                    </a>
-                  )}
-                </div>
-              ) : null}
-
-              <p className="text-xs text-slate-500">Per night</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">View details</p>
+              <p className="text-xs text-slate-500">From per night</p>
               <p className="text-2xl font-bold text-slate-900">
                 {hotel.currency === "THB" ? "฿" : "$"}
                 {hotel.lowestRate.toLocaleString()}
