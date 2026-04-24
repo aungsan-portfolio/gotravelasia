@@ -21,6 +21,7 @@ const EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
 const PAGE_SIZE = 20;
 
 const AGODA_SORT_MAP: Record<HotelSort, string> = {
+  best: "rank",
   rank: "rank",
   price_asc: "priceLowToHigh",
   price_desc: "priceHighToLow",
@@ -300,6 +301,51 @@ function normalizeFreeCancellation(rawHotel: any): boolean | undefined {
   return undefined;
 }
 
+function normalizePayLater(rawHotel: any): boolean | undefined {
+  if (typeof rawHotel.payLater === "boolean") {
+    return rawHotel.payLater;
+  }
+  if (typeof rawHotel.payAtHotel === "boolean") {
+    return rawHotel.payAtHotel;
+  }
+  if (typeof rawHotel.payAtProperty === "boolean") {
+    return rawHotel.payAtProperty;
+  }
+  if (typeof rawHotel.payment?.payLater === "boolean") {
+    return rawHotel.payment.payLater;
+  }
+  if (typeof rawHotel.payment?.payAtHotel === "boolean") {
+    return rawHotel.payment.payAtHotel;
+  }
+
+  const paymentText =
+    asNonEmptyString(rawHotel.paymentType) ??
+    asNonEmptyString(rawHotel.paymentDescription) ??
+    asNonEmptyString(rawHotel.ratePlan?.paymentType) ??
+    asNonEmptyString(rawHotel.ratePlan?.paymentDescription);
+
+  if (!paymentText) return undefined;
+
+  const normalized = paymentText.toLowerCase();
+  if (
+    /\bpay later\b/.test(normalized) ||
+    /\bpay at hotel\b/.test(normalized) ||
+    /\breserve now[, ]*pay later\b/.test(normalized)
+  ) {
+    return true;
+  }
+
+  if (
+    /\bprepaid\b/.test(normalized) ||
+    /\bpay now\b/.test(normalized) ||
+    /\bfull prepayment\b/.test(normalized)
+  ) {
+    return false;
+  }
+
+  return undefined;
+}
+
 function deriveCoordinatesConfidence(
   hasExactCoordinates: boolean,
   hasFallbackCoordinates: boolean
@@ -424,7 +470,11 @@ function normalizeHotel(
         )
       : fallbackLinks.agoda);
 
+  // Metasearch-ready outbound links:
+  // Agoda is hotel-specific when available, the others are destination-level fallbacks
+  // until live provider APIs are connected.
   const outboundLinks: HotelOutboundLinks = {
+    ...fallbackLinks,
     agoda: agodaUrl,
   };
 
@@ -462,6 +512,7 @@ function normalizeHotel(
   const neighborhood = normalizeNeighborhood(rawHotel);
   const breakfastIncluded = normalizeBreakfastIncluded(rawHotel);
   const freeCancellation = normalizeFreeCancellation(rawHotel);
+  const payLater = normalizePayLater(rawHotel);
   const priceDisplay = buildPriceDisplay(
     lowestRate,
     currency,
@@ -489,6 +540,12 @@ function normalizeHotel(
     neighborhood,
     breakfastIncluded,
     freeCancellation,
+    payLater,
+    provider: "agoda",
+    providerPrices:
+      Number.isFinite(lowestRate) && lowestRate > 0
+        ? { agoda: lowestRate }
+        : undefined,
     coordinatesConfidence,
     priceDisplay,
   };
@@ -642,6 +699,10 @@ function getMockHotels(
       lowestRate: 120,
       currency: "USD",
       rankingPosition: 1,
+      breakfastIncluded: true,
+      freeCancellation: true,
+      payLater: true,
+      provider: "mock",
     },
     {
       hotelId: `${cityId}-2`,
@@ -656,6 +717,8 @@ function getMockHotels(
       lowestRate: 78,
       currency: "USD",
       rankingPosition: 2,
+      freeCancellation: true,
+      provider: "mock",
     },
     {
       hotelId: `${cityId}-3`,
@@ -670,6 +733,8 @@ function getMockHotels(
       lowestRate: 35,
       currency: "USD",
       rankingPosition: 3,
+      payLater: true,
+      provider: "mock",
     },
     {
       hotelId: `${cityId}-4`,
@@ -684,6 +749,9 @@ function getMockHotels(
       lowestRate: 185,
       currency: "USD",
       rankingPosition: 4,
+      breakfastIncluded: true,
+      freeCancellation: true,
+      provider: "mock",
     },
     {
       hotelId: `${cityId}-5`,
@@ -698,6 +766,9 @@ function getMockHotels(
       lowestRate: 95,
       currency: "USD",
       rankingPosition: 5,
+      freeCancellation: true,
+      payLater: true,
+      provider: "mock",
     },
     {
       hotelId: `${cityId}-6`,
@@ -712,6 +783,9 @@ function getMockHotels(
       lowestRate: 42,
       currency: "USD",
       rankingPosition: 6,
+      breakfastIncluded: true,
+      payLater: true,
+      provider: "mock",
     },
   ];
 
@@ -730,6 +804,10 @@ function getMockHotels(
         1
       ),
     },
+    providerPrices:
+      Number.isFinite(hotel.lowestRate) && hotel.lowestRate > 0
+        ? { agoda: hotel.lowestRate }
+        : undefined,
   }));
 
   return sortHotels(withLinks, sort);

@@ -12,6 +12,7 @@ import type {
 } from "@shared/hotels/types";
 import { buildHotelSearchParams } from "@shared/hotels/searchParams";
 import { applyHotelFilters } from "@/lib/hotels/filterEngine";
+import { sortHotelsByRankingScore } from "@/lib/hotels/rankingScore";
 import { buildHotelRouteUrl, type HotelRouteMeta } from "@/lib/hotels/buildHotelRouteUrl";
 
 export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
@@ -24,6 +25,7 @@ export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
 ];
 
 export const HOTEL_SORT_OPTIONS: Array<{ value: HotelSort; label: string }> = [
+  { value: "best", label: "Best" },
   { value: "rank", label: "Recommended" },
   { value: "price_asc", label: "Price: low to high" },
   { value: "price_desc", label: "Price: high to low" },
@@ -68,7 +70,7 @@ export function useHotelSearch(
   const [allHotels, setAllHotels] = useState<HotelResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sort, setSortState] = useState<HotelSort>(query.sort || "rank");
+  const [sort, setSortState] = useState<HotelSort>(query.sort || "best");
   const [activeFilters, setActiveFilters] = useState<HotelFilterId[]>([]);
 
   const routeMode = options.routeMode ?? "legacy";
@@ -131,12 +133,45 @@ export function useHotelSearch(
   }, [loadHotels]);
 
   useEffect(() => {
-    setSortState(query.sort || "rank");
+    setSortState(query.sort || "best");
   }, [query.sort]);
 
   const visibleHotels = useMemo(() => {
-    return applyHotelFilters({ hotels: allHotels, quickFilters: activeFilters });
-  }, [allHotels, activeFilters]);
+    const filteredHotels = applyHotelFilters({
+      hotels: allHotels,
+      quickFilters: activeFilters,
+    });
+
+    switch (sort) {
+      case "best":
+        return sortHotelsByRankingScore(filteredHotels);
+      case "price_asc":
+        return [...filteredHotels].sort(
+          (a, b) =>
+            (a.lowestRate || Number.MAX_SAFE_INTEGER) -
+            (b.lowestRate || Number.MAX_SAFE_INTEGER),
+        );
+      case "price_desc":
+        return [...filteredHotels].sort(
+          (a, b) => (b.lowestRate || 0) - (a.lowestRate || 0),
+        );
+      case "review_desc":
+        return [...filteredHotels].sort(
+          (a, b) =>
+            (b.reviewScore || 0) - (a.reviewScore || 0) ||
+            (b.reviewCount || 0) - (a.reviewCount || 0),
+        );
+      case "stars_desc":
+        return [...filteredHotels].sort(
+          (a, b) =>
+            (b.stars || 0) - (a.stars || 0) ||
+            (b.reviewScore || 0) - (a.reviewScore || 0),
+        );
+      case "rank":
+      default:
+        return filteredHotels;
+    }
+  }, [allHotels, activeFilters, sort]);
 
   const toggleFilter = useCallback((filterId: HotelFilterId) => {
     setActiveFilters((current) =>

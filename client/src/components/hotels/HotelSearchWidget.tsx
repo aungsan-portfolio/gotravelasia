@@ -33,10 +33,13 @@ export default function HotelSearchWidget() {
       adults: params.guests.adults,
       rooms: params.guests.rooms,
       page: 1,
-      sort: "rank",
+      sort: "best",
     });
 
-    setLocation(`/hotels/search?${query.toString()}`);
+    // NOTE:
+    // Router currently has /hotels and canonical /hotels/:destination/... routes,
+    // but not /hotels/search. Keep front-door search on the legacy /hotels route.
+    setLocation(`/hotels?${query.toString()}`);
   };
 
   const updateGuests = (guests: GuestConfig) => {

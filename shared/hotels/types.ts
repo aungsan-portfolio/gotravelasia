@@ -1,12 +1,20 @@
 import type { City } from "./cities.js";
 
 export type HotelSort =
+  | "best"
   | "rank"
   | "price_asc"
   | "price_desc"
   | "stars_desc"
   | "review_desc";
-export type HotelSearchSource = "agoda" | "mock";
+export type HotelSearchSource =
+  | "agoda"
+  | "booking"
+  | "trip"
+  | "expedia"
+  | "klook"
+  | "metasearch"
+  | "mock";
 export type HotelViewMode = "list" | "map";
 
 export interface HotelSearchParams {
@@ -58,6 +66,11 @@ export interface HotelResult {
   neighborhood?: string;
   breakfastIncluded?: boolean;
   freeCancellation?: boolean;
+  payLater?: boolean;
+  provider?: HotelSearchSource;
+  providerPrices?: Partial<
+    Record<Exclude<HotelSearchSource, "metasearch" | "mock">, number>
+  >;
   coordinatesConfidence?: HotelCoordinatesConfidence;
   priceDisplay?: HotelPriceDisplay;
 }

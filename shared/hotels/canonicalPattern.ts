@@ -13,6 +13,7 @@ type CanonicalParseResult = {
 };
 
 const SORT_TO_INTERNAL: Record<string, HotelSort> = {
+  best_a: "best",
   rank_a: "rank",
   price_a: "price_asc",
   price_d: "price_desc",
@@ -21,6 +22,7 @@ const SORT_TO_INTERNAL: Record<string, HotelSort> = {
 };
 
 const INTERNAL_TO_SORT: Record<HotelSort, string> = {
+  best: "best_a",
   rank: "rank_a",
   price_asc: "price_a",
   price_desc: "price_d",
@@ -31,8 +33,8 @@ const INTERNAL_TO_SORT: Record<HotelSort, string> = {
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function canonicalSortToInternalSort(token: string | null | undefined): HotelSort {
-  if (!token) return "rank";
-  return SORT_TO_INTERNAL[token.toLowerCase()] ?? "rank";
+  if (!token) return "best";
+  return SORT_TO_INTERNAL[token.toLowerCase()] ?? "best";
 }
 
 export function internalSortToCanonicalSort(sort: HotelSort): string {

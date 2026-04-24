@@ -10,7 +10,7 @@ const MAX_ROOMS = 5;
 const MAX_PAGE = 100;
 const MAX_STAY_NIGHTS = 30;
 
-const HOTEL_SORT_VALUES: HotelSort[] = ['rank', 'price_asc', 'price_desc', 'stars_desc', 'review_desc'];
+const HOTEL_SORT_VALUES: HotelSort[] = ['best', 'rank', 'price_asc', 'price_desc', 'stars_desc', 'review_desc'];
 
 export function toIsoDate(date: Date): string {
   return date.toISOString().split('T')[0];
@@ -65,7 +65,7 @@ export function normalizeHotelSearchParams(input: Partial<HotelSearchParams> & {
     adults: clampInteger(input.adults, DEFAULT_ADULTS, 1, MAX_ADULTS),
     rooms: clampInteger(input.rooms, DEFAULT_ROOMS, 1, MAX_ROOMS),
     page: clampInteger(input.page, DEFAULT_PAGE, 1, MAX_PAGE),
-    sort: HOTEL_SORT_VALUES.includes(input.sort as HotelSort) ? (input.sort as HotelSort) : 'rank',
+    sort: HOTEL_SORT_VALUES.includes(input.sort as HotelSort) ? (input.sort as HotelSort) : 'best',
   };
 
   const dateErrors = validateHotelSearchParams({

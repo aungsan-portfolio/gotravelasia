@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildcanonicalHotelPath,
+  buildCanonicalHotelPath,
   canonicalSortToInternalSort,
-  internalSortTocanonicalSort,
-  parsecanonicalHotelPath,
-  toInternalHotelParamsFromcanonical,
+  internalSortToCanonicalSort,
+  parseCanonicalHotelPath,
+  toInternalHotelParamsFromCanonical,
 } from "./canonicalPattern";
 
 describe("canonicalPattern", () => {
   it("parses a canonical map URL", () => {
-    const parsed = parsecanonicalHotelPath(
+    const parsed = parseCanonicalHotelPath(
       "/hotels/bangkok-pid123/2026-07-10/2026-07-14/2adults;map?sort=price_d&ucs=abc",
     );
 
@@ -28,7 +28,7 @@ describe("canonicalPattern", () => {
   });
 
   it("parses a canonical list full URL", () => {
-    const parsed = parsecanonicalHotelPath(
+    const parsed = parseCanonicalHotelPath(
       "https://www.example.com/hotels/ho-chi-minh-city-pid987/2026-08-01/2026-08-05/1adults;list?sort=rank_a",
     );
 
@@ -44,17 +44,17 @@ describe("canonicalPattern", () => {
     expect(canonicalSortToInternalSort("price_d")).toBe("price_desc");
     expect(canonicalSortToInternalSort("star_d")).toBe("stars_desc");
     expect(canonicalSortToInternalSort("review_a")).toBe("review_desc");
-    expect(canonicalSortToInternalSort("unknown")).toBe("rank");
+    expect(canonicalSortToInternalSort("unknown")).toBe("best");
 
-    expect(internalSortTocanonicalSort("rank")).toBe("rank_a");
-    expect(internalSortTocanonicalSort("price_asc")).toBe("price_a");
-    expect(internalSortTocanonicalSort("price_desc")).toBe("price_d");
-    expect(internalSortTocanonicalSort("stars_desc")).toBe("star_d");
-    expect(internalSortTocanonicalSort("review_desc")).toBe("review_a");
+    expect(internalSortToCanonicalSort("rank")).toBe("rank_a");
+    expect(internalSortToCanonicalSort("price_asc")).toBe("price_a");
+    expect(internalSortToCanonicalSort("price_desc")).toBe("price_d");
+    expect(internalSortToCanonicalSort("stars_desc")).toBe("star_d");
+    expect(internalSortToCanonicalSort("review_desc")).toBe("review_a");
   });
 
   it("converts parsed data into internal params", () => {
-    const converted = toInternalHotelParamsFromcanonical(
+    const converted = toInternalHotelParamsFromCanonical(
       "/hotels/singapore-pid88/2026-09-10/2026-09-12/2adults;map?sort=price_a&ucs=xyz",
       (label, placeId) => (label === "singapore" && placeId === "88" ? "singapore" : undefined),
     );
@@ -78,7 +78,7 @@ describe("canonicalPattern", () => {
   });
 
   it("builds a canonical URL", () => {
-    const built = buildcanonicalHotelPath({
+    const built = buildCanonicalHotelPath({
       destinationLabel: "Ho Chi Minh City",
       placeId: "987",
       checkIn: "2026-08-01",
@@ -95,7 +95,7 @@ describe("canonicalPattern", () => {
   });
 
   it("round trips build -> parse sanely", () => {
-    const built = buildcanonicalHotelPath({
+    const built = buildCanonicalHotelPath({
       destinationLabel: "Bangkok",
       placeId: "123",
       checkIn: "2026-07-10",
@@ -106,7 +106,7 @@ describe("canonicalPattern", () => {
       extraQuery: { ucs: "abc" },
     });
 
-    const parsed = parsecanonicalHotelPath(built);
+    const parsed = parseCanonicalHotelPath(built);
     expect(parsed).toMatchObject({
       destinationLabel: "bangkok",
       placeId: "123",
@@ -121,14 +121,14 @@ describe("canonicalPattern", () => {
   });
 
   it("handles invalid input safely", () => {
-    expect(parsecanonicalHotelPath("not-a-real-route")).toBeNull();
+    expect(parseCanonicalHotelPath("not-a-real-route")).toBeNull();
 
-    const converted = toInternalHotelParamsFromcanonical("/bad-route", () => "bangkok");
+    const converted = toInternalHotelParamsFromCanonical("/bad-route", () => "bangkok");
     expect(converted).toEqual({ params: null, meta: null });
   });
 
   it("preserves extra query params", () => {
-    const parsed = parsecanonicalHotelPath(
+    const parsed = parseCanonicalHotelPath(
       "/hotels/seoul-pid55/2026-10-01/2026-10-03/2adults;map?sort=rank_a&ucs=keepme&ref=partner",
     );
 
