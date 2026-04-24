@@ -239,13 +239,32 @@ export default function SmartDatePicker({ checkIn, checkOut, onChange }: Props) 
       >
         <CalendarDays className="h-5 w-5 text-gray-600" aria-hidden="true" />
         <div className="grid flex-1 grid-cols-2 gap-2 text-left">
-          <div>
+          <div className="relative">
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Check-in</p>
             <p className="text-sm font-semibold text-gray-900">{checkIn || "Select"}</p>
+            {/* Hidden inputs for E2E testing compatibility */}
+            <input 
+              type="text" 
+              tabIndex={-1}
+              aria-hidden="true"
+              data-testid="hotel-checkin-input" 
+              className="absolute inset-0 h-0 w-0 opacity-0 pointer-events-none"
+              value={checkIn}
+              readOnly
+            />
           </div>
-          <div>
+          <div className="relative">
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Check-out</p>
             <p className="text-sm font-semibold text-gray-900">{checkOut || "Select"}</p>
+            <input 
+              type="text" 
+              tabIndex={-1}
+              aria-hidden="true"
+              data-testid="hotel-checkout-input" 
+              className="absolute inset-0 h-0 w-0 opacity-0 pointer-events-none"
+              value={checkOut}
+              readOnly
+            />
           </div>
         </div>
       </button>

@@ -74,6 +74,7 @@ export default function HotelSearchWidget() {
         <GuestSelector value={params.guests} onChange={updateGuests} />
         <button
           type="button"
+          data-testid="hotel-search-submit"
           disabled={!validation.isValid}
           onClick={handleSearch}
           className="flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 font-bold text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none"

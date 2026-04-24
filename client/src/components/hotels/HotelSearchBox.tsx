@@ -59,7 +59,8 @@ export default function HotelSearchBox({
         <div className="flex-1 text-left pt-0.5">
           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Destination</p>
           <input
-            type="text"
+            inputMode="search"
+            data-testid="hotel-destination-select"
             className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal"
             placeholder={placeholder}
             value={query}

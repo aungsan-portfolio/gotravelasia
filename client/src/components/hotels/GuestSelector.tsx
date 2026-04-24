@@ -34,6 +34,7 @@ export default function GuestSelector({ value, onChange }: Props) {
     <div ref={containerRef} className="relative h-full w-full">
       <button
         type="button"
+        data-testid="hotel-guests-trigger"
         onClick={() => setIsOpen(!isOpen)}
         className="flex h-full w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98]"
       >
