@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
-      E2E_BASE_URL: ${{ github.event.inputs.base_url || vars.E2E_BASE_URL || secrets.VERCEL_PREVIEW_URL }}
+      E2E_BASE_URL: ${{ github.event.inputs.base_url || vars.E2E_BASE_URL || secrets.E2E_BASE_URL || secrets.VERCEL_PREVIEW_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "$E2E_BASE_URL" ]; then
-            echo "::error::No E2E base URL configured. Set repository variable E2E_BASE_URL to the live Vercel URL, or set secret VERCEL_PREVIEW_URL, or run this workflow manually with the base_url input."
+            echo "::error::No E2E base URL configured. Set repository variable or secret E2E_BASE_URL to the live Vercel URL, or set secret VERCEL_PREVIEW_URL, or run this workflow manually with the base_url input."
             exit 1
           fi
 
