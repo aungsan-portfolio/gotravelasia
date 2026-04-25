@@ -57,9 +57,10 @@ test.describe('Search & Affiliate Flows', () => {
       await suggestion.click({ force: true });
     }
 
-    // Open the date picker and select check-in/check-out
+    // Open the visible date-picker button. The hidden date inputs exist only
+    // as stable state hooks and are intentionally not clickable.
     const dateTrigger = await firstExisting(page, [
-      page.getByTestId('hotel-checkin-input'),
+      page.locator('button').filter({ has: page.getByTestId('hotel-checkin-input') }),
       page.locator('button').filter({ hasText: /check-in|select/i }).first(),
     ]);
     await dismissOverlays(page);
