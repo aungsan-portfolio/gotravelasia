@@ -30,20 +30,14 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Build app (for local server)
-        run: pnpm build
-        env:
-          VITE_AGODA_CID: ${{ secrets.VITE_AGODA_CID }}
-
-      # If VERCEL_PREVIEW_URL secret is set, tests run against that URL.
-      # Otherwise Playwright starts a local server via playwright.config.ts webServer.
+      # Tests run against the deployed Vercel production URL.
+      # A local server approach fails in CI because .env files with
+      # database URLs and API keys are not available in GitHub Actions.
       - name: Run Playwright tests
         run: pnpm exec playwright test
         env:
           CI: 'true'
-          NODE_ENV: production
-          VITE_AGODA_CID: ${{ secrets.VITE_AGODA_CID }}
-          BASE_URL: ${{ secrets.VERCEL_PREVIEW_URL }}
+          BASE_URL: ${{ secrets.VERCEL_PREVIEW_URL || 'https://gotravelasia.vercel.app' }}
 
       - uses: actions/upload-artifact@v4
         if: always()
