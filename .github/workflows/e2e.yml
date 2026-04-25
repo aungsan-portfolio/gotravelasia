@@ -35,9 +35,13 @@ jobs:
         env:
           VITE_AGODA_CID: ${{ secrets.VITE_AGODA_CID }}
 
+      # If VERCEL_PREVIEW_URL secret is set, tests run against that URL.
+      # Otherwise Playwright starts a local server via playwright.config.ts webServer.
       - name: Run Playwright tests
         run: pnpm exec playwright test
         env:
+          CI: 'true'
+          NODE_ENV: production
           VITE_AGODA_CID: ${{ secrets.VITE_AGODA_CID }}
           BASE_URL: ${{ secrets.VERCEL_PREVIEW_URL }}
 

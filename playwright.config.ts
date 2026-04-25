@@ -10,7 +10,9 @@ export default defineConfig({
   },
 
   webServer: {
-    command: process.env.CI ? 'npm run start' : 'pnpm dev',
+    command: process.env.CI
+      ? 'npx tsx server/_core/index.ts'
+      : 'pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 300 * 1000,
