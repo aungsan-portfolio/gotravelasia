@@ -270,19 +270,25 @@ async function maybeExisting(page: Page, locators: Locator[]): Promise<Locator |
 }
 
 async function firstExisting(page: Page, locators: Locator[]): Promise<Locator> {
-  for (const locator of locators) {
-    try {
-      const candidate = locator.first();
-      if (await candidate.count()) {
-        return candidate;
+  // Retry for up to 10 seconds — CI runners can be slow to render the SPA.
+  const deadline = Date.now() + 10_000;
+
+  while (Date.now() < deadline) {
+    for (const locator of locators) {
+      try {
+        const candidate = locator.first();
+        if (await candidate.count()) {
+          return candidate;
+        }
+      } catch {
+        // ignore and continue
       }
-    } catch {
-      // ignore and continue
     }
+    await page.waitForTimeout(250);
   }
 
   const debug = await page.content();
-  throw new Error(`No matching locator found. Page snapshot length=${debug.length}`);
+  throw new Error(`No matching locator found after 10s. Page snapshot length=${debug.length}`);
 }
 
 async function setDateInput(locator: Locator, value: string): Promise<void> {
