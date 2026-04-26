@@ -41,9 +41,7 @@ test.describe('Search & Affiliate Flows', () => {
     await openHotelsTab(page);
 
     const destination = await firstExisting(page, [
-      page.getByTestId('hotel-destination-select'),
-      page.getByLabel(/destination|city|where to/i),
-      page.locator('input[placeholder*="Where"]'),
+      hotelDestinationInput(page),
     ]);
 
     await destination.click({ force: true });
@@ -221,10 +219,8 @@ async function openHotelsTab(page: Page): Promise<void> {
   await dismissOverlays(page);
 
   const alreadyVisibleHotelUi = await maybeExisting(page, [
-    page.getByTestId('hotel-destination-select'),
-    page.getByLabel(/destination|city|where to/i),
-    page.locator('select[name="destination"]'),
-    page.locator('input[name="checkin"]'),
+    hotelDestinationInput(page),
+    page.getByTestId('hotel-search-submit'),
   ]);
 
   if (alreadyVisibleHotelUi) {
@@ -247,13 +243,22 @@ async function openHotelsTab(page: Page): Promise<void> {
   await dismissOverlays(page);
 
   const hotelUi = await firstExisting(page, [
-    page.getByTestId('hotel-destination-select'),
-    page.getByLabel(/destination|city|where to/i),
-    page.locator('select[name="destination"]'),
-    page.locator('input[name="checkin"]'),
+    hotelDestinationInput(page),
+    page.getByTestId('hotel-search-submit'),
   ]);
 
   await expect(hotelUi).toBeVisible({ timeout: 5000 });
+}
+
+function hotelDestinationInput(page: Page): Locator {
+  return page.locator(
+    [
+      'input[data-testid="hotel-destination-select"]',
+      'input[placeholder*="Where"]',
+      'input[placeholder*="Destination"]',
+      'input[inputmode="search"]',
+    ].join(","),
+  );
 }
 
 async function dismissOverlays(page: Page): Promise<void> {
