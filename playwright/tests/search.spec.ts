@@ -72,11 +72,12 @@ test.describe('Search & Affiliate Flows', () => {
     }
 
     await page.waitForTimeout(500);
+    await expect(destination).toHaveValue(/Bangkok/i);
+    await expect(page.getByTestId('hotel-checkin-input')).not.toHaveValue('');
+    await expect(page.getByTestId('hotel-checkout-input')).not.toHaveValue('');
 
     const submit = await firstExisting(page, [
-      page.getByTestId('hotel-search-submit'),
-      page.getByRole('button', { name: /search hotels|find stays|search stays|search/i }),
-      page.locator('button[type="submit"]'),
+      hotelSearchSubmit(page),
     ]);
 
     await expect(submit).toBeEnabled({ timeout: 5000 });
@@ -257,6 +258,15 @@ function hotelDestinationInput(page: Page): Locator {
       'input[placeholder*="Where"]',
       'input[placeholder*="Destination"]',
       'input[inputmode="search"]',
+    ].join(","),
+  );
+}
+
+function hotelSearchSubmit(page: Page): Locator {
+  return page.locator(
+    [
+      '[data-testid="hotel-search-submit"]',
+      'button:has-text("Search Hotels")',
     ].join(","),
   );
 }
