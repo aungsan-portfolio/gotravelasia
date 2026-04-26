@@ -1,9 +1,6 @@
 import { memo, useMemo, useState } from "react";
-import {
-  formatMoney,
-  formatReviewLabel,
-  formatStayNights,
-} from "@/lib/hotels/formatters";
+import { formatReviewLabel, formatStayNights } from "@/lib/hotels/formatters";
+import type { HotelPriceContext } from "@/lib/hotels/priceContext";
 import type { HotelResult } from "@shared/hotels/types";
 import {
   getLightweightHotelBadges,
@@ -19,6 +16,7 @@ interface HotelCardProps {
   onSelect: (hotelId: string) => void;
   onHover: (hotelId: string | null) => void;
   onOpenDetail: (hotelId: string) => void;
+  priceContext: HotelPriceContext;
 }
 
 function HotelCardComponent({
@@ -30,6 +28,7 @@ function HotelCardComponent({
   onSelect,
   onHover,
   onOpenDetail,
+  priceContext: _priceContext,
 }: HotelCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
 

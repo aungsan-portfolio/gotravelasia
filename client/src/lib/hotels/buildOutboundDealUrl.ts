@@ -1,6 +1,6 @@
 interface BuildOutboundDealUrlInput {
   baseUrl?: string | null;
-  provider: "agoda";
+  provider: "agoda" | "booking" | "trip" | "expedia" | "klook";
   hotelId?: string;
   city?: string;
   checkIn?: string;
@@ -40,10 +40,6 @@ function parseBaseUrl(baseUrl: string): URL | null {
 }
 
 export function buildOutboundDealUrl(input: BuildOutboundDealUrlInput): string | null {
-  if (input.provider !== "agoda") {
-    return null;
-  }
-
   const baseUrl = sanitizeString(input.baseUrl ?? undefined);
   if (!baseUrl) {
     return null;
@@ -58,6 +54,10 @@ export function buildOutboundDealUrl(input: BuildOutboundDealUrlInput): string |
     if (!parsedUrl.searchParams.has(key)) {
       parsedUrl.searchParams.set(key, value);
     }
+  }
+
+  if (!parsedUrl.searchParams.has("partner")) {
+    parsedUrl.searchParams.set("partner", input.provider);
   }
 
   const optionalParams: Record<string, string | null> = {

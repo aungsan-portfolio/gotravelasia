@@ -25,11 +25,14 @@ function passesQuickFilters(hotel: HotelResult, quickFilters: HotelFilterId[]): 
   return quickFilters.every((filterId) => {
     switch (filterId) {
       case "free_breakfast":
-        return (hotel.amenities ?? []).some((a) => a.toLowerCase().includes("breakfast"));
+        return (
+          hotel.breakfastIncluded === true ||
+          (hotel.amenities ?? []).some((a) => a.toLowerCase().includes("breakfast"))
+        );
       case "free_cancellation":
-        return true;
+        return hotel.freeCancellation === true;
       case "pay_later":
-        return true;
+        return hotel.payLater === true;
       case "highly_rated":
         return hotel.reviewScore >= 8;
       case "budget":

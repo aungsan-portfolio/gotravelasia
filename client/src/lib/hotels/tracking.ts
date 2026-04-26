@@ -8,7 +8,7 @@ export interface HotelTrackingContext {
   sort?: string;
   filters?: Record<string, unknown>;
   resultPosition?: number;
-  provider?: "agoda";
+  provider?: "agoda" | "booking" | "trip" | "expedia" | "klook";
 }
 
 function sanitizeString(value?: string): string | undefined {

@@ -1,5 +1,6 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { HotelCard } from "@/components/hotels/results/HotelCard";
+import { buildHotelPriceContext } from "@/lib/hotels/priceContext";
 import type { HotelResult } from "@shared/hotels/types";
 
 interface HotelResultsListProps {
@@ -23,6 +24,15 @@ function HotelResultsListComponent({
   onHoverHotel,
   onOpenHotelDetail,
 }: HotelResultsListProps) {
+  const hotelsWithPriceContext = useMemo(
+    () =>
+      hotels.map((hotel) => ({
+        hotel,
+        priceContext: buildHotelPriceContext(hotel),
+      })),
+    [hotels],
+  );
+
   if (!hotels.length) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-600">
@@ -33,10 +43,11 @@ function HotelResultsListComponent({
 
   return (
     <section className="space-y-4" aria-live="polite">
-      {hotels.map((hotel) => (
+      {hotelsWithPriceContext.map(({ hotel, priceContext }) => (
         <HotelCard
           key={hotel.hotelId}
           hotel={hotel}
+          priceContext={priceContext}
           checkIn={checkIn}
           checkOut={checkOut}
           isSelected={hotel.hotelId === selectedHotelId}
