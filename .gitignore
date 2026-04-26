@@ -224,3 +224,10 @@ final_errors.txt
 rebuild_errors.txt
 clean_errors.txt
 test_output.txt
+
+# Test artifacts
+job_logs.txt
+test-results/
+playwright-report/
+blob-report/
+test-results/
