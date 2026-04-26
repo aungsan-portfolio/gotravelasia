@@ -37,77 +37,71 @@ test.describe('Search & Affiliate Flows', () => {
     await dismissOverlays(page);
   });
 
-  test('Hotels: Agoda search triggers correct parameterized URL', async ({ page, context }) => {
+  test('Hotels: search navigates to parameterized hotels URL', async ({ page }) => {
     await openHotelsTab(page);
 
-    // Type into the autocomplete destination input
     const destination = await firstExisting(page, [
       page.getByTestId('hotel-destination-select'),
       page.getByLabel(/destination|city|where to/i),
       page.locator('input[placeholder*="Where"]'),
     ]);
+
     await destination.click({ force: true });
     await destination.fill('Bangkok');
     await dismissOverlays(page);
 
-    // Wait for autocomplete suggestions and pick the first one
     const suggestion = page.locator('li').filter({ hasText: /Bangkok/i }).first();
-    await suggestion.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-    if (await suggestion.isVisible()) {
-      await suggestion.click({ force: true });
-    }
+    await expect(suggestion).toBeVisible({ timeout: 10_000 });
+    await suggestion.click({ force: true });
+    await expect(destination).toHaveValue(/Bangkok/i);
 
-    // Open the visible date-picker button. The hidden date inputs exist only
-    // as stable state hooks and are intentionally not clickable.
     const dateTrigger = await firstExisting(page, [
       page.locator('button').filter({ has: page.getByTestId('hotel-checkin-input') }),
       page.locator('button').filter({ hasText: /check-in|select/i }).first(),
     ]);
+
     await dismissOverlays(page);
     await dateTrigger.click({ force: true });
 
-    // Pick two dates from the calendar (first available, then the next)
     const calendarDays = page.locator('button').filter({ hasText: /^\d{1,2}$/ });
     const dayCount = await calendarDays.count();
-    if (dayCount >= 2) {
-      // Pick a day near the middle of the month for check-in
-      const midIndex = Math.min(Math.floor(dayCount / 2), dayCount - 2);
+
+    if (dayCount >= 3) {
+      const midIndex = Math.min(Math.floor(dayCount / 2), dayCount - 3);
       await calendarDays.nth(midIndex).click({ force: true });
       await page.waitForTimeout(300);
-      // Pick 2 days later for check-out
       await calendarDays.nth(midIndex + 2).click({ force: true });
     }
 
-    // Wait for calendar to close
     await page.waitForTimeout(500);
 
-    // Click the search button
     const submit = await firstExisting(page, [
       page.getByTestId('hotel-search-submit'),
       page.getByRole('button', { name: /search hotels|find stays|search stays|search/i }),
       page.locator('button[type="submit"]'),
     ]);
 
+    await expect(submit).toBeEnabled({ timeout: 5000 });
+
     await dismissOverlays(page);
-    const destinationUrl = await clickAndCaptureDestination(page, context, submit);
+    await submit.click({ force: true });
 
-    expect(destinationUrl).toBeTruthy();
+    await expect(page).toHaveURL(/\/hotels\?/, { timeout: 10_000 });
 
-    const url = new URL(destinationUrl);
+    const url = new URL(page.url());
 
-    // The search navigates to internal /hotels route or external Agoda URL.
+    expect(url.pathname).toContain('/hotels');
+
     expect(
-      /agoda/i.test(url.hostname) ||
-        /agoda/i.test(url.href) ||
-        url.pathname.includes('/hotels')
+      url.searchParams.get('city') === 'bangkok' ||
+        url.href.includes('bangkok') ||
+        /city|destination|place|location/i.test(url.search),
     ).toBeTruthy();
 
-    // URL should contain city or destination identifier
-    expect(
-      url.href.includes('bangkok') ||
-        url.href.includes('3940') ||
-        /city|cid|destination|dest_id|hotel_id|place|location/i.test(url.search)
-    ).toBeTruthy();
+    expect(url.searchParams.get('checkIn')).toBeTruthy();
+    expect(url.searchParams.get('checkOut')).toBeTruthy();
+    expect(url.searchParams.get('adults')).toBeTruthy();
+    expect(url.searchParams.get('rooms')).toBeTruthy();
   });
 
   // NOTE: This test is skipped because the current GuestSelector component
@@ -226,6 +220,22 @@ test.describe('Search & Affiliate Flows', () => {
 async function openHotelsTab(page: Page): Promise<void> {
   await dismissOverlays(page);
 
+  const alreadyVisibleHotelUi = await maybeExisting(page, [
+    page.getByTestId('hotel-destination-select'),
+    page.getByLabel(/destination|city|where to/i),
+    page.locator('select[name="destination"]'),
+    page.locator('input[name="checkin"]'),
+  ]);
+
+  if (alreadyVisibleHotelUi) {
+    try {
+      await expect(alreadyVisibleHotelUi).toBeVisible({ timeout: 1000 });
+      return;
+    } catch {
+      // Continue to tab/link fallback below.
+    }
+  }
+
   const hotelsTab = await firstExisting(page, [
     page.getByTestId('tab-hotels'),
     page.getByRole('tab', { name: /hotels/i }),
@@ -236,8 +246,6 @@ async function openHotelsTab(page: Page): Promise<void> {
   await hotelsTab.click({ force: true });
   await dismissOverlays(page);
 
-  // Verify a hotels-specific control appeared after switching.
-  // Since the tab is lazy-loaded, we wait for the UI to be visible.
   const hotelUi = await firstExisting(page, [
     page.getByTestId('hotel-destination-select'),
     page.getByLabel(/destination|city|where to/i),
