@@ -28,7 +28,7 @@ const PROVIDER_STYLE: Record<
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   booking: {
-    label: "Booking",
+    label: "Booking.com",
     className: "border-blue-200 bg-blue-50 text-blue-700",
   },
   trip: {
@@ -173,7 +173,7 @@ function HotelCardComponent({
             <div className="text-right">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">View details</p>
               <p className="text-xs text-slate-500">
-                {compareCount > 0 ? `Compare ${compareCount} sites` : "Rate check unavailable"}
+                {compareCount > 1 ? `Compare ${compareCount} sites` : "From per night"}
               </p>
               {hasPrice ? (
                 <>
