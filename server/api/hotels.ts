@@ -194,7 +194,45 @@ function asNonEmptyString(value: any): string | undefined {
 
 function asPositiveFiniteNumber(value: any): number | undefined {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : void 0;
+}
+
+function asSafeErrorValue(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
+}
+
+function extractAgodaErrorDiagnostics(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return {};
+  }
+
+  const error = (payload as Record<string, unknown>).error;
+  if (!error || typeof error !== "object" || Array.isArray(error)) {
+    return {};
+  }
+
+  const errorObject = error as Record<string, unknown>;
+  const code =
+    asSafeErrorValue(errorObject.code) ??
+    asSafeErrorValue(errorObject.errorCode) ??
+    asSafeErrorValue(errorObject.status);
+  const message =
+    asSafeErrorValue(errorObject.message) ??
+    asSafeErrorValue(errorObject.errorMessage);
+  const type = asSafeErrorValue(errorObject.type);
+
+  return {
+    agodaErrorCode: code,
+    agodaErrorMessage: message,
+    agodaErrorType: type,
+  };
 }
 
 function normalizeNeighborhood(rawHotel: any): string | undefined {
@@ -664,6 +702,10 @@ async function fetchAgodaHotels(
           payload && typeof payload === "object" && !Array.isArray(payload)
             ? Object.keys(payload)
             : [];
+        const hasErrorPayload = payloadTopLevelKeys.includes("error");
+        const agodaErrorDiagnostics = hasErrorPayload
+          ? extractAgodaErrorDiagnostics(payload)
+          : {};
         const resultCandidateMap: Record<string, unknown> = {
           results: payload?.results,
           hotels: payload?.hotels,
@@ -689,6 +731,13 @@ async function fetchAgodaHotels(
           ) as unknown[]) ?? [];
 
         if (!hotels.length) {
+          if (hasErrorPayload) {
+            console.warn("[Hotels] Agoda lt_v1 error payload", {
+              code: agodaErrorDiagnostics.agodaErrorCode,
+              message: agodaErrorDiagnostics.agodaErrorMessage,
+              type: agodaErrorDiagnostics.agodaErrorType,
+            });
+          }
           console.warn("[Hotels] Agoda lt_v1 empty results shape", {
             payloadTopLevelKeys,
             resultCandidateCounts,
@@ -696,6 +745,7 @@ async function fetchAgodaHotels(
           const diagnostics = buildDiagnostics("empty_results", undefined, {
             payloadTopLevelKeys,
             resultCandidateCounts,
+            ...agodaErrorDiagnostics,
           });
           if (allowMockFallback) {
             return {

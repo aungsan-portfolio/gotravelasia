@@ -105,6 +105,9 @@ export interface HotelSearchDiagnostics {
   hasAgodaApiKey: boolean;
   payloadTopLevelKeys?: string[];
   resultCandidateCounts?: Record<string, number>;
+  agodaErrorCode?: string;
+  agodaErrorMessage?: string;
+  agodaErrorType?: string;
 }
 
 export interface HotelSearchCity {

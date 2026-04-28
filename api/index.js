@@ -2898,6 +2898,34 @@ function asPositiveFiniteNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : void 0;
 }
+function asSafeErrorValue(value) {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : void 0;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return void 0;
+}
+function extractAgodaErrorDiagnostics(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return {};
+  }
+  const error = payload.error;
+  if (!error || typeof error !== "object" || Array.isArray(error)) {
+    return {};
+  }
+  const errorObject = error;
+  const code = asSafeErrorValue(errorObject.code) ?? asSafeErrorValue(errorObject.errorCode) ?? asSafeErrorValue(errorObject.status);
+  const message = asSafeErrorValue(errorObject.message) ?? asSafeErrorValue(errorObject.errorMessage);
+  const type = asSafeErrorValue(errorObject.type);
+  return {
+    agodaErrorCode: code,
+    agodaErrorMessage: message,
+    agodaErrorType: type
+  };
+}
 function normalizeNeighborhood(rawHotel) {
   return asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.district) ?? asNonEmptyString(rawHotel.neighborhood) ?? asNonEmptyString(rawHotel.zone) ?? asNonEmptyString(rawHotel.location?.district) ?? asNonEmptyString(rawHotel.location?.neighborhood);
 }
@@ -3197,6 +3225,8 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
         }
         const payload = await response.json();
         const payloadTopLevelKeys = payload && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : [];
+        const hasErrorPayload = payloadTopLevelKeys.includes("error");
+        const agodaErrorDiagnostics = hasErrorPayload ? extractAgodaErrorDiagnostics(payload) : {};
         const resultCandidateMap = {
           results: payload?.results,
           hotels: payload?.hotels,
@@ -3217,13 +3247,21 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
           (candidate) => Array.isArray(candidate) && candidate.length > 0
         ) ?? [];
         if (!hotels.length) {
+          if (hasErrorPayload) {
+            console.warn("[Hotels] Agoda lt_v1 error payload", {
+              code: agodaErrorDiagnostics.agodaErrorCode,
+              message: agodaErrorDiagnostics.agodaErrorMessage,
+              type: agodaErrorDiagnostics.agodaErrorType
+            });
+          }
           console.warn("[Hotels] Agoda lt_v1 empty results shape", {
             payloadTopLevelKeys,
             resultCandidateCounts
           });
           const diagnostics = buildDiagnostics("empty_results", void 0, {
             payloadTopLevelKeys,
-            resultCandidateCounts
+            resultCandidateCounts,
+            ...agodaErrorDiagnostics
           });
           if (allowMockFallback) {
             return {
