@@ -101,6 +101,7 @@ export type HotelDiagnosticsReason =
 export interface HotelSearchDiagnostics {
   reason: HotelDiagnosticsReason;
   status?: number;
+  agodaResponsePreview?: string;
   hasAgodaSiteId: boolean;
   hasAgodaApiKey: boolean;
   requestShape?: {

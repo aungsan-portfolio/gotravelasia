@@ -714,7 +714,9 @@ async function fetchAgodaHotels(
           safeWarnOnce(
             `Agoda lt_v1 search returned status ${response.status}.`
           );
-          const diagnostics = buildDiagnostics("non_ok_response", response.status);
+          const diagnostics = buildDiagnostics("non_ok_response", response.status, {
+            agodaResponsePreview: bodySnippet,
+          });
           if (allowMockFallback) {
             return {
               source: "mock" as const,
