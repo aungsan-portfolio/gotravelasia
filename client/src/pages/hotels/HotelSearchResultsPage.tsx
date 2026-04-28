@@ -10,6 +10,7 @@ import { buildHotelDetailUrl } from "@/lib/hotels/buildHotelDetailUrl";
 import { trackHotelSearchView, trackHotelSelect } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
+import { ExternalLink, SearchX } from "lucide-react";
 
 export default function HotelSearchResultsPage() {
   const { query, routeMode, routeMeta } = useHotelRouteState();
@@ -20,6 +21,8 @@ export default function HotelSearchResultsPage() {
     isLoading,
     errorMessage,
     visibleHotels,
+    meta,
+    affiliateLinks,
     sort,
     activeFilters,
     totalFound,
@@ -44,6 +47,8 @@ export default function HotelSearchResultsPage() {
       ),
     [visibleHotels]
   );
+  const isLiveAgodaUnavailable =
+    meta?.warning === "Live Agoda results are temporarily unavailable.";
 
   const openHotelDetail = (hotelId: string) => {
     const selectedHotel = visibleHotels.find(
@@ -71,55 +76,41 @@ export default function HotelSearchResultsPage() {
       return;
     }
 
-    const filters =
-      activeFilters.length > 0
-        ? { active: [...activeFilters].sort() }
-        : undefined;
-
     trackHotelSearchView({
       city: query.city,
       checkIn: query.checkIn,
       checkOut: query.checkOut,
-      sort,
-      filters,
+      resultCount: visibleHotels.length,
     });
   }, [
-    activeFilters,
-    errorMessage,
     isLoading,
+    errorMessage,
+    visibleHotels.length,
+    query.city,
     query.checkIn,
     query.checkOut,
-    query.city,
-    sort,
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <div className="mx-auto w-full max-w-7xl px-4 py-6 lg:px-6 lg:py-8">
-        <header className="mb-5 rounded-xl bg-white p-4 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Hotel Search Results
-          </h1>
-          <p className="mt-1 text-slate-600">
-            {cityName} · {query.checkIn} to {query.checkOut} · {query.adults}{" "}
-            guests · {query.rooms} room
-            {query.rooms > 1 ? "s" : ""}
-          </p>
-        </header>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+          Hotels in {cityName}
+        </h1>
 
-        <div className="space-y-4">
-          <HotelResultsSummaryRow
-            cityName={cityName}
-            totalFound={totalFound}
-            mappedCount={mappedHotels.length}
-          />
-
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <HotelFilterToolbar
-            sort={sort}
             activeFilters={activeFilters}
-            onSortChange={setSort}
             onToggleFilter={toggleFilter}
             onClearFilters={clearFilters}
+            sort={sort}
+            onSortChange={setSort}
+          />
+        </div>
+
+        <div className="mt-6">
+          <HotelResultsSummaryRow
+            cityName={cityName}
             totalFound={totalFound}
           />
         </div>
@@ -145,33 +136,64 @@ export default function HotelSearchResultsPage() {
         )}
 
         {!isLoading && !errorMessage && (
-          <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0">
-              <HotelResultsList
-                hotels={visibleHotels}
-                checkIn={query.checkIn}
-                checkOut={query.checkOut}
-                selectedHotelId={selectedHotelId}
-                hoveredHotelId={hoveredHotelId}
-                onSelectHotel={setSelectedHotelId}
-                onHoverHotel={setHoveredHotelId}
-                onOpenHotelDetail={openHotelDetail}
-              />
-            </div>
-            <div className="min-w-0">
-              <HotelMapPanel
-                hotels={mappedHotels}
-                selectedHotelId={selectedHotelId}
-                hoveredHotelId={hoveredHotelId}
-                bounds={bounds}
-                onSelectHotel={setSelectedHotelId}
-                onHoverHotel={setHoveredHotelId}
-                city={query.city}
-                checkIn={query.checkIn}
-                checkOut={query.checkOut}
-              />
-            </div>
-          </div>
+          <>
+            {visibleHotels.length === 0 && isLiveAgodaUnavailable && (
+              <section className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <SearchX className="h-7 w-7" />
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                  Live Agoda hotel results are temporarily unavailable.
+                </h2>
+                <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
+                  Please try again shortly. You can still browse partner inventory directly on Agoda.
+                </p>
+                {affiliateLinks?.agoda && (
+                  <div className="mt-4 flex justify-center">
+                    <a
+                      href={affiliateLinks.agoda}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                    >
+                      View hotels on Agoda
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {!(visibleHotels.length === 0 && isLiveAgodaUnavailable) && (
+              <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="min-w-0">
+                  <HotelResultsList
+                    hotels={visibleHotels}
+                    checkIn={query.checkIn}
+                    checkOut={query.checkOut}
+                    selectedHotelId={selectedHotelId}
+                    hoveredHotelId={hoveredHotelId}
+                    onSelectHotel={setSelectedHotelId}
+                    onHoverHotel={setHoveredHotelId}
+                    onOpenHotelDetail={openHotelDetail}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <HotelMapPanel
+                    hotels={mappedHotels}
+                    selectedHotelId={selectedHotelId}
+                    hoveredHotelId={hoveredHotelId}
+                    bounds={bounds}
+                    onSelectHotel={setSelectedHotelId}
+                    onHoverHotel={setHoveredHotelId}
+                    city={query.city}
+                    checkIn={query.checkIn}
+                    checkOut={query.checkOut}
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>

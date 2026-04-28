@@ -87,7 +87,22 @@ export interface HotelSearchMeta {
   pageSize: number;
   totalCount: number;
   totalPages: number;
+  warning?: string;
   warnings?: string[];
+  diagnostics?: HotelSearchDiagnostics;
+}
+
+export type HotelDiagnosticsReason =
+  | "missing_credentials"
+  | "non_ok_response"
+  | "empty_results"
+  | "fetch_error";
+
+export interface HotelSearchDiagnostics {
+  reason: HotelDiagnosticsReason;
+  status?: number;
+  hasAgodaSiteId: boolean;
+  hasAgodaApiKey: boolean;
 }
 
 export interface HotelSearchCity {
