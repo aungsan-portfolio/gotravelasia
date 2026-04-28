@@ -2780,6 +2780,9 @@ function safeWarnOnce(message) {
   warnedMessages.add(message);
   console.warn(`[Hotels] ${message}`);
 }
+function shouldUseMockHotelFallback() {
+  return process.env.ALLOW_HOTEL_MOCKS === "true";
+}
 function agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms) {
   const params = new URLSearchParams({
     city: String(cityId),
@@ -3101,12 +3104,13 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
 async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, page, sort) {
   const hasAgodaSiteId = Boolean(AGODA_SITE_ID);
   const hasAgodaApiKey = Boolean(AGODA_API_KEY);
-  const isProduction = process.env.NODE_ENV === "production";
-  const buildDiagnostics = (reason, status) => ({
+  const allowMockFallback = shouldUseMockHotelFallback();
+  const buildDiagnostics = (reason, status, extras = {}) => ({
     reason,
     status,
     hasAgodaSiteId,
-    hasAgodaApiKey
+    hasAgodaApiKey,
+    ...extras
   });
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
   const key = `agoda-lt:${agodaCityId}:${checkIn}:${checkOut}:${adults}:${rooms}:${page}:${sort}`;
@@ -3118,23 +3122,23 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
           "Agoda credentials are missing; live results are unavailable."
         );
         const diagnostics = buildDiagnostics("missing_credentials");
-        if (isProduction) {
+        if (allowMockFallback) {
           return {
-            source: "agoda",
-            hotels: [],
-            warning: liveAgodaWarning,
-            warnings: [liveAgodaWarning],
-            diagnostics,
-            totalCount: 0
+            source: "mock",
+            hotels: getMockHotels(agodaCityId, page, sort),
+            warnings: [
+              "Live Agoda credentials are not configured. Showing fallback results."
+            ],
+            diagnostics
           };
         }
         return {
-          source: "mock",
-          hotels: getMockHotels(agodaCityId, page, sort),
-          warnings: [
-            "Live Agoda credentials are not configured. Showing fallback results."
-          ],
-          diagnostics
+          source: "agoda",
+          hotels: [],
+          warning: liveAgodaWarning,
+          warnings: [liveAgodaWarning],
+          diagnostics,
+          totalCount: 0
         };
       }
       try {
@@ -3172,57 +3176,65 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
             `Agoda lt_v1 search returned status ${response.status}.`
           );
           const diagnostics = buildDiagnostics("non_ok_response", response.status);
-          if (isProduction) {
+          if (allowMockFallback) {
             return {
-              source: "agoda",
-              hotels: [],
-              warning: liveAgodaWarning,
-              warnings: [liveAgodaWarning],
-              diagnostics,
-              totalCount: 0
+              source: "mock",
+              hotels: getMockHotels(agodaCityId, page, sort),
+              warnings: [
+                "Live Agoda search is temporarily unavailable. Showing fallback results."
+              ],
+              diagnostics
             };
           }
           return {
-            source: "mock",
-            hotels: getMockHotels(agodaCityId, page, sort),
-            warnings: [
-              "Live Agoda search is temporarily unavailable. Showing fallback results."
-            ],
-            diagnostics
+            source: "agoda",
+            hotels: [],
+            warning: liveAgodaWarning,
+            warnings: [liveAgodaWarning],
+            diagnostics,
+            totalCount: 0
           };
         }
         const payload = await response.json();
-        const hotels = Array.isArray(payload.results) ? payload.results : [];
+        const payloadTopLevelKeys = payload && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : [];
+        const resultCandidateMap = {
+          results: payload?.results,
+          hotels: payload?.hotels,
+          properties: payload?.properties,
+          data: payload?.data,
+          dataResults: payload?.data?.results,
+          dataHotels: payload?.data?.hotels,
+          searchResults: payload?.searchResults,
+          hotelList: payload?.hotelList
+        };
+        const resultCandidateCounts = Object.entries(resultCandidateMap).reduce((acc, [candidateKey, candidateValue]) => {
+          if (Array.isArray(candidateValue)) {
+            acc[candidateKey] = candidateValue.length;
+          }
+          return acc;
+        }, {});
+        const hotels = Object.values(resultCandidateMap).find(
+          (candidate) => Array.isArray(candidate) && candidate.length > 0
+        ) ?? [];
         if (!hotels.length) {
-          const diagnostics = buildDiagnostics("empty_results");
-          if (isProduction) {
+          console.warn("[Hotels] Agoda lt_v1 empty results shape", {
+            payloadTopLevelKeys,
+            resultCandidateCounts
+          });
+          const diagnostics = buildDiagnostics("empty_results", void 0, {
+            payloadTopLevelKeys,
+            resultCandidateCounts
+          });
+          if (allowMockFallback) {
             return {
-              source: "agoda",
-              hotels: [],
-              warning: liveAgodaWarning,
-              warnings: [liveAgodaWarning],
-              diagnostics,
-              totalCount: 0
+              source: "mock",
+              hotels: getMockHotels(agodaCityId, page, sort),
+              warnings: [
+                "No live Agoda hotels were returned for this criteria. Showing fallback results."
+              ],
+              diagnostics
             };
           }
-          return {
-            source: "mock",
-            hotels: getMockHotels(agodaCityId, page, sort),
-            warnings: [
-              "No live Agoda hotels were returned for this criteria. Showing fallback results."
-            ],
-            diagnostics
-          };
-        }
-        return {
-          source: "agoda",
-          hotels,
-          totalCount: payload.totalResults ?? hotels.length
-        };
-      } catch (err) {
-        console.error("[Hotels] Agoda lt_v1 search failed:", err);
-        const diagnostics = buildDiagnostics("fetch_error");
-        if (isProduction) {
           return {
             source: "agoda",
             hotels: [],
@@ -3233,10 +3245,28 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
           };
         }
         return {
-          source: "mock",
-          hotels: getMockHotels(agodaCityId, page, sort),
-          warnings: ["Live Agoda search failed. Showing fallback results."],
-          diagnostics
+          source: "agoda",
+          hotels,
+          totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
+        };
+      } catch (err) {
+        console.error("[Hotels] Agoda lt_v1 search failed:", err);
+        const diagnostics = buildDiagnostics("fetch_error");
+        if (allowMockFallback) {
+          return {
+            source: "mock",
+            hotels: getMockHotels(agodaCityId, page, sort),
+            warnings: ["Live Agoda search failed. Showing fallback results."],
+            diagnostics
+          };
+        }
+        return {
+          source: "agoda",
+          hotels: [],
+          warning: liveAgodaWarning,
+          warnings: [liveAgodaWarning],
+          diagnostics,
+          totalCount: 0
         };
       }
     },
