@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useAutocomplete } from "../../hooks/useAutocomplete";
 import { AutocompleteSuggestion, LocationType } from "../../types/hotel-search.types";
-import { resolveSupportedHotelCity } from "@/features/hotels/frontdoor/hotelFrontDoor.mapping";
 
 const LOCATION_ICONS: Record<string, string> = {
   [LocationType.HOTEL]:        "🏨",
@@ -14,7 +13,6 @@ const LOCATION_ICONS: Record<string, string> = {
 
 interface SelectionPayload {
   suggestion: AutocompleteSuggestion;
-  citySlug: string | null;
 }
 
 interface Props {
@@ -89,8 +87,7 @@ export default function HotelSearchBox({
                   key={`${s.locationId}-${s.displayName}`}
                   className="flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors hover:bg-gray-50"
                   onClick={() => {
-                    const citySlug = resolveSupportedHotelCity({ suggestion: s, label: s.displayName });
-                    onSelect({ suggestion: s, citySlug });
+                    onSelect({ suggestion: s });
                     setQuery(s.displayName);
                     setIsOpen(false);
                   }}

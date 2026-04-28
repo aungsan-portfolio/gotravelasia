@@ -6,6 +6,7 @@ import type {
   HotelOutboundLinks,
   HotelPriceDisplay,
   HotelResult,
+  HotelSearchCity,
   HotelSearchResponse,
   HotelSort,
 } from "../../shared/hotels/types.js";
@@ -193,21 +194,27 @@ function buildAffiliateLinks(
   };
 }
 
-function buildFallbackCoordinates(city: City, index: number) {
-  if (!Number.isFinite(city.lat) || !Number.isFinite(city.lng)) {
+type SearchCity = HotelSearchCity & { hasHotels?: boolean };
+
+function buildFallbackCoordinates(city: SearchCity, index: number) {
+  const cityLat = city.lat;
+  const cityLng = city.lng;
+
+  if (typeof cityLat !== "number" || typeof cityLng !== "number") {
     return undefined;
   }
+
   // TEMPORARY FALLBACK STRATEGY: until upstream hotel-level lat/lng is consistently available,
   // spread missing-coordinate hotels in a deterministic ring around the destination center.
   const angle = (index * 137.5 * Math.PI) / 180;
   const radiusKm = 1.2 + (index % 6) * 0.45;
   const latOffset = (radiusKm / 111) * Math.cos(angle);
   const lngOffset =
-    (radiusKm / (111 * Math.max(0.3, Math.cos((city.lat * Math.PI) / 180)))) *
+    (radiusKm / (111 * Math.max(0.3, Math.cos((cityLat * Math.PI) / 180)))) *
     Math.sin(angle);
   return {
-    lat: city.lat + latOffset,
-    lng: city.lng + lngOffset,
+    lat: cityLat + latOffset,
+    lng: cityLng + lngOffset,
     isFallback: true,
   };
 }
@@ -359,7 +366,9 @@ function calculateStayNights(checkIn: string, checkOut: string): number {
   const checkInDate = new Date(`${checkIn}T00:00:00Z`);
   const checkOutDate = new Date(`${checkOut}T00:00:00Z`);
   const msPerNight = 24 * 60 * 60 * 1000;
-  const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / msPerNight);
+  const nights = Math.round(
+    (checkOutDate.getTime() - checkInDate.getTime()) / msPerNight
+  );
   return nights > 0 ? nights : 0;
 }
 
@@ -406,7 +415,7 @@ function buildPriceDisplay(
 
 function normalizeHotel(
   rawHotel: any,
-  city: City,
+  city: SearchCity,
   checkIn: string,
   checkOut: string,
   adults: number,
@@ -496,7 +505,8 @@ function normalizeHotel(
   const hasExactCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
   const fallbackCoordinates = buildFallbackCoordinates(city, index);
   const coordinates = hasExactCoordinates ? { lat, lng } : fallbackCoordinates;
-  const hasFallbackCoordinates = !hasExactCoordinates && Boolean(fallbackCoordinates);
+  const hasFallbackCoordinates =
+    !hasExactCoordinates && Boolean(fallbackCoordinates);
   const coordinatesConfidence = deriveCoordinatesConfidence(
     hasExactCoordinates,
     hasFallbackCoordinates
@@ -505,10 +515,10 @@ function normalizeHotel(
     asPositiveFiniteNumber(rawHotel.rankingPosition) ??
     asPositiveFiniteNumber(rawHotel.rank) ??
     asPositiveFiniteNumber(rawHotel.ranking) ??
-    (page - 1) * PAGE_SIZE +
-      index +
-      1;
-  const currency = asNonEmptyString(rawHotel.currency) ?? asNonEmptyString(rawHotel.price?.currency);
+    (page - 1) * PAGE_SIZE + index + 1;
+  const currency =
+    asNonEmptyString(rawHotel.currency) ??
+    asNonEmptyString(rawHotel.price?.currency);
   const neighborhood = normalizeNeighborhood(rawHotel);
   const breakfastIncluded = normalizeBreakfastIncluded(rawHotel);
   const freeCancellation = normalizeFreeCancellation(rawHotel);
@@ -817,16 +827,42 @@ export async function searchHotels(req: any, res: any) {
   const normalized = normalizeHotelSearchParams(
     req.query as Record<string, string | string[] | undefined>
   );
-  const city = getCityBySlug(normalized.city);
 
-  if (!city)
-    return res
-      .status(404)
-      .json({ error: `City not found: ${normalized.city}` });
-  if (!city.hasHotels)
-    return res
-      .status(400)
-      .json({ error: `No hotels available for ${city.name}` });
+  const isNumericCityId = /^\d+$/.test(normalized.city);
+  let city: SearchCity | undefined;
+
+  if (isNumericCityId) {
+    const agodaCityId = Number.parseInt(normalized.city, 10);
+    if (!Number.isFinite(agodaCityId)) {
+      return res
+        .status(400)
+        .json({ error: `Invalid Agoda city id: ${normalized.city}` });
+    }
+
+    const fallbackName =
+      normalized.cityName?.trim() || `City ${normalized.city}`;
+    city = {
+      slug: normalized.city,
+      name: fallbackName,
+      bookingName: fallbackName,
+      country: "",
+      agodaCityId,
+      hasHotels: true,
+    };
+  } else {
+    const localCity = getCityBySlug(normalized.city);
+
+    if (!localCity)
+      return res
+        .status(404)
+        .json({ error: `City not found: ${normalized.city}` });
+    if (!localCity.hasHotels)
+      return res
+        .status(400)
+        .json({ error: `No hotels available for ${localCity.name}` });
+
+    city = localCity;
+  }
 
   try {
     const affiliateLinks = buildAffiliateLinks(

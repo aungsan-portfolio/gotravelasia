@@ -13,7 +13,7 @@ import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 
 export default function HotelSearchResultsPage() {
   const { query, routeMode, routeMeta } = useHotelRouteState();
-  const cityName = getCityName(query.city);
+  const cityName = query.cityName || getCityName(query.city) || query.city;
   const [, setLocation] = useLocation();
 
   const {
@@ -40,13 +40,15 @@ export default function HotelSearchResultsPage() {
   const mappedHotels = useMemo(
     () =>
       visibleHotels.filter(
-        (hotel) => hotel.coordinates && !hotel.coordinates.isFallback,
+        hotel => hotel.coordinates && !hotel.coordinates.isFallback
       ),
-    [visibleHotels],
+    [visibleHotels]
   );
 
   const openHotelDetail = (hotelId: string) => {
-    const selectedHotel = visibleHotels.find((hotel) => hotel.hotelId === hotelId);
+    const selectedHotel = visibleHotels.find(
+      hotel => hotel.hotelId === hotelId
+    );
 
     trackHotelSelect({
       hotelId,
@@ -60,7 +62,7 @@ export default function HotelSearchResultsPage() {
       buildHotelDetailUrl({
         hotelId,
         query,
-      }),
+      })
     );
   };
 
@@ -81,15 +83,26 @@ export default function HotelSearchResultsPage() {
       sort,
       filters,
     });
-  }, [activeFilters, errorMessage, isLoading, query.checkIn, query.checkOut, query.city, sort]);
+  }, [
+    activeFilters,
+    errorMessage,
+    isLoading,
+    query.checkIn,
+    query.checkOut,
+    query.city,
+    sort,
+  ]);
 
   return (
     <main className="min-h-screen bg-slate-100">
       <div className="mx-auto w-full max-w-7xl px-4 py-6 lg:px-6 lg:py-8">
         <header className="mb-5 rounded-xl bg-white p-4 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Hotel Search Results</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Hotel Search Results
+          </h1>
           <p className="mt-1 text-slate-600">
-            {cityName} · {query.checkIn} to {query.checkOut} · {query.adults} guests · {query.rooms} room
+            {cityName} · {query.checkIn} to {query.checkOut} · {query.adults}{" "}
+            guests · {query.rooms} room
             {query.rooms > 1 ? "s" : ""}
           </p>
         </header>

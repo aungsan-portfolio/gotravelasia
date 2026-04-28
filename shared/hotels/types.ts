@@ -19,6 +19,7 @@ export type HotelViewMode = "list" | "map";
 
 export interface HotelSearchParams {
   city: string;
+  cityName?: string;
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -89,8 +90,18 @@ export interface HotelSearchMeta {
   warnings?: string[];
 }
 
+export interface HotelSearchCity {
+  slug: string;
+  name: string;
+  bookingName: string;
+  country: string;
+  agodaCityId: number;
+  lat?: number;
+  lng?: number;
+}
+
 export interface HotelSearchResponse {
-  city: City;
+  city: HotelSearchCity | City;
   hotels: HotelResult[];
   affiliateLinks: HotelOutboundLinks;
   meta: HotelSearchMeta;

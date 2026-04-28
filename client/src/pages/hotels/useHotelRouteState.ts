@@ -19,7 +19,16 @@ interface HotelRouteState {
   routeMeta: HotelRouteMeta | null;
 }
 
-const KNOWN_QUERY_KEYS = new Set(["city", "checkIn", "checkOut", "adults", "rooms", "page", "sort"]);
+const KNOWN_QUERY_KEYS = new Set([
+  "city",
+  "cityName",
+  "checkIn",
+  "checkOut",
+  "adults",
+  "rooms",
+  "page",
+  "sort",
+]);
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
@@ -30,10 +39,16 @@ export function useHotelRouteState(): HotelRouteState {
   const [pathname] = useLocation();
   const searchString = useSearch();
 
-  return useMemo(() => resolveHotelRouteState(pathname, searchString), [pathname, searchString]);
+  return useMemo(
+    () => resolveHotelRouteState(pathname, searchString),
+    [pathname, searchString]
+  );
 }
 
-export function resolveHotelRouteState(pathname: string, searchString: string): HotelRouteState {
+export function resolveHotelRouteState(
+  pathname: string,
+  searchString: string
+): HotelRouteState {
   // 1. Prepare legacy fallback
   const legacyQuery = parseHotelSearchParams(searchString);
 
@@ -52,9 +67,15 @@ export function resolveHotelRouteState(pathname: string, searchString: string): 
     const mergedParams = new URLSearchParams(rawQueryParams);
 
     // Resolve city slug from the canonical label/pid
-    const city = resolveCitySlug(canonicalParts.destinationLabel, canonicalParts.placeId);
+    const city = resolveCitySlug(
+      canonicalParts.destinationLabel,
+      canonicalParts.placeId
+    );
 
-    mergedParams.set("city", city || "");
+    mergedParams.set("city", city || canonicalParts.placeId || "");
+    if (canonicalParts.destinationLabel) {
+      mergedParams.set("cityName", canonicalParts.destinationLabel);
+    }
     mergedParams.set("checkIn", canonicalParts.checkIn);
     mergedParams.set("checkOut", canonicalParts.checkOut);
 
@@ -112,14 +133,24 @@ function parseCanonicalPath(pathname: string) {
     }
 
     // Match destination and optional placeId (supports -p and -pid)
-    const destinationMatch = destinationSegment.match(/^(.*?)(?:-pid?(\d+))?$/i);
+    const destinationMatch = destinationSegment.match(
+      /^(.*?)(?:-pid?(\d+))?$/i
+    );
     const destinationRaw = (destinationMatch?.[1] ?? destinationSegment).trim();
     const placeId = destinationMatch?.[2];
 
-    const partyTokens = partySegment.split(";").map((token) => token.trim().toLowerCase());
-    const adultsToken = partyTokens.find((token) => /\d+/.test(token) && (token.includes("adult") || !token.includes("room")));
-    const roomsToken = partyTokens.find((token) => /\d+room/.test(token));
-    const viewToken = partyTokens.find((token) => token === "map" || token === "list");
+    const partyTokens = partySegment
+      .split(";")
+      .map(token => token.trim().toLowerCase());
+    const adultsToken = partyTokens.find(
+      token =>
+        /\d+/.test(token) &&
+        (token.includes("adult") || !token.includes("room"))
+    );
+    const roomsToken = partyTokens.find(token => /\d+room/.test(token));
+    const viewToken = partyTokens.find(
+      token => token === "map" || token === "list"
+    );
 
     const adultsMatch = adultsToken?.match(/(\d+)/);
     const roomsMatch = roomsToken?.match(/(\d+)/);
@@ -141,7 +172,10 @@ function parseCanonicalPath(pathname: string) {
 /**
  * Fuzzy resolves a city slug from a destination label and optional place ID.
  */
-function resolveCitySlug(destinationLabel: string | undefined, placeId?: string) {
+function resolveCitySlug(
+  destinationLabel: string | undefined,
+  placeId?: string
+) {
   if (!destinationLabel) return undefined;
 
   const cities = getHotelCities();
@@ -154,7 +188,8 @@ function resolveCitySlug(destinationLabel: string | undefined, placeId?: string)
   }
 
   const normalize = (val: string) =>
-    val.toLowerCase()
+    val
+      .toLowerCase()
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, " ")

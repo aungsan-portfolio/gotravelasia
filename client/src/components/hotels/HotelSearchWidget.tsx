@@ -15,7 +15,9 @@ export default function HotelSearchWidget() {
   const [, setLocation] = useLocation();
   const [params, setParams] = useState<HotelFrontDoorFormState>({
     destinationLabel: "",
-    citySlug: "",
+    city: "",
+    cityName: "",
+    destinationSource: undefined,
     checkIn: "",
     checkOut: "",
     guests: { rooms: 1, adults: 2, children: 0 },
@@ -27,7 +29,8 @@ export default function HotelSearchWidget() {
     if (!validation.isValid) return;
 
     const query = buildHotelSearchParams({
-      city: params.citySlug,
+      city: params.city,
+      cityName: params.cityName || params.destinationLabel,
       checkIn: params.checkIn,
       checkOut: params.checkOut,
       adults: params.guests.adults,
@@ -43,7 +46,7 @@ export default function HotelSearchWidget() {
   };
 
   const updateGuests = (guests: GuestConfig) => {
-    setParams((prev) => ({ ...prev, guests }));
+    setParams(prev => ({ ...prev, guests }));
   };
 
   return (
@@ -51,25 +54,33 @@ export default function HotelSearchWidget() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
         <HotelSearchBox
           value={params.destinationLabel}
-          onInputChange={(value) => {
-            setParams((prev) => ({
+          onInputChange={value => {
+            setParams(prev => ({
               ...prev,
               destinationLabel: value,
-              citySlug: "",
+              city: "",
+              cityName: "",
+              destinationSource: undefined,
             }));
           }}
-          onSelect={({ suggestion, citySlug }) =>
-            setParams((prev) => ({
+          onSelect={({ suggestion }) =>
+            setParams(prev => ({
               ...prev,
               destinationLabel: suggestion.displayName,
-              citySlug: citySlug ?? "",
+              city: suggestion.locationId,
+              cityName: suggestion.displayName,
+              destinationSource: /^\d+$/.test(suggestion.locationId)
+                ? "agoda"
+                : "local",
             }))
           }
         />
         <SmartDatePicker
           checkIn={params.checkIn}
           checkOut={params.checkOut}
-          onChange={(checkIn, checkOut) => setParams((prev) => ({ ...prev, checkIn, checkOut }))}
+          onChange={(checkIn, checkOut) =>
+            setParams(prev => ({ ...prev, checkIn, checkOut }))
+          }
         />
         <GuestSelector value={params.guests} onChange={updateGuests} />
         <button
@@ -85,14 +96,22 @@ export default function HotelSearchWidget() {
 
       <div className="space-y-1 px-1">
         {(validation.errors.destination || validation.errors.city) && (
-          <p className="text-xs text-rose-200">{validation.errors.destination || validation.errors.city}</p>
+          <p className="text-xs text-rose-200">
+            {validation.errors.destination || validation.errors.city}
+          </p>
         )}
         {(validation.errors.checkIn || validation.errors.checkOut) && (
-          <p className="text-xs text-rose-200">{validation.errors.checkIn || validation.errors.checkOut}</p>
+          <p className="text-xs text-rose-200">
+            {validation.errors.checkIn || validation.errors.checkOut}
+          </p>
         )}
-        {validation.errors.guests && <p className="text-xs text-rose-200">{validation.errors.guests}</p>}
-        {validation.warnings.map((warning) => (
-          <p key={warning} className="text-xs text-amber-200">{warning}</p>
+        {validation.errors.guests && (
+          <p className="text-xs text-rose-200">{validation.errors.guests}</p>
+        )}
+        {validation.warnings.map(warning => (
+          <p key={warning} className="text-xs text-amber-200">
+            {warning}
+          </p>
         ))}
       </div>
     </div>

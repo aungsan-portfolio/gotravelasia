@@ -1,7 +1,12 @@
-import type { HotelFrontDoorFormState, HotelFrontDoorValidationResult } from "./hotelFrontDoor.types";
+import type {
+  HotelFrontDoorFormState,
+  HotelFrontDoorValidationResult,
+} from "./hotelFrontDoor.types";
 import { parseIsoLocalDate } from "./hotelFrontDoor.dates";
 
-export function validateHotelFrontDoor(state: HotelFrontDoorFormState): HotelFrontDoorValidationResult {
+export function validateHotelFrontDoor(
+  state: HotelFrontDoorFormState
+): HotelFrontDoorValidationResult {
   const errors: HotelFrontDoorValidationResult["errors"] = {};
   const warnings: string[] = [];
 
@@ -9,8 +14,8 @@ export function validateHotelFrontDoor(state: HotelFrontDoorFormState): HotelFro
     errors.destination = "Destination is required.";
   }
 
-  if (!state.citySlug) {
-    errors.city = "Please choose a supported city from suggestions.";
+  if (!state.city?.trim()) {
+    errors.city = "Please choose a destination from suggestions.";
   }
 
   const checkInDate = parseIsoLocalDate(state.checkIn);
@@ -34,7 +39,9 @@ export function validateHotelFrontDoor(state: HotelFrontDoorFormState): HotelFro
 
   const totalGuests = state.guests.adults + state.guests.children;
   if (state.guests.rooms > totalGuests) {
-    warnings.push("Rooms exceed total guests. Consider reducing rooms or adding guests.");
+    warnings.push(
+      "Rooms exceed total guests. Consider reducing rooms or adding guests."
+    );
   }
 
   return {
