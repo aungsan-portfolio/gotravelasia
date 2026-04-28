@@ -2913,7 +2913,15 @@ function extractAgodaErrorDiagnostics(payload) {
     return {};
   }
   const error = payload.error;
-  if (!error || typeof error !== "object" || Array.isArray(error)) {
+  if (!error) {
+    return {};
+  }
+  if (typeof error === "string" || typeof error === "number") {
+    return {
+      agodaErrorMessage: asSafeErrorValue(error)
+    };
+  }
+  if (typeof error !== "object" || Array.isArray(error)) {
     return {};
   }
   const errorObject = error;
@@ -2924,6 +2932,19 @@ function extractAgodaErrorDiagnostics(payload) {
     agodaErrorCode: code,
     agodaErrorMessage: message,
     agodaErrorType: type
+  };
+}
+var AGODA_LT_V1_ENDPOINT = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
+function buildAgodaLtV1RequestBody(params) {
+  return {
+    checkInDate: params.checkIn,
+    checkOutDate: params.checkOut,
+    cityId: params.cityId,
+    adults: params.adults,
+    rooms: params.rooms,
+    pageNo: params.page,
+    pageSize: params.pageSize,
+    publisherId: params.publisherId
   };
 }
 function normalizeNeighborhood(rawHotel) {
@@ -3133,11 +3154,21 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
   const hasAgodaSiteId = Boolean(AGODA_SITE_ID);
   const hasAgodaApiKey = Boolean(AGODA_API_KEY);
   const allowMockFallback = shouldUseMockHotelFallback();
+  const requestShape = {
+    cityId: agodaCityId,
+    checkIn,
+    checkOut,
+    adults,
+    rooms,
+    page,
+    pageSize: PAGE_SIZE
+  };
   const buildDiagnostics = (reason, status, extras = {}) => ({
     reason,
     status,
     hasAgodaSiteId,
     hasAgodaApiKey,
+    requestShape,
     ...extras
   });
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
@@ -3170,30 +3201,25 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
         };
       }
       try {
-        const body = {
-          criteria: {
-            checkInDate: checkIn,
-            checkOutDate: checkOut,
-            cityId: agodaCityId,
-            adults,
-            rooms,
-            pageNo: page,
-            pageSize: PAGE_SIZE
-          },
+        const body = buildAgodaLtV1RequestBody({
+          ...requestShape,
           publisherId: AGODA_SITE_ID
-        };
-        const response = await fetch(
-          "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: AGODA_API_KEY,
-              "Accept-Encoding": "gzip,deflate"
-            },
-            body: JSON.stringify(body)
-          }
-        );
+        });
+        console.info("[Hotels] Agoda lt_v1 request", {
+          endpointUrl: AGODA_LT_V1_ENDPOINT,
+          ...requestShape,
+          hasAgodaSiteId,
+          hasAgodaApiKey
+        });
+        const response = await fetch(AGODA_LT_V1_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: AGODA_API_KEY,
+            "Accept-Encoding": "gzip,deflate"
+          },
+          body: JSON.stringify(body)
+        });
         if (!response.ok) {
           const responseBody = await response.text();
           const bodySnippet = responseBody.slice(0, 300).replace(/\s+/g, " ");

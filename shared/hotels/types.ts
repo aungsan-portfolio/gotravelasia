@@ -103,6 +103,15 @@ export interface HotelSearchDiagnostics {
   status?: number;
   hasAgodaSiteId: boolean;
   hasAgodaApiKey: boolean;
+  requestShape?: {
+    cityId: number;
+    checkIn: string;
+    checkOut: string;
+    adults: number;
+    rooms: number;
+    page: number;
+    pageSize: number;
+  };
   payloadTopLevelKeys?: string[];
   resultCandidateCounts?: Record<string, number>;
   agodaErrorCode?: string;
