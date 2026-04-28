@@ -60,6 +60,13 @@ function HotelCardComponent({
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
   const explanation = useMemo(() => getPrimaryHotelExplanation(hotel), [hotel]);
+
+  const hasProviderImage =
+    hotel.provider !== "mock" &&
+    typeof hotel.imageUrl === "string" &&
+    hotel.imageUrl.trim().length > 0;
+
+  const shouldShowImage = hasProviderImage && !imageFailed;
   const hasFallbackPrice = Number.isFinite(hotel.lowestRate) && hotel.lowestRate > 0;
   const minPrice = priceContext.minPrice ?? (hasFallbackPrice ? hotel.lowestRate : null);
   const maxPrice = priceContext.maxPrice;
@@ -96,7 +103,7 @@ function HotelCardComponent({
         className="grid w-full grid-cols-1 text-left md:grid-cols-[220px_1fr]"
       >
         <div className="h-48 bg-slate-100 md:h-full">
-          {!imageFailed ? (
+          {shouldShowImage ? (
             <img
               src={hotel.imageUrl}
               alt={hotel.name}
@@ -105,7 +112,12 @@ function HotelCardComponent({
               onError={() => setImageFailed(true)}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-3xl">🏨</div>
+            <div className="flex h-full flex-col items-center justify-center gap-1 text-slate-400">
+              <span className="text-3xl">🏨</span>
+              <span className="text-xs font-medium">
+                {hotel.provider === "mock" ? "Sample hotel" : "Image unavailable"}
+              </span>
+            </div>
           )}
         </div>
 
