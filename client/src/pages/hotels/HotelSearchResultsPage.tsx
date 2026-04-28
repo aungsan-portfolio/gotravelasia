@@ -80,7 +80,6 @@ export default function HotelSearchResultsPage() {
       city: query.city,
       checkIn: query.checkIn,
       checkOut: query.checkOut,
-      resultCount: visibleHotels.length,
     });
   }, [
     isLoading,
@@ -105,6 +104,7 @@ export default function HotelSearchResultsPage() {
             onClearFilters={clearFilters}
             sort={sort}
             onSortChange={setSort}
+            totalFound={totalFound}
           />
         </div>
 
@@ -112,6 +112,7 @@ export default function HotelSearchResultsPage() {
           <HotelResultsSummaryRow
             cityName={cityName}
             totalFound={totalFound}
+            mappedCount={mappedHotels.length}
           />
         </div>
 
