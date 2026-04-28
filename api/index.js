@@ -2651,7 +2651,14 @@ var MAX_ADULTS = 8;
 var MAX_ROOMS = 5;
 var MAX_PAGE = 100;
 var MAX_STAY_NIGHTS = 30;
-var HOTEL_SORT_VALUES = ["rank", "price_asc", "price_desc", "stars_desc", "review_desc"];
+var HOTEL_SORT_VALUES = [
+  "best",
+  "rank",
+  "price_asc",
+  "price_desc",
+  "stars_desc",
+  "review_desc"
+];
 function toIsoDate(date) {
   return date.toISOString().split("T")[0];
 }
@@ -2666,8 +2673,10 @@ function defaultHotelDates(baseDate = /* @__PURE__ */ new Date()) {
 function validateHotelSearchParams(params) {
   const errors = [];
   if (!params.city) errors.push("City is required.");
-  if (!params.checkIn || !isIsoDate(params.checkIn)) errors.push("Check-in date must use YYYY-MM-DD.");
-  if (!params.checkOut || !isIsoDate(params.checkOut)) errors.push("Check-out date must use YYYY-MM-DD.");
+  if (!params.checkIn || !isIsoDate(params.checkIn))
+    errors.push("Check-in date must use YYYY-MM-DD.");
+  if (!params.checkOut || !isIsoDate(params.checkOut))
+    errors.push("Check-out date must use YYYY-MM-DD.");
   if (typeof params.adults !== "number" || Number.isNaN(params.adults) || params.adults < 1 || params.adults > MAX_ADULTS) {
     errors.push(`Adults must be between 1 and ${MAX_ADULTS}.`);
   }
@@ -2683,9 +2692,12 @@ function validateHotelSearchParams(params) {
   if (params.checkIn && params.checkOut && isIsoDate(params.checkIn) && isIsoDate(params.checkOut)) {
     const checkInDate = /* @__PURE__ */ new Date(`${params.checkIn}T00:00:00Z`);
     const checkOutDate = /* @__PURE__ */ new Date(`${params.checkOut}T00:00:00Z`);
-    const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / MS_PER_DAY);
+    const nights = Math.round(
+      (checkOutDate.getTime() - checkInDate.getTime()) / MS_PER_DAY
+    );
     if (nights < 1) errors.push("Check-out must be after check-in.");
-    if (nights > MAX_STAY_NIGHTS) errors.push(`Stay length cannot exceed ${MAX_STAY_NIGHTS} nights.`);
+    if (nights > MAX_STAY_NIGHTS)
+      errors.push(`Stay length cannot exceed ${MAX_STAY_NIGHTS} nights.`);
   }
   return errors;
 }
@@ -2693,15 +2705,17 @@ function normalizeHotelSearchParams(input) {
   const defaults = defaultHotelDates();
   const normalized = {
     city: sanitizeCity(input.city) ?? DEFAULT_CITY,
+    cityName: sanitizeCityName(input.cityName),
     checkIn: isIsoDate(input.checkIn) ? input.checkIn : defaults.checkIn,
     checkOut: isIsoDate(input.checkOut) ? input.checkOut : defaults.checkOut,
     adults: clampInteger(input.adults, DEFAULT_ADULTS, 1, MAX_ADULTS),
     rooms: clampInteger(input.rooms, DEFAULT_ROOMS, 1, MAX_ROOMS),
     page: clampInteger(input.page, DEFAULT_PAGE, 1, MAX_PAGE),
-    sort: HOTEL_SORT_VALUES.includes(input.sort) ? input.sort : "rank"
+    sort: HOTEL_SORT_VALUES.includes(input.sort) ? input.sort : "best"
   };
   const dateErrors = validateHotelSearchParams({
     city: normalized.city,
+    ...normalized.cityName ? { cityName: normalized.cityName } : {},
     checkIn: normalized.checkIn,
     checkOut: normalized.checkOut,
     adults: normalized.adults,
@@ -2710,7 +2724,11 @@ function normalizeHotelSearchParams(input) {
     sort: normalized.sort
   });
   if (dateErrors.includes("Check-out must be after check-in.")) {
-    normalized.checkOut = toIsoDate(new Date((/* @__PURE__ */ new Date(`${normalized.checkIn}T00:00:00Z`)).getTime() + 3 * MS_PER_DAY));
+    normalized.checkOut = toIsoDate(
+      new Date(
+        (/* @__PURE__ */ new Date(`${normalized.checkIn}T00:00:00Z`)).getTime() + 3 * MS_PER_DAY
+      )
+    );
   }
   return normalized;
 }
@@ -2726,6 +2744,11 @@ function parseOptionalInt(value) {
 }
 function isIsoDate(value) {
   return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+function sanitizeCityName(value) {
+  if (!value) return void 0;
+  const trimmed = value.trim();
+  return trimmed || void 0;
 }
 function sanitizeCity(value) {
   if (!value) return void 0;
@@ -2848,17 +2871,151 @@ function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, a
   };
 }
 function buildFallbackCoordinates(city, index) {
+  const cityLat = city.lat;
+  const cityLng = city.lng;
+  if (typeof cityLat !== "number" || typeof cityLng !== "number") {
+    return void 0;
+  }
   const angle = index * 137.5 * Math.PI / 180;
   const radiusKm = 1.2 + index % 6 * 0.45;
   const latOffset = radiusKm / 111 * Math.cos(angle);
-  const lngOffset = radiusKm / (111 * Math.max(0.3, Math.cos(city.lat * Math.PI / 180))) * Math.sin(angle);
+  const lngOffset = radiusKm / (111 * Math.max(0.3, Math.cos(cityLat * Math.PI / 180))) * Math.sin(angle);
   return {
-    lat: city.lat + latOffset,
-    lng: city.lng + lngOffset,
+    lat: cityLat + latOffset,
+    lng: cityLng + lngOffset,
     isFallback: true
   };
 }
-function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallbackLinks, index) {
+function asNonEmptyString(value) {
+  if (typeof value !== "string") return void 0;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : void 0;
+}
+function asPositiveFiniteNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : void 0;
+}
+function normalizeNeighborhood(rawHotel) {
+  return asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.district) ?? asNonEmptyString(rawHotel.neighborhood) ?? asNonEmptyString(rawHotel.zone) ?? asNonEmptyString(rawHotel.location?.district) ?? asNonEmptyString(rawHotel.location?.neighborhood);
+}
+function normalizeBreakfastIncluded(rawHotel) {
+  if (typeof rawHotel.breakfastIncluded === "boolean") {
+    return rawHotel.breakfastIncluded;
+  }
+  if (typeof rawHotel.mealPlan?.breakfastIncluded === "boolean") {
+    return rawHotel.mealPlan.breakfastIncluded;
+  }
+  if (typeof rawHotel.boardBasis?.breakfastIncluded === "boolean") {
+    return rawHotel.boardBasis.breakfastIncluded;
+  }
+  const planText = asNonEmptyString(rawHotel.mealPlan) ?? asNonEmptyString(rawHotel.mealPlanName) ?? asNonEmptyString(rawHotel.boardBasis) ?? asNonEmptyString(rawHotel.boardType);
+  if (!planText) return void 0;
+  const normalized = planText.toLowerCase();
+  if (!/\bbreakfast\b/.test(normalized)) return void 0;
+  if (/\b(no breakfast|without breakfast|breakfast excluded|room only)\b/.test(
+    normalized
+  )) {
+    return false;
+  }
+  return true;
+}
+function normalizeFreeCancellation(rawHotel) {
+  if (typeof rawHotel.freeCancellation === "boolean") {
+    return rawHotel.freeCancellation;
+  }
+  if (typeof rawHotel.cancellation?.freeCancellation === "boolean") {
+    return rawHotel.cancellation.freeCancellation;
+  }
+  if (typeof rawHotel.refundable === "boolean") {
+    return rawHotel.refundable;
+  }
+  if (typeof rawHotel.isRefundable === "boolean") {
+    return rawHotel.isRefundable;
+  }
+  const policyText = asNonEmptyString(rawHotel.cancellationType) ?? asNonEmptyString(rawHotel.cancellationPolicy) ?? asNonEmptyString(rawHotel.ratePlan?.cancellationPolicy) ?? asNonEmptyString(rawHotel.refundType);
+  if (!policyText) return void 0;
+  const normalized = policyText.toLowerCase();
+  if (/\bnon[- ]?refundable\b/.test(normalized) || /\bno free cancellation\b/.test(normalized)) {
+    return false;
+  }
+  if (/\bfree cancellation\b/.test(normalized) || /\bfully refundable\b/.test(normalized)) {
+    return true;
+  }
+  return void 0;
+}
+function normalizePayLater(rawHotel) {
+  if (typeof rawHotel.payLater === "boolean") {
+    return rawHotel.payLater;
+  }
+  if (typeof rawHotel.payAtHotel === "boolean") {
+    return rawHotel.payAtHotel;
+  }
+  if (typeof rawHotel.payAtProperty === "boolean") {
+    return rawHotel.payAtProperty;
+  }
+  if (typeof rawHotel.payment?.payLater === "boolean") {
+    return rawHotel.payment.payLater;
+  }
+  if (typeof rawHotel.payment?.payAtHotel === "boolean") {
+    return rawHotel.payment.payAtHotel;
+  }
+  const paymentText = asNonEmptyString(rawHotel.paymentType) ?? asNonEmptyString(rawHotel.paymentDescription) ?? asNonEmptyString(rawHotel.ratePlan?.paymentType) ?? asNonEmptyString(rawHotel.ratePlan?.paymentDescription);
+  if (!paymentText) return void 0;
+  const normalized = paymentText.toLowerCase();
+  if (/\bpay later\b/.test(normalized) || /\bpay at hotel\b/.test(normalized) || /\breserve now[, ]*pay later\b/.test(normalized)) {
+    return true;
+  }
+  if (/\bprepaid\b/.test(normalized) || /\bpay now\b/.test(normalized) || /\bfull prepayment\b/.test(normalized)) {
+    return false;
+  }
+  return void 0;
+}
+function deriveCoordinatesConfidence(hasExactCoordinates, hasFallbackCoordinates) {
+  if (hasExactCoordinates) return "exact";
+  if (hasFallbackCoordinates) return "fallback";
+  return "missing";
+}
+function calculateStayNights(checkIn, checkOut) {
+  const checkInDate = /* @__PURE__ */ new Date(`${checkIn}T00:00:00Z`);
+  const checkOutDate = /* @__PURE__ */ new Date(`${checkOut}T00:00:00Z`);
+  const msPerNight = 24 * 60 * 60 * 1e3;
+  const nights = Math.round(
+    (checkOutDate.getTime() - checkInDate.getTime()) / msPerNight
+  );
+  return nights > 0 ? nights : 0;
+}
+function formatMoney2(amount, currency) {
+  if (!Number.isFinite(amount) || amount < 0) return "";
+  if (currency) {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0
+      }).format(amount);
+    } catch {
+    }
+  }
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
+    amount
+  );
+}
+function buildPriceDisplay(lowestRate, currency, nights) {
+  if (!Number.isFinite(lowestRate) || lowestRate <= 0) return void 0;
+  const nightly = formatMoney2(lowestRate, currency);
+  if (!nightly) return void 0;
+  const priceDisplay = {
+    priceLabel: `${nightly} / night`
+  };
+  if (nights > 0) {
+    const total = formatMoney2(lowestRate * nights, currency);
+    if (total) {
+      priceDisplay.totalStayEstimateLabel = `${total} total (${nights} ${nights === 1 ? "night" : "nights"})`;
+    }
+  }
+  return priceDisplay;
+}
+function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallbackLinks, index, page) {
   const hotelId = String(
     rawHotel.hotelId ?? rawHotel.propertyId ?? rawHotel.id ?? `${city.agodaCityId}-${index + 1}`
   );
@@ -2885,6 +3042,7 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     rooms
   ) : fallbackLinks.agoda);
   const outboundLinks = {
+    ...fallbackLinks,
     agoda: agodaUrl
   };
   const lat = Number(
@@ -2893,7 +3051,25 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   const lng = Number(
     rawHotel.longitude ?? rawHotel.lng ?? rawHotel.lon ?? rawHotel.coordinate?.lng ?? rawHotel.coordinates?.lng ?? rawHotel.location?.lng
   );
-  const coordinates = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : buildFallbackCoordinates(city, index);
+  const hasExactCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
+  const fallbackCoordinates = buildFallbackCoordinates(city, index);
+  const coordinates = hasExactCoordinates ? { lat, lng } : fallbackCoordinates;
+  const hasFallbackCoordinates = !hasExactCoordinates && Boolean(fallbackCoordinates);
+  const coordinatesConfidence = deriveCoordinatesConfidence(
+    hasExactCoordinates,
+    hasFallbackCoordinates
+  );
+  const rankingPosition = asPositiveFiniteNumber(rawHotel.rankingPosition) ?? asPositiveFiniteNumber(rawHotel.rank) ?? asPositiveFiniteNumber(rawHotel.ranking) ?? (page - 1) * PAGE_SIZE + index + 1;
+  const currency = asNonEmptyString(rawHotel.currency) ?? asNonEmptyString(rawHotel.price?.currency);
+  const neighborhood = normalizeNeighborhood(rawHotel);
+  const breakfastIncluded = normalizeBreakfastIncluded(rawHotel);
+  const freeCancellation = normalizeFreeCancellation(rawHotel);
+  const payLater = normalizePayLater(rawHotel);
+  const priceDisplay = buildPriceDisplay(
+    lowestRate,
+    currency,
+    calculateStayNights(checkIn, checkOut)
+  );
   return {
     hotelId,
     name: String(
@@ -2908,10 +3084,18 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     imageUrl,
     amenities,
     lowestRate,
-    currency: rawHotel.currency ?? rawHotel.price?.currency,
-    rankingPosition: Number(rawHotel.rankingPosition ?? index + 1),
+    currency,
+    rankingPosition,
     coordinates,
-    outboundLinks
+    outboundLinks,
+    neighborhood,
+    breakfastIncluded,
+    freeCancellation,
+    payLater,
+    provider: "agoda",
+    providerPrices: Number.isFinite(lowestRate) && lowestRate > 0 ? { agoda: lowestRate } : void 0,
+    coordinatesConfidence,
+    priceDisplay
   };
 }
 async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, page, sort) {
@@ -3028,7 +3212,11 @@ function getMockHotels(cityId, page, sort) {
       amenities: ["Pool", "Spa", "WiFi", "Gym"],
       lowestRate: 120,
       currency: "USD",
-      rankingPosition: 1
+      rankingPosition: 1,
+      breakfastIncluded: true,
+      freeCancellation: true,
+      payLater: true,
+      provider: "mock"
     },
     {
       hotelId: `${cityId}-2`,
@@ -3041,7 +3229,9 @@ function getMockHotels(cityId, page, sort) {
       amenities: ["Pool", "Restaurant", "WiFi"],
       lowestRate: 78,
       currency: "USD",
-      rankingPosition: 2
+      rankingPosition: 2,
+      freeCancellation: true,
+      provider: "mock"
     },
     {
       hotelId: `${cityId}-3`,
@@ -3054,7 +3244,9 @@ function getMockHotels(cityId, page, sort) {
       amenities: ["Restaurant", "WiFi"],
       lowestRate: 35,
       currency: "USD",
-      rankingPosition: 3
+      rankingPosition: 3,
+      payLater: true,
+      provider: "mock"
     },
     {
       hotelId: `${cityId}-4`,
@@ -3067,7 +3259,10 @@ function getMockHotels(cityId, page, sort) {
       amenities: ["Spa", "Bar", "WiFi", "Pool"],
       lowestRate: 185,
       currency: "USD",
-      rankingPosition: 4
+      rankingPosition: 4,
+      breakfastIncluded: true,
+      freeCancellation: true,
+      provider: "mock"
     },
     {
       hotelId: `${cityId}-5`,
@@ -3080,7 +3275,10 @@ function getMockHotels(cityId, page, sort) {
       amenities: ["Rooftop", "Bar", "WiFi"],
       lowestRate: 95,
       currency: "USD",
-      rankingPosition: 5
+      rankingPosition: 5,
+      freeCancellation: true,
+      payLater: true,
+      provider: "mock"
     },
     {
       hotelId: `${cityId}-6`,
@@ -3093,7 +3291,10 @@ function getMockHotels(cityId, page, sort) {
       amenities: ["Garden", "WiFi", "Breakfast"],
       lowestRate: 42,
       currency: "USD",
-      rankingPosition: 6
+      rankingPosition: 6,
+      breakfastIncluded: true,
+      payLater: true,
+      provider: "mock"
     }
   ];
   const pageOffset = (page - 1) * base.length;
@@ -3110,7 +3311,8 @@ function getMockHotels(cityId, page, sort) {
         2,
         1
       )
-    }
+    },
+    providerPrices: Number.isFinite(hotel.lowestRate) && hotel.lowestRate > 0 ? { agoda: hotel.lowestRate } : void 0
   }));
   return sortHotels(withLinks, sort);
 }
@@ -3118,11 +3320,30 @@ async function searchHotels(req, res) {
   const normalized = normalizeHotelSearchParams(
     req.query
   );
-  const city = getCityBySlug(normalized.city);
-  if (!city)
-    return res.status(404).json({ error: `City not found: ${normalized.city}` });
-  if (!city.hasHotels)
-    return res.status(400).json({ error: `No hotels available for ${city.name}` });
+  const isNumericCityId = /^\d+$/.test(normalized.city);
+  let city;
+  if (isNumericCityId) {
+    const agodaCityId = Number.parseInt(normalized.city, 10);
+    if (!Number.isFinite(agodaCityId)) {
+      return res.status(400).json({ error: `Invalid Agoda city id: ${normalized.city}` });
+    }
+    const fallbackName = normalized.cityName?.trim() || `City ${normalized.city}`;
+    city = {
+      slug: normalized.city,
+      name: fallbackName,
+      bookingName: fallbackName,
+      country: "",
+      agodaCityId,
+      hasHotels: true
+    };
+  } else {
+    const localCity = getCityBySlug(normalized.city);
+    if (!localCity)
+      return res.status(404).json({ error: `City not found: ${normalized.city}` });
+    if (!localCity.hasHotels)
+      return res.status(400).json({ error: `No hotels available for ${localCity.name}` });
+    city = localCity;
+  }
   try {
     const affiliateLinks = buildAffiliateLinks(
       city.name,
@@ -3163,7 +3384,8 @@ async function searchHotels(req, res) {
           normalized.adults,
           normalized.rooms,
           affiliateLinks,
-          index
+          index,
+          normalized.page
         )
       ),
       normalized.sort
@@ -3198,17 +3420,127 @@ async function searchHotels(req, res) {
 }
 
 // server/api/autocomplete.ts
+// server/api/autocomplete.ts
+var AGODA_UNIFIED_SUGGEST_URL = "https://affiliateapi7643.agoda.com/api/v1/UnifiedSuggest";
+var AGODA_TIMEOUT_MS = 2500;
+var AGODA_API_KEY2 = process.env.AGODA_API_KEY ?? "";
+function normalize(value) {
+  return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+}
+function toStringIfPresent(value) {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : void 0;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return void 0;
+}
+function parseAgodaCitySuggestions(payload) {
+  const collectableCandidates = [];
+  if (Array.isArray(payload)) {
+    collectableCandidates.push(...payload);
+  } else if (payload && typeof payload === "object") {
+    const root = payload;
+    const buckets = [
+      root.suggestions,
+      root.data,
+      root.data?.suggestions,
+      root.result?.items,
+      root.results,
+      root.items
+    ];
+    for (const bucket of buckets) {
+      if (Array.isArray(bucket)) {
+        collectableCandidates.push(...bucket);
+      }
+    }
+  }
+  const suggestions = [];
+  for (const candidate of collectableCandidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const row = candidate;
+    const typeRaw = toStringIfPresent(
+      row.type ?? row.locationType ?? row.objectType ?? row.category
+    )?.toLowerCase();
+    if (typeRaw && !typeRaw.includes("city")) continue;
+    const cityId = toStringIfPresent(
+      row.cityId ?? row.city_id ?? row.id ?? row.locationId ?? row.objectId
+    );
+    const cityName = toStringIfPresent(
+      row.cityName ?? row.name ?? row.displayName ?? row.label ?? row.title
+    );
+    if (!cityId || !cityName) continue;
+    const subtitle = [
+      toStringIfPresent(row.countryName ?? row.country ?? row.countryCode),
+      toStringIfPresent(row.regionName ?? row.region ?? row.state)
+    ].filter(Boolean).join(" \u2022 ");
+    suggestions.push({
+      displayName: cityName,
+      locationType: "city",
+      locationId: cityId,
+      subtitle: subtitle || void 0
+    });
+  }
+  return suggestions.slice(0, 10);
+}
+function fallbackLocalSuggestions(q) {
+  return getHotelCities().filter((city) => {
+    const haystacks = [
+      city.name,
+      city.nameMM,
+      city.country,
+      city.bookingName,
+      city.slug,
+      city.iata
+    ].map(normalize);
+    return haystacks.some((value) => value.includes(normalize(q)));
+  }).slice(0, 10).map((city) => ({
+    displayName: city.name,
+    locationType: "city",
+    locationId: String(city.agodaCityId),
+    subtitle: `${city.country} \u2022 ${city.iata}`
+  }));
+}
+async function fetchAgodaSuggestions(query) {
+  if (!AGODA_API_KEY2) return [];
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AGODA_TIMEOUT_MS);
+  try {
+    const response = await fetch(AGODA_UNIFIED_SUGGEST_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: AGODA_API_KEY2
+      },
+      body: JSON.stringify({
+        keyword: query,
+        query,
+        language: "en-us",
+        limit: 10
+      }),
+      signal: controller.signal
+    });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    return parseAgodaCitySuggestions(payload);
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 async function searchAutocompleteHotels(req, res) {
-  const q = String(req.query.q || "").toLowerCase();
-  const suggestions = [
-    { displayName: "Bangkok", locationType: "city", locationId: "604", subtitle: "Thailand" },
-    { displayName: "Phuket", locationType: "city", locationId: "12080", subtitle: "Thailand" },
-    { displayName: "Chiang Mai", locationType: "city", locationId: "7401", subtitle: "Thailand" },
-    { displayName: "Yangon", locationType: "city", locationId: "2464", subtitle: "Myanmar" },
-    { displayName: "Mandalay", locationType: "city", locationId: "2465", subtitle: "Myanmar" },
-    { displayName: "Grand Palace Hotel", locationType: "hotel", locationId: "12345", subtitle: "Bangkok, Thailand" }
-  ].filter((s) => s.displayName.toLowerCase().includes(q) || s.subtitle && s.subtitle.toLowerCase().includes(q));
-  res.json({ suggestions });
+  const q = String(req.query.q || "").trim();
+  if (q.length < 2) {
+    return res.json({ suggestions: [] });
+  }
+  const agodaSuggestions = await fetchAgodaSuggestions(q);
+  if (agodaSuggestions.length > 0) {
+    return res.json({ suggestions: agodaSuggestions });
+  }
+  return res.json({ suggestions: fallbackLocalSuggestions(q) });
 }
 
 // server/api/prices.ts
