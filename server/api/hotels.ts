@@ -61,6 +61,13 @@ function normalizeAgodaApiKey(rawValue: string): string {
   return rawValue.trim();
 }
 
+function shouldExposeHotelDiagnostics(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.HOTEL_DEBUG_DIAGNOSTICS === "true"
+  );
+}
+
 function agodaSearchUrl(cityId: number, checkIn: string, checkOut: string, adults: number, rooms: number) {
   const params = new URLSearchParams({
     city: String(cityId),
@@ -1140,28 +1147,34 @@ export async function searchHotels(req: any, res: any) {
       normalized.sort
     );
 
+    const exposeDiagnostics = shouldExposeHotelDiagnostics();
+    const responseMeta: HotelSearchResponse["meta"] = {
+      source: result.source,
+      checkIn: normalized.checkIn,
+      checkOut: normalized.checkOut,
+      adults: normalized.adults,
+      rooms: normalized.rooms,
+      page: normalized.page,
+      sort: normalized.sort,
+      pageSize: PAGE_SIZE,
+      totalCount: result.totalCount ?? normalizedHotels.length,
+      totalPages: Math.max(
+        1,
+        Math.ceil((result.totalCount ?? normalizedHotels.length) / PAGE_SIZE)
+      ),
+      warning: (result as any).warning,
+      warnings: result.warnings,
+    };
+
+    if (exposeDiagnostics) {
+      responseMeta.diagnostics = (result as any).diagnostics;
+    }
+
     const response: HotelSearchResponse = {
       city: city as HotelSearchCity,
       hotels: normalizedHotels,
       affiliateLinks: { ...affiliateLinks, booking: bookingLink },
-      meta: {
-        source: result.source,
-        checkIn: normalized.checkIn,
-        checkOut: normalized.checkOut,
-        adults: normalized.adults,
-        rooms: normalized.rooms,
-        page: normalized.page,
-        sort: normalized.sort,
-        pageSize: PAGE_SIZE,
-        totalCount: result.totalCount ?? normalizedHotels.length,
-        totalPages: Math.max(
-          1,
-          Math.ceil((result.totalCount ?? normalizedHotels.length) / PAGE_SIZE)
-        ),
-        warning: (result as any).warning,
-        warnings: result.warnings,
-        diagnostics: (result as any).diagnostics,
-      },
+      meta: responseMeta,
     };
 
     return res.json(response);
