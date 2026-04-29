@@ -13,8 +13,8 @@ import type {
   HotelSort,
 } from "../../shared/hotels/types.js";
 
-const AGODA_SITE_ID = process.env.AGODA_SITE_ID ?? "";
-const AGODA_API_KEY = process.env.AGODA_API_KEY ?? "";
+const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
+const AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
 const AWIN_TOKEN = process.env.AWIN_TOKEN ?? "";
 const AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID ?? "";
 const BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID ?? "5910";
@@ -51,6 +51,14 @@ function safeWarnOnce(message: string) {
 
 function shouldUseMockHotelFallback() {
   return process.env.ALLOW_HOTEL_MOCKS === "true";
+}
+
+function normalizeAgodaSiteId(rawValue: string): string {
+  return rawValue.trim().replace(/,/g, "").replace(/\D/g, "");
+}
+
+function normalizeAgodaApiKey(rawValue: string): string {
+  return rawValue.trim();
 }
 
 function agodaSearchUrl(cityId: number, checkIn: string, checkOut: string, adults: number, rooms: number) {
@@ -679,6 +687,9 @@ async function fetchAgodaHotels(
     status,
     hasAgodaSiteId,
     hasAgodaApiKey,
+    siteIdLooksNumeric: /^\d+$/.test(AGODA_SITE_ID),
+    apiKeyPresent: hasAgodaApiKey,
+    authFormat: "siteid_colon_apikey",
     requestShape,
     ...extras,
   });

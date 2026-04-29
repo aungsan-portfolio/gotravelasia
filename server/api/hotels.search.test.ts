@@ -22,10 +22,10 @@ const originalEnv = {
   ALLOW_HOTEL_MOCKS: process.env.ALLOW_HOTEL_MOCKS,
 };
 
-function setLiveAgodaEnv() {
-  process.env.AGODA_API_KEY = "test_api_key";
-  process.env.AGODA_SITE_ID = "test_site_id";
-  process.env.ALLOW_HOTEL_MOCKS = "false";
+function setLiveAgodaEnv(overrides: Partial<Record<string, string>> = {}) {
+  process.env.AGODA_API_KEY = overrides.AGODA_API_KEY ?? "test_api_key";
+  process.env.AGODA_SITE_ID = overrides.AGODA_SITE_ID ?? "1959281";
+  process.env.ALLOW_HOTEL_MOCKS = overrides.ALLOW_HOTEL_MOCKS ?? "false";
 }
 
 function buildReq(page: string, city = "16404") {
@@ -97,7 +97,54 @@ describe("hotel search api", () => {
     const res = createRes();
     await runSearch(buildReq("1"), res);
     const headers = fetchSpy.mock.calls[0][1] as RequestInit;
-    expect((headers.headers as any).Authorization).toBe("test_site_id:test_api_key");
+    expect((headers.headers as any).Authorization).toBe("1959281:test_api_key");
+  });
+
+  it("normalizes comma-separated Agoda site id for Authorization header", async () => {
+    setLiveAgodaEnv({ AGODA_SITE_ID: "1,959,281" });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    const headers = fetchSpy.mock.calls[0][1] as RequestInit;
+    expect((headers.headers as any).Authorization).toBe("1959281:test_api_key");
+  });
+
+  it("trims Agoda site id and API key from env", async () => {
+    setLiveAgodaEnv({
+      AGODA_SITE_ID: " 1959281 ",
+      AGODA_API_KEY: "  test_api_key  ",
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    const headers = fetchSpy.mock.calls[0][1] as RequestInit;
+    expect((headers.headers as any).Authorization).toBe("1959281:test_api_key");
+  });
+
+  it("does not expose secrets in diagnostics", async () => {
+    setLiveAgodaEnv({
+      AGODA_SITE_ID: "1,959,281",
+      AGODA_API_KEY: "  test_api_key  ",
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => '{"error":{"id":100,"message":"invalid"}}',
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    const diagnostics = (res.body as any)?.meta?.diagnostics;
+    expect(diagnostics.apiKeyPresent).toBe(true);
+    expect(diagnostics.siteIdLooksNumeric).toBe(true);
+    expect(diagnostics.authFormat).toBe("siteid_colon_apikey");
+    expect(JSON.stringify(diagnostics)).not.toContain("test_api_key");
+    expect(JSON.stringify(diagnostics)).not.toContain("1959281");
   });
 
   it("normalizes PDF-style results fields", async () => {

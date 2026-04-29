@@ -106,6 +106,9 @@ export interface HotelSearchDiagnostics {
   agodaResponsePreview?: string;
   hasAgodaSiteId: boolean;
   hasAgodaApiKey: boolean;
+  siteIdLooksNumeric: boolean;
+  apiKeyPresent: boolean;
+  authFormat: "siteid_colon_apikey";
   requestShape?: {
     cityId: number;
     checkIn: string;

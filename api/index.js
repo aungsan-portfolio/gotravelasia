@@ -2757,8 +2757,8 @@ function sanitizeCity(value) {
 }
 
 // server/api/hotels.ts
-var AGODA_SITE_ID = process.env.AGODA_SITE_ID ?? "";
-var AGODA_API_KEY = process.env.AGODA_API_KEY ?? "";
+var AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
+var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
 var AWIN_TOKEN = process.env.AWIN_TOKEN ?? "";
 var AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID ?? "";
 var BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID ?? "5910";
@@ -2790,6 +2790,12 @@ function safeWarnOnce(message) {
 }
 function shouldUseMockHotelFallback() {
   return process.env.ALLOW_HOTEL_MOCKS === "true";
+}
+function normalizeAgodaSiteId(rawValue) {
+  return rawValue.trim().replace(/,/g, "").replace(/\D/g, "");
+}
+function normalizeAgodaApiKey(rawValue) {
+  return rawValue.trim();
 }
 function agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms) {
   const params = new URLSearchParams({
@@ -3201,6 +3207,9 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
     status,
     hasAgodaSiteId,
     hasAgodaApiKey,
+    siteIdLooksNumeric: /^\d+$/.test(AGODA_SITE_ID),
+    apiKeyPresent: hasAgodaApiKey,
+    authFormat: "siteid_colon_apikey",
     requestShape,
     ...extras
   });
