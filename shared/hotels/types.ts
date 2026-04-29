@@ -69,6 +69,8 @@ export interface HotelResult {
   freeCancellation?: boolean;
   payLater?: boolean;
   provider?: HotelSearchSource;
+  crossedOutRate?: number;
+  discountPercentage?: number;
   providerPrices?: Partial<
     Record<Exclude<HotelSearchSource, "metasearch" | "mock">, number>
   >;
@@ -112,6 +114,9 @@ export interface HotelSearchDiagnostics {
     rooms: number;
     page: number;
     pageSize: number;
+    ltCityId?: number;
+    authFormat?: string;
+    requestFormat?: string;
   };
   payloadTopLevelKeys?: string[];
   resultCandidateCounts?: Record<string, number>;
@@ -126,6 +131,7 @@ export interface HotelSearchCity {
   bookingName: string;
   country: string;
   agodaCityId: number;
+  agodaLtCityId?: number;
   lat?: number;
   lng?: number;
 }

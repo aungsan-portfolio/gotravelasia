@@ -13,6 +13,7 @@ export interface City {
   lng: number;
   hub: boolean;
   hasHotels: boolean;
+  agodaLtCityId?: number;
 }
 
 export type IataCode = City['iata'];
@@ -20,10 +21,10 @@ export type IataCode = City['iata'];
 export const CITIES: City[] = [
   { iata:'RGN', slug:'yangon',        name:'Yangon',        nameMM:'ရန်ကုန်',            country:'Myanmar',      cc:'MM', flag:'🇲🇲', agodaCityId:4611,  bookingName:'Yangon',               twelveGoName:'Yangon',        lat:16.9074, lng:96.1297,  hub:true,  hasHotels:true  },
   { iata:'MDL', slug:'mandalay',      name:'Mandalay',      nameMM:'မန္တလေး',           country:'Myanmar',      cc:'MM', flag:'🇲🇲', agodaCityId:4612,  bookingName:'Mandalay',             twelveGoName:'Mandalay',      lat:21.9020, lng:96.0842,  hub:false, hasHotels:true  },
-  { iata:'BKK', slug:'bangkok',       name:'Bangkok',       nameMM:'ဘန်ကောက်',           country:'Thailand',     cc:'TH', flag:'🇹🇭', agodaCityId:18056, bookingName:'Bangkok',              twelveGoName:'Bangkok',       lat:13.7563, lng:100.5018, hub:true,  hasHotels:true  },
+  { iata:'BKK', slug:'bangkok',       name:'Bangkok',       nameMM:'ဘန်ကောက်',           country:'Thailand',     cc:'TH', flag:'🇹🇭', agodaCityId:18056, bookingName:'Bangkok',              twelveGoName:'Bangkok',       lat:13.7563, lng:100.5018, hub:true,  hasHotels:true,  agodaLtCityId:9395  },
   { iata:'CNX', slug:'chiang-mai',    name:'Chiang Mai',    nameMM:'ချင်းမိုင်',        country:'Thailand',     cc:'TH', flag:'🇹🇭', agodaCityId:3458,  bookingName:'Chiang Mai',           twelveGoName:'Chiang Mai',    lat:18.7883, lng:98.9853,  hub:false, hasHotels:true  },
   { iata:'HKT', slug:'phuket',        name:'Phuket',        nameMM:'ဖူးခက်',             country:'Thailand',     cc:'TH', flag:'🇹🇭', agodaCityId:5533,  bookingName:'Phuket',               twelveGoName:'Phuket',        lat:7.8804,  lng:98.3923,  hub:false, hasHotels:true  },
-  { iata:'DMK', slug:'bangkok-dmk',   name:'Bangkok DMK',   nameMM:'ဘန်ကောက်-ဒွန်မောင်း', country:'Thailand',  cc:'TH', flag:'🇹🇭', agodaCityId:18056, bookingName:'Bangkok',              twelveGoName:'Bangkok',       lat:13.9126, lng:100.6068, hub:false, hasHotels:false },
+  { iata:'DMK', slug:'bangkok-dmk',   name:'Bangkok DMK',   nameMM:'ဘန်ကောက်-ဒွန်မောင်း', country:'Thailand',  cc:'TH', flag:'🇹🇭', agodaCityId:18056, bookingName:'Bangkok',              twelveGoName:'Bangkok',       lat:13.9126, lng:100.6068, hub:false, hasHotels:false, agodaLtCityId:9395 },
   { iata:'KBV', slug:'krabi',         name:'Krabi',         nameMM:'ကရာဘီ',              country:'Thailand',     cc:'TH', flag:'🇹🇭', agodaCityId:8939,  bookingName:'Krabi',                twelveGoName:'Krabi',         lat:8.0990,  lng:98.9862,  hub:false, hasHotels:true  },
   { iata:'BJS', slug:'beijing',       name:'Beijing',       nameMM:'ပေကျင်း',            country:'China',        cc:'CN', flag:'🇨🇳', agodaCityId:3085,  bookingName:'Beijing',              twelveGoName:'Beijing',       lat:39.9042, lng:116.4074, hub:true,  hasHotels:true  },
   { iata:'SHA', slug:'shanghai',      name:'Shanghai',      nameMM:'ရှန်ဟိုင်း',        country:'China',        cc:'CN', flag:'🇨🇳', agodaCityId:6882,  bookingName:'Shanghai',             twelveGoName:'Shanghai',      lat:31.2304, lng:121.4737, hub:true,  hasHotels:true  },

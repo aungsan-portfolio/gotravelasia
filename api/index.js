@@ -2583,10 +2583,10 @@ async function createContext(opts) {
 var CITIES = [
   { iata: "RGN", slug: "yangon", name: "Yangon", nameMM: "\u101B\u1014\u103A\u1000\u102F\u1014\u103A", country: "Myanmar", cc: "MM", flag: "\u{1F1F2}\u{1F1F2}", agodaCityId: 4611, bookingName: "Yangon", twelveGoName: "Yangon", lat: 16.9074, lng: 96.1297, hub: true, hasHotels: true },
   { iata: "MDL", slug: "mandalay", name: "Mandalay", nameMM: "\u1019\u1014\u1039\u1010\u101C\u1031\u1038", country: "Myanmar", cc: "MM", flag: "\u{1F1F2}\u{1F1F2}", agodaCityId: 4612, bookingName: "Mandalay", twelveGoName: "Mandalay", lat: 21.902, lng: 96.0842, hub: false, hasHotels: true },
-  { iata: "BKK", slug: "bangkok", name: "Bangkok", nameMM: "\u1018\u1014\u103A\u1000\u1031\u102C\u1000\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 18056, bookingName: "Bangkok", twelveGoName: "Bangkok", lat: 13.7563, lng: 100.5018, hub: true, hasHotels: true },
+  { iata: "BKK", slug: "bangkok", name: "Bangkok", nameMM: "\u1018\u1014\u103A\u1000\u1031\u102C\u1000\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 18056, bookingName: "Bangkok", twelveGoName: "Bangkok", lat: 13.7563, lng: 100.5018, hub: true, hasHotels: true, agodaLtCityId: 9395 },
   { iata: "CNX", slug: "chiang-mai", name: "Chiang Mai", nameMM: "\u1001\u103B\u1004\u103A\u1038\u1019\u102D\u102F\u1004\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 3458, bookingName: "Chiang Mai", twelveGoName: "Chiang Mai", lat: 18.7883, lng: 98.9853, hub: false, hasHotels: true },
   { iata: "HKT", slug: "phuket", name: "Phuket", nameMM: "\u1016\u1030\u1038\u1001\u1000\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 5533, bookingName: "Phuket", twelveGoName: "Phuket", lat: 7.8804, lng: 98.3923, hub: false, hasHotels: true },
-  { iata: "DMK", slug: "bangkok-dmk", name: "Bangkok DMK", nameMM: "\u1018\u1014\u103A\u1000\u1031\u102C\u1000\u103A-\u1012\u103D\u1014\u103A\u1019\u1031\u102C\u1004\u103A\u1038", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 18056, bookingName: "Bangkok", twelveGoName: "Bangkok", lat: 13.9126, lng: 100.6068, hub: false, hasHotels: false },
+  { iata: "DMK", slug: "bangkok-dmk", name: "Bangkok DMK", nameMM: "\u1018\u1014\u103A\u1000\u1031\u102C\u1000\u103A-\u1012\u103D\u1014\u103A\u1019\u1031\u102C\u1004\u103A\u1038", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 18056, bookingName: "Bangkok", twelveGoName: "Bangkok", lat: 13.9126, lng: 100.6068, hub: false, hasHotels: false, agodaLtCityId: 9395 },
   { iata: "KBV", slug: "krabi", name: "Krabi", nameMM: "\u1000\u101B\u102C\u1018\u102E", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 8939, bookingName: "Krabi", twelveGoName: "Krabi", lat: 8.099, lng: 98.9862, hub: false, hasHotels: true },
   { iata: "BJS", slug: "beijing", name: "Beijing", nameMM: "\u1015\u1031\u1000\u103B\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3085, bookingName: "Beijing", twelveGoName: "Beijing", lat: 39.9042, lng: 116.4074, hub: true, hasHotels: true },
   { iata: "SHA", slug: "shanghai", name: "Shanghai", nameMM: "\u101B\u103E\u1014\u103A\u101F\u102D\u102F\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 6882, bookingName: "Shanghai", twelveGoName: "Shanghai", lat: 31.2304, lng: 121.4737, hub: true, hasHotels: true },
@@ -2766,6 +2766,14 @@ var TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID ?? "";
 var KLOOK_ID = process.env.KLOOK_PARTNER_ID ?? "";
 var EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
 var PAGE_SIZE = 20;
+var AGODA_SORT_MAP = {
+  best: "Recommended",
+  rank: "Recommended",
+  price_asc: "PriceAsc",
+  price_desc: "PriceDesc",
+  stars_desc: "StarRatingDesc",
+  review_desc: "AllGuestsReviewScore"
+};
 var cache2 = /* @__PURE__ */ new Map();
 var warnedMessages = /* @__PURE__ */ new Set();
 async function cached(key, fn, ttlSeconds) {
@@ -2937,14 +2945,28 @@ function extractAgodaErrorDiagnostics(payload) {
 var AGODA_LT_V1_ENDPOINT = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
 function buildAgodaLtV1RequestBody(params) {
   return {
-    checkInDate: params.checkIn,
-    checkOutDate: params.checkOut,
-    cityId: params.cityId,
-    adults: params.adults,
-    rooms: params.rooms,
-    pageNo: params.page,
-    pageSize: params.pageSize,
-    publisherId: params.publisherId
+    criteria: {
+      additional: {
+        currency: "USD",
+        dailyRate: {
+          minimum: 1,
+          maximum: 1e4
+        },
+        discountOnly: false,
+        language: "en-us",
+        maxResult: params.pageSize,
+        minimumReviewScore: 0,
+        minimumStarRating: 0,
+        occupancy: {
+          numberOfAdult: params.adults,
+          numberOfChildren: 0
+        },
+        sortBy: AGODA_SORT_MAP[params.sort] ?? "Recommended"
+      },
+      checkInDate: params.checkIn,
+      checkOutDate: params.checkOut,
+      cityId: params.cityId
+    }
   };
 }
 function normalizeNeighborhood(rawHotel) {
@@ -2953,6 +2975,9 @@ function normalizeNeighborhood(rawHotel) {
 function normalizeBreakfastIncluded(rawHotel) {
   if (typeof rawHotel.breakfastIncluded === "boolean") {
     return rawHotel.breakfastIncluded;
+  }
+  if (typeof rawHotel.includeBreakfast === "boolean") {
+    return rawHotel.includeBreakfast;
   }
   if (typeof rawHotel.mealPlan?.breakfastIncluded === "boolean") {
     return rawHotel.mealPlan.breakfastIncluded;
@@ -3073,6 +3098,9 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   );
   const imageUrl = asNonEmptyString(rawHotel.imageUrl) ?? asNonEmptyString(rawHotel.imageURL) ?? asNonEmptyString(rawHotel.photoURL) ?? asNonEmptyString(rawHotel.photoUrl) ?? asNonEmptyString(rawHotel.thumbnailURL) ?? asNonEmptyString(rawHotel.thumbnailUrl) ?? asNonEmptyString(rawHotel.mainPhotoUrl) ?? asNonEmptyString(rawHotel.mainPhotoURL) ?? asNonEmptyString(rawHotel.hotelImageUrl) ?? asNonEmptyString(rawHotel.hotelImageURL) ?? asNonEmptyString(rawHotel.images?.[0]?.url) ?? asNonEmptyString(rawHotel.images?.[0]) ?? asNonEmptyString(rawHotel.image?.url) ?? asNonEmptyString(rawHotel.photos?.[0]?.url) ?? asNonEmptyString(rawHotel.photos?.[0]) ?? "";
   const amenities = Array.isArray(rawHotel.amenities) ? rawHotel.amenities.map((amenity) => String(amenity?.name ?? amenity)).filter(Boolean) : [];
+  if (rawHotel.freeWifi === true && !amenities.includes("Free WiFi")) {
+    amenities.push("Free WiFi");
+  }
   const reviewScore = Number(
     rawHotel.reviewScore ?? rawHotel.reviewScoreRaw ?? rawHotel.review?.score ?? 0
   );
@@ -3087,7 +3115,7 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   );
   const agodaUrl = rawHotel.landingURL ?? (hotelId ? agodaHotelUrl(
     hotelId,
-    city.agodaCityId,
+    city.agodaLtCityId ?? city.agodaCityId,
     checkIn,
     checkOut,
     adults,
@@ -3145,23 +3173,28 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     freeCancellation,
     payLater,
     provider: "agoda",
+    crossedOutRate: Number.isFinite(Number(rawHotel.crossedOutRate)) ? Number(rawHotel.crossedOutRate) : void 0,
+    discountPercentage: Number.isFinite(Number(rawHotel.discountPercentage)) && Number(rawHotel.discountPercentage) > 0 ? Number(rawHotel.discountPercentage) : void 0,
     providerPrices: Number.isFinite(lowestRate) && lowestRate > 0 ? { agoda: lowestRate } : void 0,
     coordinatesConfidence,
     priceDisplay
   };
 }
-async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, page, sort) {
+async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
   const hasAgodaSiteId = Boolean(AGODA_SITE_ID);
   const hasAgodaApiKey = Boolean(AGODA_API_KEY);
   const allowMockFallback = shouldUseMockHotelFallback();
   const requestShape = {
+    ltCityId,
     cityId: agodaCityId,
     checkIn,
     checkOut,
     adults,
     rooms,
     page,
-    pageSize: PAGE_SIZE
+    pageSize: PAGE_SIZE,
+    authFormat: "siteid_colon_apikey",
+    requestFormat: "criteria_city_search"
   };
   const buildDiagnostics = (reason, status, extras = {}) => ({
     reason,
@@ -3172,7 +3205,7 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
     ...extras
   });
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
-  const key = `agoda-lt:${agodaCityId}:${checkIn}:${checkOut}:${adults}:${rooms}:${page}:${sort}`;
+  const key = `agoda-lt:${ltCityId}:${checkIn}:${checkOut}:${adults}:${rooms}:${page}:${sort}`;
   return cached(
     key,
     async () => {
@@ -3202,8 +3235,12 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
       }
       try {
         const body = buildAgodaLtV1RequestBody({
-          ...requestShape,
-          publisherId: AGODA_SITE_ID
+          checkIn,
+          checkOut,
+          cityId: ltCityId,
+          adults,
+          pageSize: PAGE_SIZE,
+          sort
         });
         console.info("[Hotels] Agoda lt_v1 request", {
           endpointUrl: AGODA_LT_V1_ENDPOINT,
@@ -3215,7 +3252,7 @@ async function fetchAgodaHotels(agodaCityId, checkIn, checkOut, adults, rooms, p
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: AGODA_API_KEY,
+            Authorization: `${AGODA_SITE_ID}:${AGODA_API_KEY}`,
             "Accept-Encoding": "gzip,deflate"
           },
           body: JSON.stringify(body)
@@ -3524,6 +3561,7 @@ async function searchHotels(req, res) {
       ),
       fetchAgodaHotels(
         city.agodaCityId,
+        city.agodaLtCityId ?? city.agodaCityId,
         normalized.checkIn,
         normalized.checkOut,
         normalized.adults,
@@ -3579,7 +3617,6 @@ async function searchHotels(req, res) {
   }
 }
 
-// server/api/autocomplete.ts
 // server/api/autocomplete.ts
 var AGODA_UNIFIED_SUGGEST_URL = "https://affiliateapi7643.agoda.com/api/v1/UnifiedSuggest";
 var AGODA_TIMEOUT_MS = 2500;
