@@ -127,6 +127,14 @@ function expediaUrl(destinationName: string, checkIn: string, checkOut: string, 
   return `https://expedia.tpx.gr/${EXPEDIA_CODE}?url=${encodeURIComponent(destination)}`;
 }
 
+function shouldIncludeExpediaLink(expediaCode: string): boolean {
+  const normalized = expediaCode.trim();
+  if (!normalized) return false;
+  if (/placeholder|your|replace|sample|example|todo/i.test(normalized)) return false;
+  if (/[\u1000-\u109f]/.test(normalized)) return false; // Exclude non-Latin chars (e.g. Burmese)
+  return true;
+}
+
 async function awinDeepLink(destinationUrl: string): Promise<string> {
   const key = `awin:${Buffer.from(destinationUrl).toString("base64").slice(0, 60)}`;
   return cached(
@@ -168,13 +176,23 @@ function buildAffiliateLinks(
   adults: number,
   rooms: number
 ): HotelOutboundLinks {
-  return {
+  const links: HotelOutboundLinks = {
     agoda: agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms),
     booking: bookingUrl(bookingName, checkIn, checkOut, adults, rooms),
     trip: tripUrl(cityName, checkIn, checkOut, adults),
     klook: klookUrl(cityName, checkIn, checkOut, adults),
-    expedia: expediaUrl(bookingName, checkIn, checkOut, adults),
   };
+
+  if (shouldIncludeExpediaLink(EXPEDIA_CODE)) {
+    links.expedia = expediaUrl(bookingName, checkIn, checkOut, adults);
+  }
+
+  return links;
+}
+
+function normalizeImageUrl(url: string): string {
+  if (url.startsWith("http://")) return `https://${url.slice("http://".length)}`;
+  return url;
 }
 
 function buildFallbackCoordinates(city: SearchCity, index: number) {
@@ -505,23 +523,24 @@ function normalizeHotel(
       rawHotel.id ??
       `${(city as any).agodaCityId}-${index + 1}`
   );
-  const imageUrl =
+  const imageUrl = normalizeImageUrl(
     asNonEmptyString(rawHotel.imageUrl) ??
-    asNonEmptyString(rawHotel.imageURL) ??
-    asNonEmptyString(rawHotel.photoURL) ??
-    asNonEmptyString(rawHotel.photoUrl) ??
-    asNonEmptyString(rawHotel.thumbnailURL) ??
-    asNonEmptyString(rawHotel.thumbnailUrl) ??
-    asNonEmptyString(rawHotel.mainPhotoUrl) ??
-    asNonEmptyString(rawHotel.mainPhotoURL) ??
-    asNonEmptyString(rawHotel.hotelImageUrl) ??
-    asNonEmptyString(rawHotel.hotelImageURL) ??
-    asNonEmptyString(rawHotel.images?.[0]?.url) ??
-    asNonEmptyString(rawHotel.images?.[0]) ??
-    asNonEmptyString(rawHotel.image?.url) ??
-    asNonEmptyString(rawHotel.photos?.[0]?.url) ??
-    asNonEmptyString(rawHotel.photos?.[0]) ??
-    "";
+      asNonEmptyString(rawHotel.imageURL) ??
+      asNonEmptyString(rawHotel.photoURL) ??
+      asNonEmptyString(rawHotel.photoUrl) ??
+      asNonEmptyString(rawHotel.thumbnailURL) ??
+      asNonEmptyString(rawHotel.thumbnailUrl) ??
+      asNonEmptyString(rawHotel.mainPhotoUrl) ??
+      asNonEmptyString(rawHotel.mainPhotoURL) ??
+      asNonEmptyString(rawHotel.hotelImageUrl) ??
+      asNonEmptyString(rawHotel.hotelImageURL) ??
+      asNonEmptyString(rawHotel.images?.[0]?.url) ??
+      asNonEmptyString(rawHotel.images?.[0]) ??
+      asNonEmptyString(rawHotel.image?.url) ??
+      asNonEmptyString(rawHotel.photos?.[0]?.url) ??
+      asNonEmptyString(rawHotel.photos?.[0]) ??
+      ""
+  );
   const amenities = Array.isArray(rawHotel.amenities)
     ? rawHotel.amenities
         .map((amenity: unknown) => String((amenity as any)?.name ?? amenity))
@@ -628,9 +647,15 @@ function normalizeHotel(
     stars,
     reviewScore,
     reviewCount,
-    address: String(
-      rawHotel.address ?? rawHotel.addressLine1 ?? rawHotel.areaName ?? ""
-    ),
+    address:
+      asNonEmptyString(rawHotel.address) ??
+      asNonEmptyString(rawHotel.addressLine1) ??
+      asNonEmptyString(rawHotel.areaName) ??
+      asNonEmptyString(rawHotel.cityName) ??
+      asNonEmptyString(rawHotel.location?.address) ??
+      asNonEmptyString(rawHotel.location?.areaName) ??
+      asNonEmptyString(rawHotel.location?.cityName) ??
+      "",
     imageUrl,
     amenities,
     lowestRate,

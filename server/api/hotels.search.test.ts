@@ -20,6 +20,7 @@ const originalEnv = {
   AGODA_API_KEY: process.env.AGODA_API_KEY,
   AGODA_SITE_ID: process.env.AGODA_SITE_ID,
   ALLOW_HOTEL_MOCKS: process.env.ALLOW_HOTEL_MOCKS,
+  EXPEDIA_TP_CODE: process.env.EXPEDIA_TP_CODE,
 };
 
 function setLiveAgodaEnv(overrides: Partial<Record<string, string>> = {}) {
@@ -54,6 +55,7 @@ afterEach(() => {
   process.env.AGODA_API_KEY = originalEnv.AGODA_API_KEY;
   process.env.AGODA_SITE_ID = originalEnv.AGODA_SITE_ID;
   process.env.ALLOW_HOTEL_MOCKS = originalEnv.ALLOW_HOTEL_MOCKS;
+  process.env.EXPEDIA_TP_CODE = originalEnv.EXPEDIA_TP_CODE;
 });
 
 describe("hotel search api", () => {
@@ -225,5 +227,68 @@ describe("hotel search api", () => {
 
   it("bangkok has Agoda LT city override", () => {
     expect(getCityBySlug("bangkok")?.agodaLtCityId).toBe(9395);
+  });
+
+  it("normalizes Agoda image URLs to https", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [
+          {
+            hotelId: "h3",
+            hotelName: "HTTP Image",
+            imageUrl: "http://example.com/hotel.jpg",
+            dailyRate: 44,
+          },
+        ],
+      }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    expect((res.body as any).hotels[0].imageUrl).toBe(
+      "https://example.com/hotel.jpg"
+    );
+  });
+
+  it("omits Expedia link when EXPEDIA_TP_CODE is missing or placeholder", async () => {
+    setLiveAgodaEnv();
+    process.env.EXPEDIA_TP_CODE = "placeholder-ဒီမှာထည့်ပါ";
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    expect((res.body as any).affiliateLinks.expedia).toBeUndefined();
+  });
+
+  it("uses area/location fields for address fallback", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [
+          {
+            hotelId: "h4",
+            hotelName: "Fallback Address",
+            address: "",
+            areaName: "Sukhumvit",
+            dailyRate: 88,
+          },
+          {
+            hotelId: "h5",
+            hotelName: "Location Address",
+            address: "",
+            location: { areaName: "Riverside" },
+            dailyRate: 99,
+          },
+        ],
+      }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    expect((res.body as any).hotels[0].address).toBe("Sukhumvit");
+    expect((res.body as any).hotels[1].address).toBe("Riverside");
   });
 });

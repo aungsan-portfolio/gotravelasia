@@ -2851,6 +2851,13 @@ function expediaUrl(destinationName, checkIn, checkOut, adults) {
   const destination = `https://www.expedia.com/Hotel-Search?destination=${encodeURIComponent(destinationName)}&startDate=${checkIn}&endDate=${checkOut}&adults=${adults}`;
   return `https://expedia.tpx.gr/${EXPEDIA_CODE}?url=${encodeURIComponent(destination)}`;
 }
+function shouldIncludeExpediaLink(expediaCode) {
+  const normalized = expediaCode.trim();
+  if (!normalized) return false;
+  if (/placeholder|your|replace|sample|example|todo/i.test(normalized)) return false;
+  if (/[\u1000-\u109f]/.test(normalized)) return false;
+  return true;
+}
 async function awinDeepLink(destinationUrl) {
   const key = `awin:${Buffer.from(destinationUrl).toString("base64").slice(0, 60)}`;
   return cached(
@@ -2882,13 +2889,20 @@ async function awinDeepLink(destinationUrl) {
   );
 }
 function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, adults, rooms) {
-  return {
+  const links = {
     agoda: agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms),
     booking: bookingUrl(bookingName, checkIn, checkOut, adults, rooms),
     trip: tripUrl(cityName, checkIn, checkOut, adults),
-    klook: klookUrl(cityName, checkIn, checkOut, adults),
-    expedia: expediaUrl(bookingName, checkIn, checkOut, adults)
+    klook: klookUrl(cityName, checkIn, checkOut, adults)
   };
+  if (shouldIncludeExpediaLink(EXPEDIA_CODE)) {
+    links.expedia = expediaUrl(bookingName, checkIn, checkOut, adults);
+  }
+  return links;
+}
+function normalizeImageUrl(url) {
+  if (url.startsWith("http://")) return `https://${url.slice("http://".length)}`;
+  return url;
 }
 function buildFallbackCoordinates(city, index) {
   const cityLat = city.lat;
@@ -3105,7 +3119,9 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   const hotelId = String(
     rawHotel.hotelId ?? rawHotel.propertyId ?? rawHotel.id ?? `${city.agodaCityId}-${index + 1}`
   );
-  const imageUrl = asNonEmptyString(rawHotel.imageUrl) ?? asNonEmptyString(rawHotel.imageURL) ?? asNonEmptyString(rawHotel.photoURL) ?? asNonEmptyString(rawHotel.photoUrl) ?? asNonEmptyString(rawHotel.thumbnailURL) ?? asNonEmptyString(rawHotel.thumbnailUrl) ?? asNonEmptyString(rawHotel.mainPhotoUrl) ?? asNonEmptyString(rawHotel.mainPhotoURL) ?? asNonEmptyString(rawHotel.hotelImageUrl) ?? asNonEmptyString(rawHotel.hotelImageURL) ?? asNonEmptyString(rawHotel.images?.[0]?.url) ?? asNonEmptyString(rawHotel.images?.[0]) ?? asNonEmptyString(rawHotel.image?.url) ?? asNonEmptyString(rawHotel.photos?.[0]?.url) ?? asNonEmptyString(rawHotel.photos?.[0]) ?? "";
+  const imageUrl = normalizeImageUrl(
+    asNonEmptyString(rawHotel.imageUrl) ?? asNonEmptyString(rawHotel.imageURL) ?? asNonEmptyString(rawHotel.photoURL) ?? asNonEmptyString(rawHotel.photoUrl) ?? asNonEmptyString(rawHotel.thumbnailURL) ?? asNonEmptyString(rawHotel.thumbnailUrl) ?? asNonEmptyString(rawHotel.mainPhotoUrl) ?? asNonEmptyString(rawHotel.mainPhotoURL) ?? asNonEmptyString(rawHotel.hotelImageUrl) ?? asNonEmptyString(rawHotel.hotelImageURL) ?? asNonEmptyString(rawHotel.images?.[0]?.url) ?? asNonEmptyString(rawHotel.images?.[0]) ?? asNonEmptyString(rawHotel.image?.url) ?? asNonEmptyString(rawHotel.photos?.[0]?.url) ?? asNonEmptyString(rawHotel.photos?.[0]) ?? ""
+  );
   const amenities = Array.isArray(rawHotel.amenities) ? rawHotel.amenities.map((amenity) => String(amenity?.name ?? amenity)).filter(Boolean) : [];
   if (rawHotel.freeWifi === true && !amenities.includes("Free WiFi")) {
     amenities.push("Free WiFi");
@@ -3167,9 +3183,7 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     stars,
     reviewScore,
     reviewCount,
-    address: String(
-      rawHotel.address ?? rawHotel.addressLine1 ?? rawHotel.areaName ?? ""
-    ),
+    address: asNonEmptyString(rawHotel.address) ?? asNonEmptyString(rawHotel.addressLine1) ?? asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.cityName) ?? asNonEmptyString(rawHotel.location?.address) ?? asNonEmptyString(rawHotel.location?.areaName) ?? asNonEmptyString(rawHotel.location?.cityName) ?? "",
     imageUrl,
     amenities,
     lowestRate,
