@@ -2640,6 +2640,22 @@ var HOTEL_CITIES_SORTED = [...getHotelCities()].sort((a, b) => {
   if (b.cc === "MM" && a.cc !== "MM") return 1;
   return a.name.localeCompare(b.name);
 });
+function buildAgodaLtCityCandidates(params) {
+  const candidates = [];
+  const usedCityIds = /* @__PURE__ */ new Set();
+  const add = (cityId, source, verified) => {
+    if (!Number.isFinite(cityId) || cityId <= 0) return;
+    const normalizedCityId = Number(cityId);
+    if (usedCityIds.has(normalizedCityId)) return;
+    usedCityIds.add(normalizedCityId);
+    candidates.push({ cityId: normalizedCityId, source, verified });
+  };
+  add(params.city?.agodaLtCityId, "verified_lt_id", true);
+  const queryCityId = typeof params.queryCity === "string" ? Number.parseInt(params.queryCity, 10) : Number(params.queryCity);
+  add(queryCityId, "dynamic_query_id", false);
+  add(params.city?.agodaCityId, "local_agoda_city_id", false);
+  return candidates;
+}
 
 // shared/hotels/searchParams.ts
 var MS_PER_DAY = 864e5;
@@ -3402,6 +3418,61 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
     1800
   );
 }
+async function fetchAgodaHotelsWithCityCandidates(params) {
+  const attemptedLtCityIds = [];
+  let latestDiagnostics;
+  let cityResolutionStatus = "unresolved_empty_results";
+  for (const candidate of params.ltCityCandidates) {
+    attemptedLtCityIds.push(candidate.cityId);
+    const result = await fetchAgodaHotels(
+      params.agodaCityId,
+      candidate.cityId,
+      params.checkIn,
+      params.checkOut,
+      params.adults,
+      params.rooms,
+      params.page,
+      params.sort
+    );
+    const candidateDiagnostics = result.diagnostics;
+    latestDiagnostics = candidateDiagnostics ?? latestDiagnostics;
+    const responseStatus = candidateDiagnostics?.status;
+    if (result.hotels.length > 0) {
+      cityResolutionStatus = "resolved";
+      return {
+        ...result,
+        diagnostics: {
+          ...candidateDiagnostics ?? {},
+          attemptedLtCityIds,
+          resolvedLtCityId: candidate.cityId,
+          resolvedLtCityIdSource: candidate.source,
+          cityResolutionStatus
+        }
+      };
+    }
+    if (responseStatus === 401 || responseStatus === 403) {
+      cityResolutionStatus = "auth_error";
+      break;
+    }
+    if (candidateDiagnostics?.reason === "non_ok_response") {
+      cityResolutionStatus = "api_error";
+    }
+  }
+  return {
+    source: "agoda",
+    hotels: [],
+    totalCount: 0,
+    warning: "Live Agoda results are temporarily unavailable.",
+    warnings: ["Live Agoda results are temporarily unavailable."],
+    diagnostics: {
+      ...latestDiagnostics ?? {
+        reason: "empty_results"
+      },
+      attemptedLtCityIds,
+      cityResolutionStatus
+    }
+  };
+}
 function sortHotels(hotels, sort) {
   const sorted = [...hotels];
   sorted.sort((a, b) => {
@@ -3575,6 +3646,10 @@ async function searchHotels(req, res) {
       normalized.adults,
       normalized.rooms
     );
+    const ltCityCandidates = buildAgodaLtCityCandidates({
+      city,
+      queryCity: normalized.city
+    });
     const [bookingLink, result] = await Promise.all([
       awinDeepLink(
         affiliateLinks.booking ?? bookingUrl(
@@ -3585,16 +3660,16 @@ async function searchHotels(req, res) {
           normalized.rooms
         )
       ),
-      fetchAgodaHotels(
-        city.agodaCityId,
-        city.agodaLtCityId ?? city.agodaCityId,
-        normalized.checkIn,
-        normalized.checkOut,
-        normalized.adults,
-        normalized.rooms,
-        normalized.page,
-        normalized.sort
-      )
+      fetchAgodaHotelsWithCityCandidates({
+        agodaCityId: city.agodaCityId,
+        ltCityCandidates,
+        checkIn: normalized.checkIn,
+        checkOut: normalized.checkOut,
+        adults: normalized.adults,
+        rooms: normalized.rooms,
+        page: normalized.page,
+        sort: normalized.sort
+      })
     ]);
     const normalizedHotels = sortHotels(
       result.hotels.map(
@@ -3707,7 +3782,9 @@ function parseAgodaCitySuggestions(payload) {
       displayName: cityName,
       locationType: "city",
       locationId: cityId,
-      subtitle: subtitle || void 0
+      subtitle: subtitle || void 0,
+      source: "agoda_suggest",
+      idKind: "unverified_agoda_city_id"
     });
   }
   return suggestions.slice(0, 10);
@@ -3727,7 +3804,9 @@ function fallbackLocalSuggestions(q) {
     displayName: city.name,
     locationType: "city",
     locationId: String(city.agodaCityId),
-    subtitle: `${city.country} \u2022 ${city.iata}`
+    subtitle: `${city.country} \u2022 ${city.iata}`,
+    source: "local",
+    idKind: city.agodaLtCityId ? "verified_lt_city_id" : "local_agoda_city_id"
   }));
 }
 async function fetchAgodaSuggestions(query) {

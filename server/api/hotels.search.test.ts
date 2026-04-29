@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getCityBySlug } from "../../shared/hotels/cities";
+import {
+  buildAgodaLtCityCandidates,
+  getCityBySlug,
+  type City,
+} from "../../shared/hotels/cities";
 
 function createRes() {
   return {
@@ -290,5 +294,58 @@ describe("hotel search api", () => {
     await runSearch(buildReq("1"), res);
     expect((res.body as any).hotels[0].address).toBe("Sukhumvit");
     expect((res.body as any).hotels[1].address).toBe("Riverside");
+  });
+
+  it("builds Agoda LT candidates with verified LT id first", () => {
+    const bangkok = getCityBySlug("bangkok")!;
+    const candidates = buildAgodaLtCityCandidates({
+      city: bangkok,
+      queryCity: "18056",
+    });
+    expect(candidates.map((item) => item.cityId)).toEqual([9395, 18056]);
+    expect(candidates[0].source).toBe("verified_lt_id");
+  });
+
+  it("treats dynamic query city id as unverified and keeps affiliate link", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1", "3386"), res);
+    expect((res.body as any).meta.source).toBe("agoda");
+    expect((res.body as any).hotels).toEqual([]);
+    expect((res.body as any).affiliateLinks.agoda).toContain("city=3386");
+  });
+
+  it("tries next LT candidate after empty results and resolves", async () => {
+    setLiveAgodaEnv();
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [{ hotelId: "ok-1", dailyRate: 77 }] }),
+      } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1", "bangkok"), res);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect((res.body as any).hotels.length).toBe(1);
+  });
+
+  it("stops retrying on 401/403 response", async () => {
+    setLiveAgodaEnv();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => "unauthorized",
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1", "bangkok"), res);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });

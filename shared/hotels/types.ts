@@ -126,6 +126,17 @@ export interface HotelSearchDiagnostics {
   agodaErrorCode?: string;
   agodaErrorMessage?: string;
   agodaErrorType?: string;
+  attemptedLtCityIds?: number[];
+  resolvedLtCityId?: number;
+  resolvedLtCityIdSource?:
+    | "verified_lt_id"
+    | "dynamic_query_id"
+    | "local_agoda_city_id";
+  cityResolutionStatus?:
+    | "resolved"
+    | "unresolved_empty_results"
+    | "auth_error"
+    | "api_error";
 }
 
 export interface HotelSearchCity {

@@ -47,8 +47,10 @@ export default function HotelSearchResultsPage() {
       ),
     [visibleHotels]
   );
-  const isLiveAgodaUnavailable =
-    meta?.warning === "Live Agoda results are temporarily unavailable.";
+  const shouldShowAgodaCtaFallback =
+    meta?.source === "agoda" &&
+    visibleHotels.length === 0 &&
+    Boolean(affiliateLinks?.agoda);
 
   const openHotelDetail = (hotelId: string) => {
     const selectedHotel = visibleHotels.find(
@@ -138,16 +140,16 @@ export default function HotelSearchResultsPage() {
 
         {!isLoading && !errorMessage && (
           <>
-            {visibleHotels.length === 0 && isLiveAgodaUnavailable && (
+            {shouldShowAgodaCtaFallback && (
               <section className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                   <SearchX className="h-7 w-7" />
                 </div>
                 <h2 className="mt-4 text-lg font-semibold text-slate-900">
-                  Live Agoda hotel results are temporarily unavailable.
+                  Live hotel results are not available in-app for {cityName} yet.
                 </h2>
                 <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
-                  Please try again shortly. You can still browse partner inventory directly on Agoda.
+                  You can still view hotels directly on Agoda.
                 </p>
                 {affiliateLinks?.agoda && (
                   <div className="mt-4 flex justify-center">
@@ -165,7 +167,7 @@ export default function HotelSearchResultsPage() {
               </section>
             )}
 
-            {!(visibleHotels.length === 0 && isLiveAgodaUnavailable) && (
+            {!shouldShowAgodaCtaFallback && (
               <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <div className="min-w-0">
                   <HotelResultsList

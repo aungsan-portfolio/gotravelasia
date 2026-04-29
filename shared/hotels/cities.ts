@@ -85,3 +85,44 @@ export const HOTEL_CITIES_SORTED = [...getHotelCities()].sort((a, b) => {
   if (b.cc === 'MM' && a.cc !== 'MM') return 1;
   return a.name.localeCompare(b.name);
 });
+
+export type AgodaLtCityCandidateSource =
+  | "verified_lt_id"
+  | "dynamic_query_id"
+  | "local_agoda_city_id";
+
+export interface AgodaLtCityCandidate {
+  cityId: number;
+  source: AgodaLtCityCandidateSource;
+  verified: boolean;
+}
+
+export function buildAgodaLtCityCandidates(params: {
+  city?: Pick<City, "agodaCityId" | "agodaLtCityId"> | null;
+  queryCity?: string | number | null;
+}): AgodaLtCityCandidate[] {
+  const candidates: AgodaLtCityCandidate[] = [];
+  const usedCityIds = new Set<number>();
+  const add = (
+    cityId: number | undefined,
+    source: AgodaLtCityCandidateSource,
+    verified: boolean
+  ) => {
+    if (!Number.isFinite(cityId) || (cityId as number) <= 0) return;
+    const normalizedCityId = Number(cityId);
+    if (usedCityIds.has(normalizedCityId)) return;
+    usedCityIds.add(normalizedCityId);
+    candidates.push({ cityId: normalizedCityId, source, verified });
+  };
+
+  add(params.city?.agodaLtCityId, "verified_lt_id", true);
+
+  const queryCityId =
+    typeof params.queryCity === "string"
+      ? Number.parseInt(params.queryCity, 10)
+      : Number(params.queryCity);
+  add(queryCityId, "dynamic_query_id", false);
+
+  add(params.city?.agodaCityId, "local_agoda_city_id", false);
+  return candidates;
+}

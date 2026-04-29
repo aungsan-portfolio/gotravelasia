@@ -27,5 +27,6 @@ describe("hotel autocomplete api", () => {
     expect(
       suggestions.some(item => item.displayName.toLowerCase().includes("bang"))
     ).toBe(true);
+    expect(suggestions.some(item => item.source === "local")).toBe(true);
   });
 });

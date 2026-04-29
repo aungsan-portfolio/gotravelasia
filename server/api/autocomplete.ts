@@ -12,6 +12,11 @@ type AutocompleteSuggestion = {
   locationType: "city";
   locationId: string;
   subtitle?: string;
+  source?: "agoda_suggest" | "local";
+  idKind?:
+    | "verified_lt_city_id"
+    | "local_agoda_city_id"
+    | "unverified_agoda_city_id";
 };
 
 function normalize(value: string) {
@@ -91,6 +96,8 @@ function parseAgodaCitySuggestions(payload: unknown): AutocompleteSuggestion[] {
       locationType: "city",
       locationId: cityId,
       subtitle: subtitle || undefined,
+      source: "agoda_suggest",
+      idKind: "unverified_agoda_city_id",
     });
   }
 
@@ -117,6 +124,10 @@ function fallbackLocalSuggestions(q: string): AutocompleteSuggestion[] {
       locationType: "city",
       locationId: String(city.agodaCityId),
       subtitle: `${city.country} • ${city.iata}`,
+      source: "local" as const,
+      idKind: city.agodaLtCityId
+        ? ("verified_lt_city_id" as const)
+        : ("local_agoda_city_id" as const),
     }));
 }
 

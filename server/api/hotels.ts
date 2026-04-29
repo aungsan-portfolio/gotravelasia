@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
-import { getCityBySlug, type City } from "../../shared/hotels/cities.js";
+import {
+  buildAgodaLtCityCandidates,
+  type AgodaLtCityCandidate,
+  getCityBySlug,
+  type City,
+} from "../../shared/hotels/cities.js";
 import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams.js";
 import type {
   HotelDiagnosticsReason,
@@ -923,6 +928,82 @@ async function fetchAgodaHotels(
   );
 }
 
+async function fetchAgodaHotelsWithCityCandidates(params: {
+  agodaCityId: number;
+  ltCityCandidates: AgodaLtCityCandidate[];
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  rooms: number;
+  page: number;
+  sort: HotelSort;
+}) {
+  const attemptedLtCityIds: number[] = [];
+  let latestDiagnostics: HotelSearchDiagnostics | undefined;
+  let cityResolutionStatus:
+    | "resolved"
+    | "unresolved_empty_results"
+    | "auth_error"
+    | "api_error" = "unresolved_empty_results";
+
+  for (const candidate of params.ltCityCandidates) {
+    attemptedLtCityIds.push(candidate.cityId);
+    const result = await fetchAgodaHotels(
+      params.agodaCityId,
+      candidate.cityId,
+      params.checkIn,
+      params.checkOut,
+      params.adults,
+      params.rooms,
+      params.page,
+      params.sort
+    );
+
+    const candidateDiagnostics = (result as any)
+      .diagnostics as HotelSearchDiagnostics | undefined;
+    latestDiagnostics = candidateDiagnostics ?? latestDiagnostics;
+    const responseStatus = candidateDiagnostics?.status;
+
+    if (result.hotels.length > 0) {
+      cityResolutionStatus = "resolved";
+      return {
+        ...result,
+        diagnostics: {
+          ...(candidateDiagnostics ?? {}),
+          attemptedLtCityIds,
+          resolvedLtCityId: candidate.cityId,
+          resolvedLtCityIdSource: candidate.source,
+          cityResolutionStatus,
+        },
+      };
+    }
+
+    if (responseStatus === 401 || responseStatus === 403) {
+      cityResolutionStatus = "auth_error";
+      break;
+    }
+
+    if (candidateDiagnostics?.reason === "non_ok_response") {
+      cityResolutionStatus = "api_error";
+    }
+  }
+
+  return {
+    source: "agoda" as const,
+    hotels: [],
+    totalCount: 0,
+    warning: "Live Agoda results are temporarily unavailable.",
+    warnings: ["Live Agoda results are temporarily unavailable."],
+    diagnostics: {
+      ...(latestDiagnostics ?? {
+        reason: "empty_results" as const,
+      }),
+      attemptedLtCityIds,
+      cityResolutionStatus,
+    },
+  };
+}
+
 function sortHotels(hotels: HotelResult[], sort: HotelSort) {
   const sorted = [...hotels];
   sorted.sort((a, b) => {
@@ -1132,6 +1213,11 @@ export async function searchHotels(req: any, res: any) {
       normalized.rooms
     );
 
+    const ltCityCandidates = buildAgodaLtCityCandidates({
+      city: city as City,
+      queryCity: normalized.city,
+    });
+
     const [bookingLink, result] = await Promise.all([
       awinDeepLink(
         affiliateLinks.booking ??
@@ -1143,16 +1229,16 @@ export async function searchHotels(req: any, res: any) {
             normalized.rooms
           )
       ),
-      fetchAgodaHotels(
-        (city as any).agodaCityId,
-        (city as any).agodaLtCityId ?? (city as any).agodaCityId,
-        normalized.checkIn,
-        normalized.checkOut,
-        normalized.adults,
-        normalized.rooms,
-        normalized.page,
-        normalized.sort
-      ),
+      fetchAgodaHotelsWithCityCandidates({
+        agodaCityId: (city as any).agodaCityId,
+        ltCityCandidates,
+        checkIn: normalized.checkIn,
+        checkOut: normalized.checkOut,
+        adults: normalized.adults,
+        rooms: normalized.rooms,
+        page: normalized.page,
+        sort: normalized.sort,
+      }),
     ]);
 
     const normalizedHotels = sortHotels(
