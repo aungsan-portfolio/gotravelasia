@@ -3261,7 +3261,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `${AGODA_SITE_ID}:${AGODA_API_KEY}`,
+            Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID}:`) ? AGODA_API_KEY : `${AGODA_SITE_ID}:${AGODA_API_KEY}`,
             "Accept-Encoding": "gzip,deflate"
           },
           body: JSON.stringify(body)

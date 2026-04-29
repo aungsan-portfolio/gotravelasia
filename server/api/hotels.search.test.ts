@@ -127,6 +127,21 @@ describe("hotel search api", () => {
     expect((headers.headers as any).Authorization).toBe("1959281:test_api_key");
   });
 
+  it("does not duplicate site id in Authorization header if already present in api key", async () => {
+    setLiveAgodaEnv({
+      AGODA_SITE_ID: "1959281",
+      AGODA_API_KEY: "1959281:test_api_key",
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    const headers = fetchSpy.mock.calls[0][1] as RequestInit;
+    expect((headers.headers as any).Authorization).toBe("1959281:test_api_key");
+  });
+
   it("does not expose secrets in diagnostics", async () => {
     setLiveAgodaEnv({
       AGODA_SITE_ID: "1,959,281",
