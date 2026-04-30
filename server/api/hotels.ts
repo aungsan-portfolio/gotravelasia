@@ -1216,6 +1216,8 @@ export async function searchHotels(req: any, res: any) {
     const ltCityCandidates = buildAgodaLtCityCandidates({
       city: city as City,
       queryCity: normalized.city,
+      queryCityName: normalized.cityName,
+      country: (city as any).country,
     });
 
     const [bookingLink, result] = await Promise.all([

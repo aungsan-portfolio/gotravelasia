@@ -2579,49 +2579,99 @@ async function createContext(opts) {
   };
 }
 
+// shared/hotels/agodaLtCityMap.ts
+var AGODA_LT_CITY_MAP = [
+  { city: "Bangkok", country: "Thailand", agodaLtCityId: 9395, hotelCount: 1, avgLatitude: 13.7563, avgLongitude: 100.5018 },
+  { city: "Da Nang", country: "Vietnam", agodaLtCityId: 16440, hotelCount: 1, avgLatitude: 16.0544, avgLongitude: 108.2022 },
+  { city: "Singapore", country: "Singapore", agodaLtCityId: 4064, hotelCount: 1, avgLatitude: 1.3521, avgLongitude: 103.8198 },
+  { city: "Hanoi", country: "Vietnam", agodaLtCityId: 2758, hotelCount: 1, avgLatitude: 21.0285, avgLongitude: 105.8542 },
+  { city: "Ho Chi Minh City", country: "Vietnam", agodaLtCityId: 13170, hotelCount: 1, avgLatitude: 10.8231, avgLongitude: 106.6297 },
+  { city: "Phuket", country: "Thailand", agodaLtCityId: 16056, hotelCount: 1, avgLatitude: 7.8804, avgLongitude: 98.3923 },
+  { city: "Chiang Mai", country: "Thailand", agodaLtCityId: 7401, hotelCount: 1, avgLatitude: 18.7883, avgLongitude: 98.9853 },
+  { city: "Bali", country: "Indonesia", agodaLtCityId: 17193, hotelCount: 1, avgLatitude: -8.3405, avgLongitude: 115.092 },
+  { city: "Tokyo", country: "Japan", agodaLtCityId: 5085, hotelCount: 1, avgLatitude: 35.6762, avgLongitude: 139.6503 },
+  { city: "Seoul", country: "South Korea", agodaLtCityId: 14690, hotelCount: 1, avgLatitude: 37.5665, avgLongitude: 126.978 },
+  { city: "Dubai", country: "UAE", agodaLtCityId: 2994, hotelCount: 1, avgLatitude: 25.2048, avgLongitude: 55.2708 },
+  { city: "London", country: "United Kingdom", agodaLtCityId: 233, hotelCount: 1, avgLatitude: 51.5072, avgLongitude: -0.1276 },
+  { city: "Paris", country: "France", agodaLtCityId: 15470, hotelCount: 1, avgLatitude: 48.8566, avgLongitude: 2.3522 },
+  { city: "Kuala Lumpur", country: "Malaysia", agodaLtCityId: 14524, hotelCount: 1, avgLatitude: 3.139, avgLongitude: 101.6869 },
+  { city: "Hong Kong", country: "Hong Kong", agodaLtCityId: 16808, hotelCount: 1, avgLatitude: 22.3193, avgLongitude: 114.1694 },
+  { city: "Taipei", country: "Taiwan", agodaLtCityId: 4951, hotelCount: 1, avgLatitude: 25.033, avgLongitude: 121.5654 },
+  { city: "Osaka", country: "Japan", agodaLtCityId: 9590, hotelCount: 1, avgLatitude: 34.6937, avgLongitude: 135.5023 },
+  { city: "Krabi", country: "Thailand", agodaLtCityId: 14865, hotelCount: 1, avgLatitude: 8.099, avgLongitude: 98.9862 },
+  { city: "Yangon", country: "Myanmar", agodaLtCityId: 16599, hotelCount: 1, avgLatitude: 16.9074, avgLongitude: 96.1297 },
+  { city: "Mandalay", country: "Myanmar", agodaLtCityId: 9299, hotelCount: 1, avgLatitude: 21.902, avgLongitude: 96.0842 },
+  { city: "Manila", country: "Philippines", agodaLtCityId: 1622, hotelCount: 1, avgLatitude: 14.5995, avgLongitude: 120.9842 },
+  { city: "Cebu", country: "Philippines", agodaLtCityId: 4001, hotelCount: 1, avgLatitude: 10.3157, avgLongitude: 123.8854 },
+  { city: "Siem Reap", country: "Cambodia", agodaLtCityId: 16917, hotelCount: 1, avgLatitude: 13.3633, avgLongitude: 103.856 },
+  { city: "Phnom Penh", country: "Cambodia", agodaLtCityId: 4816, hotelCount: 1, avgLatitude: 11.5564, avgLongitude: 104.9282 },
+  { city: "New Delhi and NCR", country: "India", agodaLtCityId: 14552, hotelCount: 1, avgLatitude: 28.6139, avgLongitude: 77.209 },
+  { city: "Shanghai", country: "China", agodaLtCityId: 3987, hotelCount: 1, avgLatitude: 31.2304, avgLongitude: 121.4737 },
+  { city: "Beijing", country: "China", agodaLtCityId: 1569, hotelCount: 1, avgLatitude: 39.9042, avgLongitude: 116.4074 }
+];
+var normalize = (value) => (value ?? "").trim().toLowerCase();
+var cityCountryIndex = /* @__PURE__ */ new Map();
+var cityOnlyIndex = /* @__PURE__ */ new Map();
+for (const entry of AGODA_LT_CITY_MAP) {
+  const cityKey = normalize(entry.city);
+  const countryKey = normalize(entry.country);
+  cityCountryIndex.set(`${cityKey}|${countryKey}`, entry);
+  if (!cityOnlyIndex.has(cityKey)) {
+    cityOnlyIndex.set(cityKey, entry);
+  }
+}
+function findAgodaLtCityIdByName(cityName, country) {
+  const normalizedCity = normalize(cityName);
+  if (!normalizedCity) return void 0;
+  const normalizedCountry = normalize(country);
+  const match = normalizedCountry ? cityCountryIndex.get(`${normalizedCity}|${normalizedCountry}`) : cityOnlyIndex.get(normalizedCity);
+  if (!match) return void 0;
+  return { ...match, source: "data_file_city_id" };
+}
+
 // shared/hotels/cities.ts
 var CITIES = [
-  { iata: "RGN", slug: "yangon", name: "Yangon", nameMM: "\u101B\u1014\u103A\u1000\u102F\u1014\u103A", country: "Myanmar", cc: "MM", flag: "\u{1F1F2}\u{1F1F2}", agodaCityId: 4611, bookingName: "Yangon", twelveGoName: "Yangon", lat: 16.9074, lng: 96.1297, hub: true, hasHotels: true },
-  { iata: "MDL", slug: "mandalay", name: "Mandalay", nameMM: "\u1019\u1014\u1039\u1010\u101C\u1031\u1038", country: "Myanmar", cc: "MM", flag: "\u{1F1F2}\u{1F1F2}", agodaCityId: 4612, bookingName: "Mandalay", twelveGoName: "Mandalay", lat: 21.902, lng: 96.0842, hub: false, hasHotels: true },
+  { iata: "RGN", slug: "yangon", name: "Yangon", nameMM: "\u101B\u1014\u103A\u1000\u102F\u1014\u103A", country: "Myanmar", cc: "MM", flag: "\u{1F1F2}\u{1F1F2}", agodaCityId: 4611, bookingName: "Yangon", twelveGoName: "Yangon", lat: 16.9074, lng: 96.1297, hub: true, hasHotels: true, agodaLtCityId: 16599 },
+  { iata: "MDL", slug: "mandalay", name: "Mandalay", nameMM: "\u1019\u1014\u1039\u1010\u101C\u1031\u1038", country: "Myanmar", cc: "MM", flag: "\u{1F1F2}\u{1F1F2}", agodaCityId: 4612, bookingName: "Mandalay", twelveGoName: "Mandalay", lat: 21.902, lng: 96.0842, hub: false, hasHotels: true, agodaLtCityId: 9299 },
   { iata: "BKK", slug: "bangkok", name: "Bangkok", nameMM: "\u1018\u1014\u103A\u1000\u1031\u102C\u1000\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 18056, bookingName: "Bangkok", twelveGoName: "Bangkok", lat: 13.7563, lng: 100.5018, hub: true, hasHotels: true, agodaLtCityId: 9395 },
-  { iata: "CNX", slug: "chiang-mai", name: "Chiang Mai", nameMM: "\u1001\u103B\u1004\u103A\u1038\u1019\u102D\u102F\u1004\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 3458, bookingName: "Chiang Mai", twelveGoName: "Chiang Mai", lat: 18.7883, lng: 98.9853, hub: false, hasHotels: true },
-  { iata: "HKT", slug: "phuket", name: "Phuket", nameMM: "\u1016\u1030\u1038\u1001\u1000\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 5533, bookingName: "Phuket", twelveGoName: "Phuket", lat: 7.8804, lng: 98.3923, hub: false, hasHotels: true },
+  { iata: "CNX", slug: "chiang-mai", name: "Chiang Mai", nameMM: "\u1001\u103B\u1004\u103A\u1038\u1019\u102D\u102F\u1004\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 3458, bookingName: "Chiang Mai", twelveGoName: "Chiang Mai", lat: 18.7883, lng: 98.9853, hub: false, hasHotels: true, agodaLtCityId: 7401 },
+  { iata: "HKT", slug: "phuket", name: "Phuket", nameMM: "\u1016\u1030\u1038\u1001\u1000\u103A", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 5533, bookingName: "Phuket", twelveGoName: "Phuket", lat: 7.8804, lng: 98.3923, hub: false, hasHotels: true, agodaLtCityId: 16056 },
   { iata: "DMK", slug: "bangkok-dmk", name: "Bangkok DMK", nameMM: "\u1018\u1014\u103A\u1000\u1031\u102C\u1000\u103A-\u1012\u103D\u1014\u103A\u1019\u1031\u102C\u1004\u103A\u1038", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 18056, bookingName: "Bangkok", twelveGoName: "Bangkok", lat: 13.9126, lng: 100.6068, hub: false, hasHotels: false, agodaLtCityId: 9395 },
-  { iata: "KBV", slug: "krabi", name: "Krabi", nameMM: "\u1000\u101B\u102C\u1018\u102E", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 8939, bookingName: "Krabi", twelveGoName: "Krabi", lat: 8.099, lng: 98.9862, hub: false, hasHotels: true },
-  { iata: "BJS", slug: "beijing", name: "Beijing", nameMM: "\u1015\u1031\u1000\u103B\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3085, bookingName: "Beijing", twelveGoName: "Beijing", lat: 39.9042, lng: 116.4074, hub: true, hasHotels: true },
-  { iata: "SHA", slug: "shanghai", name: "Shanghai", nameMM: "\u101B\u103E\u1014\u103A\u101F\u102D\u102F\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 6882, bookingName: "Shanghai", twelveGoName: "Shanghai", lat: 31.2304, lng: 121.4737, hub: true, hasHotels: true },
+  { iata: "KBV", slug: "krabi", name: "Krabi", nameMM: "\u1000\u101B\u102C\u1018\u102E", country: "Thailand", cc: "TH", flag: "\u{1F1F9}\u{1F1ED}", agodaCityId: 8939, bookingName: "Krabi", twelveGoName: "Krabi", lat: 8.099, lng: 98.9862, hub: false, hasHotels: true, agodaLtCityId: 14865 },
+  { iata: "BJS", slug: "beijing", name: "Beijing", nameMM: "\u1015\u1031\u1000\u103B\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3085, bookingName: "Beijing", twelveGoName: "Beijing", lat: 39.9042, lng: 116.4074, hub: true, hasHotels: true, agodaLtCityId: 1569 },
+  { iata: "SHA", slug: "shanghai", name: "Shanghai", nameMM: "\u101B\u103E\u1014\u103A\u101F\u102D\u102F\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 6882, bookingName: "Shanghai", twelveGoName: "Shanghai", lat: 31.2304, lng: 121.4737, hub: true, hasHotels: true, agodaLtCityId: 3987 },
   { iata: "CAN", slug: "guangzhou", name: "Guangzhou", nameMM: "\u1000\u103D\u1019\u103A\u1000\u103B\u102D\u102F\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3374, bookingName: "Guangzhou", twelveGoName: "Guangzhou", lat: 23.1291, lng: 113.2644, hub: false, hasHotels: true },
   { iata: "KMG", slug: "kunming", name: "Kunming", nameMM: "\u1000\u1030\u1019\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3686, bookingName: "Kunming", twelveGoName: "Kunming", lat: 24.8801, lng: 102.8329, hub: false, hasHotels: true },
   { iata: "CSX", slug: "changsha", name: "Changsha", nameMM: "\u1001\u103B\u1014\u103A\u101B\u103E\u102C", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 11516, bookingName: "Changsha", twelveGoName: "Changsha", lat: 28.2278, lng: 112.9388, hub: false, hasHotels: true },
   { iata: "CKG", slug: "chongqing", name: "Chongqing", nameMM: "\u1001\u103B\u102F\u1036\u1000\u1004\u103A\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3243, bookingName: "Chongqing", twelveGoName: "Chongqing", lat: 29.563, lng: 106.5516, hub: false, hasHotels: true },
   { iata: "CTU", slug: "chengdu", name: "Chengdu", nameMM: "\u1001\u103B\u1014\u103A\u1012\u1030\u1038", country: "China", cc: "CN", flag: "\u{1F1E8}\u{1F1F3}", agodaCityId: 3227, bookingName: "Chengdu", twelveGoName: "Chengdu", lat: 30.5728, lng: 104.0668, hub: false, hasHotels: true },
   { iata: "CCU", slug: "kolkata", name: "Kolkata", nameMM: "\u1000\u102C\u101C\u103A\u1000\u1010\u1039\u1010\u102C\u1038", country: "India", cc: "IN", flag: "\u{1F1EE}\u{1F1F3}", agodaCityId: 3499, bookingName: "Kolkata", twelveGoName: "Kolkata", lat: 22.5726, lng: 88.3639, hub: false, hasHotels: true },
-  { iata: "DEL", slug: "delhi", name: "Delhi", nameMM: "\u1012\u1031\u101C\u102E", country: "India", cc: "IN", flag: "\u{1F1EE}\u{1F1F3}", agodaCityId: 1479, bookingName: "New Delhi", twelveGoName: "Delhi", lat: 28.6139, lng: 77.209, hub: true, hasHotels: true },
+  { iata: "DEL", slug: "delhi", name: "Delhi", nameMM: "\u1012\u1031\u101C\u102E", country: "India", cc: "IN", flag: "\u{1F1EE}\u{1F1F3}", agodaCityId: 1479, bookingName: "New Delhi", twelveGoName: "Delhi", lat: 28.6139, lng: 77.209, hub: true, hasHotels: true, agodaLtCityId: 14552 },
   { iata: "MAA", slug: "chennai", name: "Chennai", nameMM: "\u1001\u103B\u1014\u103A\u1014\u102D\u102F\u1004\u103A\u1038", country: "India", cc: "IN", flag: "\u{1F1EE}\u{1F1F3}", agodaCityId: 3383, bookingName: "Chennai", twelveGoName: "Chennai", lat: 13.0827, lng: 80.2707, hub: false, hasHotels: true },
   { iata: "GAY", slug: "gaya", name: "Gaya", nameMM: "\u1002\u102B\u101A\u102C", country: "India", cc: "IN", flag: "\u{1F1EE}\u{1F1F3}", agodaCityId: 47898, bookingName: "Gaya", twelveGoName: "Gaya", lat: 24.7496, lng: 85.0077, hub: false, hasHotels: true },
-  { iata: "SEL", slug: "seoul", name: "Seoul", nameMM: "\u1006\u102D\u102F\u1038\u101C\u103A", country: "South Korea", cc: "KR", flag: "\u{1F1F0}\u{1F1F7}", agodaCityId: 6682, bookingName: "Seoul", twelveGoName: "Seoul", lat: 37.5665, lng: 126.978, hub: true, hasHotels: true },
+  { iata: "SEL", slug: "seoul", name: "Seoul", nameMM: "\u1006\u102D\u102F\u1038\u101C\u103A", country: "South Korea", cc: "KR", flag: "\u{1F1F0}\u{1F1F7}", agodaCityId: 6682, bookingName: "Seoul", twelveGoName: "Seoul", lat: 37.5665, lng: 126.978, hub: true, hasHotels: true, agodaLtCityId: 14690 },
   { iata: "PUS", slug: "busan", name: "Busan", nameMM: "\u1018\u1030\u1006\u1014\u103A", country: "South Korea", cc: "KR", flag: "\u{1F1F0}\u{1F1F7}", agodaCityId: 6745, bookingName: "Busan", twelveGoName: "Busan", lat: 35.1796, lng: 129.0756, hub: false, hasHotels: true },
   { iata: "CJU", slug: "jeju", name: "Jeju", nameMM: "\u1002\u103B\u101A\u103A\u1002\u103B\u1030\u1038", country: "South Korea", cc: "KR", flag: "\u{1F1F0}\u{1F1F7}", agodaCityId: 6788, bookingName: "Jeju City", twelveGoName: "Jeju", lat: 33.4996, lng: 126.5312, hub: false, hasHotels: true },
-  { iata: "TYO", slug: "tokyo", name: "Tokyo", nameMM: "\u1010\u102D\u102F\u1000\u103B\u102D\u102F", country: "Japan", cc: "JP", flag: "\u{1F1EF}\u{1F1F5}", agodaCityId: 17277, bookingName: "Tokyo", twelveGoName: "Tokyo", lat: 35.6762, lng: 139.6503, hub: true, hasHotels: true },
-  { iata: "OSA", slug: "osaka", name: "Osaka", nameMM: "\u1021\u102D\u102F\u1006\u102C\u1000\u102C", country: "Japan", cc: "JP", flag: "\u{1F1EF}\u{1F1F5}", agodaCityId: 8752, bookingName: "Osaka", twelveGoName: "Osaka", lat: 34.6937, lng: 135.5023, hub: false, hasHotels: true },
-  { iata: "KUL", slug: "kuala-lumpur", name: "Kuala Lumpur", nameMM: "\u1000\u103D\u102C\u101C\u102C\u101C\u1019\u103A\u1015\u1030", country: "Malaysia", cc: "MY", flag: "\u{1F1F2}\u{1F1FE}", agodaCityId: 3714, bookingName: "Kuala Lumpur", twelveGoName: "Kuala Lumpur", lat: 3.139, lng: 101.6869, hub: true, hasHotels: true },
+  { iata: "TYO", slug: "tokyo", name: "Tokyo", nameMM: "\u1010\u102D\u102F\u1000\u103B\u102D\u102F", country: "Japan", cc: "JP", flag: "\u{1F1EF}\u{1F1F5}", agodaCityId: 17277, bookingName: "Tokyo", twelveGoName: "Tokyo", lat: 35.6762, lng: 139.6503, hub: true, hasHotels: true, agodaLtCityId: 5085 },
+  { iata: "OSA", slug: "osaka", name: "Osaka", nameMM: "\u1021\u102D\u102F\u1006\u102C\u1000\u102C", country: "Japan", cc: "JP", flag: "\u{1F1EF}\u{1F1F5}", agodaCityId: 8752, bookingName: "Osaka", twelveGoName: "Osaka", lat: 34.6937, lng: 135.5023, hub: false, hasHotels: true, agodaLtCityId: 9590 },
+  { iata: "KUL", slug: "kuala-lumpur", name: "Kuala Lumpur", nameMM: "\u1000\u103D\u102C\u101C\u102C\u101C\u1019\u103A\u1015\u1030", country: "Malaysia", cc: "MY", flag: "\u{1F1F2}\u{1F1FE}", agodaCityId: 3714, bookingName: "Kuala Lumpur", twelveGoName: "Kuala Lumpur", lat: 3.139, lng: 101.6869, hub: true, hasHotels: true, agodaLtCityId: 14524 },
   { iata: "BKI", slug: "kota-kinabalu", name: "Kota Kinabalu", nameMM: "\u1000\u102D\u102F\u1010\u102C\u1000\u1004\u103A\u1014\u102C\u1018\u102C\u101C\u1030", country: "Malaysia", cc: "MY", flag: "\u{1F1F2}\u{1F1FE}", agodaCityId: 3719, bookingName: "Kota Kinabalu", twelveGoName: "Kota Kinabalu", lat: 5.9804, lng: 116.0735, hub: false, hasHotels: true },
   { iata: "PEN", slug: "penang", name: "Penang", nameMM: "\u1015\u102E\u1014\u1014\u103A\u1038", country: "Malaysia", cc: "MY", flag: "\u{1F1F2}\u{1F1FE}", agodaCityId: 3717, bookingName: "Penang", twelveGoName: "Penang", lat: 5.4141, lng: 100.3288, hub: false, hasHotels: true },
-  { iata: "DAD", slug: "da-nang", name: "Da Nang", nameMM: "\u1012\u102B\u1014\u1014\u103A\u1038", country: "Vietnam", cc: "VN", flag: "\u{1F1FB}\u{1F1F3}", agodaCityId: 3386, bookingName: "Da Nang", twelveGoName: "Da Nang", lat: 16.0544, lng: 108.2022, hub: false, hasHotels: true },
-  { iata: "SGN", slug: "ho-chi-minh", name: "Ho Chi Minh", nameMM: "\u101F\u102D\u102F\u1001\u103B\u102E\u1019\u1004\u103A\u1038", country: "Vietnam", cc: "VN", flag: "\u{1F1FB}\u{1F1F3}", agodaCityId: 1349, bookingName: "Ho Chi Minh City", twelveGoName: "Ho Chi Minh City", lat: 10.8231, lng: 106.6297, hub: true, hasHotels: true },
-  { iata: "HAN", slug: "hanoi", name: "Hanoi", nameMM: "\u101F\u1014\u103D\u102D\u102F\u1004\u103A\u1038", country: "Vietnam", cc: "VN", flag: "\u{1F1FB}\u{1F1F3}", agodaCityId: 2516, bookingName: "Hanoi", twelveGoName: "Hanoi", lat: 21.0285, lng: 105.8542, hub: false, hasHotels: true },
-  { iata: "DPS", slug: "bali", name: "Bali", nameMM: "\u1018\u102C\u101C\u102E", country: "Indonesia", cc: "ID", flag: "\u{1F1EE}\u{1F1E9}", agodaCityId: 2553, bookingName: "Bali", twelveGoName: "Bali", lat: -8.3405, lng: 115.092, hub: false, hasHotels: true },
+  { iata: "DAD", slug: "da-nang", name: "Da Nang", nameMM: "\u1012\u102B\u1014\u1014\u103A\u1038", country: "Vietnam", cc: "VN", flag: "\u{1F1FB}\u{1F1F3}", agodaCityId: 3386, bookingName: "Da Nang", twelveGoName: "Da Nang", lat: 16.0544, lng: 108.2022, hub: false, hasHotels: true, agodaLtCityId: 16440 },
+  { iata: "SGN", slug: "ho-chi-minh", name: "Ho Chi Minh", nameMM: "\u101F\u102D\u102F\u1001\u103B\u102E\u1019\u1004\u103A\u1038", country: "Vietnam", cc: "VN", flag: "\u{1F1FB}\u{1F1F3}", agodaCityId: 1349, bookingName: "Ho Chi Minh City", twelveGoName: "Ho Chi Minh City", lat: 10.8231, lng: 106.6297, hub: true, hasHotels: true, agodaLtCityId: 13170 },
+  { iata: "HAN", slug: "hanoi", name: "Hanoi", nameMM: "\u101F\u1014\u103D\u102D\u102F\u1004\u103A\u1038", country: "Vietnam", cc: "VN", flag: "\u{1F1FB}\u{1F1F3}", agodaCityId: 2516, bookingName: "Hanoi", twelveGoName: "Hanoi", lat: 21.0285, lng: 105.8542, hub: false, hasHotels: true, agodaLtCityId: 2758 },
+  { iata: "DPS", slug: "bali", name: "Bali", nameMM: "\u1018\u102C\u101C\u102E", country: "Indonesia", cc: "ID", flag: "\u{1F1EE}\u{1F1E9}", agodaCityId: 2553, bookingName: "Bali", twelveGoName: "Bali", lat: -8.3405, lng: 115.092, hub: false, hasHotels: true, agodaLtCityId: 17193 },
   { iata: "JKT", slug: "jakarta", name: "Jakarta", nameMM: "\u1002\u103B\u1000\u102C\u1010\u102C", country: "Indonesia", cc: "ID", flag: "\u{1F1EE}\u{1F1E9}", agodaCityId: 3393, bookingName: "Jakarta", twelveGoName: "Jakarta", lat: -6.2088, lng: 106.8456, hub: false, hasHotels: true },
-  { iata: "SAI", slug: "siem-reap", name: "Siem Reap", nameMM: "\u1005\u102E\u101A\u1019\u103A\u101B\u102D", country: "Cambodia", cc: "KH", flag: "\u{1F1F0}\u{1F1ED}", agodaCityId: 3271, bookingName: "Siem Reap", twelveGoName: "Siem Reap", lat: 13.3633, lng: 103.856, hub: false, hasHotels: true },
-  { iata: "PNH", slug: "phnom-penh", name: "Phnom Penh", nameMM: "\u1016\u1014\u103D\u1019\u103A\u1038\u1015\u1004\u103A", country: "Cambodia", cc: "KH", flag: "\u{1F1F0}\u{1F1ED}", agodaCityId: 3272, bookingName: "Phnom Penh", twelveGoName: "Phnom Penh", lat: 11.5564, lng: 104.9282, hub: false, hasHotels: true },
-  { iata: "MNL", slug: "manila", name: "Manila", nameMM: "\u1019\u1014\u102E\u101C\u102C", country: "Philippines", cc: "PH", flag: "\u{1F1F5}\u{1F1ED}", agodaCityId: 3878, bookingName: "Manila", twelveGoName: "Manila", lat: 14.5995, lng: 120.9842, hub: true, hasHotels: true },
-  { iata: "CEB", slug: "cebu", name: "Cebu", nameMM: "\u1006\u102E\u1018\u1030\u1038", country: "Philippines", cc: "PH", flag: "\u{1F1F5}\u{1F1ED}", agodaCityId: 3879, bookingName: "Cebu City", twelveGoName: "Cebu", lat: 10.3157, lng: 123.8854, hub: false, hasHotels: true },
-  { iata: "SIN", slug: "singapore", name: "Singapore", nameMM: "\u1005\u1004\u103A\u1000\u102C\u1015\u1030", country: "Singapore", cc: "SG", flag: "\u{1F1F8}\u{1F1EC}", agodaCityId: 10307, bookingName: "Singapore", twelveGoName: "Singapore", lat: 1.3521, lng: 103.8198, hub: true, hasHotels: true },
-  { iata: "TPE", slug: "taipei", name: "Taipei", nameMM: "\u1010\u102D\u102F\u1004\u103A\u1015\u1031", country: "Taiwan", cc: "TW", flag: "\u{1F1F9}\u{1F1FC}", agodaCityId: 2427, bookingName: "Taipei", twelveGoName: "Taipei", lat: 25.033, lng: 121.5654, hub: false, hasHotels: true },
-  { iata: "HKG", slug: "hong-kong", name: "Hong Kong", nameMM: "\u101F\u1031\u102C\u1004\u103A\u1000\u1031\u102C\u1004\u103A", country: "Hong Kong", cc: "HK", flag: "\u{1F1ED}\u{1F1F0}", agodaCityId: 2515, bookingName: "Hong Kong", twelveGoName: "Hong Kong", lat: 22.3193, lng: 114.1694, hub: false, hasHotels: true },
+  { iata: "SAI", slug: "siem-reap", name: "Siem Reap", nameMM: "\u1005\u102E\u101A\u1019\u103A\u101B\u102D", country: "Cambodia", cc: "KH", flag: "\u{1F1F0}\u{1F1ED}", agodaCityId: 3271, bookingName: "Siem Reap", twelveGoName: "Siem Reap", lat: 13.3633, lng: 103.856, hub: false, hasHotels: true, agodaLtCityId: 16917 },
+  { iata: "PNH", slug: "phnom-penh", name: "Phnom Penh", nameMM: "\u1016\u1014\u103D\u1019\u103A\u1038\u1015\u1004\u103A", country: "Cambodia", cc: "KH", flag: "\u{1F1F0}\u{1F1ED}", agodaCityId: 3272, bookingName: "Phnom Penh", twelveGoName: "Phnom Penh", lat: 11.5564, lng: 104.9282, hub: false, hasHotels: true, agodaLtCityId: 4816 },
+  { iata: "MNL", slug: "manila", name: "Manila", nameMM: "\u1019\u1014\u102E\u101C\u102C", country: "Philippines", cc: "PH", flag: "\u{1F1F5}\u{1F1ED}", agodaCityId: 3878, bookingName: "Manila", twelveGoName: "Manila", lat: 14.5995, lng: 120.9842, hub: true, hasHotels: true, agodaLtCityId: 1622 },
+  { iata: "CEB", slug: "cebu", name: "Cebu", nameMM: "\u1006\u102E\u1018\u1030\u1038", country: "Philippines", cc: "PH", flag: "\u{1F1F5}\u{1F1ED}", agodaCityId: 3879, bookingName: "Cebu City", twelveGoName: "Cebu", lat: 10.3157, lng: 123.8854, hub: false, hasHotels: true, agodaLtCityId: 4001 },
+  { iata: "SIN", slug: "singapore", name: "Singapore", nameMM: "\u1005\u1004\u103A\u1000\u102C\u1015\u1030", country: "Singapore", cc: "SG", flag: "\u{1F1F8}\u{1F1EC}", agodaCityId: 10307, bookingName: "Singapore", twelveGoName: "Singapore", lat: 1.3521, lng: 103.8198, hub: true, hasHotels: true, agodaLtCityId: 4064 },
+  { iata: "TPE", slug: "taipei", name: "Taipei", nameMM: "\u1010\u102D\u102F\u1004\u103A\u1015\u1031", country: "Taiwan", cc: "TW", flag: "\u{1F1F9}\u{1F1FC}", agodaCityId: 2427, bookingName: "Taipei", twelveGoName: "Taipei", lat: 25.033, lng: 121.5654, hub: false, hasHotels: true, agodaLtCityId: 4951 },
+  { iata: "HKG", slug: "hong-kong", name: "Hong Kong", nameMM: "\u101F\u1031\u102C\u1004\u103A\u1000\u1031\u102C\u1004\u103A", country: "Hong Kong", cc: "HK", flag: "\u{1F1ED}\u{1F1F0}", agodaCityId: 2515, bookingName: "Hong Kong", twelveGoName: "Hong Kong", lat: 22.3193, lng: 114.1694, hub: false, hasHotels: true, agodaLtCityId: 16808 },
   { iata: "MFM", slug: "macau", name: "Macau", nameMM: "\u1019\u1000\u102C\u1021\u102D\u102F", country: "Macau", cc: "MO", flag: "\u{1F1F2}\u{1F1F4}", agodaCityId: 2609, bookingName: "Macau", twelveGoName: "Macau", lat: 22.1987, lng: 113.5439, hub: false, hasHotels: true },
   { iata: "LPQ", slug: "luang-prabang", name: "Luang Prabang", nameMM: "\u101C\u102C\u1021\u102D\u102F", country: "Laos", cc: "LA", flag: "\u{1F1F1}\u{1F1E6}", agodaCityId: 2594, bookingName: "Luang Prabang", twelveGoName: "Luang Prabang", lat: 19.8845, lng: 102.1348, hub: false, hasHotels: true },
-  { iata: "DXB", slug: "dubai", name: "Dubai", nameMM: "\u1012\u1030\u1018\u102D\u102F\u1004\u103A\u1038", country: "UAE", cc: "AE", flag: "\u{1F1E6}\u{1F1EA}", agodaCityId: 11867, bookingName: "Dubai", twelveGoName: "Dubai", lat: 25.2048, lng: 55.2708, hub: false, hasHotels: true },
+  { iata: "DXB", slug: "dubai", name: "Dubai", nameMM: "\u1012\u1030\u1018\u102D\u102F\u1004\u103A\u1038", country: "UAE", cc: "AE", flag: "\u{1F1E6}\u{1F1EA}", agodaCityId: 11867, bookingName: "Dubai", twelveGoName: "Dubai", lat: 25.2048, lng: 55.2708, hub: false, hasHotels: true, agodaLtCityId: 2994 },
   { iata: "BWN", slug: "brunei", name: "Brunei", nameMM: "\u1018\u101B\u1030\u1014\u102D\u102F\u1004\u103A\u1038", country: "Brunei", cc: "BN", flag: "\u{1F1E7}\u{1F1F3}", agodaCityId: 3155, bookingName: "Bandar Seri Begawan", twelveGoName: "Brunei", lat: 4.9031, lng: 114.9398, hub: false, hasHotels: true }
 ];
 var cityBySlug = new Map(CITIES.map((city) => [city.slug, city]));
@@ -2651,6 +2701,13 @@ function buildAgodaLtCityCandidates(params) {
     candidates.push({ cityId: normalizedCityId, source, verified });
   };
   add(params.city?.agodaLtCityId, "verified_lt_id", true);
+  const mappedCityName = params.queryCityName ?? params.city?.name;
+  const mappedCountry = params.country ?? params.city?.country;
+  const dataFileMatch = findAgodaLtCityIdByName(
+    mappedCityName ?? "",
+    mappedCountry ?? void 0
+  );
+  add(dataFileMatch?.agodaLtCityId, "data_file_city_id", true);
   const queryCityId = typeof params.queryCity === "string" ? Number.parseInt(params.queryCity, 10) : Number(params.queryCity);
   add(queryCityId, "dynamic_query_id", false);
   add(params.city?.agodaCityId, "local_agoda_city_id", false);
@@ -3648,7 +3705,9 @@ async function searchHotels(req, res) {
     );
     const ltCityCandidates = buildAgodaLtCityCandidates({
       city,
-      queryCity: normalized.city
+      queryCity: normalized.city,
+      queryCityName: normalized.cityName,
+      country: city.country
     });
     const [bookingLink, result] = await Promise.all([
       awinDeepLink(
@@ -3726,7 +3785,7 @@ async function searchHotels(req, res) {
 var AGODA_UNIFIED_SUGGEST_URL = "https://affiliateapi7643.agoda.com/api/v1/UnifiedSuggest";
 var AGODA_TIMEOUT_MS = 2500;
 var AGODA_API_KEY2 = process.env.AGODA_API_KEY ?? "";
-function normalize(value) {
+function normalize2(value) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
 }
 function toStringIfPresent(value) {
@@ -3798,8 +3857,8 @@ function fallbackLocalSuggestions(q) {
       city.bookingName,
       city.slug,
       city.iata
-    ].map(normalize);
-    return haystacks.some((value) => value.includes(normalize(q)));
+    ].map(normalize2);
+    return haystacks.some((value) => value.includes(normalize2(q)));
   }).slice(0, 10).map((city) => ({
     displayName: city.name,
     locationType: "city",

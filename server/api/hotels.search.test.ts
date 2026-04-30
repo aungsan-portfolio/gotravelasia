@@ -4,6 +4,7 @@ import {
   getCityBySlug,
   type City,
 } from "../../shared/hotels/cities";
+import { findAgodaLtCityIdByName } from "../../shared/hotels/agodaLtCityMap";
 
 function createRes() {
   return {
@@ -25,6 +26,8 @@ const originalEnv = {
   AGODA_SITE_ID: process.env.AGODA_SITE_ID,
   ALLOW_HOTEL_MOCKS: process.env.ALLOW_HOTEL_MOCKS,
   EXPEDIA_TP_CODE: process.env.EXPEDIA_TP_CODE,
+  NODE_ENV: process.env.NODE_ENV,
+  HOTEL_DEBUG_DIAGNOSTICS: process.env.HOTEL_DEBUG_DIAGNOSTICS,
 };
 
 function setLiveAgodaEnv(overrides: Partial<Record<string, string>> = {}) {
@@ -60,6 +63,8 @@ afterEach(() => {
   process.env.AGODA_SITE_ID = originalEnv.AGODA_SITE_ID;
   process.env.ALLOW_HOTEL_MOCKS = originalEnv.ALLOW_HOTEL_MOCKS;
   process.env.EXPEDIA_TP_CODE = originalEnv.EXPEDIA_TP_CODE;
+  process.env.NODE_ENV = originalEnv.NODE_ENV;
+  process.env.HOTEL_DEBUG_DIAGNOSTICS = originalEnv.HOTEL_DEBUG_DIAGNOSTICS;
 });
 
 describe("hotel search api", () => {
@@ -304,6 +309,50 @@ describe("hotel search api", () => {
     });
     expect(candidates.map((item) => item.cityId)).toEqual([9395, 18056]);
     expect(candidates[0].source).toBe("verified_lt_id");
+  });
+
+  it("resolves Da Nang LT city id from data-file mapping", () => {
+    expect(findAgodaLtCityIdByName("Da Nang", "Vietnam")?.agodaLtCityId).toBe(
+      16440
+    );
+  });
+
+  it("resolves Singapore LT city id from data-file mapping", () => {
+    expect(findAgodaLtCityIdByName("Singapore", "Singapore")?.agodaLtCityId).toBe(
+      4064
+    );
+  });
+
+  it("tries resolved LT city id before dynamic query city id", () => {
+    const candidates = buildAgodaLtCityCandidates({
+      queryCity: "3386",
+      queryCityName: "Da Nang",
+      country: "Vietnam",
+    });
+    expect(candidates.map((item) => item.cityId)).toEqual([16440, 3386]);
+    expect(candidates[0].source).toBe("data_file_city_id");
+  });
+
+  it("keeps dynamic query city id when no mapping exists", () => {
+    const candidates = buildAgodaLtCityCandidates({
+      queryCity: "3386",
+      queryCityName: "Unknown City",
+      country: "Nowhere",
+    });
+    expect(candidates.map((item) => item.cityId)).toEqual([3386]);
+  });
+
+  it("hides diagnostics in production by default", async () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.HOTEL_DEBUG_DIAGNOSTICS;
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1", "3386"), res);
+    expect((res.body as any)?.meta?.diagnostics).toBeUndefined();
   });
 
   it("treats dynamic query city id as unverified and keeps affiliate link", async () => {
