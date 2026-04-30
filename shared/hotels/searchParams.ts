@@ -95,7 +95,11 @@ export function normalizeHotelSearchParams(
 ): HotelSearchParams {
   const defaults = defaultHotelDates();
   const normalized: HotelSearchParams = {
-    city: sanitizeCity(input.city) ?? DEFAULT_CITY,
+    city:
+      sanitizeCity(input.city) ??
+      (sanitizeCityName(input.cityName)
+        ? sanitizeCityName(input.cityName)!.toLowerCase().replace(/\s+/g, "-")
+        : DEFAULT_CITY),
     cityName: sanitizeCityName(input.cityName),
     checkIn: isIsoDate(input.checkIn) ? input.checkIn : defaults.checkIn,
     checkOut: isIsoDate(input.checkOut) ? input.checkOut : defaults.checkOut,

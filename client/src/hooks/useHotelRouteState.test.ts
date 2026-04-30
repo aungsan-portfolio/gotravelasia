@@ -70,6 +70,17 @@ describe("resolveHotelRouteState", () => {
     expect(state.query.checkOut).toBe("2026-10-04");
   });
 
+  it("supports cityName-only legacy URLs without defaulting city", () => {
+    const state = resolveHotelRouteState(
+      "/hotels",
+      "?cityName=Singapore&checkIn=2026-05-12&checkOut=2026-05-14&adults=2&rooms=1&page=1&sort=best",
+    );
+
+    expect(state.routeMode).toBe("legacy");
+    expect(state.query.cityName).toBe("Singapore");
+    expect(state.query.city).not.toBe("yangon");
+  });
+
   it("keeps defaults safe for empty legacy links", () => {
     const state = resolveHotelRouteState("/hotels", "");
 

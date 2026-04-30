@@ -103,7 +103,7 @@ describe("hotel search api", () => {
     setLiveAgodaEnv();
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ results: [] }),
+      json: async () => ({ results: [{ hotelId: "sg-1", dailyRate: 120 }] }),
     } as Response);
     const res = createRes();
     await runSearch(buildReq("1"), res);
@@ -331,6 +331,59 @@ describe("hotel search api", () => {
     });
     expect(candidates.map((item) => item.cityId)).toEqual([16440, 3386]);
     expect(candidates[0].source).toBe("data_file_city_id");
+  });
+
+  it("resolves cityName-only search to Singapore LT city id", async () => {
+    setLiveAgodaEnv();
+    process.env.HOTEL_DEBUG_DIAGNOSTICS = "true";
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [{ hotelId: "sg-1", hotelName: "SGP Hotel", dailyRate: 100 }],
+      }),
+    } as Response);
+
+    const req = {
+      query: {
+        cityName: "Singapore",
+        checkIn: "2026-05-12",
+        checkOut: "2026-05-14",
+        adults: "2",
+        rooms: "1",
+        page: "1",
+        sort: "best",
+      },
+    };
+
+    const res = createRes();
+    await runSearch(req, res);
+
+    expect((res.body as any).city.name).toBe("Singapore");
+    expect((res.body as any).meta.diagnostics.attemptedLtCityIds).toContain(4064);
+    expect((res.body as any).meta.diagnostics.resolvedLtCityIdSource).toBe("data_file_city_id");
+  });
+
+  it("keeps default behavior when city and cityName are missing", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+
+    const req = {
+      query: {
+        checkIn: "2026-05-12",
+        checkOut: "2026-05-14",
+        adults: "2",
+        rooms: "1",
+        page: "1",
+        sort: "best",
+      },
+    };
+
+    const res = createRes();
+    await runSearch(req, res);
+    expect((res.body as any).city.slug).toBe("yangon");
   });
 
   it("keeps dynamic query city id when no mapping exists", () => {

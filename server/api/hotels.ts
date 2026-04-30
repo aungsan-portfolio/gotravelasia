@@ -5,6 +5,7 @@ import {
   getCityBySlug,
   type City,
 } from "../../shared/hotels/cities.js";
+import { findAgodaLtCityIdByName } from "../../shared/hotels/agodaLtCityMap.js";
 import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams.js";
 import type {
   HotelDiagnosticsReason,
@@ -999,6 +1000,8 @@ async function fetchAgodaHotelsWithCityCandidates(params: {
         reason: "empty_results" as const,
       }),
       attemptedLtCityIds,
+      resolvedLtCityId: params.ltCityCandidates[0]?.cityId,
+      resolvedLtCityIdSource: params.ltCityCandidates[0]?.source,
       cityResolutionStatus,
     },
   };
@@ -1165,11 +1168,31 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
 
 export async function searchHotels(req: any, res: any) {
   const normalized = normalizeHotelSearchParams(req.query);
+  const rawCity = typeof req.query?.city === "string" ? req.query.city.trim() : "";
+  const rawCityName =
+    typeof req.query?.cityName === "string" ? req.query.cityName.trim() : "";
+  const hasRawCity = rawCity.length > 0;
+  const hasRawCityName = rawCityName.length > 0;
+
+  const isCityNameOnlySearch = !hasRawCity && hasRawCityName;
+  const cityNameOnlyMatch = isCityNameOnlySearch
+    ? findAgodaLtCityIdByName(rawCityName)
+    : undefined;
 
   const isNumericCityId = /^\d+$/.test(normalized.city);
   let city: SearchCity;
 
-  if (isNumericCityId) {
+  if (isCityNameOnlySearch) {
+    const fallbackName = rawCityName;
+    city = {
+      slug: fallbackName.toLowerCase().replace(/\s+/g, "-"),
+      name: fallbackName,
+      bookingName: fallbackName,
+      country: cityNameOnlyMatch?.country ?? "",
+      agodaCityId: cityNameOnlyMatch?.agodaLtCityId ?? 0,
+      hasHotels: true,
+    } as SearchCity;
+  } else if (isNumericCityId) {
     const agodaCityId = parseInt(normalized.city, 10);
     if (!Number.isFinite(agodaCityId)) {
       return res
@@ -1189,17 +1212,29 @@ export async function searchHotels(req: any, res: any) {
     } as SearchCity;
   } else {
     const localCity = getCityBySlug(normalized.city);
-    if (!localCity)
-      return res
-        .status(404)
-        .json({ error: `City not found: ${normalized.city}` });
+    if (!localCity) {
+      if (normalized.cityName) {
+        city = {
+          slug: normalized.city,
+          name: normalized.cityName,
+          bookingName: normalized.cityName,
+          country: "",
+          agodaCityId: 0,
+          hasHotels: true,
+        } as SearchCity;
+      } else {
+        return res
+          .status(404)
+          .json({ error: `City not found: ${normalized.city}` });
+      }
+    } else {
+      if (!localCity.hasHotels)
+        return res
+          .status(400)
+          .json({ error: `No hotels available for ${localCity.name}` });
 
-    if (!localCity.hasHotels)
-      return res
-        .status(400)
-        .json({ error: `No hotels available for ${localCity.name}` });
-
-    city = localCity;
+      city = localCity;
+    }
   }
 
   try {
@@ -1214,7 +1249,7 @@ export async function searchHotels(req: any, res: any) {
     );
 
     const ltCityCandidates = buildAgodaLtCityCandidates({
-      city: city as City,
+      city: isCityNameOnlySearch ? null : (city as City),
       queryCity: normalized.city,
       queryCityName: normalized.cityName,
       country: (city as any).country,
