@@ -11,6 +11,7 @@ interface HotelFilterToolbarProps {
   onToggleFilter: (filterId: HotelFilterId) => void;
   onClearFilters: () => void;
   totalFound: number;
+  mappedCount?: number;
 }
 
 /**

@@ -27,8 +27,13 @@ export default function HotelSearchResultsPage() {
     sort,
     activeFilters,
     totalFound,
+    richFilters,
     setSort,
     toggleFilter,
+    setPriceRange,
+    toggleStarRating,
+    setMinGuestRating,
+    toggleAmenity,
     clearFilters,
     retry,
   } = useHotelSearch(query, { routeMode, routeMeta });
@@ -120,8 +125,13 @@ export default function HotelSearchResultsPage() {
         <div className="mt-4 xl:hidden">
           <HotelFilterSidebar
             activeFilters={activeFilters}
+            richFilters={richFilters}
             onToggleFilter={toggleFilter}
             onClearFilters={clearFilters}
+            onSetPriceRange={setPriceRange}
+            onToggleStarRating={toggleStarRating}
+            onSetMinGuestRating={setMinGuestRating}
+            onToggleAmenity={toggleAmenity}
             totalFound={totalFound}
           />
         </div>
@@ -180,8 +190,13 @@ export default function HotelSearchResultsPage() {
                 <div className="hidden xl:block">
                   <HotelFilterSidebar
                     activeFilters={activeFilters}
+                    richFilters={richFilters}
                     onToggleFilter={toggleFilter}
                     onClearFilters={clearFilters}
+                    onSetPriceRange={setPriceRange}
+                    onToggleStarRating={toggleStarRating}
+                    onSetMinGuestRating={setMinGuestRating}
+                    onToggleAmenity={toggleAmenity}
                     totalFound={totalFound}
                   />
                 </div>

@@ -49,11 +49,16 @@ export interface UseHotelSearchResult {
   sort: HotelSort;
   activeFilters: HotelFilterId[];
   totalFound: number;
+  richFilters: HotelRichFilters;
   currentPage: number;
   totalPages: number;
   setSort: (value: HotelSort) => void;
   setPage: (value: number) => void;
   toggleFilter: (filterId: HotelFilterId) => void;
+  setPriceRange: (range: HotelRichFilters["priceRange"]) => void;
+  toggleStarRating: (stars: number) => void;
+  setMinGuestRating: (rating?: number) => void;
+  toggleAmenity: (amenity: string) => void;
   clearFilters: () => void;
   retry: () => void;
 }
@@ -72,6 +77,7 @@ export function useHotelSearch(
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sort, setSortState] = useState<HotelSort>(query.sort || "best");
   const [activeFilters, setActiveFilters] = useState<HotelFilterId[]>([]);
+  const [richFilters, setRichFilters] = useState<HotelRichFilters>({});
 
   const routeMode = options.routeMode ?? "legacy";
   const routeMeta = options.routeMeta ?? null;
