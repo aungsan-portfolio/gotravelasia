@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
-import { HotelFilterToolbar } from "@/components/hotels/filters/HotelFilterToolbar";
+import { HotelFilterSidebar } from "@/components/hotels/results/HotelFilterSidebar";
+import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
@@ -100,13 +101,11 @@ export default function HotelSearchResultsPage() {
         </h1>
 
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <HotelFilterToolbar
-            activeFilters={activeFilters}
-            onToggleFilter={toggleFilter}
-            onClearFilters={clearFilters}
+          <HotelResultsToolbar
             sort={sort}
             onSortChange={setSort}
             totalFound={totalFound}
+            mappedCount={mappedHotels.length}
           />
         </div>
 
@@ -115,6 +114,15 @@ export default function HotelSearchResultsPage() {
             cityName={cityName}
             totalFound={totalFound}
             mappedCount={mappedHotels.length}
+          />
+        </div>
+
+        <div className="mt-4 xl:hidden">
+          <HotelFilterSidebar
+            activeFilters={activeFilters}
+            onToggleFilter={toggleFilter}
+            onClearFilters={clearFilters}
+            totalFound={totalFound}
           />
         </div>
 
@@ -168,7 +176,16 @@ export default function HotelSearchResultsPage() {
             )}
 
             {!shouldShowAgodaCtaFallback && (
-              <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+                <div className="hidden xl:block">
+                  <HotelFilterSidebar
+                    activeFilters={activeFilters}
+                    onToggleFilter={toggleFilter}
+                    onClearFilters={clearFilters}
+                    totalFound={totalFound}
+                  />
+                </div>
+
                 <div className="min-w-0">
                   <HotelResultsList
                     hotels={visibleHotels}

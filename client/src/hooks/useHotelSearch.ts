@@ -10,10 +10,10 @@ import type {
   HotelSearchResponse,
   HotelSort,
 } from "@shared/hotels/types";
-import { buildHotelSearchParams } from "@shared/hotels/searchParams";
 import { applyHotelFilters } from "@/lib/hotels/filterEngine";
 import { sortHotelsByRankingScore } from "@/lib/hotels/rankingScore";
 import { buildHotelRouteUrl, type HotelRouteMeta } from "@/lib/hotels/buildHotelRouteUrl";
+import { searchHotels } from "@/lib/hotels/searchClient";
 
 export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
   { id: "free_breakfast", label: "Free breakfast", description: "Breakfast included" },
@@ -86,16 +86,7 @@ export function useHotelSearch(
       setErrorMessage(null);
 
       try {
-        const queryParams = buildHotelSearchParams(query);
-        const response = await fetch(`/api/hotels/search?${queryParams.toString()}`, {
-          signal,
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to load hotel results.");
-        }
-
-        const payload = (await response.json()) as HotelSearchResponse;
+        const payload = await searchHotels(query, signal);
 
         if (requestId !== requestIdRef.current) {
           return;

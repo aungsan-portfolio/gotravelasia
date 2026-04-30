@@ -1,88 +1,36 @@
-import { useMemo, useState } from "react";
-import { useLocation } from "wouter";
 import { Search } from "lucide-react";
 
 import HotelSearchBox from "./HotelSearchBox";
 import SmartDatePicker from "./SmartDatePicker";
 import GuestSelector from "./GuestSelector";
 
-import type { GuestConfig } from "../../types/hotel-search.types";
-import type { HotelFrontDoorFormState } from "@/features/hotels/frontdoor/hotelFrontDoor.types";
-import { validateHotelFrontDoor } from "@/features/hotels/frontdoor/hotelFrontDoor.validation";
-import { buildHotelSearchParams } from "@shared/hotels/searchParams";
+import { useHotelSearchState } from "@/features/hotels/frontdoor/useHotelSearchState";
 
 export default function HotelSearchWidget() {
-  const [, setLocation] = useLocation();
-  const [params, setParams] = useState<HotelFrontDoorFormState>({
-    destinationLabel: "",
-    city: "",
-    cityName: "",
-    destinationSource: undefined,
-    checkIn: "",
-    checkOut: "",
-    guests: { rooms: 1, adults: 2, children: 0 },
-  });
-
-  const validation = useMemo(() => validateHotelFrontDoor(params), [params]);
-
-  const handleSearch = () => {
-    if (!validation.isValid) return;
-
-    const query = buildHotelSearchParams({
-      city: params.city,
-      cityName: params.cityName || params.destinationLabel,
-      checkIn: params.checkIn,
-      checkOut: params.checkOut,
-      adults: params.guests.adults,
-      rooms: params.guests.rooms,
-      page: 1,
-      sort: "best",
-    });
-
-    // NOTE:
-    // Router currently has /hotels and canonical /hotels/:destination/... routes,
-    // but not /hotels/search. Keep front-door search on the legacy /hotels route.
-    setLocation(`/hotels?${query.toString()}`);
-  };
-
-  const updateGuests = (guests: GuestConfig) => {
-    setParams(prev => ({ ...prev, guests }));
-  };
+  const {
+    params,
+    validation,
+    handleDestinationInputChange,
+    handleDestinationSelect,
+    handleDatesChange,
+    handleGuestsChange,
+    handleSearch,
+  } = useHotelSearchState();
 
   return (
     <div className="w-full space-y-3">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
         <HotelSearchBox
           value={params.destinationLabel}
-          onInputChange={value => {
-            setParams(prev => ({
-              ...prev,
-              destinationLabel: value,
-              city: "",
-              cityName: "",
-              destinationSource: undefined,
-            }));
-          }}
-          onSelect={({ suggestion }) =>
-            setParams(prev => ({
-              ...prev,
-              destinationLabel: suggestion.displayName,
-              city: suggestion.locationId,
-              cityName: suggestion.displayName,
-              destinationSource: /^\d+$/.test(suggestion.locationId)
-                ? "agoda"
-                : "local",
-            }))
-          }
+          onInputChange={handleDestinationInputChange}
+          onSelect={handleDestinationSelect}
         />
         <SmartDatePicker
           checkIn={params.checkIn}
           checkOut={params.checkOut}
-          onChange={(checkIn, checkOut) =>
-            setParams(prev => ({ ...prev, checkIn, checkOut }))
-          }
+          onChange={handleDatesChange}
         />
-        <GuestSelector value={params.guests} onChange={updateGuests} />
+        <GuestSelector value={params.guests} onChange={handleGuestsChange} />
         <button
           type="button"
           data-testid="hotel-search-submit"

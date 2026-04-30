@@ -73,10 +73,7 @@ function HotelResultsPanelComponent({
     <>
       <HotelResultsToolbar
         sort={sort}
-        activeFilters={activeFilters}
         onSortChange={onSortChange}
-        onToggleFilter={onToggleFilter}
-        onClearFilters={onClearFilters}
         totalFound={totalFound}
         mappedCount={mappedHotels.length}
       />

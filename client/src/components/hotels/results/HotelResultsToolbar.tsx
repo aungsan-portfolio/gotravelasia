@@ -1,29 +1,19 @@
 import { memo } from "react";
 import { ListFilter, Map, SlidersHorizontal } from "lucide-react";
 
-import {
-  HOTEL_FILTER_OPTIONS,
-  HOTEL_SORT_OPTIONS,
-} from "@/hooks/useHotelSearch";
-import type { HotelFilterId } from "@/types/hotels";
+import { HOTEL_SORT_OPTIONS } from "@/hooks/useHotelSearch";
 import type { HotelSort } from "@shared/hotels/types";
 
 interface HotelResultsToolbarProps {
   sort: HotelSort;
-  activeFilters: HotelFilterId[];
   onSortChange: (value: HotelSort) => void;
-  onToggleFilter: (filterId: HotelFilterId) => void;
-  onClearFilters: () => void;
   totalFound: number;
   mappedCount?: number;
 }
 
 function HotelResultsToolbarComponent({
   sort,
-  activeFilters,
   onSortChange,
-  onToggleFilter,
-  onClearFilters,
   totalFound,
   mappedCount = 0,
 }: HotelResultsToolbarProps) {
@@ -39,9 +29,7 @@ function HotelResultsToolbarComponent({
           <h1 className="text-xl font-bold tracking-tight text-indigo-600">
             GOTRAVELASIA
           </h1>
-          <p className="text-xs text-slate-500">
-            Hotels results toolbar
-          </p>
+          <p className="text-xs text-slate-500">Hotels results toolbar</p>
         </div>
       </div>
 
@@ -78,40 +66,6 @@ function HotelResultsToolbarComponent({
             ))}
           </select>
         </label>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {HOTEL_FILTER_OPTIONS.map((filter) => {
-          const isActive = activeFilters.includes(filter.id);
-
-          return (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={() => onToggleFilter(filter.id)}
-              title={filter.description}
-              aria-pressed={isActive}
-              className={[
-                "rounded-full border px-3 py-1.5 text-sm transition",
-                isActive
-                  ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              {filter.label}
-            </button>
-          );
-        })}
-
-        {activeFilters.length > 0 && (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="rounded-full border border-transparent px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50"
-          >
-            Clear all
-          </button>
-        )}
       </div>
     </section>
   );

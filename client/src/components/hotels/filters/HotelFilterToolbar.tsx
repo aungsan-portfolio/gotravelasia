@@ -19,7 +19,14 @@ interface HotelFilterToolbarProps {
  * for all new work. This wrapper stays in place to avoid breaking older imports.
  */
 function HotelFilterToolbarComponent(props: HotelFilterToolbarProps) {
-  return <HotelResultsToolbar {...props} />;
+  return (
+    <HotelResultsToolbar
+      sort={props.sort}
+      onSortChange={props.onSortChange}
+      totalFound={props.totalFound}
+      mappedCount={props.mappedCount}
+    />
+  );
 }
 
 export const HotelFilterToolbar = memo(HotelFilterToolbarComponent);
