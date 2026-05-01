@@ -1,7 +1,10 @@
 import type { HotelResult } from "@shared/hotels/types";
 import { buildOutboundDealUrl } from "@/lib/hotels/buildOutboundDealUrl";
 import { buildHotelOutboundRedirectUrl } from "@/lib/hotels/buildHotelOutboundRedirectUrl";
-import { trackHotelBookClick } from "@/lib/hotels/tracking";
+import {
+  trackHotelBookClick,
+  trackHotelOutboundRedirectClick,
+} from "@/lib/hotels/tracking";
 
 interface HotelDetailBookingCardProps {
   hotel: HotelResult;
@@ -44,7 +47,7 @@ export function HotelDetailBookingCard({
         label: provider.label,
         url: buildHotelOutboundRedirectUrl({
           provider: provider.key,
-          targetUrl,
+          targetUrl: targetUrl ?? undefined,
           hotelId: hotel.hotelId,
           city,
           checkIn,
@@ -78,6 +81,17 @@ export function HotelDetailBookingCard({
                   sort,
                   resultPosition,
                   provider: provider.key,
+                  source: "hotel_detail_booking_card",
+                });
+                trackHotelOutboundRedirectClick({
+                  hotelId: hotel.hotelId,
+                  city,
+                  checkIn,
+                  checkOut,
+                  sort,
+                  resultPosition,
+                  provider: provider.key,
+                  source: "hotel_detail_booking_card",
                 });
               }}
               target="_blank"

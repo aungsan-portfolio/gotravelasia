@@ -10,10 +10,15 @@ import type {
   HotelSearchResponse,
   HotelSort,
 } from "@shared/hotels/types";
-import { applyHotelFilters } from "@/lib/hotels/filterEngine";
+import { applyHotelFilters, type HotelRichFilters } from "@/lib/hotels/filterEngine";
 import { sortHotelsByRankingScore } from "@/lib/hotels/rankingScore";
 import { buildHotelRouteUrl, type HotelRouteMeta } from "@/lib/hotels/buildHotelRouteUrl";
 import { searchHotels } from "@/lib/hotels/searchClient";
+import {
+  trackHotelFilterApply,
+  trackHotelFilterClear,
+  trackHotelSortChange,
+} from "@/lib/hotels/tracking";
 
 export const HOTEL_FILTER_OPTIONS: HotelFilterOption[] = [
   { id: "free_breakfast", label: "Free breakfast", description: "Breakfast included" },
@@ -168,19 +173,111 @@ export function useHotelSearch(
       default:
         return filteredHotels;
     }
-  }, [allHotels, activeFilters, sort]);
+  }, [allHotels, activeFilters, richFilters, sort]);
 
   const toggleFilter = useCallback((filterId: HotelFilterId) => {
+    trackHotelFilterApply({
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      filterId,
+      filterType: "quick",
+      source: "hotel_results",
+    });
+
     setActiveFilters((current) =>
       current.includes(filterId)
         ? current.filter((item) => item !== filterId)
         : [...current, filterId],
     );
-  }, []);
+  }, [query.checkIn, query.checkOut, query.city]);
 
   const clearFilters = useCallback(() => {
+    trackHotelFilterClear({
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      source: "hotel_results",
+    });
     setActiveFilters([]);
-  }, []);
+    setRichFilters({});
+  }, [query.checkIn, query.checkOut, query.city]);
+
+  const setPriceRange = useCallback(
+    (range: HotelRichFilters["priceRange"]) => {
+      trackHotelFilterApply({
+        city: query.city,
+        checkIn: query.checkIn,
+        checkOut: query.checkOut,
+        filterType: "price_range",
+        filters: { priceRange: range },
+        source: "hotel_results",
+      });
+      setRichFilters((current) => ({ ...current, priceRange: range }));
+    },
+    [query.checkIn, query.checkOut, query.city],
+  );
+
+  const toggleStarRating = useCallback(
+    (stars: number) => {
+      trackHotelFilterApply({
+        city: query.city,
+        checkIn: query.checkIn,
+        checkOut: query.checkOut,
+        filterType: "star_rating",
+        filterValue: stars,
+        source: "hotel_results",
+      });
+      setRichFilters((current) => {
+        const currentStars = current.starRatings ?? [];
+        return {
+          ...current,
+          starRatings: currentStars.includes(stars)
+            ? currentStars.filter((value) => value !== stars)
+            : [...currentStars, stars],
+        };
+      });
+    },
+    [query.checkIn, query.checkOut, query.city],
+  );
+
+  const setMinGuestRating = useCallback(
+    (rating?: number) => {
+      trackHotelFilterApply({
+        city: query.city,
+        checkIn: query.checkIn,
+        checkOut: query.checkOut,
+        filterType: "guest_rating",
+        filterValue: rating ?? "clear",
+        source: "hotel_results",
+      });
+      setRichFilters((current) => ({ ...current, minGuestRating: rating }));
+    },
+    [query.checkIn, query.checkOut, query.city],
+  );
+
+  const toggleAmenity = useCallback(
+    (amenity: string) => {
+      trackHotelFilterApply({
+        city: query.city,
+        checkIn: query.checkIn,
+        checkOut: query.checkOut,
+        filterType: "amenity",
+        filterValue: amenity,
+        source: "hotel_results",
+      });
+      setRichFilters((current) => {
+        const currentAmenities = current.amenities ?? [];
+        return {
+          ...current,
+          amenities: currentAmenities.includes(amenity)
+            ? currentAmenities.filter((value) => value !== amenity)
+            : [...currentAmenities, amenity],
+        };
+      });
+    },
+    [query.checkIn, query.checkOut, query.city],
+  );
 
   const retry = useCallback(() => {
     void loadHotels();
@@ -189,6 +286,13 @@ export function useHotelSearch(
   const setSort = useCallback(
     (newSort: HotelSort) => {
       setSortState(newSort);
+      trackHotelSortChange({
+        city: query.city,
+        checkIn: query.checkIn,
+        checkOut: query.checkOut,
+        sort: newSort,
+        source: "hotel_results",
+      });
       setLocation(
         buildHotelRouteUrl({
           query: { ...query, page: 1, sort: newSort },
@@ -225,11 +329,16 @@ export function useHotelSearch(
     sort,
     activeFilters,
     totalFound: visibleHotels.length,
+    richFilters,
     currentPage: data?.meta.page ?? query.page,
     totalPages: data?.meta.totalPages ?? 1,
     setSort,
     setPage,
     toggleFilter,
+    setPriceRange,
+    toggleStarRating,
+    setMinGuestRating,
+    toggleAmenity,
     clearFilters,
     retry,
   };

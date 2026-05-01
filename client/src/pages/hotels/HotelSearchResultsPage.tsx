@@ -8,7 +8,12 @@ import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResults
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
 import { buildHotelDetailUrl } from "@/lib/hotels/buildHotelDetailUrl";
-import { trackHotelSearchView, trackHotelSelect } from "@/lib/hotels/tracking";
+import {
+  trackHotelNoResults,
+  trackHotelSearchError,
+  trackHotelSearchView,
+  trackHotelSelect,
+} from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 import { ExternalLink, SearchX } from "lucide-react";
@@ -96,6 +101,41 @@ export default function HotelSearchResultsPage() {
     query.city,
     query.checkIn,
     query.checkOut,
+  ]);
+
+  useEffect(() => {
+    if (isLoading || !errorMessage) {
+      return;
+    }
+
+    trackHotelSearchError({
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      errorMessage,
+      source: "hotel_results",
+    });
+  }, [errorMessage, isLoading, query.checkIn, query.checkOut, query.city]);
+
+  useEffect(() => {
+    if (isLoading || errorMessage || visibleHotels.length !== 0) {
+      return;
+    }
+
+    trackHotelNoResults({
+      city: query.city,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      resultCount: 0,
+      source: "hotel_results",
+    });
+  }, [
+    errorMessage,
+    isLoading,
+    query.checkIn,
+    query.checkOut,
+    query.city,
+    visibleHotels.length,
   ]);
 
   return (

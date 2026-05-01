@@ -4,6 +4,7 @@ import {
   buildHotelSearchParams,
   defaultHotelDates,
 } from "@shared/hotels/searchParams";
+import { trackHotelDealClick } from "@/lib/hotels/tracking";
 
 import { HotelDealCard } from "./HotelDealCard";
 import { HOTEL_DEAL_SEEDS, type HotelDealSeed } from "./hotelDeals.seed";
@@ -16,6 +17,14 @@ export function HotelDealsCarousel() {
   const [, setLocation] = useLocation();
 
   const handleDealClick = (deal: HotelDealSeed) => {
+    trackHotelDealClick({
+      dealId: deal.id,
+      dealTitle: deal.title,
+      city: deal.city,
+      cityName: deal.cityName,
+      source: "hotel_deals_carousel",
+    });
+
     const dates = defaultHotelDates();
     const query = buildHotelSearchParams({
       city: deal.city,

@@ -4,6 +4,10 @@ import { useLocation } from "wouter";
 import type { AutocompleteSuggestion, GuestConfig } from "@/types/hotel-search.types";
 import type { HotelFrontDoorFormState } from "@/features/hotels/frontdoor/hotelFrontDoor.types";
 import { validateHotelFrontDoor } from "@/features/hotels/frontdoor/hotelFrontDoor.validation";
+import {
+  trackHotelAutocompleteSelect,
+  trackHotelSearchSubmit,
+} from "@/lib/hotels/tracking";
 import { buildHotelSearchParams } from "@shared/hotels/searchParams";
 
 interface DestinationSelectPayload {
@@ -41,6 +45,13 @@ export function useHotelSearchState() {
   };
 
   const handleDestinationSelect = ({ suggestion }: DestinationSelectPayload) => {
+    trackHotelAutocompleteSelect({
+      destinationLabel: suggestion.displayName,
+      city: suggestion.locationId,
+      cityName: suggestion.displayName,
+      source: "hotel_frontdoor",
+    });
+
     setParams(prev => ({
       ...prev,
       destinationLabel: suggestion.displayName,
@@ -60,6 +71,19 @@ export function useHotelSearchState() {
 
   const handleSearch = () => {
     if (!validation.isValid) return;
+
+    trackHotelSearchSubmit({
+      city: params.city,
+      cityName: params.cityName || params.destinationLabel,
+      destinationLabel: params.destinationLabel,
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+      adults: params.guests.adults,
+      rooms: params.guests.rooms,
+      children: params.guests.children,
+      sort: "best",
+      source: "hotel_frontdoor",
+    });
 
     const query = buildHotelSearchParams({
       city: params.city,
