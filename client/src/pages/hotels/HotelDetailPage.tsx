@@ -28,7 +28,7 @@ export default function HotelDetailPage() {
   });
 
   const selectedHotelId = match ? params?.hotelId : undefined;
-...
+
   const primaryHotel = useMemo(() => {
     if (!selectedHotelId) {
       return null;

@@ -156,3 +156,10 @@ export interface HotelSearchResponse {
   affiliateLinks: HotelOutboundLinks;
   meta: HotelSearchMeta;
 }
+
+export interface HotelDetailResponse {
+  hotel: HotelResult | null;
+  city: HotelSearchCity;
+  affiliateLinks: HotelOutboundLinks;
+  meta?: HotelSearchMeta & { hotelId?: string };
+}

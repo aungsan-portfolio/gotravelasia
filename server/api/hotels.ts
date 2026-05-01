@@ -8,6 +8,7 @@ import {
 import { findAgodaLtCityIdByName } from "../../shared/hotels/agodaLtCityMap.js";
 import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams.js";
 import type {
+  HotelDetailResponse,
   HotelDiagnosticsReason,
   HotelCoordinatesConfidence,
   HotelSearchDiagnostics,
@@ -16,6 +17,7 @@ import type {
   HotelResult,
   HotelSearchCity,
   HotelSearchResponse,
+  HotelSearchParams,
   HotelSort,
 } from "../../shared/hotels/types.js";
 
@@ -1166,11 +1168,11 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
   return sortHotels(withLinks as HotelResult[], sort);
 }
 
-export async function searchHotels(req: any, res: any) {
-  const normalized = normalizeHotelSearchParams(req.query);
-  const rawCity = typeof req.query?.city === "string" ? req.query.city.trim() : "";
+async function executeHotelSearch(reqQuery: Record<string, unknown>) {
+  const normalized = normalizeHotelSearchParams(reqQuery);
+  const rawCity = typeof reqQuery?.city === "string" ? reqQuery.city.trim() : "";
   const rawCityName =
-    typeof req.query?.cityName === "string" ? req.query.cityName.trim() : "";
+    typeof reqQuery?.cityName === "string" ? reqQuery.cityName.trim() : "";
   const hasRawCity = rawCity.length > 0;
   const hasRawCityName = rawCityName.length > 0;
 
@@ -1195,13 +1197,9 @@ export async function searchHotels(req: any, res: any) {
   } else if (isNumericCityId) {
     const agodaCityId = parseInt(normalized.city, 10);
     if (!Number.isFinite(agodaCityId)) {
-      return res
-        .status(400)
-        .json({ error: `Invalid Agoda city id: ${normalized.city}` });
+      throw new Error(`Invalid Agoda city id: ${normalized.city}`);
     }
-
-    const fallbackName =
-      normalized.cityName?.trim() || `City ${normalized.city}`;
+    const fallbackName = normalized.cityName?.trim() || `City ${normalized.city}`;
     city = {
       slug: normalized.city,
       name: fallbackName,
@@ -1223,112 +1221,173 @@ export async function searchHotels(req: any, res: any) {
           hasHotels: true,
         } as SearchCity;
       } else {
-        return res
-          .status(404)
-          .json({ error: `City not found: ${normalized.city}` });
+        throw new Error(`City not found: ${normalized.city}`);
       }
     } else {
-      if (!localCity.hasHotels)
-        return res
-          .status(400)
-          .json({ error: `No hotels available for ${localCity.name}` });
-
+      if (!localCity.hasHotels) {
+        throw new Error(`No hotels available for ${localCity.name}`);
+      }
       city = localCity;
     }
   }
 
-  try {
-    const affiliateLinks = buildAffiliateLinks(
-      (city as any).name,
-      (city as any).bookingName,
-      (city as any).agodaCityId,
-      normalized.checkIn,
-      normalized.checkOut,
-      normalized.adults,
-      normalized.rooms
-    );
+  const affiliateLinks = buildAffiliateLinks(
+    (city as any).name,
+    (city as any).bookingName,
+    (city as any).agodaCityId,
+    normalized.checkIn,
+    normalized.checkOut,
+    normalized.adults,
+    normalized.rooms
+  );
 
-    const ltCityCandidates = buildAgodaLtCityCandidates({
-      city: isCityNameOnlySearch ? null : (city as City),
-      queryCity: normalized.city,
-      queryCityName: normalized.cityName,
-      country: (city as any).country,
-    });
+  const ltCityCandidates = buildAgodaLtCityCandidates({
+    city: isCityNameOnlySearch ? null : (city as City),
+    queryCity: normalized.city,
+    queryCityName: normalized.cityName,
+    country: (city as any).country,
+  });
 
-    const [bookingLink, result] = await Promise.all([
-      awinDeepLink(
-        affiliateLinks.booking ??
-          bookingUrl(
-            (city as any).bookingName,
-            normalized.checkIn,
-            normalized.checkOut,
-            normalized.adults,
-            normalized.rooms
-          )
-      ),
-      fetchAgodaHotelsWithCityCandidates({
-        agodaCityId: (city as any).agodaCityId,
-        ltCityCandidates,
-        checkIn: normalized.checkIn,
-        checkOut: normalized.checkOut,
-        adults: normalized.adults,
-        rooms: normalized.rooms,
-        page: normalized.page,
-        sort: normalized.sort,
-      }),
-    ]);
-
-    const normalizedHotels = sortHotels(
-      result.hotels.map((hotel: any, index: number) =>
-        normalizeHotel(
-          hotel,
-          city,
+  const [bookingLink, result] = await Promise.all([
+    awinDeepLink(
+      affiliateLinks.booking ??
+        bookingUrl(
+          (city as any).bookingName,
           normalized.checkIn,
           normalized.checkOut,
           normalized.adults,
-          normalized.rooms,
-          affiliateLinks,
-          index,
-          normalized.page
+          normalized.rooms
         )
-      ),
-      normalized.sort
-    );
-
-    const exposeDiagnostics = shouldExposeHotelDiagnostics();
-    const responseMeta: HotelSearchResponse["meta"] = {
-      source: result.source,
+    ),
+    fetchAgodaHotelsWithCityCandidates({
+      agodaCityId: (city as any).agodaCityId,
+      ltCityCandidates,
       checkIn: normalized.checkIn,
       checkOut: normalized.checkOut,
       adults: normalized.adults,
       rooms: normalized.rooms,
       page: normalized.page,
       sort: normalized.sort,
-      pageSize: PAGE_SIZE,
-      totalCount: result.totalCount ?? normalizedHotels.length,
-      totalPages: Math.max(
-        1,
-        Math.ceil((result.totalCount ?? normalizedHotels.length) / PAGE_SIZE)
-      ),
-      warning: (result as any).warning,
-      warnings: result.warnings,
-    };
+    }),
+  ]);
 
-    if (exposeDiagnostics) {
-      responseMeta.diagnostics = (result as any).diagnostics;
-    }
+  const hotels = sortHotels(
+    result.hotels.map((hotel: any, index: number) =>
+      normalizeHotel(
+        hotel,
+        city,
+        normalized.checkIn,
+        normalized.checkOut,
+        normalized.adults,
+        normalized.rooms,
+        affiliateLinks,
+        index,
+        normalized.page
+      )
+    ),
+    normalized.sort
+  );
 
-    const response: HotelSearchResponse = {
-      city: city as HotelSearchCity,
-      hotels: normalizedHotels,
-      affiliateLinks: { ...affiliateLinks, booking: bookingLink },
-      meta: responseMeta,
-    };
+  return {
+    normalized,
+    city,
+    hotels,
+    result,
+    affiliateLinks: { ...affiliateLinks, booking: bookingLink },
+  };
+}
 
+function buildHotelSearchResponsePayload(params: {
+  city: SearchCity;
+  hotels: HotelResult[];
+  result: Awaited<ReturnType<typeof fetchAgodaHotelsWithCityCandidates>>;
+  affiliateLinks: HotelOutboundLinks;
+  normalized: ReturnType<typeof normalizeHotelSearchParams>;
+}): HotelSearchResponse {
+  const exposeDiagnostics = shouldExposeHotelDiagnostics();
+  const responseMeta: HotelSearchResponse["meta"] = {
+    source: params.result.source,
+    checkIn: params.normalized.checkIn,
+    checkOut: params.normalized.checkOut,
+    adults: params.normalized.adults,
+    rooms: params.normalized.rooms,
+    page: params.normalized.page,
+    sort: params.normalized.sort,
+    pageSize: PAGE_SIZE,
+    totalCount: params.result.totalCount ?? params.hotels.length,
+    totalPages: Math.max(
+      1,
+      Math.ceil((params.result.totalCount ?? params.hotels.length) / PAGE_SIZE)
+    ),
+    warning: (params.result as any).warning,
+    warnings: params.result.warnings,
+  };
+
+  if (exposeDiagnostics) {
+    responseMeta.diagnostics = (params.result as any).diagnostics;
+  }
+
+  return {
+    city: params.city as HotelSearchCity,
+    hotels: params.hotels,
+    affiliateLinks: params.affiliateLinks,
+    meta: responseMeta,
+  };
+}
+
+export async function searchHotels(req: any, res: any) {
+  try {
+    const search = await executeHotelSearch(req.query);
+    const response = buildHotelSearchResponsePayload(search);
     return res.json(response);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[Hotels] Search failed:", message);
+    if (message.startsWith("City not found:")) {
+      return res.status(404).json({ error: message });
+    }
+    if (
+      message.startsWith("No hotels available for") ||
+      message.startsWith("Invalid Agoda city id:")
+    ) {
+      return res.status(400).json({ error: message });
+    }
     return res.status(500).json({ error: "Search failed" });
+  }
+}
+
+export async function getHotelDetail(req: Request, res: Response) {
+  const hotelId = String(req.params.hotelId ?? "").trim();
+  if (!hotelId) {
+    return res.status(400).json({ error: "Missing hotelId path parameter." });
+  }
+
+  try {
+    const search = await executeHotelSearch(req.query as Record<string, unknown>);
+    const searchResponse = buildHotelSearchResponsePayload(search);
+    const hotel = searchResponse.hotels.find((item) => item.hotelId === hotelId) ?? null;
+    const response: HotelDetailResponse = {
+      city: searchResponse.city,
+      hotel,
+      affiliateLinks: searchResponse.affiliateLinks,
+      meta: {
+        ...searchResponse.meta,
+        hotelId,
+      },
+    };
+    return res.json(response);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Hotels] Hotel detail lookup failed:", message);
+    if (message.startsWith("City not found:")) {
+      return res.status(404).json({ error: message });
+    }
+    if (
+      message.startsWith("No hotels available for") ||
+      message.startsWith("Invalid Agoda city id:")
+    ) {
+      return res.status(400).json({ error: message });
+    }
+    return res.status(500).json({ error: "Hotel detail lookup failed" });
   }
 }

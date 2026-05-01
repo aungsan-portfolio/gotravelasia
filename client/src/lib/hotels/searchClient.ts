@@ -1,4 +1,5 @@
 import type {
+  HotelDetailResponse,
   HotelResult,
   HotelSearchParams,
   HotelSearchResponse,
@@ -34,6 +35,29 @@ export async function findHotelInSearchResults(
   hotelId: string,
   signal?: AbortSignal,
 ): Promise<HotelResult | null> {
-  const payload = await searchHotels(query, signal);
-  return payload.hotels.find((hotel) => hotel.hotelId === hotelId) ?? null;
+  const payload = await getHotelDetail(query, hotelId, signal);
+  return payload.hotel;
+}
+
+/**
+ * Returns one hotel by id using the server-side normalized search results.
+ */
+export async function getHotelDetail(
+  query: HotelSearchParams,
+  hotelId: string,
+  signal?: AbortSignal,
+): Promise<HotelDetailResponse> {
+  const queryParams = buildHotelSearchParams(query);
+  const encodedHotelId = encodeURIComponent(hotelId);
+
+  const response = await fetch(
+    `/api/hotels/detail/${encodedHotelId}?${queryParams.toString()}`,
+    { signal },
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load hotel details.");
+  }
+
+  return response.json() as Promise<HotelDetailResponse>;
 }
