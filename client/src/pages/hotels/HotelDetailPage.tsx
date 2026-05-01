@@ -5,6 +5,7 @@ import { HotelDetailAmenities } from "@/components/hotels/detail/HotelDetailAmen
 import { HotelDetailBookingCard } from "@/components/hotels/detail/HotelDetailBookingCard";
 import { HotelDetailHeader } from "@/components/hotels/detail/HotelDetailHeader";
 import { HotelDetailPriceBox } from "@/components/hotels/detail/HotelDetailPriceBox";
+import { useHotelDetailFallback } from "@/hooks/useHotelDetailFallback";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
 import { buildHotelRouteUrl } from "@/lib/hotels/buildHotelRouteUrl";
@@ -26,19 +27,39 @@ export default function HotelDetailPage() {
     routeMeta,
   });
 
-  const hotel = useMemo(() => {
-    if (!match || !params?.hotelId) {
+  const selectedHotelId = match ? params?.hotelId : undefined;
+...
+  const primaryHotel = useMemo(() => {
+    if (!selectedHotelId) {
       return null;
     }
 
-    return allHotels.find((item) => item.hotelId === params.hotelId) ?? null;
-  }, [allHotels, match, params?.hotelId]);
+    return allHotels.find((item) => item.hotelId === selectedHotelId) ?? null;
+  }, [allHotels, selectedHotelId]);
+
+  const shouldLoadFallback =
+    Boolean(selectedHotelId) && !isLoading && !errorMessage && !primaryHotel;
+
+  const {
+    fallbackHotel,
+    isFallbackLoading,
+    fallbackErrorMessage,
+    retryFallback,
+  } = useHotelDetailFallback(selectedHotelId, query, shouldLoadFallback);
+
+  const hotel = primaryHotel ?? fallbackHotel;
 
   const cityName = getCityName(query.city);
   const hotelResultPosition = hotel?.rankingPosition;
 
   useEffect(() => {
-    if (isLoading || errorMessage || !hotel) {
+    if (
+      isLoading ||
+      isFallbackLoading ||
+      errorMessage ||
+      fallbackErrorMessage ||
+      !hotel
+    ) {
       return;
     }
 
@@ -50,7 +71,17 @@ export default function HotelDetailPage() {
       sort: query.sort,
       resultPosition: hotel.rankingPosition,
     });
-  }, [errorMessage, hotel, isLoading, query.checkIn, query.checkOut, query.city, query.sort]);
+  }, [
+    errorMessage,
+    fallbackErrorMessage,
+    hotel,
+    isFallbackLoading,
+    isLoading,
+    query.checkIn,
+    query.checkOut,
+    query.city,
+    query.sort,
+  ]);
 
   if (!match || !params?.hotelId) {
     return (
@@ -102,15 +133,55 @@ export default function HotelDetailPage() {
           </div>
         )}
 
-        {!isLoading && !errorMessage && !hotel && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
-            <p className="font-semibold">We couldn&apos;t find this hotel in the latest results.</p>
-            <p className="mt-1 text-sm">Try returning to results and selecting the hotel again.</p>
-            <a href={backToResultsUrl} className="mt-3 inline-block text-sm font-semibold text-indigo-700 hover:text-indigo-900">
-              Back to results
-            </a>
+        {!isLoading && !errorMessage && isFallbackLoading && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
+            Looking up this hotel again…
           </div>
         )}
+
+        {!isLoading &&
+          !errorMessage &&
+          !isFallbackLoading &&
+          !!fallbackErrorMessage && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+              <p className="font-semibold">Couldn&apos;t reload this hotel.</p>
+              <p className="mt-1 text-sm">{fallbackErrorMessage}</p>
+              <button
+                type="button"
+                onClick={retryFallback}
+                className="mt-3 rounded-md bg-amber-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-800"
+              >
+                Try again
+              </button>
+              <a
+                href={backToResultsUrl}
+                className="mt-3 block text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+              >
+                Back to results
+              </a>
+            </div>
+          )}
+
+        {!isLoading &&
+          !errorMessage &&
+          !isFallbackLoading &&
+          !fallbackErrorMessage &&
+          !hotel && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+              <p className="font-semibold">
+                We couldn&apos;t find this hotel in the latest results.
+              </p>
+              <p className="mt-1 text-sm">
+                Try returning to results and selecting the hotel again.
+              </p>
+              <a
+                href={backToResultsUrl}
+                className="mt-3 inline-block text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+              >
+                Back to results
+              </a>
+            </div>
+          )}
 
         {!isLoading && !errorMessage && hotel && (
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
