@@ -1,4 +1,5 @@
 import HotelSearchWidget from '@/components/hotels/HotelSearchWidget';
+import { HotelDealsCarousel } from '@/components/hotels/deals/HotelDealsCarousel';
 
 export default function HotelSearchPreview() {
   return (
@@ -9,6 +10,8 @@ export default function HotelSearchPreview() {
       </div>
       
       <HotelSearchWidget />
+
+      <HotelDealsCarousel />
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-6 border-t border-white/5 pt-6">
         <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter">Verified Providers</span>
