@@ -1,5 +1,6 @@
 import type { HotelResult } from "@shared/hotels/types";
 import { buildOutboundDealUrl } from "@/lib/hotels/buildOutboundDealUrl";
+import { buildHotelOutboundRedirectUrl } from "@/lib/hotels/buildHotelOutboundRedirectUrl";
 import { trackHotelBookClick } from "@/lib/hotels/tracking";
 
 interface HotelDetailBookingCardProps {
@@ -20,77 +21,40 @@ export function HotelDetailBookingCard({
   resultPosition,
 }: HotelDetailBookingCardProps) {
   const providers = [
-    {
-      key: "agoda" as const,
-      label: "Agoda",
-      url: buildOutboundDealUrl({
-        baseUrl: hotel.outboundLinks?.agoda,
-        provider: "agoda",
+    { key: "agoda" as const, label: "Agoda", baseUrl: hotel.outboundLinks?.agoda },
+    { key: "booking" as const, label: "Booking.com", baseUrl: hotel.outboundLinks?.booking },
+    { key: "trip" as const, label: "Trip.com", baseUrl: hotel.outboundLinks?.trip },
+    { key: "expedia" as const, label: "Expedia", baseUrl: hotel.outboundLinks?.expedia },
+    { key: "klook" as const, label: "Klook", baseUrl: hotel.outboundLinks?.klook },
+  ]
+    .map((provider) => {
+      const targetUrl = buildOutboundDealUrl({
+        baseUrl: provider.baseUrl ?? undefined,
+        provider: provider.key,
         hotelId: hotel.hotelId,
         city,
         checkIn,
         checkOut,
         sort,
         resultPosition,
-      }),
-    },
-    {
-      key: "booking" as const,
-      label: "Booking.com",
-      url: buildOutboundDealUrl({
-        baseUrl: hotel.outboundLinks?.booking,
-        provider: "booking",
-        hotelId: hotel.hotelId,
-        city,
-        checkIn,
-        checkOut,
-        sort,
-        resultPosition,
-      }),
-    },
-    {
-      key: "trip" as const,
-      label: "Trip.com",
-      url: buildOutboundDealUrl({
-        baseUrl: hotel.outboundLinks?.trip,
-        provider: "trip",
-        hotelId: hotel.hotelId,
-        city,
-        checkIn,
-        checkOut,
-        sort,
-        resultPosition,
-      }),
-    },
-    {
-      key: "expedia" as const,
-      label: "Expedia",
-      url: buildOutboundDealUrl({
-        baseUrl: hotel.outboundLinks?.expedia,
-        provider: "expedia",
-        hotelId: hotel.hotelId,
-        city,
-        checkIn,
-        checkOut,
-        sort,
-        resultPosition,
-      }),
-    },
-    {
-      key: "klook" as const,
-      label: "Klook",
-      url: buildOutboundDealUrl({
-        baseUrl: hotel.outboundLinks?.klook,
-        provider: "klook",
-        hotelId: hotel.hotelId,
-        city,
-        checkIn,
-        checkOut,
-        sort,
-        resultPosition,
-      }),
-    },
-  ].filter((provider) => Boolean(provider.url));
+      });
+
+      return {
+        key: provider.key,
+        label: provider.label,
+        url: buildHotelOutboundRedirectUrl({
+          provider: provider.key,
+          targetUrl,
+          hotelId: hotel.hotelId,
+          city,
+          checkIn,
+          checkOut,
+          sort,
+          resultPosition,
+        }),
+      };
+    })
+    .filter((provider) => Boolean(provider.url));
 
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

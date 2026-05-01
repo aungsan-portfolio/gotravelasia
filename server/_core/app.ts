@@ -38,6 +38,7 @@ import calendarPricesRouter from "../routes/calendarPrices.js";
 import flightsSearchRouter from "../routes/flightsSearch.js";
 import priceAlertsRouter from "../routes/priceAlerts.js";
 import cronRouter from "../routes/cron.js";
+import hotelOutboundRouter from "../routes/hotelOutbound.js";
 console.log("[APP] All routes imported.\n");
 
 // ─── App Setup ─────────────────────────────────────────────────
@@ -60,6 +61,8 @@ app.use(sitemapRouter);
 
 // CSP headers for main pages
 app.use(["/", "/transport", "/hotels", "/flights"], cspOpen);
+
+app.use(hotelOutboundRouter);
 
 // ── API routes ────────────────────────────────────────────────
 app.use("/api/destination-landing", destinationRouter);
