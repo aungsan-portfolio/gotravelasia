@@ -5,6 +5,10 @@ import {
   trackHotelBookClick,
   trackHotelOutboundRedirectClick,
 } from "@/lib/hotels/tracking";
+import {
+  ProviderOfferList,
+  hasRenderableProviderOffers,
+} from "@/components/hotels/detail/ProviderOfferList";
 
 interface HotelDetailBookingCardProps {
   hotel: HotelResult;
@@ -23,7 +27,9 @@ export function HotelDetailBookingCard({
   sort,
   resultPosition,
 }: HotelDetailBookingCardProps) {
-  const providers = [
+  const hasOfferList = hasRenderableProviderOffers(hotel.offers);
+
+  const legacyProviders = [
     { key: "agoda" as const, label: "Agoda", baseUrl: hotel.outboundLinks?.agoda },
     { key: "booking" as const, label: "Booking.com", baseUrl: hotel.outboundLinks?.booking },
     { key: "trip" as const, label: "Trip.com", baseUrl: hotel.outboundLinks?.trip },
@@ -66,9 +72,21 @@ export function HotelDetailBookingCard({
         Compare partner options and complete your booking on the provider site.
       </p>
 
-      {providers.length > 0 ? (
+      {hasOfferList && (
+        <ProviderOfferList
+          hotel={hotel}
+          offers={hotel.offers}
+          city={city}
+          checkIn={checkIn}
+          checkOut={checkOut}
+          sort={sort}
+          resultPosition={resultPosition}
+        />
+      )}
+
+      {!hasOfferList && (legacyProviders.length > 0 ? (
         <div className="mt-4 space-y-2">
-          {providers.map((provider, index) => (
+          {legacyProviders.map((provider, index) => (
             <a
               key={provider.key}
               href={provider.url!}
@@ -116,7 +134,7 @@ export function HotelDetailBookingCard({
         >
           Partner links unavailable
         </button>
-      )}
+      ))}
     </aside>
   );
 }
