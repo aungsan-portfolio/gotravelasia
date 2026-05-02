@@ -1,291 +1,222 @@
 import type {
   CanonicalHotel,
-  HotelCoordinates,
   HotelIdentityMatch,
-  HotelIdentityMatchReason,
   HotelOffer,
   HotelOfferProvider,
   HotelResult,
   ProviderHotel,
 } from "../../shared/hotels/types.js";
 
-const HOTEL_COMMON_WORDS = new Set([
+const STOPWORDS = new Set([
   "hotel",
   "resort",
-  "hostel",
-  "guesthouse",
-  "guest",
-  "house",
-  "inn",
-  "suites",
-  "suite",
-  "residence",
-  "residences",
-  "apartment",
-  "apartments",
+  "the",
+  "and",
+  "at",
+  "by",
+  "&",
 ]);
 
-const OFFER_PROVIDERS: HotelOfferProvider[] = ["agoda", "booking", "trip", "expedia", "klook"];
+const toFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value !== "number") return undefined;
+  return Number.isFinite(value) ? value : undefined;
+};
 
-function stripDiacritics(input: string): string {
-  return input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-function normalizeBasicText(input: string): string {
-  return stripDiacritics(input)
+export function normalizeHotelName(name: string | null | undefined): string {
+  if (!name) return "";
+  const sanitized = name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
 
-export function normalizeHotelName(name: string): string {
-  const cleaned = normalizeBasicText(name ?? "");
-  if (!cleaned) return "";
+  if (!sanitized) return "";
 
-  const withoutCommonWords = cleaned
+  return sanitized
     .split(" ")
-    .filter((token) => !HOTEL_COMMON_WORDS.has(token))
-    .join(" ")
-    .trim();
-
-  return withoutCommonWords || cleaned;
+    .filter((token) => token && !STOPWORDS.has(token))
+    .map((token) => (token.length > 3 && token.endsWith("s") ? token.slice(0, -1) : token))
+    .join(" ");
 }
 
-export function normalizeHotelAddress(address?: string | null): string {
+export function normalizeHotelAddress(address: string | null | undefined): string {
   if (!address) return "";
-  return stripDiacritics(address)
+  return address
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = Array.from({ length: a.length + 1 }, () =>
-    Array.from({ length: b.length + 1 }, () => 0)
-  );
-
-  for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i;
-  for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j;
-
-  for (let i = 1; i <= a.length; i += 1) {
-    for (let j = 1; j <= b.length; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
-    }
-  }
-
-  return matrix[a.length][b.length];
-}
-
-function clampScore(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(1, value));
 }
 
 export function computeHotelNameSimilarity(a: string, b: string): number {
-  const normalizedA = normalizeHotelName(a);
-  const normalizedB = normalizeHotelName(b);
+  const nameA = normalizeHotelName(a);
+  const nameB = normalizeHotelName(b);
+  if (!nameA || !nameB) return 0;
+  if (nameA === nameB) return 1;
 
-  if (!normalizedA && !normalizedB) return 0;
-  if (normalizedA === normalizedB) return 1;
+  const tokensA = new Set(nameA.split(" ").filter(Boolean));
+  const tokensB = new Set(nameB.split(" ").filter(Boolean));
+  const union = new Set([...tokensA, ...tokensB]);
+  if (union.size === 0) return 0;
 
-  const distance = levenshteinDistance(normalizedA, normalizedB);
-  const length = Math.max(normalizedA.length, normalizedB.length);
-  if (!length) return 0;
+  let intersection = 0;
+  for (const token of tokensA) {
+    if (tokensB.has(token)) intersection += 1;
+  }
 
-  return clampScore(1 - distance / length);
+  return intersection / union.size;
 }
 
-export function computeHotelDistanceKm(a?: HotelCoordinates, b?: HotelCoordinates): number | null {
-  if (!a || !b) return null;
+export function computeHotelDistanceKm(
+  a?: { lat?: number; lng?: number },
+  b?: { lat?: number; lng?: number },
+): number | undefined {
+  const lat1 = toFiniteNumber(a?.lat);
+  const lng1 = toFiniteNumber(a?.lng);
+  const lat2 = toFiniteNumber(b?.lat);
+  const lng2 = toFiniteNumber(b?.lng);
+
+  if (
+    lat1 === undefined ||
+    lng1 === undefined ||
+    lat2 === undefined ||
+    lng2 === undefined
+  ) {
+    return undefined;
+  }
+
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
   const earthRadiusKm = 6371;
-  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
 
-  const dLat = toRadians(b.lat - a.lat);
-  const dLng = toRadians(b.lng - a.lng);
-  const lat1 = toRadians(a.lat);
-  const lat2 = toRadians(b.lat);
-
-  const sinLat = Math.sin(dLat / 2);
-  const sinLng = Math.sin(dLng / 2);
-
-  const haversine = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
-  const c = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
-
+  const aHarv =
+    s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
+  const c = 2 * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
   return earthRadiusKm * c;
 }
 
-function normalizeComparableCity(hotel: ProviderHotel): string {
-  return normalizeBasicText(hotel.cityName || hotel.city || "");
-}
-
-export function computeHotelMatchScore(a: ProviderHotel, b: ProviderHotel): HotelIdentityMatch {
-  const reasons: HotelIdentityMatchReason[] = [];
-
-  if (a.provider === b.provider && a.providerHotelId === b.providerHotelId) {
-    reasons.push("same_provider_id");
-    return { score: 1, matched: true, reasons };
-  }
-
+export function computeHotelMatchScore(
+  a: ProviderHotel,
+  b: ProviderHotel,
+): HotelIdentityMatch {
+  const providerIdMatch = a.providerHotelId === b.providerHotelId;
   const nameSimilarity = computeHotelNameSimilarity(a.name, b.name);
-  if (nameSimilarity >= 0.999) reasons.push("exact_normalized_name");
-  else if (nameSimilarity >= 0.72) reasons.push("similar_name");
+  const sameCity = normalizeHotelAddress(a.city) === normalizeHotelAddress(b.city);
+  const distanceKm = computeHotelDistanceKm(a.coordinates, b.coordinates);
+  const nearby = distanceKm !== undefined && distanceKm <= 1.5;
 
-  let score = nameSimilarity * 0.6;
+  let score = nameSimilarity;
+  if (sameCity) score += 0.2;
+  if (nearby) score += 0.2;
+  if (providerIdMatch) score = 1;
 
-  const cityA = normalizeComparableCity(a);
-  const cityB = normalizeComparableCity(b);
-  if (cityA && cityB && cityA === cityB) {
-    score += 0.15;
-    reasons.push("same_city");
-  }
+  score = Math.max(0, Math.min(1, score));
 
-  const distance = computeHotelDistanceKm(a.coordinates, b.coordinates);
-  if (distance !== null) {
-    if (distance <= 0.2) {
-      score += 0.2;
-      reasons.push("nearby_coordinates");
-    } else if (distance <= 1) {
-      score += Math.max(0, (1 - (distance - 0.2) / 0.8) * 0.2);
-      reasons.push("nearby_coordinates");
-    }
-  }
+  const matched = providerIdMatch || (nameSimilarity >= 0.5 && sameCity && nearby);
 
-  const addressA = normalizeHotelAddress(a.address);
-  const addressB = normalizeHotelAddress(b.address);
-  if (addressA && addressB && addressA === addressB) {
-    score += 0.05;
-    reasons.push("same_address");
-  }
-
-  const clampedScore = clampScore(score);
-  const matched = clampedScore >= 0.82 && nameSimilarity >= 0.72;
-
-  return { score: clampedScore, matched, reasons };
-}
-
-function isHotelOfferProvider(value?: string): value is HotelOfferProvider {
-  return Boolean(value && OFFER_PROVIDERS.includes(value as HotelOfferProvider));
-}
-
-export function createHotelOfferFromResult(hotel: HotelResult, provider: HotelOfferProvider): HotelOffer {
-  const providerHotelId = hotel.hotelId;
-  const rawPrice = hotel.providerPrices?.[provider] ?? hotel.lowestRate;
-  const price = Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+  let reason: HotelIdentityMatch["reason"] = "none";
+  if (providerIdMatch) reason = "same_provider_hotel_id";
+  else if (matched) reason = "name_city_distance";
 
   return {
-    offerId: `${provider}:${providerHotelId}`,
+    matched,
+    score,
+    reason,
+    nameSimilarity,
+    distanceKm,
+    sameCity,
+  };
+}
+
+export function createHotelOfferFromResult(
+  provider: HotelOfferProvider,
+  result: HotelResult,
+): HotelOffer {
+  return {
     provider,
-    providerHotelId,
-    price,
-    currency: hotel.currency,
-    deeplink: hotel.outboundLinks?.[provider],
-    crossedOutRate: hotel.crossedOutRate,
-    discountPercentage: hotel.discountPercentage,
-    breakfastIncluded: hotel.breakfastIncluded,
-    freeCancellation: hotel.freeCancellation,
-    payLater: hotel.payLater,
-    updatedAt: new Date().toISOString(),
+    providerHotelId: result.hotelId,
+    hotelId: result.hotelId,
+    currency: result.currency,
+    lowestRate: Number.isFinite(result.lowestRate) ? result.lowestRate : undefined,
+    deepLink: result.outboundLinks?.[provider],
+    freeCancellation: Boolean(result.freeCancellation),
+    breakfastIncluded: Boolean(result.breakfastIncluded),
+    payLater: Boolean(result.payLater),
   };
 }
 
 export function createProviderHotelFromResult(
-  hotel: HotelResult,
-  provider?: HotelOfferProvider
+  provider: HotelOfferProvider,
+  city: string,
+  result: HotelResult,
 ): ProviderHotel {
-  const resolvedProvider = isHotelOfferProvider(hotel.provider)
-    ? hotel.provider
-    : provider ?? "agoda";
-
   return {
-    provider: resolvedProvider,
-    providerHotelId: hotel.hotelId,
-    name: hotel.name,
-    city: undefined,
-    cityName: undefined,
-    address: hotel.address,
-    neighborhood: hotel.neighborhood,
-    stars: hotel.stars,
-    reviewScore: hotel.reviewScore,
-    reviewCount: hotel.reviewCount,
-    imageUrl: hotel.imageUrl,
-    amenities: hotel.amenities ? [...hotel.amenities] : undefined,
-    coordinates: hotel.coordinates ? { ...hotel.coordinates } : undefined,
-    offer: createHotelOfferFromResult(hotel, resolvedProvider),
-    sourceHotel: hotel,
+    provider,
+    providerHotelId: result.hotelId,
+    name: result.name,
+    address: result.address,
+    city,
+    coordinates: result.coordinates
+      ? { lat: result.coordinates.lat, lng: result.coordinates.lng }
+      : undefined,
+    amenities: [...result.amenities],
+    stars: result.stars,
+    reviewScore: result.reviewScore,
+    imageUrl: result.imageUrl,
+    offer: createHotelOfferFromResult(provider, result),
   };
 }
 
-// Foundation utilities for future scatter-gather provider fanout and hotel identity grouping.
-// Intentionally not wired into the live /api/hotels/search response in this step.
 export function mergeProviderHotels(providerHotels: ProviderHotel[]): CanonicalHotel[] {
-  const canonicalHotels: CanonicalHotel[] = [];
+  if (providerHotels.length === 0) return [];
+
+  const canonicals: CanonicalHotel[] = [];
 
   for (const providerHotel of providerHotels) {
-    let targetCanonical: CanonicalHotel | undefined;
+    let merged = false;
 
-    for (const canonical of canonicalHotels) {
-      const seedHotel = canonical.sourceHotels?.[0];
-      if (!seedHotel) continue;
-      const match = computeHotelMatchScore(seedHotel, providerHotel);
-      if (match.matched) {
-        targetCanonical = canonical;
-        break;
+    for (const canonical of canonicals) {
+      const match = computeHotelMatchScore(canonical.primary, providerHotel);
+      if (!match.matched) continue;
+
+      const alreadyHasProviderOffer = canonical.offers.some(
+        (offer) =>
+          offer.provider === providerHotel.offer.provider &&
+          offer.providerHotelId === providerHotel.offer.providerHotelId,
+      );
+      if (!alreadyHasProviderOffer) {
+        canonical.offers = [...canonical.offers, providerHotel.offer];
       }
+
+      canonical.providers = Array.from(
+        new Set([...canonical.providers, providerHotel.provider]),
+      );
+      canonical.matches = [...canonical.matches, match];
+      canonical.amenities = Array.from(
+        new Set([...canonical.amenities, ...providerHotel.amenities]),
+      );
+      merged = true;
+      break;
     }
 
-    if (!targetCanonical) {
-      canonicalHotels.push({
-        canonicalId: `canonical:${providerHotel.provider}:${providerHotel.providerHotelId}`,
-        name: providerHotel.name,
-        city: providerHotel.city,
-        cityName: providerHotel.cityName,
-        address: providerHotel.address,
-        neighborhood: providerHotel.neighborhood,
-        stars: providerHotel.stars,
-        reviewScore: providerHotel.reviewScore,
-        reviewCount: providerHotel.reviewCount,
-        imageUrl: providerHotel.imageUrl,
-        amenities: [...(providerHotel.amenities ?? [])],
-        coordinates: providerHotel.coordinates ? { ...providerHotel.coordinates } : undefined,
-        offers: providerHotel.offer ? [{ ...providerHotel.offer }] : [],
-        providerHotelIds: {
-          [providerHotel.provider]: providerHotel.providerHotelId,
-        },
-        sourceHotels: [{ ...providerHotel }],
+    if (!merged) {
+      canonicals.push({
+        canonicalId: `${providerHotel.provider}:${providerHotel.providerHotelId}`,
+        primary: providerHotel,
+        providers: [providerHotel.provider],
+        offers: [providerHotel.offer],
+        amenities: [...providerHotel.amenities],
+        matches: [],
       });
-      continue;
     }
-
-    if (providerHotel.amenities?.length) {
-      targetCanonical.amenities = Array.from(
-        new Set([...targetCanonical.amenities, ...providerHotel.amenities])
-      );
-    }
-
-    if (providerHotel.offer) {
-      const hasOffer = targetCanonical.offers.some(
-        (offer) => offer.offerId === providerHotel.offer?.offerId
-      );
-      if (!hasOffer) targetCanonical.offers.push({ ...providerHotel.offer });
-    }
-
-    targetCanonical.providerHotelIds = {
-      ...targetCanonical.providerHotelIds,
-      [providerHotel.provider]: providerHotel.providerHotelId,
-    };
-    targetCanonical.sourceHotels = [
-      ...(targetCanonical.sourceHotels ?? []),
-      { ...providerHotel },
-    ];
   }
 
-  return canonicalHotels;
+  return canonicals;
 }

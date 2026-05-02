@@ -171,84 +171,51 @@ export interface HotelDetailResponse {
 export type HotelOfferProvider = Exclude<HotelSearchSource, "metasearch" | "mock">;
 
 export interface HotelOffer {
-  offerId: string;
-  provider: HotelSearchSource;
+  provider: HotelOfferProvider;
   providerHotelId: string;
-  price: number;
+  hotelId: string;
   currency?: string;
-  deeplink?: string;
-  /** Optional metadata about the specific offer (e.g., room type) */
-  description?: string;
-  crossedOutRate?: number;
-  discountPercentage?: number;
-  breakfastIncluded?: boolean;
-  freeCancellation?: boolean;
-  payLater?: boolean;
-  updatedAt?: string;
+  lowestRate?: number;
+  deepLink?: string;
+  freeCancellation: boolean;
+  breakfastIncluded: boolean;
+  payLater: boolean;
 }
 
 /**
  * Represents a hotel as seen by a specific upstream provider.
- * This is the input to the identity matching/canonicalization flow.
  */
 export interface ProviderHotel {
-  provider: HotelSearchSource;
+  provider: HotelOfferProvider;
   providerHotelId: string;
   name: string;
-  city?: string;
-  cityName?: string;
   address?: string;
-  neighborhood?: string;
-  stars?: number;
-  reviewScore?: number;
-  reviewCount?: number;
-  imageUrl?: string;
-  amenities?: string[];
+  city?: string;
   coordinates?: HotelCoordinates;
-  /** The specific offer (price/link) associated with this provider's listing. */
-  offer?: HotelOffer;
-  /** Raw metadata from the provider for debugging/diagnostics. */
-  raw?: any;
-  /** The original normalized result if created from search. */
-  sourceHotel?: HotelResult;
+  amenities: string[];
+  stars: number;
+  reviewScore: number;
+  imageUrl: string;
+  offer: HotelOffer;
 }
 
 /**
- * A "Unified" hotel representing the best-known metadata for a property,
- * aggregating offers from multiple providers.
+ * A "Unified" hotel representing the best-known metadata for a property.
  */
 export interface CanonicalHotel {
   canonicalId: string;
-  name: string;
-  city?: string;
-  cityName?: string;
-  address?: string;
-  neighborhood?: string;
-  amenities: string[];
-  coordinates?: HotelCoordinates;
-  imageUrl?: string;
-  stars?: number;
-  reviewScore?: number;
-  reviewCount?: number;
-  /** All available offers for this property, deduped by offerId. */
+  primary: ProviderHotel;
+  providers: HotelSearchSource[];
   offers: HotelOffer[];
-  /** Mapping of provider -> providerHotelId for traceability. */
-  providerHotelIds?: Partial<Record<HotelSearchSource, string>>;
-  /** Original provider records for deeper inspection. */
-  sourceHotels?: ProviderHotel[];
+  amenities: string[];
+  matches: HotelIdentityMatch[];
 }
-
-export type HotelIdentityMatchReason =
-  | "same_provider_id"
-  | "exact_normalized_name"
-  | "similar_name"
-  | "same_city"
-  | "same_address"
-  | "nearby_coordinates"
-  | "city_mismatch_negative";
 
 export interface HotelIdentityMatch {
   matched: boolean;
   score: number;
-  reasons: HotelIdentityMatchReason[];
+  reason: "none" | "same_provider_hotel_id" | "name_city_distance";
+  nameSimilarity: number;
+  distanceKm?: number;
+  sameCity: boolean;
 }

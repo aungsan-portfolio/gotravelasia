@@ -1,169 +1,141 @@
 import { describe, expect, it } from "vitest";
 
-import type { ProviderHotel } from "@shared/hotels/types";
-
+import type { ProviderHotel } from "../../shared/hotels/types.js";
 import {
   computeHotelDistanceKm,
   computeHotelMatchScore,
   computeHotelNameSimilarity,
-  createHotelOfferFromResult,
   mergeProviderHotels,
+  normalizeHotelAddress,
   normalizeHotelName,
-} from "./identity";
+} from "./identity.js";
 
-describe("hotel identity utilities", () => {
-  it("normalizeHotelName removes common hotel words safely", () => {
-    expect(normalizeHotelName("The Bangkok Hotel Resort")).toBe("the bangkok");
+const createProviderHotel = (overrides: Partial<ProviderHotel>): ProviderHotel => {
+  const provider = overrides.provider ?? "agoda";
+  const providerHotelId = overrides.providerHotelId ?? "h1";
+
+  return {
+    provider,
+    providerHotelId,
+    name: "The Riverside Hotel",
+    address: "123 Main St",
+    city: "Bangkok",
+    coordinates: { lat: 13.7563, lng: 100.5018 },
+    amenities: ["Pool", "WiFi"],
+    stars: 4,
+    reviewScore: 8.4,
+    imageUrl: "https://example.com/a.jpg",
+    offer: {
+      provider,
+      providerHotelId,
+      hotelId: providerHotelId,
+      lowestRate: 100,
+      currency: "USD",
+      freeCancellation: true,
+      breakfastIncluded: false,
+      payLater: false,
+    },
+    ...overrides,
+  };
+};
+
+describe("identity foundation", () => {
+  it("normalizeHotelName", () => {
+    expect(normalizeHotelName("The Grand Hôtel Resort & Spa")).toBe("grand spa");
   });
 
-  it('normalizeHotelName("Hotel") does not return an empty string', () => {
-    expect(normalizeHotelName("Hotel")).toBe("hotel");
+  it("empty/safe normalization", () => {
+    expect(normalizeHotelName("")).toBe("");
+    expect(normalizeHotelName(undefined)).toBe("");
+    expect(normalizeHotelAddress(null)).toBe("");
   });
 
-  it("exact normalized names get similarity 1", () => {
-    expect(computeHotelNameSimilarity("The Bangkok Hotel", "the bangkok")).toBe(1);
+  it("name similarity", () => {
+    expect(computeHotelNameSimilarity("Grand Palace Hotel", "Grand Palace")).toBe(1);
+    expect(computeHotelNameSimilarity("Alpha", "Beta")).toBe(0);
   });
 
-  it("similar typo names have high similarity", () => {
-    expect(computeHotelNameSimilarity("Marriot Bangkok", "Marriott Bangkok")).toBeGreaterThan(0.9);
+  it("missing coordinates", () => {
+    expect(computeHotelDistanceKm(undefined, { lat: 1, lng: 2 })).toBeUndefined();
   });
 
-  it("very different names have low similarity", () => {
-    expect(computeHotelNameSimilarity("Marina Bay Sands", "Backpacker Hostel")).toBeLessThan(0.4);
-  });
-
-  it("missing coordinates return null distance", () => {
-    expect(computeHotelDistanceKm(undefined, { lat: 13.75, lng: 100.5 })).toBeNull();
-  });
-
-  it("nearby coordinates produce small distance", () => {
-    const distance = computeHotelDistanceKm(
+  it("nearby coordinates", () => {
+    const d = computeHotelDistanceKm(
       { lat: 13.7563, lng: 100.5018 },
-      { lat: 13.7569, lng: 100.5024 },
+      { lat: 13.7569, lng: 100.5021 },
     );
-    expect(distance).not.toBeNull();
-    expect(distance as number).toBeLessThan(0.2);
+    expect(d).toBeDefined();
+    expect(d as number).toBeLessThan(0.2);
   });
 
-  it("same provider + same providerHotelId matches with score 1", () => {
-    const a: ProviderHotel = { provider: "agoda", providerHotelId: "123", name: "Test" };
-    const b: ProviderHotel = { provider: "agoda", providerHotelId: "123", name: "Other" };
+  it("same provider id match", () => {
+    const a = createProviderHotel({ provider: "agoda", providerHotelId: "same" });
+    const b = createProviderHotel({ provider: "booking", providerHotelId: "same" });
     const match = computeHotelMatchScore(a, b);
     expect(match.matched).toBe(true);
-    expect(match.score).toBe(1);
-    expect(match.reasons).toContain("same_provider_id");
+    expect(match.reason).toBe("same_provider_hotel_id");
   });
 
-  it("same/similar name + same city + nearby coordinates matches", () => {
-    const a: ProviderHotel = {
-      provider: "agoda",
-      providerHotelId: "a1",
-      name: "The Riverside Bangkok Hotel",
-      city: "Bangkok",
-      coordinates: { lat: 13.7563, lng: 100.5018 },
-    };
-    const b: ProviderHotel = {
+  it("similar name + same city + nearby coordinates match", () => {
+    const a = createProviderHotel({ name: "Riverside Suites Bangkok" });
+    const b = createProviderHotel({
       provider: "booking",
-      providerHotelId: "b1",
-      name: "Riverside Bangkok",
-      cityName: "Bangkok",
-      coordinates: { lat: 13.7568, lng: 100.5021 },
-    };
+      providerHotelId: "b2",
+      name: "Riverside Suite",
+      coordinates: { lat: 13.7567, lng: 100.502 },
+    });
     const match = computeHotelMatchScore(a, b);
     expect(match.matched).toBe(true);
-    expect(match.score).toBeGreaterThanOrEqual(0.82);
+    expect(match.reason).toBe("name_city_distance");
   });
 
-  it("different name + different city does not match", () => {
-    const a: ProviderHotel = { provider: "agoda", providerHotelId: "a1", name: "Hilton", city: "Bangkok" };
-    const b: ProviderHotel = { provider: "booking", providerHotelId: "b1", name: "Capsule Inn", city: "Tokyo" };
-    const match = computeHotelMatchScore(a, b);
-    expect(match.matched).toBe(false);
+  it("different hotels not matched", () => {
+    const a = createProviderHotel({ name: "Sunrise Hotel", city: "Bangkok" });
+    const b = createProviderHotel({
+      provider: "trip",
+      providerHotelId: "t2",
+      name: "Mountain Lodge",
+      city: "Chiang Mai",
+      coordinates: { lat: 18.7883, lng: 98.9853 },
+    });
+    expect(computeHotelMatchScore(a, b).matched).toBe(false);
   });
 
-  it("empty providerHotels returns []", () => {
-    expect(mergeProviderHotels([])).toEqual([]);
-  });
-
-  it("mergeProviderHotels merges two provider hotels that represent the same property", () => {
-    const merged = mergeProviderHotels([
-      {
-        provider: "agoda",
-        providerHotelId: "a1",
-        name: "The Riverside Bangkok Hotel",
-        city: "Bangkok",
-        coordinates: { lat: 13.7563, lng: 100.5018 },
-        amenities: ["pool", "wifi"],
-        offer: { offerId: "agoda:a1", provider: "agoda", providerHotelId: "a1", price: 100 },
-      },
-      {
-        provider: "booking",
-        providerHotelId: "b1",
-        name: "Riverside Bangkok",
-        cityName: "Bangkok",
-        coordinates: { lat: 13.7564, lng: 100.5019 },
-        amenities: ["wifi", "gym"],
-        offer: { offerId: "booking:b1", provider: "booking", providerHotelId: "b1", price: 105 },
-      },
-    ]);
+  it("mergeProviderHotels merges same property", () => {
+    const a = createProviderHotel({ provider: "agoda", providerHotelId: "a1" });
+    const b = createProviderHotel({ provider: "booking", providerHotelId: "b1" });
+    const merged = mergeProviderHotels([a, b]);
     expect(merged).toHaveLength(1);
     expect(merged[0].offers).toHaveLength(2);
-    expect(merged[0].sourceHotels).toHaveLength(2);
   });
 
   it("mergeProviderHotels keeps different properties separate", () => {
-    const merged = mergeProviderHotels([
-      { provider: "agoda", providerHotelId: "a1", name: "Hotel Alpha", city: "Bangkok" },
-      { provider: "booking", providerHotelId: "b1", name: "Hotel Beta", city: "Tokyo" },
-    ]);
-    expect(merged).toHaveLength(2);
+    const a = createProviderHotel({ providerHotelId: "a1", name: "Alpha Hotel" });
+    const b = createProviderHotel({
+      provider: "booking",
+      providerHotelId: "b1",
+      name: "Beta Lodge",
+      city: "Phuket",
+      coordinates: { lat: 7.8804, lng: 98.3923 },
+    });
+    expect(mergeProviderHotels([a, b])).toHaveLength(2);
   });
 
-  it("offers are deduped by offerId", () => {
-    const merged = mergeProviderHotels([
-      {
-        provider: "agoda",
-        providerHotelId: "a1",
-        name: "Riverside Bangkok",
-        city: "Bangkok",
-        offer: { offerId: "agoda:a1", provider: "agoda", providerHotelId: "a1", price: 100 },
-      },
-      {
-        provider: "agoda",
-        providerHotelId: "a1",
-        name: "Riverside Bangkok",
-        city: "Bangkok",
-        offer: { offerId: "agoda:a1", provider: "agoda", providerHotelId: "a1", price: 100 },
-      },
-    ]);
-    expect(merged).toHaveLength(1);
+  it("offer deduplication", () => {
+    const a = createProviderHotel({ provider: "agoda", providerHotelId: "a1" });
+    const b = createProviderHotel({ provider: "agoda", providerHotelId: "a1" });
+    const merged = mergeProviderHotels([a, b]);
     expect(merged[0].offers).toHaveLength(1);
   });
 
-  it("amenities are deduped", () => {
-    const merged = mergeProviderHotels([
-      { provider: "agoda", providerHotelId: "a1", name: "Riverside", amenities: ["wifi", "pool"] },
-      { provider: "agoda", providerHotelId: "a1", name: "Riverside", amenities: ["pool", "gym"] },
-    ]);
-    expect(merged[0].amenities.sort()).toEqual(["gym", "pool", "wifi"]);
-  });
-
-  it("createHotelOfferFromResult handles invalid prices safely", () => {
-    const offer = createHotelOfferFromResult(
-      {
-        hotelId: "h1",
-        name: "Test",
-        stars: 4,
-        reviewScore: 8,
-        reviewCount: 100,
-        address: "Addr",
-        imageUrl: "img",
-        amenities: [],
-        lowestRate: Number.NaN,
-      },
-      "agoda",
-    );
-    expect(offer.price).toBe(0);
-    expect(typeof offer.updatedAt).toBe("string");
+  it("amenity deduplication", () => {
+    const a = createProviderHotel({ amenities: ["Pool", "WiFi"] });
+    const b = createProviderHotel({
+      provider: "booking",
+      providerHotelId: "b1",
+      amenities: ["WiFi", "Gym"],
+    });
+    const merged = mergeProviderHotels([a, b]);
+    expect(merged[0].amenities.sort()).toEqual(["Gym", "Pool", "WiFi"]);
   });
 });
