@@ -7,6 +7,10 @@ import {
 } from "../../shared/hotels/cities.js";
 import { findAgodaLtCityIdByName } from "../../shared/hotels/agodaLtCityMap.js";
 import { normalizeHotelSearchParams } from "../../shared/hotels/searchParams.js";
+import {
+  createProviderHotelFromResult,
+  mergeProviderHotels,
+} from "../hotels/identity.js";
 import type {
   HotelDetailResponse,
   HotelDiagnosticsReason,
@@ -1271,20 +1275,28 @@ async function executeHotelSearch(reqQuery: Record<string, unknown>) {
     }),
   ]);
 
+  const normalizedProviderHotels = result.hotels.map((hotel: any, index: number) =>
+    normalizeHotel(
+      hotel,
+      city,
+      normalized.checkIn,
+      normalized.checkOut,
+      normalized.adults,
+      normalized.rooms,
+      affiliateLinks,
+      index,
+      normalized.page
+    )
+  );
+
+  const canonicalHotels = mergeProviderHotels(
+    normalizedProviderHotels.map((hotel) =>
+      createProviderHotelFromResult("agoda", (city as any).name, hotel)
+    )
+  );
+
   const hotels = sortHotels(
-    result.hotels.map((hotel: any, index: number) =>
-      normalizeHotel(
-        hotel,
-        city,
-        normalized.checkIn,
-        normalized.checkOut,
-        normalized.adults,
-        normalized.rooms,
-        affiliateLinks,
-        index,
-        normalized.page
-      )
-    ),
+    canonicalHotels.map((canonical) => canonical.primaryHotel.result),
     normalized.sort
   );
 

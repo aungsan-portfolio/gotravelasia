@@ -172,50 +172,36 @@ export type HotelOfferProvider = Exclude<HotelSearchSource, "metasearch" | "mock
 
 export interface HotelOffer {
   provider: HotelOfferProvider;
-  providerHotelId: string;
   hotelId: string;
+  price: number;
   currency?: string;
-  lowestRate?: number;
-  deepLink?: string;
-  freeCancellation: boolean;
-  breakfastIncluded: boolean;
-  payLater: boolean;
+  outboundLinks?: HotelOutboundLinks;
+  freeCancellation?: boolean;
+  payLater?: boolean;
+  breakfastIncluded?: boolean;
 }
 
-/**
- * Represents a hotel as seen by a specific upstream provider.
- */
 export interface ProviderHotel {
   provider: HotelOfferProvider;
-  providerHotelId: string;
-  name: string;
-  address?: string;
-  city?: string;
-  coordinates?: HotelCoordinates;
-  amenities: string[];
-  stars: number;
-  reviewScore: number;
-  imageUrl: string;
+  city: string;
+  result: HotelResult;
   offer: HotelOffer;
 }
 
-/**
- * A "Unified" hotel representing the best-known metadata for a property.
- */
-export interface CanonicalHotel {
-  canonicalId: string;
-  primary: ProviderHotel;
-  providers: HotelSearchSource[];
-  offers: HotelOffer[];
-  amenities: string[];
-  matches: HotelIdentityMatch[];
-}
-
 export interface HotelIdentityMatch {
-  matched: boolean;
-  score: number;
-  reason: "none" | "same_provider_hotel_id" | "name_city_distance";
   nameSimilarity: number;
   distanceKm?: number;
-  sameCity: boolean;
+  score: number;
+}
+
+export interface CanonicalHotel {
+  canonicalId: string;
+  city: string;
+  name: string;
+  address?: string;
+  coordinates?: HotelCoordinates;
+  primaryHotel: ProviderHotel;
+  offers: HotelOffer[];
+  providers: ProviderHotel[];
+  identityMatch?: HotelIdentityMatch;
 }
