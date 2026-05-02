@@ -1296,7 +1296,10 @@ async function executeHotelSearch(reqQuery: Record<string, unknown>) {
   );
 
   const hotels = sortHotels(
-    canonicalHotels.map((canonical) => canonical.primaryHotel.result),
+    canonicalHotels.map((canonical) => ({
+      ...canonical.primaryHotel.result,
+      offers: canonical.offers,
+    })),
     normalized.sort
   );
 

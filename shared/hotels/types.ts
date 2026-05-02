@@ -50,6 +50,8 @@ export interface HotelPriceDisplay {
   totalStayEstimateLabel?: string;
 }
 
+
+
 export interface HotelResult {
   hotelId: string;
   name: string;
@@ -76,6 +78,7 @@ export interface HotelResult {
   >;
   coordinatesConfidence?: HotelCoordinatesConfidence;
   priceDisplay?: HotelPriceDisplay;
+  offers?: HotelOffer[];
 }
 
 export interface HotelSearchMeta {
@@ -179,6 +182,10 @@ export interface HotelOffer {
   freeCancellation?: boolean;
   payLater?: boolean;
   breakfastIncluded?: boolean;
+  crossedOutPrice?: number;
+  deeplinkUrl?: string;
+  roomName?: string;
+  cancellationPolicy?: string;
 }
 
 export interface ProviderHotel {
