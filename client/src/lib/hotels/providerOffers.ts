@@ -1,14 +1,10 @@
-import type { HotelOffer, HotelSearchSource, HotelResult, HotelOutboundLinks } from "@shared/hotels/types";
+import type {
+  HotelOffer,
+  HotelOfferProvider,
+  HotelResult,
+} from "@shared/hotels/types";
 
-export const ALLOWED_PROVIDERS: Set<HotelSearchSource> = new Set([
-  "agoda",
-  "booking",
-  "trip",
-  "expedia",
-  "klook",
-]);
-
-export const HOTEL_OFFER_PROVIDER_LABELS: Record<string, string> = {
+export const HOTEL_OFFER_PROVIDER_LABELS: Record<HotelOfferProvider, string> = {
   agoda: "Agoda",
   booking: "Booking.com",
   trip: "Trip.com",
@@ -16,42 +12,93 @@ export const HOTEL_OFFER_PROVIDER_LABELS: Record<string, string> = {
   klook: "Klook",
 };
 
-/** @deprecated Use HOTEL_OFFER_PROVIDER_LABELS */
-export const PROVIDER_LABELS = HOTEL_OFFER_PROVIDER_LABELS;
+const HOTEL_OFFER_PROVIDERS = new Set<HotelOfferProvider>([
+  "agoda",
+  "booking",
+  "trip",
+  "expedia",
+  "klook",
+]);
 
-export function formatOfferPrice(price: number | undefined, currency?: string): string | null {
-  if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) return null;
-  const symbol = currency === "THB" ? "฿" : "$";
-  return `${symbol}${price.toLocaleString()}`;
-}
-
-export function resolveOfferBaseUrl(offer: HotelOffer, hotel: HotelResult): string | undefined {
-  return offer.deeplinkUrl || hotel.outboundLinks?.[offer.provider as keyof HotelOutboundLinks];
-}
-
-export function getValidProviderOffers(offers: HotelOffer[] | undefined): HotelOffer[] {
-  if (!offers) return [];
-
-  const valid = offers.filter(
-    (offer) =>
-      ALLOWED_PROVIDERS.has(offer.provider) &&
-      typeof offer.price === "number" &&
-      Number.isFinite(offer.price) &&
-      offer.price > 0,
+export function isHotelOfferProvider(
+  value: unknown,
+): value is HotelOfferProvider {
+  return (
+    typeof value === "string" &&
+    HOTEL_OFFER_PROVIDERS.has(value as HotelOfferProvider)
   );
-
-  // Deduplicate by provider + hotelId (if present) + price
-  const seen = new Map<string, HotelOffer>();
-  valid.forEach((offer) => {
-    const key = `${offer.provider}-${offer.hotelId || ""}-${offer.price}`;
-    if (!seen.has(key)) {
-      seen.set(key, offer);
-    }
-  });
-
-  return Array.from(seen.values()).sort((a, b) => a.price - b.price);
 }
 
-export function hasRenderableProviderOffers(offers: HotelOffer[] | undefined): boolean {
+function isValidOfferPrice(price: number | undefined): price is number {
+  return Number.isFinite(price) && Number(price) > 0;
+}
+
+export function formatOfferPrice(
+  price: number | undefined,
+  currency?: string,
+): string | null {
+  if (!isValidOfferPrice(price)) {
+    return null;
+  }
+
+  try {
+    if (currency) {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(price);
+    }
+  } catch {
+    // fallback to numeric formatting below
+  }
+
+  try {
+    return new Intl.NumberFormat(undefined, {
+      maximumFractionDigits: 0,
+    }).format(price);
+  } catch {
+    return String(Math.round(price));
+  }
+}
+
+export function getValidProviderOffers(offers?: HotelOffer[]): HotelOffer[] {
+  if (!Array.isArray(offers)) {
+    return [];
+  }
+
+  const deduped = new Map<string, HotelOffer>();
+
+  for (const offer of offers) {
+    if (!isHotelOfferProvider(offer.provider) || !isValidOfferPrice(offer.price)) {
+      continue;
+    }
+
+    const key = `${offer.provider}|${offer.hotelId}|${offer.price}`;
+    if (!deduped.has(key)) {
+      deduped.set(key, offer);
+    }
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => a.price - b.price);
+}
+
+export function hasRenderableProviderOffers(offers?: HotelOffer[]): boolean {
   return getValidProviderOffers(offers).length > 0;
+}
+
+export function resolveOfferBaseUrl(
+  offer: HotelOffer,
+  hotel: HotelResult,
+): string | undefined {
+  const url =
+    offer.deeplinkUrl ??
+    offer.outboundLinks?.[offer.provider] ??
+    hotel.outboundLinks?.[offer.provider];
+
+  if (!url || !url.trim()) {
+    return undefined;
+  }
+
+  return url;
 }
