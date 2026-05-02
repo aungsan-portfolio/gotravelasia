@@ -1,9 +1,12 @@
+import { useEffect, useRef } from "react";
 import type { HotelOffer, HotelResult } from "@shared/hotels/types";
 import { buildOutboundDealUrl } from "@/lib/hotels/buildOutboundDealUrl";
 import { buildHotelOutboundRedirectUrl } from "@/lib/hotels/buildHotelOutboundRedirectUrl";
 import {
   trackHotelBookClick,
   trackHotelOutboundRedirectClick,
+  trackHotelOfferImpression,
+  trackHotelOfferClick,
 } from "@/lib/hotels/tracking";
 import {
   formatOfferPrice,
@@ -35,6 +38,31 @@ export function ProviderOfferList({
   resultPosition,
 }: ProviderOfferListProps) {
   const validOffers = getValidProviderOffers(offers);
+  const hasTrackedImpressions = useRef(false);
+
+  useEffect(() => {
+    if (validOffers.length > 0 && !hasTrackedImpressions.current) {
+      validOffers.forEach((offer, index) => {
+        trackHotelOfferImpression({
+          hotelId: hotel.hotelId,
+          city,
+          checkIn,
+          checkOut,
+          sort,
+          resultPosition,
+          provider: offer.provider,
+          price: offer.price,
+          currency: offer.currency ?? hotel.currency,
+          offerRank: index + 1,
+          freeCancellation: offer.freeCancellation,
+          payLater: offer.payLater,
+          breakfastIncluded: offer.breakfastIncluded,
+          source: "hotel_detail_offer_list",
+        });
+      });
+      hasTrackedImpressions.current = true;
+    }
+  }, [validOffers, hotel.hotelId, city, checkIn, checkOut, sort, resultPosition, hotel.currency]);
 
   if (validOffers.length === 0) {
     return null;
@@ -111,7 +139,7 @@ export function ProviderOfferList({
               <a
                 href={redirectUrl}
                 onClick={() => {
-                  trackHotelBookClick({
+                  const trackingContext = {
                     hotelId: hotel.hotelId,
                     city,
                     checkIn,
@@ -119,18 +147,18 @@ export function ProviderOfferList({
                     sort,
                     resultPosition,
                     provider: offer.provider,
+                    price: offer.price,
+                    currency: offer.currency ?? hotel.currency,
+                    offerRank: index + 1,
+                    freeCancellation: offer.freeCancellation,
+                    payLater: offer.payLater,
+                    breakfastIncluded: offer.breakfastIncluded,
                     source: "hotel_detail_offer_list",
-                  });
-                  trackHotelOutboundRedirectClick({
-                    hotelId: hotel.hotelId,
-                    city,
-                    checkIn,
-                    checkOut,
-                    sort,
-                    resultPosition,
-                    provider: offer.provider,
-                    source: "hotel_detail_offer_list",
-                  });
+                  };
+                  
+                  trackHotelBookClick(trackingContext);
+                  trackHotelOutboundRedirectClick(trackingContext);
+                  trackHotelOfferClick(trackingContext);
                 }}
                 target="_blank"
                 rel="noopener noreferrer"

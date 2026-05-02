@@ -23,6 +23,12 @@ export interface HotelTrackingContext {
   mappedCount?: number;
   resultPosition?: number;
   provider?: "agoda" | "booking" | "trip" | "expedia" | "klook";
+  price?: number;
+  currency?: string;
+  offerRank?: number;
+  freeCancellation?: boolean;
+  payLater?: boolean;
+  breakfastIncluded?: boolean;
 }
 
 function sanitizeString(value?: string): string | undefined {
@@ -73,6 +79,14 @@ export function buildHotelTrackingPayload(
   const mappedCount = sanitizeNumber(context.mappedCount);
   const provider = context.provider;
   const resultPosition = sanitizeNumber(context.resultPosition);
+  
+  // Offer-specific fields
+  const price = sanitizeNumber(context.price);
+  const currency = sanitizeString(context.currency);
+  const offerRank = sanitizeNumber(context.offerRank);
+  const freeCancellation = sanitizeBoolean(context.freeCancellation);
+  const payLater = sanitizeBoolean(context.payLater);
+  const breakfastIncluded = sanitizeBoolean(context.breakfastIncluded);
 
   if (hotelId) payload.hotelId = hotelId;
   if (city) payload.city = city;
@@ -94,6 +108,13 @@ export function buildHotelTrackingPayload(
   if (mappedCount != null) payload.mappedCount = mappedCount;
   if (provider) payload.provider = provider;
   if (resultPosition != null) payload.resultPosition = resultPosition;
+  
+  if (price != null) payload.price = price;
+  if (currency) payload.currency = currency;
+  if (offerRank != null) payload.offerRank = offerRank;
+  if (freeCancellation != null) payload.freeCancellation = freeCancellation;
+  if (payLater != null) payload.payLater = payLater;
+  if (breakfastIncluded != null) payload.breakfastIncluded = breakfastIncluded;
 
   // Handle polymorphic filterValue
   if (typeof context.filterValue === "string") {
@@ -200,4 +221,12 @@ export function trackHotelOutboundRedirectClick(
   context: HotelTrackingContext,
 ): void {
   trackHotelEvent("hotel_outbound_redirect_click", context);
+}
+
+export function trackHotelOfferImpression(context: HotelTrackingContext): void {
+  trackHotelEvent("hotel_offer_impression", context);
+}
+
+export function trackHotelOfferClick(context: HotelTrackingContext): void {
+  trackHotelEvent("hotel_offer_click", context);
 }
