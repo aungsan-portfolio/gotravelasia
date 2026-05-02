@@ -1,12 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { HotelOffer, HotelResult } from "@shared/hotels/types";
 import { buildOutboundDealUrl } from "@/lib/hotels/buildOutboundDealUrl";
 import { buildHotelOutboundRedirectUrl } from "@/lib/hotels/buildHotelOutboundRedirectUrl";
 import {
   trackHotelBookClick,
-  trackHotelOutboundRedirectClick,
-  trackHotelOfferImpression,
   trackHotelOfferClick,
+  trackHotelOfferImpression,
+  trackHotelOutboundRedirectClick,
 } from "@/lib/hotels/tracking";
 import {
   formatOfferPrice,
@@ -28,6 +28,22 @@ export interface ProviderOfferListProps {
   resultPosition?: number;
 }
 
+function buildOfferKey({
+  hotelId,
+  checkIn,
+  checkOut,
+  offer,
+  offerRank,
+}: {
+  hotelId: string;
+  checkIn?: string;
+  checkOut?: string;
+  offer: HotelOffer;
+  offerRank: number;
+}): string {
+  return [hotelId, offer.provider, offer.hotelId ?? hotelId, offer.price, offer.currency ?? "", offerRank, checkIn ?? "", checkOut ?? ""].join("|");
+}
+
 export function ProviderOfferList({
   hotel,
   offers,
@@ -37,32 +53,43 @@ export function ProviderOfferList({
   sort,
   resultPosition,
 }: ProviderOfferListProps) {
-  const validOffers = getValidProviderOffers(offers);
-  const hasTrackedImpressions = useRef(false);
+  const validOffers = useMemo(() => getValidProviderOffers(offers), [offers]);
+  const trackedImpressionsRef = useRef(new Set<string>());
 
   useEffect(() => {
-    if (validOffers.length > 0 && !hasTrackedImpressions.current) {
-      validOffers.forEach((offer, index) => {
-        trackHotelOfferImpression({
-          hotelId: hotel.hotelId,
-          city,
-          checkIn,
-          checkOut,
-          sort,
-          resultPosition,
-          provider: offer.provider,
-          price: offer.price,
-          currency: offer.currency ?? hotel.currency,
-          offerRank: index + 1,
-          freeCancellation: offer.freeCancellation,
-          payLater: offer.payLater,
-          breakfastIncluded: offer.breakfastIncluded,
-          source: "hotel_detail_offer_list",
-        });
+    for (const [index, offer] of validOffers.entries()) {
+      const offerRank = index + 1;
+      const impressionKey = buildOfferKey({
+        hotelId: hotel.hotelId,
+        checkIn,
+        checkOut,
+        offer,
+        offerRank,
       });
-      hasTrackedImpressions.current = true;
+
+      if (trackedImpressionsRef.current.has(impressionKey)) {
+        continue;
+      }
+
+      trackedImpressionsRef.current.add(impressionKey);
+      trackHotelOfferImpression({
+        hotelId: hotel.hotelId,
+        city,
+        checkIn,
+        checkOut,
+        sort,
+        resultPosition,
+        provider: offer.provider,
+        price: offer.price,
+        currency: offer.currency ?? hotel.currency,
+        offerRank,
+        freeCancellation: offer.freeCancellation,
+        payLater: offer.payLater,
+        breakfastIncluded: offer.breakfastIncluded,
+        source: "hotel_detail_offer_list",
+      });
     }
-  }, [validOffers, hotel.hotelId, city, checkIn, checkOut, sort, resultPosition, hotel.currency]);
+  }, [hotel.hotelId, hotel.currency, city, checkIn, checkOut, sort, resultPosition, validOffers]);
 
   if (validOffers.length === 0) {
     return null;
@@ -104,6 +131,22 @@ export function ProviderOfferList({
         });
 
         const isPrimary = index === 0;
+        const trackingContext = {
+          hotelId: hotel.hotelId,
+          city,
+          checkIn,
+          checkOut,
+          sort,
+          resultPosition,
+          provider: offer.provider,
+          price: offer.price,
+          currency: offer.currency ?? hotel.currency,
+          offerRank: index + 1,
+          freeCancellation: offer.freeCancellation,
+          payLater: offer.payLater,
+          breakfastIncluded: offer.breakfastIncluded,
+          source: "hotel_detail_offer_list",
+        };
 
         return (
           <div
@@ -139,23 +182,6 @@ export function ProviderOfferList({
               <a
                 href={redirectUrl}
                 onClick={() => {
-                  const trackingContext = {
-                    hotelId: hotel.hotelId,
-                    city,
-                    checkIn,
-                    checkOut,
-                    sort,
-                    resultPosition,
-                    provider: offer.provider,
-                    price: offer.price,
-                    currency: offer.currency ?? hotel.currency,
-                    offerRank: index + 1,
-                    freeCancellation: offer.freeCancellation,
-                    payLater: offer.payLater,
-                    breakfastIncluded: offer.breakfastIncluded,
-                    source: "hotel_detail_offer_list",
-                  };
-                  
                   trackHotelBookClick(trackingContext);
                   trackHotelOutboundRedirectClick(trackingContext);
                   trackHotelOfferClick(trackingContext);
