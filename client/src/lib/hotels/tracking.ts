@@ -79,8 +79,6 @@ export function buildHotelTrackingPayload(
   const mappedCount = sanitizeNumber(context.mappedCount);
   const provider = context.provider;
   const resultPosition = sanitizeNumber(context.resultPosition);
-  
-  // Offer-specific fields
   const price = sanitizeNumber(context.price);
   const currency = sanitizeString(context.currency);
   const offerRank = sanitizeNumber(context.offerRank);
@@ -108,7 +106,6 @@ export function buildHotelTrackingPayload(
   if (mappedCount != null) payload.mappedCount = mappedCount;
   if (provider) payload.provider = provider;
   if (resultPosition != null) payload.resultPosition = resultPosition;
-  
   if (price != null) payload.price = price;
   if (currency) payload.currency = currency;
   if (offerRank != null) payload.offerRank = offerRank;
