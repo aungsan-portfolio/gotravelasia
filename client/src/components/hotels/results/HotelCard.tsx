@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from "react";
 import { formatReviewLabel, formatStayNights } from "@/lib/hotels/formatters";
 import { HotelPriceComparison } from "@/components/hotels/results/HotelPriceComparison";
 import type { HotelPriceContext } from "@/lib/hotels/priceContext";
-import type { HotelResult } from "@shared/hotels/types";
+import type { HotelOffer, HotelResult } from "@shared/hotels/types";
 import {
   getLightweightHotelBadges,
   getPrimaryHotelExplanation,
@@ -19,7 +19,7 @@ interface HotelCardProps {
   onOpenDetail: (hotelId: string) => void;
   priceContext: HotelPriceContext;
 }
-
+type HotelResultWithOffers = HotelResult & { offers?: HotelOffer[] };
 
 
 function HotelCardComponent({
@@ -33,6 +33,7 @@ function HotelCardComponent({
   onOpenDetail,
   priceContext,
 }: HotelCardProps) {
+  const hotelWithOffers = hotel as HotelResultWithOffers;
   const [imageFailed, setImageFailed] = useState(false);
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
@@ -147,7 +148,11 @@ function HotelCardComponent({
               {formatStayNights(checkIn, checkOut)}
             </div>
 
-            <HotelPriceComparison hotel={hotel} priceContext={priceContext} />
+            <HotelPriceComparison
+              hotel={hotel}
+              priceContext={priceContext}
+              offers={hotelWithOffers.offers}
+            />
           </div>
         </div>
       </button>

@@ -1,10 +1,11 @@
 import { memo } from "react";
 import type { HotelPriceContext } from "@/lib/hotels/priceContext";
-import type { HotelResult } from "@shared/hotels/types";
+import type { HotelOffer, HotelResult } from "@shared/hotels/types";
 
 export interface HotelPriceComparisonProps {
   hotel: HotelResult;
   priceContext: HotelPriceContext;
+  offers?: HotelOffer[];
 }
 
 const PROVIDER_STYLE: Record<string, { label: string; className: string }> = {
@@ -38,12 +39,29 @@ const PROVIDER_STYLE: Record<string, { label: string; className: string }> = {
 function HotelPriceComparisonComponent({
   hotel,
   priceContext,
+  offers,
 }: HotelPriceComparisonProps) {
+  const validOfferPrices = (offers ?? [])
+    .map((offer) => offer.price)
+    .filter((price) => typeof price === "number" && Number.isFinite(price) && price > 0)
+    .sort((a, b) => a - b);
+  const offerProviders = Array.from(
+    new Set((offers ?? []).map((offer) => offer.provider).filter(Boolean)),
+  );
+  const offerMinPrice = validOfferPrices.length > 0 ? validOfferPrices[0] : null;
+  const offerMaxPrice =
+    validOfferPrices.length > 0 ? validOfferPrices[validOfferPrices.length - 1] : null;
+  const hasOfferPricing = offerMinPrice !== null;
   const hasFallbackPrice = Number.isFinite(hotel.lowestRate) && hotel.lowestRate > 0;
-  const minPrice = priceContext.minPrice ?? (hasFallbackPrice ? hotel.lowestRate : null);
-  const maxPrice = priceContext.maxPrice;
+  const minPrice = hasOfferPricing
+    ? offerMinPrice
+    : priceContext.minPrice ?? (hasFallbackPrice ? hotel.lowestRate : null);
+  const maxPrice = hasOfferPricing ? offerMaxPrice : priceContext.maxPrice;
   const hasPrice = minPrice !== null;
-  const compareCount = Math.max(priceContext.providerCount, priceContext.providers.length);
+  const compareCount = hasOfferPricing
+    ? Math.max(validOfferPrices.length, offerProviders.length)
+    : Math.max(priceContext.providerCount, priceContext.providers.length);
+  const displayProviders = hasOfferPricing ? offerProviders : priceContext.providers;
   const hasComparableMaxPrice =
     hasPrice && maxPrice !== null && maxPrice > minPrice * 1.05;
   const savingsPercent = hasComparableMaxPrice
@@ -80,9 +98,9 @@ function HotelPriceComparisonComponent({
       ) : (
         <p className="text-sm font-semibold text-slate-500">Price unavailable</p>
       )}
-      {priceContext.providers.length > 0 && (
+      {displayProviders.length > 0 && (
         <div className="mt-2 flex flex-wrap justify-end gap-1.5">
-          {priceContext.providers.map((provider) => {
+          {displayProviders.map((provider) => {
             const display = PROVIDER_STYLE[provider] ?? {
               label: provider,
               className: "border-slate-200 bg-slate-50 text-slate-600",

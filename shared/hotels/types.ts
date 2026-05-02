@@ -50,6 +50,8 @@ export interface HotelPriceDisplay {
   totalStayEstimateLabel?: string;
 }
 
+
+
 export interface HotelResult {
   hotelId: string;
   name: string;
@@ -76,6 +78,7 @@ export interface HotelResult {
   >;
   coordinatesConfidence?: HotelCoordinatesConfidence;
   priceDisplay?: HotelPriceDisplay;
+  offers?: HotelOffer[];
 }
 
 export interface HotelSearchMeta {
@@ -155,4 +158,57 @@ export interface HotelSearchResponse {
   hotels: HotelResult[];
   affiliateLinks: HotelOutboundLinks;
   meta: HotelSearchMeta;
+}
+
+export interface HotelDetailResponse {
+  hotel: HotelResult | null;
+  city: HotelSearchCity;
+  affiliateLinks: HotelOutboundLinks;
+  meta?: HotelSearchMeta & { hotelId?: string };
+}
+
+/**
+ * ─── Metasearch Identity & Canonicalization ────────────────────────
+ */
+
+export type HotelOfferProvider = Exclude<HotelSearchSource, "metasearch" | "mock">;
+
+export interface HotelOffer {
+  provider: HotelOfferProvider;
+  hotelId: string;
+  price: number;
+  currency?: string;
+  outboundLinks?: HotelOutboundLinks;
+  freeCancellation?: boolean;
+  payLater?: boolean;
+  breakfastIncluded?: boolean;
+  crossedOutPrice?: number;
+  deeplinkUrl?: string;
+  roomName?: string;
+  cancellationPolicy?: string;
+}
+
+export interface ProviderHotel {
+  provider: HotelOfferProvider;
+  city: string;
+  result: HotelResult;
+  offer: HotelOffer;
+}
+
+export interface HotelIdentityMatch {
+  nameSimilarity: number;
+  distanceKm?: number;
+  score: number;
+}
+
+export interface CanonicalHotel {
+  canonicalId: string;
+  city: string;
+  name: string;
+  address?: string;
+  coordinates?: HotelCoordinates;
+  primaryHotel: ProviderHotel;
+  offers: HotelOffer[];
+  providers: ProviderHotel[];
+  identityMatch?: HotelIdentityMatch;
 }
