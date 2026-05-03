@@ -17,6 +17,7 @@ import {
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 import { ExternalLink, SearchX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function HotelSearchResultsPage() {
   const { query, routeMode, routeMeta } = useHotelRouteState();
@@ -62,6 +63,33 @@ export default function HotelSearchResultsPage() {
     meta?.source === "agoda" &&
     visibleHotels.length === 0 &&
     Boolean(affiliateLinks?.agoda);
+
+  const emptyStateContent = (() => {
+    switch (meta?.emptyStateReason) {
+      case "provider_unavailable":
+        return {
+          title: "Live hotel results are temporarily unavailable",
+          body: "You can still compare hotels directly with our partner links.",
+        };
+      case "unsupported_city":
+      case "unresolved_city":
+        return {
+          title: "Live hotel results are not available in-app for this destination yet",
+          body: "You can still view hotels directly with our partners.",
+        };
+      case "no_filter_matches":
+        return {
+          title: "No hotels match your current filters",
+          body: "Try changing your price, star rating, or amenities filters.",
+        };
+      case "no_live_inventory":
+      default:
+        return {
+          title: "No live hotel inventory returned for this search",
+          body: "Try different dates or continue directly with a provider.",
+        };
+    }
+  })();
 
   const openHotelDetail = (hotelId: string) => {
     const selectedHotel = visibleHotels.find(
@@ -186,13 +214,23 @@ export default function HotelSearchResultsPage() {
           <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800">
             <p className="font-semibold">Couldn&apos;t load hotels.</p>
             <p className="mt-1 text-sm">{errorMessage}</p>
-            <button
-              type="button"
-              onClick={retry}
-              className="mt-3 rounded-md bg-rose-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-800"
-            >
-              Retry
-            </button>
+            {meta?.emptyStateReason === "no_filter_matches" ? (
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="mt-3 min-w-[140px] shadow-sm transition-shadow hover:shadow"
+              >
+                Clear Filters
+              </Button>
+            ) : (
+              <button
+                type="button"
+                onClick={retry}
+                className="mt-3 rounded-md bg-rose-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-800"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
 
@@ -203,13 +241,16 @@ export default function HotelSearchResultsPage() {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                   <SearchX className="h-7 w-7" />
                 </div>
+                
                 <h2 className="mt-4 text-lg font-semibold text-slate-900">
-                  Live hotel results are not available in-app for {cityName} yet.
+                  {emptyStateContent.title}
                 </h2>
+
                 <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
-                  You can still view hotels directly on Agoda.
+                  {emptyStateContent.body}
                 </p>
-                {affiliateLinks?.agoda && (
+
+                {affiliateLinks?.agoda && meta?.emptyStateReason !== "no_filter_matches" && (
                   <div className="mt-4 flex justify-center">
                     <a
                       href={affiliateLinks.agoda}
@@ -220,6 +261,18 @@ export default function HotelSearchResultsPage() {
                       View hotels on Agoda
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
+                  </div>
+                )}
+                
+                {meta?.emptyStateReason === "no_filter_matches" && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Clear all filters
+                    </button>
                   </div>
                 )}
               </section>

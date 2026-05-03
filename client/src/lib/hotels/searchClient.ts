@@ -6,6 +6,17 @@ import type {
 } from "@shared/hotels/types";
 import { buildHotelSearchParams } from "@shared/hotels/searchParams";
 
+async function getSafeErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const payload = (await response.json()) as { error?: unknown; message?: unknown };
+    const candidate = typeof payload?.error === "string" ? payload.error : typeof payload?.message === "string" ? payload.message : "";
+    const normalized = candidate.trim();
+    return normalized || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * Executes a hotel search against the API.
  */
@@ -20,7 +31,7 @@ export async function searchHotels(
   });
 
   if (!response.ok) {
-    throw new Error("Unable to load hotel results.");
+    throw new Error(await getSafeErrorMessage(response, "Unable to load hotel results."));
   }
 
   return response.json() as Promise<HotelSearchResponse>;
@@ -34,7 +45,7 @@ export async function findHotelInSearchResults(
   query: HotelSearchParams,
   hotelId: string,
   signal?: AbortSignal,
-): Promise<HotelResult | null> {
+ ): Promise<HotelResult | null> {
   const payload = await getHotelDetail(query, hotelId, signal);
   return payload.hotel;
 }
@@ -56,7 +67,7 @@ export async function getHotelDetail(
   );
 
   if (!response.ok) {
-    throw new Error("Unable to load hotel details.");
+    throw new Error(await getSafeErrorMessage(response, "Unable to load hotel details."));
   }
 
   return response.json() as Promise<HotelDetailResponse>;
