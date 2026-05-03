@@ -1,20 +1,7 @@
-import type { City } from "./cities.js";
+import type { City } from "./cities";
 
-export type HotelSort =
-  | "best"
-  | "rank"
-  | "price_asc"
-  | "price_desc"
-  | "stars_desc"
-  | "review_desc";
-export type HotelSearchSource =
-  | "agoda"
-  | "booking"
-  | "trip"
-  | "expedia"
-  | "klook"
-  | "metasearch"
-  | "mock";
+export type HotelSearchSource = "agoda" | "booking" | "trip" | "expedia" | "klook" | "metasearch" | "mock";
+export type HotelSort = "best" | "rank" | "price_asc" | "price_desc" | "stars_desc" | "review_desc";
 export type HotelViewMode = "list" | "map";
 
 export interface HotelSearchParams {
@@ -24,33 +11,56 @@ export interface HotelSearchParams {
   checkOut: string;
   adults: number;
   rooms: number;
-  page: number;
+  children?: number;
   sort: HotelSort;
+  page: number;
+}
+
+export interface HotelPriceDisplay {
+  amount: number;
+  currency: string;
+  provider: HotelSearchSource;
+  taxInclusive: boolean;
+  isStrikethrough?: boolean;
 }
 
 export interface HotelOutboundLinks {
   agoda?: string;
   booking?: string;
   trip?: string;
-  klook?: string;
   expedia?: string;
+  klook?: string;
+  mock?: string;
+  metasearch?: string;
 }
+
+export type HotelOfferProvider = Exclude<HotelSearchSource, "metasearch" | "mock">;
+
+export interface HotelOffer {
+  provider: HotelSearchSource;
+  price: number;
+  currency: string;
+  outboundLink?: string; // Singular for newer logic
+  outboundLinks?: HotelOutboundLinks; // Plural for identity merging
+  breakfastIncluded: boolean;
+  freeCancellation: boolean;
+  payLater: boolean;
+  roomName?: string;
+  hotelId: string;
+  rank: number;
+  crossedOutPrice?: number;
+  deeplinkUrl?: string;
+  cancellationPolicy?: string;
+}
+
+export type HotelCoordinatesConfidence = "exact" | "approximate" | "fallback";
 
 export interface HotelCoordinates {
   lat: number;
   lng: number;
-  /** Temporary fallback until upstream hotel-level coordinates are available. */
   isFallback?: boolean;
+  confidence?: HotelCoordinatesConfidence;
 }
-
-export type HotelCoordinatesConfidence = "exact" | "fallback" | "missing";
-
-export interface HotelPriceDisplay {
-  priceLabel?: string;
-  totalStayEstimateLabel?: string;
-}
-
-
 
 export interface HotelResult {
   hotelId: string;
@@ -62,23 +72,46 @@ export interface HotelResult {
   imageUrl: string;
   amenities: string[];
   lowestRate: number;
-  currency?: string;
-  rankingPosition?: number;
+  currency: string;
+  rankingPosition: number;
+  breakfastIncluded: boolean;
+  freeCancellation: boolean;
+  payLater: boolean;
+  outboundLinks: HotelOutboundLinks;
   coordinates?: HotelCoordinates;
-  outboundLinks?: HotelOutboundLinks;
-  neighborhood?: string;
-  breakfastIncluded?: boolean;
-  freeCancellation?: boolean;
-  payLater?: boolean;
+  distanceFromCenter?: number;
   provider?: HotelSearchSource;
   crossedOutRate?: number;
   discountPercentage?: number;
-  providerPrices?: Partial<
-    Record<Exclude<HotelSearchSource, "metasearch" | "mock">, number>
-  >;
+  providerPrices?: Partial<Record<HotelOfferProvider, number>>;
   coordinatesConfidence?: HotelCoordinatesConfidence;
   priceDisplay?: HotelPriceDisplay;
   offers?: HotelOffer[];
+}
+
+export interface ProviderHotel {
+  provider: HotelOfferProvider;
+  city: string;
+  result: HotelResult;
+  offer: HotelOffer;
+}
+
+export interface HotelIdentityMatch {
+  nameSimilarity: number;
+  distanceKm?: number;
+  score: number;
+}
+
+export interface CanonicalHotel {
+  canonicalId: string;
+  city: string;
+  name: string;
+  address?: string;
+  coordinates?: HotelCoordinates;
+  primaryHotel: ProviderHotel;
+  offers: HotelOffer[];
+  providers: ProviderHotel[];
+  identityMatch?: HotelIdentityMatch;
 }
 
 export interface HotelSearchMeta {
@@ -95,13 +128,24 @@ export interface HotelSearchMeta {
   warning?: string;
   warnings?: string[];
   diagnostics?: HotelSearchDiagnostics;
+  emptyStateReason?: HotelEmptyStateReason;
 }
 
 export type HotelDiagnosticsReason =
   | "missing_credentials"
   | "non_ok_response"
   | "empty_results"
-  | "fetch_error";
+  | "fetch_error"
+  | "unsupported_city"
+  | "unresolved_city"
+  | "no_results_for_filters";
+
+export type HotelEmptyStateReason =
+  | "provider_unavailable"
+  | "unsupported_city"
+  | "unresolved_city"
+  | "no_filter_matches"
+  | "no_live_inventory";
 
 export interface HotelSearchDiagnostics {
   reason: HotelDiagnosticsReason;
@@ -111,7 +155,8 @@ export interface HotelSearchDiagnostics {
   hasAgodaApiKey: boolean;
   siteIdLooksNumeric: boolean;
   apiKeyPresent: boolean;
-  authFormat: "siteid_colon_apikey";
+  authFormat: "siteid_colon_apikey" | "plain_apikey";
+  requestFormat?: string;
   requestShape?: {
     cityId: number;
     checkIn: string;
@@ -133,6 +178,7 @@ export interface HotelSearchDiagnostics {
   resolvedLtCityId?: number;
   resolvedLtCityIdSource?:
     | "verified_lt_id"
+    | "data_file_city_id"
     | "dynamic_query_id"
     | "local_agoda_city_id";
   cityResolutionStatus?:
@@ -160,55 +206,11 @@ export interface HotelSearchResponse {
   meta: HotelSearchMeta;
 }
 
-export interface HotelDetailResponse {
+export interface HotelDetailResponse extends HotelSearchResponse {
   hotel: HotelResult | null;
-  city: HotelSearchCity;
-  affiliateLinks: HotelOutboundLinks;
-  meta?: HotelSearchMeta & { hotelId?: string };
+  meta: HotelSearchMeta & {
+    hotelId: string;
+  };
 }
 
-/**
- * ─── Metasearch Identity & Canonicalization ────────────────────────
- */
-
-export type HotelOfferProvider = Exclude<HotelSearchSource, "metasearch" | "mock">;
-
-export interface HotelOffer {
-  provider: HotelOfferProvider;
-  hotelId: string;
-  price: number;
-  currency?: string;
-  outboundLinks?: HotelOutboundLinks;
-  freeCancellation?: boolean;
-  payLater?: boolean;
-  breakfastIncluded?: boolean;
-  crossedOutPrice?: number;
-  deeplinkUrl?: string;
-  roomName?: string;
-  cancellationPolicy?: string;
-}
-
-export interface ProviderHotel {
-  provider: HotelOfferProvider;
-  city: string;
-  result: HotelResult;
-  offer: HotelOffer;
-}
-
-export interface HotelIdentityMatch {
-  nameSimilarity: number;
-  distanceKm?: number;
-  score: number;
-}
-
-export interface CanonicalHotel {
-  canonicalId: string;
-  city: string;
-  name: string;
-  address?: string;
-  coordinates?: HotelCoordinates;
-  primaryHotel: ProviderHotel;
-  offers: HotelOffer[];
-  providers: ProviderHotel[];
-  identityMatch?: HotelIdentityMatch;
-}
+export type HotelSearchResponsePayload = HotelSearchResponse;

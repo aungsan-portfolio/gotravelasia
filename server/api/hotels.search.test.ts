@@ -4,6 +4,7 @@ import {
   getCityBySlug,
   type City,
 } from "../../shared/hotels/cities";
+import { deriveEmptyStateReason } from "./hotels";
 import { findAgodaLtCityIdByName } from "../../shared/hotels/agodaLtCityMap";
 
 function createRes() {
@@ -68,6 +69,34 @@ afterEach(() => {
 });
 
 describe("hotel search api", () => {
+  describe("deriveEmptyStateReason unit tests", () => {
+    it("returns undefined if hotels are present", () => {
+      expect(deriveEmptyStateReason([{ hotelId: "1" } as any])).toBeUndefined();
+    });
+
+    it("returns provider_unavailable if no diagnostics", () => {
+      expect(deriveEmptyStateReason([])).toBe("provider_unavailable");
+    });
+
+    it("maps diagnostics reason correctly", () => {
+      expect(deriveEmptyStateReason([], { reason: "fetch_error" } as any)).toBe("provider_unavailable");
+      expect(deriveEmptyStateReason([], { reason: "unsupported_city" } as any)).toBe("unsupported_city");
+      expect(deriveEmptyStateReason([], { reason: "unresolved_city" } as any)).toBe("unresolved_city");
+    });
+
+    it("handles empty_results based on city resolution status", () => {
+      expect(deriveEmptyStateReason([], { 
+        reason: "empty_results", 
+        cityResolutionStatus: "resolved" 
+      } as any)).toBe("no_live_inventory");
+      
+      expect(deriveEmptyStateReason([], { 
+        reason: "empty_results", 
+        cityResolutionStatus: "unresolved_empty_results" 
+      } as any)).toBe("unresolved_city");
+    });
+  });
+
   it("buildAgodaLtV1RequestBody returns criteria.additional shape", async () => {
     const { buildAgodaLtV1RequestBody } = await import("./hotels");
     expect(
@@ -449,5 +478,47 @@ describe("hotel search api", () => {
     const res = createRes();
     await runSearch(buildReq("1", "bangkok"), res);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns unsupported_city empty-state reason when no LT candidates resolve", async () => {
+    setLiveAgodaEnv();
+    process.env.HOTEL_DEBUG_DIAGNOSTICS = "true";
+    const res = createRes();
+    await runSearch({
+      query: {
+        city: "mystery-city",
+        cityName: "Mystery City",
+        checkIn: "2026-05-10",
+        checkOut: "2026-05-12",
+        adults: "2",
+        rooms: "1",
+        page: "1",
+        sort: "best",
+      },
+    }, res);
+
+    expect((res.body as any).hotels).toEqual([]);
+    expect((res.body as any).meta.emptyStateReason).toBe("unresolved_city");
+    expect((res.body as any).meta.diagnostics.reason).toBe("unresolved_city");
+  });
+
+  it("maps provider non-ok to provider_unavailable empty-state", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      text: async () => "upstream unavailable",
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1", "bangkok"), res);
+    expect((res.body as any).meta.emptyStateReason).toBe("provider_unavailable");
+  });
+
+  it("kuala lumpur city candidate order prefers verified LT city id", () => {
+    const kl = getCityBySlug("kuala-lumpur")!;
+    const candidates = buildAgodaLtCityCandidates({ city: kl, queryCity: "3714" });
+    expect(kl.agodaCityId).toBe(3714);
+    expect(kl.agodaLtCityId).toBe(14524);
+    expect(candidates.map((item) => item.cityId)).toEqual([14524, 3714]);
   });
 });
