@@ -142,6 +142,7 @@ export function useHotelSearch(
     const filteredHotels = applyHotelFilters({
       hotels: allHotels,
       quickFilters: activeFilters,
+      richFilters,
     });
 
     switch (sort) {
