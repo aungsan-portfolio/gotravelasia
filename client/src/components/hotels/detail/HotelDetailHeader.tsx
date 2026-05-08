@@ -1,4 +1,5 @@
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
+import type { UIEvent } from "react";
 import { Heart } from "lucide-react";
 import { formatReviewLabel } from "@/lib/hotels/formatters";
 import { getLightweightHotelBadges } from "@/components/hotels/results/hotelBadgeCopy";
@@ -9,138 +10,190 @@ interface HotelDetailHeaderProps {
   hotel: HotelResult;
 }
 
+function HotelImageFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-4xl">
+      🏨
+    </div>
+  );
+}
+
+function GalleryImage({
+  src,
+  alt,
+  loading = "lazy",
+  roundedClassName = "",
+  onError,
+}: {
+  src: string;
+  alt: string;
+  loading?: "eager" | "lazy";
+  roundedClassName?: string;
+  onError: (src: string) => void;
+}) {
+  return (
+    <div className={["relative overflow-hidden bg-slate-100", roundedClassName].filter(Boolean).join(" ")}>
+      <img
+        src={src}
+        alt={alt}
+        loading={loading}
+        className="h-full w-full cursor-pointer object-cover transition hover:opacity-95"
+        onError={() => onError(src)}
+      />
+    </div>
+  );
+}
+
 export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 3), [hotel]);
-
-  // 1. Memoize and deduplicate gallery images
-  const galleryImages = useMemo(() => {
-    const candidates = [
-      ...(hotel.images ?? []),
-      hotel.imageUrl,
-    ].filter(Boolean);
-
-    return Array.from(new Set(candidates));
-  }, [hotel.images, hotel.imageUrl]);
-
-  // 2. Track failed images individually
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
-  
-  const handleImageError = useCallback((url: string) => {
-    setFailedImages((prev) => {
-      const next = new Set(prev);
-      next.add(url);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const galleryImages = useMemo(() => {
+    const candidates = [...(hotel.images ?? []), hotel.imageUrl].filter(Boolean);
+    return Array.from(new Set(candidates));
+  }, [hotel.imageUrl, hotel.images]);
+
+  const activeImages = useMemo(
+    () => galleryImages.filter((imageUrl) => !failedImages.has(imageUrl)),
+    [failedImages, galleryImages],
+  );
+
+  const handleImageError = useCallback((imageUrl: string) => {
+    setFailedImages((current) => {
+      const next = new Set(current);
+      next.add(imageUrl);
       return next;
     });
   }, []);
 
-  const activeImages = useMemo(
-    () => galleryImages.filter((img) => !failedImages.has(img)),
-    [galleryImages, failedImages]
-  );
-
-  // 3. Mobile carousel scroll tracking
-  const [activeSlide, setActiveSlide] = useState(0);
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const scrollLeft = e.currentTarget.scrollLeft;
-    const width = e.currentTarget.clientWidth;
-    if (width > 0) {
-      setActiveSlide(Math.round(scrollLeft / width));
+  const handleMobileGalleryScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+    const { clientWidth, scrollLeft } = event.currentTarget;
+    if (clientWidth <= 0) {
+      return;
     }
-  }, []);
+    setActiveSlide(Math.min(activeImages.length - 1, Math.max(0, Math.round(scrollLeft / clientWidth))));
+  }, [activeImages.length]);
 
-  // 4. Wishlist Hook
+  const compactDesktopImages = activeImages.slice(1, 4);
+
+  // Wishlist Hook
   const { isSaved, toggleSave } = useWishlist();
   const saved = isSaved(hotel.hotelId);
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      
-      {/* ===== Premium Gallery Section ===== */}
       {activeImages.length === 0 ? (
-        // Fallback for completely missing or failed images
-        <div className="h-64 bg-slate-100 md:h-80 flex items-center justify-center text-4xl">
-          🏨
+        <div className="h-64 md:h-80">
+          <HotelImageFallback />
         </div>
       ) : (
         <>
-          {/* Mobile Swipeable Carousel (visible only on mobile) */}
-          <div className="relative flex md:hidden h-64">
-            <div 
-              className="flex w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar"
-              onScroll={handleScroll}
+          {/* Mobile Gallery */}
+          <div className="relative h-64 md:hidden">
+            <div
+              className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              onScroll={handleMobileGalleryScroll}
             >
-              {activeImages.map((img, index) => (
-                <div key={img} className="w-full shrink-0 snap-center relative">
+              {activeImages.map((imageUrl, index) => (
+                <div key={imageUrl} className="relative h-full w-full shrink-0 snap-center bg-slate-100">
                   <img
-                    src={img}
-                    alt={`${hotel.name} - Photo ${index + 1}`}
+                    src={imageUrl}
+                    alt={`${hotel.name} photo ${index + 1}`}
                     loading={index === 0 ? "eager" : "lazy"}
                     className="h-full w-full object-cover"
-                    onError={() => handleImageError(img)}
+                    onError={() => handleImageError(imageUrl)}
                   />
                 </div>
               ))}
             </div>
-            
-            {/* Mobile Counter Badge */}
-            <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium tracking-wide text-white pointer-events-none">
-               {activeSlide + 1} / {activeImages.length}
+
+            <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium tracking-wide text-white">
+              {Math.min(activeSlide + 1, activeImages.length)} / {activeImages.length}
             </div>
           </div>
 
-          {/* Desktop Responsive Grid (visible only on md and up) */}
-          <div className="hidden md:flex gap-1.5 h-[400px] p-1.5 bg-slate-100">
-            {/* Hero Large Image */}
-            <div className={`relative overflow-hidden rounded-l-lg ${activeImages.length === 1 ? 'w-full rounded-r-lg' : 'w-2/3'}`}>
-               <img
-                  src={activeImages[0]}
-                  alt={`${hotel.name} - Hero`}
-                  loading="eager"
-                  className="h-full w-full object-cover cursor-pointer hover:opacity-95 transition"
-                  onError={() => handleImageError(activeImages[0])}
-                />
-            </div>
-            
-            {/* Right Side Small Images Grid */}
+          {/* Desktop Gallery Grid */}
+          <div className="hidden h-[400px] gap-1.5 bg-slate-100 p-1.5 md:flex">
+            <GalleryImage
+              src={activeImages[0]}
+              alt={`${hotel.name} hero photo`}
+              loading="eager"
+              roundedClassName={activeImages.length === 1 ? "w-full rounded-lg" : "w-2/3 rounded-l-lg"}
+              onError={handleImageError}
+            />
+
             {activeImages.length > 1 && (
-              <div className="w-1/3 flex flex-col gap-1.5">
-                 {activeImages.length >= 5 ? (
-                   // 5+ Images: Standard Airbnb 2x2 Grid
-                   <div className="grid grid-cols-2 grid-rows-2 gap-1.5 h-full">
-                     <div className="overflow-hidden relative"><img src={activeImages[1]} loading="lazy" className="h-full w-full object-cover cursor-pointer hover:opacity-95 transition" onError={() => handleImageError(activeImages[1])} /></div>
-                     <div className="overflow-hidden rounded-tr-lg relative"><img src={activeImages[2]} loading="lazy" className="h-full w-full object-cover cursor-pointer hover:opacity-95 transition" onError={() => handleImageError(activeImages[2])} /></div>
-                     <div className="overflow-hidden relative"><img src={activeImages[3]} loading="lazy" className="h-full w-full object-cover cursor-pointer hover:opacity-95 transition" onError={() => handleImageError(activeImages[3])} /></div>
-                     <div className="overflow-hidden rounded-br-lg relative cursor-pointer hover:opacity-90 transition group">
-                        <img src={activeImages[4]} loading="lazy" className="h-full w-full object-cover" onError={() => handleImageError(activeImages[4])} />
-                        {activeImages.length > 5 && (
-                          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white group-hover:bg-black/50 transition">
-                            <span className="text-xl font-bold tracking-tight">+{activeImages.length - 5}</span>
-                            <span className="text-xs font-medium">photos</span>
-                          </div>
-                        )}
-                     </div>
-                   </div>
-                 ) : (
-                   // Fallback for 2, 3, or 4 total images: Stack them evenly
-                   <div className={`grid gap-1.5 h-full ${activeImages.length === 2 ? 'grid-rows-1' : activeImages.length === 3 ? 'grid-rows-2' : 'grid-rows-3'}`}>
-                      {activeImages.slice(1, 4).map((img, index) => {
-                        const isLast = index === activeImages.slice(1, 4).length - 1;
-                        return (
-                          <div key={img} className={`overflow-hidden relative ${isLast ? 'rounded-br-lg' : ''} ${index === 0 ? 'rounded-tr-lg' : ''}`}>
-                            <img src={img} loading="lazy" className="h-full w-full object-cover cursor-pointer hover:opacity-95 transition" onError={() => handleImageError(img)} />
-                          </div>
-                        );
-                      })}
-                   </div>
-                 )}
+              <div className="flex w-1/3 flex-col gap-1.5">
+                {activeImages.length >= 5 ? (
+                  <div className="grid h-full grid-cols-2 grid-rows-2 gap-1.5">
+                    <GalleryImage
+                      src={activeImages[1]}
+                      alt={`${hotel.name} photo 2`}
+                      onError={handleImageError}
+                    />
+                    <GalleryImage
+                      src={activeImages[2]}
+                      alt={`${hotel.name} photo 3`}
+                      roundedClassName="rounded-tr-lg"
+                      onError={handleImageError}
+                    />
+                    <GalleryImage
+                      src={activeImages[3]}
+                      alt={`${hotel.name} photo 4`}
+                      onError={handleImageError}
+                    />
+                    <div className="group relative overflow-hidden rounded-br-lg bg-slate-100">
+                      <img
+                        src={activeImages[4]}
+                        alt={`${hotel.name} photo 5`}
+                        loading="lazy"
+                        className="h-full w-full cursor-pointer object-cover transition group-hover:opacity-90"
+                        onError={() => handleImageError(activeImages[4])}
+                      />
+                      {activeImages.length > 5 && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white transition group-hover:bg-black/50">
+                          <span className="text-xl font-bold tracking-tight">+{activeImages.length - 5}</span>
+                          <span className="text-xs font-medium">photos</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={[
+                      "grid h-full gap-1.5",
+                      activeImages.length === 2
+                        ? "grid-rows-1"
+                        : activeImages.length === 3
+                          ? "grid-rows-2"
+                          : "grid-rows-3",
+                    ].join(" ")}
+                  >
+                    {compactDesktopImages.map((imageUrl, index) => {
+                      const isFirst = index === 0;
+                      const isLast = index === compactDesktopImages.length - 1;
+                      return (
+                        <GalleryImage
+                          key={imageUrl}
+                          src={imageUrl}
+                          alt={`${hotel.name} photo ${index + 2}`}
+                          roundedClassName={[isFirst ? "rounded-tr-lg" : "", isLast ? "rounded-br-lg" : ""]
+                            .filter(Boolean)
+                            .join(" ")}
+                          onError={handleImageError}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
         </>
       )}
-      {/* ===== END Gallery Section ===== */}
 
-      {/* Preserve Existing Information Section */}
+      {/* Hotel Information Section */}
       <div className="space-y-3 p-4 md:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex-1">
@@ -148,7 +201,7 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
             <p className="mt-1 text-sm text-slate-600">{hotel.address || "Location unavailable"}</p>
           </div>
           
-          {/* 💖 Heart Save Button */}
+          {/* Heart Save Button */}
           <button
             type="button"
             onClick={() => toggleSave(hotel)}

@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { memo, useMemo } from "react";
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -10,7 +10,6 @@ interface HotelMiniMapProps {
   hotelName: string;
 }
 
-// 🏨 Custom Hotel Pin Icon ဖန်တီးခြင်း
 function createMiniMapIcon() {
   const html = `
     <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-full">
@@ -32,12 +31,13 @@ function createMiniMapIcon() {
 }
 
 function HotelMiniMapComponent({ coordinates, hotelName }: HotelMiniMapProps) {
-  const icon = createMiniMapIcon();
+  const icon = useMemo(() => createMiniMapIcon(), []);
+  const center: [number, number] = [coordinates.lat, coordinates.lng];
 
   return (
-    <div className="relative mt-4 h-64 w-full overflow-hidden rounded-xl border border-slate-200 z-0">
+    <div className="relative mt-4 h-64 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm z-0">
       <MapContainer
-        center={[coordinates.lat, coordinates.lng]}
+        center={center}
         zoom={15}
         style={{ height: "100%", width: "100%", zIndex: 0 }}
         scrollWheelZoom={false}
@@ -47,14 +47,9 @@ function HotelMiniMapComponent({ coordinates, hotelName }: HotelMiniMapProps) {
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
-        <Marker
-          position={[coordinates.lat, coordinates.lng]}
-          icon={icon}
-          title={hotelName}
-        />
+        <Marker position={center} icon={icon} title={hotelName} />
       </MapContainer>
       
-      {/* ⚠️ Fallback coordinate ဖြစ်နေရင် User ကို အသိပေးမယ့် Badge */}
       {coordinates.isFallback && (
         <div className="absolute bottom-2 right-2 z-[400] rounded bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-600 shadow-sm backdrop-blur-sm">
           Approximate location
