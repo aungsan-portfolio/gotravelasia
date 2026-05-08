@@ -161,6 +161,34 @@ function buildPriceDisplay(lowestRate: number, currency: string, nights: number)
   return priceDisplay;
 }
 
+function normalizeHotelImages(rawHotel: any): string[] {
+  const rawImages = [
+    rawHotel.imageUrl,
+    rawHotel.imageURL,
+    rawHotel.photoURL,
+    rawHotel.photoUrl,
+    rawHotel.thumbnailURL,
+    rawHotel.thumbnailUrl,
+    rawHotel.mainPhotoUrl,
+    rawHotel.mainPhotoURL,
+    rawHotel.hotelImageUrl,
+    rawHotel.hotelImageURL,
+    rawHotel.image?.url,
+    ...(Array.isArray(rawHotel.images) ? rawHotel.images.map((img: any) => img?.url ?? img) : []),
+    ...(Array.isArray(rawHotel.photos) ? rawHotel.photos.map((img: any) => img?.url ?? img) : []),
+  ];
+
+  return Array.from(
+    new Set(
+      rawImages
+        .map(asNonEmptyString)
+        .filter((value): value is string => Boolean(value))
+        .map(normalizeImageUrl)
+        .filter(Boolean),
+    ),
+  );
+}
+
 export function normalizeHotel(
   rawHotel: any,
   city: HotelSearchCity,
@@ -175,24 +203,8 @@ export function normalizeHotel(
   const hotelId = String(
     rawHotel.hotelId ?? rawHotel.propertyId ?? rawHotel.id ?? `${city.agodaCityId}-${index + 1}`
   );
-  const imageUrl = normalizeImageUrl(
-    asNonEmptyString(rawHotel.imageUrl) ??
-    asNonEmptyString(rawHotel.imageURL) ??
-    asNonEmptyString(rawHotel.photoURL) ??
-    asNonEmptyString(rawHotel.photoUrl) ??
-    asNonEmptyString(rawHotel.thumbnailURL) ??
-    asNonEmptyString(rawHotel.thumbnailUrl) ??
-    asNonEmptyString(rawHotel.mainPhotoUrl) ??
-    asNonEmptyString(rawHotel.mainPhotoURL) ??
-    asNonEmptyString(rawHotel.hotelImageUrl) ??
-    asNonEmptyString(rawHotel.hotelImageURL) ??
-    asNonEmptyString(rawHotel.images?.[0]?.url) ??
-    asNonEmptyString(rawHotel.images?.[0]) ??
-    asNonEmptyString(rawHotel.image?.url) ??
-    asNonEmptyString(rawHotel.photos?.[0]?.url) ??
-    asNonEmptyString(rawHotel.photos?.[0]) ??
-    ""
-  );
+  const images = normalizeHotelImages(rawHotel);
+  const imageUrl = images[0] ?? "";
   
   const amenities = Array.isArray(rawHotel.amenities) 
     ? rawHotel.amenities.map((amenity: any) => String(amenity?.name ?? amenity)).filter(Boolean) 
@@ -254,6 +266,7 @@ export function normalizeHotel(
              asNonEmptyString(rawHotel.location?.areaName) ?? 
              asNonEmptyString(rawHotel.location?.cityName) ?? "",
     imageUrl,
+    images,
     amenities,
     lowestRate,
     currency,
