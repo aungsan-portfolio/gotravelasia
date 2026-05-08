@@ -70,6 +70,7 @@ export interface HotelResult {
   reviewCount: number;
   address: string;
   imageUrl: string;
+  images?: string[];
   amenities: string[];
   lowestRate: number;
   currency: string;
