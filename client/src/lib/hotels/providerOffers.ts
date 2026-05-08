@@ -2,14 +2,17 @@ import type {
   HotelOffer,
   HotelOfferProvider,
   HotelResult,
+  HotelSearchSource,
 } from "@shared/hotels/types";
 
-export const HOTEL_OFFER_PROVIDER_LABELS: Record<HotelOfferProvider, string> = {
+export const HOTEL_OFFER_PROVIDER_LABELS: Record<HotelSearchSource, string> = {
   agoda: "Agoda",
   booking: "Booking.com",
   trip: "Trip.com",
   expedia: "Expedia",
   klook: "Klook",
+  metasearch: "GoTravelAsia",
+  mock: "Mock Provider",
 };
 
 const HOTEL_OFFER_PROVIDERS = new Set<HotelOfferProvider>([

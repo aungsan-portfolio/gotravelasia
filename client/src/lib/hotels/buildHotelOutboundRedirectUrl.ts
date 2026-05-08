@@ -1,5 +1,7 @@
+import type { HotelSearchSource } from "@shared/hotels/types";
+
 interface BuildHotelOutboundRedirectUrlParams {
-  provider: "agoda" | "booking" | "trip" | "expedia" | "klook";
+  provider: HotelSearchSource;
   targetUrl?: string;
   hotelId?: string;
   city?: string;

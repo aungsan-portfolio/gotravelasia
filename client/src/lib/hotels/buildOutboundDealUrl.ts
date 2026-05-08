@@ -1,6 +1,8 @@
+import type { HotelSearchSource } from "@shared/hotels/types";
+
 interface BuildOutboundDealUrlInput {
   baseUrl?: string | null;
-  provider: "agoda" | "booking" | "trip" | "expedia" | "klook";
+  provider: HotelSearchSource;
   hotelId?: string;
   city?: string;
   checkIn?: string;

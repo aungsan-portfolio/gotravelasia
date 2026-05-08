@@ -97,6 +97,7 @@ export function createHotelOfferFromResult(
     freeCancellation: result.freeCancellation,
     payLater: result.payLater,
     breakfastIncluded: result.breakfastIncluded,
+    rank: result.rankingPosition || 0,
   };
 }
 

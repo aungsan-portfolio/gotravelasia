@@ -1,4 +1,5 @@
 import posthog from "posthog-js";
+import type { HotelSearchSource } from "@shared/hotels/types";
 
 export interface HotelTrackingContext {
   hotelId?: string;
@@ -22,7 +23,7 @@ export interface HotelTrackingContext {
   resultCount?: number;
   mappedCount?: number;
   resultPosition?: number;
-  provider?: "agoda" | "booking" | "trip" | "expedia" | "klook";
+  provider?: HotelSearchSource;
   price?: number;
   currency?: string;
   offerRank?: number;
