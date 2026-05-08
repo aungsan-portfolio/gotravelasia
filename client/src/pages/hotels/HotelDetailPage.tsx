@@ -5,6 +5,7 @@ import { HotelDetailAmenities } from "@/components/hotels/detail/HotelDetailAmen
 import { HotelDetailBookingCard } from "@/components/hotels/detail/HotelDetailBookingCard";
 import { HotelDetailHeader } from "@/components/hotels/detail/HotelDetailHeader";
 import { HotelDetailPriceBox } from "@/components/hotels/detail/HotelDetailPriceBox";
+import { HotelMiniMap } from "@/components/hotels/detail/HotelMiniMap";
 import { useHotelDetailFallback } from "@/hooks/useHotelDetailFallback";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
@@ -193,10 +194,7 @@ export default function HotelDetailPage() {
                 <h2 className="text-lg font-semibold text-slate-900">Location</h2>
                 <p className="mt-2 text-sm text-slate-700">{hotel.address || "Location details unavailable"}</p>
                 {hotel.coordinates ? (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Coordinates: {hotel.coordinates.lat.toFixed(4)}, {hotel.coordinates.lng.toFixed(4)}
-                    {hotel.coordinates.isFallback ? " (approximate)" : ""}
-                  </p>
+                  <HotelMiniMap coordinates={hotel.coordinates} hotelName={hotel.name} />
                 ) : (
                   <p className="mt-1 text-xs text-slate-500">Map coordinates are not available for this hotel yet.</p>
                 )}
