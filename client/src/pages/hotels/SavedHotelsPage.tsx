@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { Heart, Search, ExternalLink, Star, MapPin } from "lucide-react";
 import Layout from "@/components/Layout";
@@ -170,8 +170,6 @@ function SavedHotelsSkeleton() {
 }
 
 // ─── Page ───────────────────────────────────────────────────────
-
-import { useState } from "react";
 
 export default function SavedHotelsPage() {
   const { normalizedSavedHotels, isLoading, isAuthenticated } = useWishlist();
