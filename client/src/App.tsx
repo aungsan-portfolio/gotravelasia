@@ -32,6 +32,7 @@ const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const TransportPage = lazy(() => import("./pages/TransportPage"));
 const HotelsPage = lazy(() => import("./pages/hotels/HotelSearchResultsPage"));
 const HotelDetailPage = lazy(() => import("./pages/hotels/HotelDetailPage"));
+const SavedHotelsPage = lazy(() => import("./pages/hotels/SavedHotelsPage"));
 
 function PageLoader() {
   return (
@@ -65,6 +66,7 @@ function Router() {
         <Route path="/flights/to/:slug" component={DestinationLandingPage} />
 
         {/* Path-based Hotel Routes (SEO Growth) */}
+        <Route path="/saved-hotels" component={SavedHotelsPage} />
         <Route path="/hotels/detail/:hotelId" component={HotelDetailPage} />
         <Route path="/hotels/:destination/:checkIn/:checkOut/:party" component={HotelsPage} />
         <Route path="/hotels" component={HotelsPage} />

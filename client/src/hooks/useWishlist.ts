@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
 import type { HotelResult } from "@shared/hotels/types";
@@ -37,10 +37,23 @@ export interface CloudWishlistItem {
   updatedAt: string;
 }
 
+/** Unified shape for rendering saved hotels in SavedHotelsPage. */
+export interface NormalizedSavedHotel {
+  hotelId: string;
+  name: string;
+  city: string;
+  imageUrl: string | null;
+  stars: number | null;
+  reviewScore: string | null;
+  price: number | null;
+  currency: string | null;
+  bookingUrl: string | null;
+  provider: string;
+}
+
 // ─── Constants ──────────────────────────────────────────────────
 
 const WISHLIST_KEY = "gotravel_hotel_wishlist";
-const SYNC_FLAG_KEY = "gotravel_wishlist_synced";
 const CLOUD_QUERY_KEY = ["wishlist", "cloud"];
 
 // ─── Local Storage Helpers ──────────────────────────────────────
@@ -70,17 +83,21 @@ function clearLocalWishlist(): void {
   }
 }
 
-function markSynced(): void {
+function syncFlagKey(userId: number | string): string {
+  return `gotravel_wishlist_synced_${userId}`;
+}
+
+function markSynced(userId: number | string): void {
   try {
-    localStorage.setItem(SYNC_FLAG_KEY, "true");
+    localStorage.setItem(syncFlagKey(userId), "true");
   } catch {
     // ignore
   }
 }
 
-function wasSynced(): boolean {
+function wasSynced(userId: number | string): boolean {
   try {
-    return localStorage.getItem(SYNC_FLAG_KEY) === "true";
+    return localStorage.getItem(syncFlagKey(userId)) === "true";
   } catch {
     return false;
   }
@@ -136,7 +153,7 @@ function buildCloudPayload(hotel: HotelResult): Record<string, unknown> {
 // ─── Hook ───────────────────────────────────────────────────────
 
 export function useWishlist() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const queryClient = useQueryClient();
   const syncAttemptedRef = useRef(false);
 
@@ -174,15 +191,15 @@ export function useWishlist() {
 
   // ── Sync localStorage → Cloud on login ────────────────────────
   useEffect(() => {
-    if (!isAuthenticated || authLoading) return;
+    if (!isAuthenticated || authLoading || !user) return;
     if (syncAttemptedRef.current) return;
-    if (wasSynced()) return;
+    if (wasSynced(user.id ?? user.openId)) return;
 
     syncAttemptedRef.current = true;
 
     const localItems = readLocalWishlist();
     if (localItems.length === 0) {
-      markSynced();
+      markSynced(user.id ?? user.openId);
       return;
     }
 
@@ -208,14 +225,14 @@ export function useWishlist() {
         }
         clearLocalWishlist();
         setLocalHotels([]);
-        markSynced();
+        markSynced(user.id ?? user.openId);
         queryClient.invalidateQueries({ queryKey: CLOUD_QUERY_KEY });
       } catch (error) {
         console.error("[Wishlist] Failed to sync local items to cloud:", error);
         // Keep local items as fallback; don't mark synced
       }
     })();
-  }, [isAuthenticated, authLoading, queryClient]);
+  }, [isAuthenticated, authLoading, user, queryClient]);
 
   // ── Unified API ───────────────────────────────────────────────
 
@@ -276,8 +293,43 @@ export function useWishlist() {
   // Expose a unified list for use in SavedHotelsPage
   const savedHotels = isAuthenticated ? (cloudQuery.data ?? []) : localHotels;
 
+  // Normalized shape for rendering
+  const normalizedSavedHotels: NormalizedSavedHotel[] = useMemo(() => {
+    return (savedHotels as any[]).map((item: any) => {
+      if ("hotelName" in item) {
+        // Cloud item
+        return {
+          hotelId: item.hotelId,
+          name: item.hotelName,
+          city: item.city || "",
+          imageUrl: item.imageUrl,
+          stars: item.starRating,
+          reviewScore: item.guestRating,
+          price: item.price,
+          currency: item.currency,
+          bookingUrl: item.bookingUrl,
+          provider: item.provider,
+        };
+      }
+      // Local item
+      return {
+        hotelId: item.hotelId,
+        name: item.name,
+        city: item.address || "",
+        imageUrl: item.imageUrl,
+        stars: item.stars,
+        reviewScore: item.reviewScore != null ? String(item.reviewScore) : null,
+        price: null,
+        currency: null,
+        bookingUrl: null,
+        provider: "agoda",
+      };
+    });
+  }, [savedHotels]);
+
   return {
     savedHotels,
+    normalizedSavedHotels,
     toggleSave,
     isSaved,
     isLoading: isAuthenticated ? cloudQuery.isLoading : false,
