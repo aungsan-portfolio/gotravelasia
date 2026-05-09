@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, uniqueIndex } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -136,3 +136,32 @@ export const hotelDeals = mysqlTable("hotelDeals", {
 
 export type HotelDeal = typeof hotelDeals.$inferSelect;
 export type InsertHotelDeal = typeof hotelDeals.$inferInsert;
+
+/**
+ * Cloud Wishlist for hotels.
+ * Stores a snapshot of hotel data to allow viewing saved hotels without re-fetching from API.
+ */
+export const userHotelWishlists = mysqlTable("userHotelWishlists", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  hotelId: varchar("hotelId", { length: 64 }).notNull(),
+  provider: varchar("provider", { length: 20 }).notNull(),
+  hotelName: text("hotelName").notNull(),
+  city: varchar("city", { length: 255 }).notNull(),
+  country: varchar("country", { length: 100 }),
+  imageUrl: text("imageUrl"),
+  starRating: int("starRating"),
+  guestRating: varchar("guestRating", { length: 10 }), // e.g. "9.2"
+  price: int("price"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  bookingUrl: text("bookingUrl"),
+  checkIn: varchar("checkIn", { length: 10 }),
+  checkOut: varchar("checkOut", { length: 10 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userHotelProviderIdx: uniqueIndex("user_hotel_provider_idx").on(table.userId, table.hotelId, table.provider),
+}));
+
+export type UserHotelWishlist = typeof userHotelWishlists.$inferSelect;
+export type InsertUserHotelWishlist = typeof userHotelWishlists.$inferInsert;
