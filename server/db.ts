@@ -1,6 +1,6 @@
 import { eq, and, asc, isNull, lte, or, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers, destinations, emailQueue } from "../drizzle/schema.js";
+import { InsertUser, users, flightPriceAlerts, InsertFlightPriceAlert, subscribers, destinations, emailQueue, userHotelWishlists, InsertUserHotelWishlist } from "../drizzle/schema.js";
 import { ENV } from "./_core/env.js";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -315,4 +315,66 @@ export async function markEmailQueueAttemptFailed(params: {
     lastError: params.error,
     updatedAt: new Date(),
   }).where(eq(emailQueue.id, params.id));
+}
+
+export async function getWishlistItems(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(userHotelWishlists).where(eq(userHotelWishlists.userId, userId));
+  } catch (err) {
+    console.error("[Database] Failed to get wishlist items:", err);
+    return [];
+  }
+}
+
+export async function saveWishlistItem(item: InsertUserHotelWishlist) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    await db.insert(userHotelWishlists)
+      .values({
+        ...item,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          hotelName: item.hotelName,
+          city: item.city,
+          country: item.country,
+          imageUrl: item.imageUrl,
+          starRating: item.starRating,
+          guestRating: item.guestRating,
+          price: item.price,
+          currency: item.currency,
+          bookingUrl: item.bookingUrl,
+          checkIn: item.checkIn,
+          checkOut: item.checkOut,
+          updatedAt: new Date(),
+        }
+      });
+  } catch (err) {
+    console.error("[Database] Failed to save wishlist item:", err);
+    throw err;
+  }
+}
+
+export async function removeWishlistItem(userId: number, hotelId: string, provider: string) {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    await db.delete(userHotelWishlists).where(
+      and(
+        eq(userHotelWishlists.userId, userId),
+        eq(userHotelWishlists.hotelId, hotelId),
+        eq(userHotelWishlists.provider, provider)
+      )
+    );
+  } catch (err) {
+    console.error("[Database] Failed to remove wishlist item:", err);
+    throw err;
+  }
 }

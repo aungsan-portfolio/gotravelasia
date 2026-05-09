@@ -20,6 +20,7 @@ import handleAuth from "../../api/_handlers/auth.js";
 import handleFlights from "../../api/_handlers/flights.js";
 import handleGeo from "../../api/_handlers/geo.js";
 import handleNewsletter from "../../api/_handlers/newsletter.js";
+import handleWishlist from "../../api/_handlers/wishlist.js";
 import { validatePriceCalendarRequest, validatePriceTrendRequest } from "../../shared/flights/priceIntelligence.validation.js";
 import { getPriceCalendar } from "../../api/_lib/price-intelligence/calendarService.js";
 import { getPriceTrend } from "../../api/_lib/price-intelligence/trendService.js";
@@ -78,6 +79,7 @@ app.use("/api/price-alerts", priceAlertsRouter);
 app.use("/api/alerts", priceAlertsRouter);
 app.use("/api/cron", cronRouter);
 app.use("/api/auth", handleAuth as any);
+app.use("/api/wishlist", handleWishlist as any);
 
 app.get("/api/flights/price-calendar", async (req, res) => {
   const validation = validatePriceCalendarRequest(req.query as Record<string, unknown>);

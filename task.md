@@ -66,11 +66,11 @@ Recommended fields:
 Add unique constraint:
 - unique(userId, hotelId, provider)
 
-#### API [ ]
+#### API [/]
 Add REST handler:
-- `GET /api/wishlist`
-- `POST /api/wishlist`
-- `DELETE /api/wishlist/:hotelId`
+- `GET /api/wishlist` [x]
+- `POST /api/wishlist` [x]
+- `DELETE /api/wishlist/:hotelId` [x]
 
 Important:
 - Do not accept userId from the client.
