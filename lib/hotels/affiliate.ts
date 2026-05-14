@@ -8,6 +8,106 @@ const BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID || "5910";
 const AWIN_TOKEN = process.env.AWIN_TOKEN || "";
 const AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID || "";
 
+// ─── Awin Configuration ────────────────────────────────────────────
+const AWIN_TIMEOUT_MS = Number(process.env.AWIN_TIMEOUT_MS) || 5000;
+const AWIN_MAX_RETRIES = Number(process.env.AWIN_MAX_RETRIES) || 2;
+const AWIN_RETRY_BASE_MS = 300;
+const AWIN_LINK_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+// ─── Awin Link Cache ───────────────────────────────────────────────
+interface AwinCacheEntry {
+  url: string;
+  expiresAt: number;
+}
+
+const awinLinkCache = new Map<string, AwinCacheEntry>();
+
+function getAwinCachedLink(destinationUrl: string): string | null {
+  const entry = awinLinkCache.get(destinationUrl);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    awinLinkCache.delete(destinationUrl);
+    return null;
+  }
+  return entry.url;
+}
+
+function setAwinCachedLink(destinationUrl: string, generatedUrl: string): void {
+  awinLinkCache.set(destinationUrl, {
+    url: generatedUrl,
+    expiresAt: Date.now() + AWIN_LINK_CACHE_TTL_MS,
+  });
+
+  // Prevent unbounded cache growth
+  if (awinLinkCache.size > 500) {
+    const oldest = awinLinkCache.keys().next().value;
+    if (oldest) awinLinkCache.delete(oldest);
+  }
+}
+
+// ─── Awin Error Logging ────────────────────────────────────────────
+interface AwinErrorLogEntry {
+  timestamp: string;
+  attempt: number;
+  maxRetries: number;
+  destinationUrl: string;
+  errorType: "timeout" | "http_error" | "network_error" | "parse_error";
+  statusCode?: number;
+  message: string;
+}
+
+function logAwinError(entry: AwinErrorLogEntry): void {
+  console.error("[Awin]", JSON.stringify(entry));
+}
+
+// ─── Awin Local Fallback Link Builder ──────────────────────────────
+/**
+ * Builds a local Awin-compatible tracking URL without calling the API.
+ * Uses the standard Awin redirect format:
+ * https://www.awin1.com/cread.php?awinmid=ADV_ID&awinaffid=PUB_ID&ued=ENCODED_URL
+ *
+ * This is a reliable fallback when the Awin Link Builder API is unavailable.
+ */
+export function buildLocalAwinLink(destinationUrl: string): string {
+  if (!AWIN_PUB_ID || !BOOKING_ADV) return destinationUrl;
+
+  const params = new URLSearchParams({
+    awinmid: BOOKING_ADV,
+    awinaffid: AWIN_PUB_ID,
+    ued: destinationUrl,
+    platform: "dl",
+  });
+
+  return `https://www.awin1.com/cread.php?${params.toString()}`;
+}
+
+// ─── Utility: Fetch with Timeout ───────────────────────────────────
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// ─── Utility: Sleep for Exponential Backoff ────────────────────────
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ─── Provider URL Builders ─────────────────────────────────────────
+
 export function agodaSearchUrl(cityId: number, checkIn: string, checkOut: string, adults: number, rooms: number) {
   const params = new URLSearchParams({
     city: String(cityId),
@@ -74,34 +174,134 @@ export function shouldIncludeExpediaLink(expediaCode: string) {
   return true;
 }
 
+// ─── Awin Deep Link (Improved) ─────────────────────────────────────
+
 /**
  * Generates an Awin deep link for a given destination URL.
- * In a real scenario, this would call Awin's Link Builder API or use a local generator.
+ *
+ * Improvements over the original implementation:
+ * - Request timeout (configurable, default 5s)
+ * - Retry with exponential backoff (configurable, default 2 retries)
+ * - In-memory link cache (1 hour TTL) to avoid redundant API calls
+ * - Local fallback link builder when API is completely unavailable
+ * - Structured error logging for observability
  */
 export async function awinDeepLink(destinationUrl: string): Promise<string> {
-  // Simple implementation for now as seen in index.js
-  if (!AWIN_TOKEN || !AWIN_PUB_ID) return destinationUrl;
-  try {
-    const response = await fetch(
-      `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${AWIN_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          advertiserId: parseInt(BOOKING_ADV, 10),
-          destinationUrl,
-        }),
-      }
-    );
-    const payload = (await response.json()) as { url?: string };
-    return payload.url ?? destinationUrl;
-  } catch {
-    return destinationUrl;
+  // If no credentials, use local fallback immediately
+  if (!AWIN_TOKEN || !AWIN_PUB_ID) {
+    return buildLocalAwinLink(destinationUrl);
   }
+
+  // Check cache first
+  const cached = getAwinCachedLink(destinationUrl);
+  if (cached) return cached;
+
+  const endpoint = `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`;
+  const body = JSON.stringify({
+    advertiserId: parseInt(BOOKING_ADV, 10),
+    destinationUrl,
+  });
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= AWIN_MAX_RETRIES + 1; attempt++) {
+    try {
+      const response = await fetchWithTimeout(
+        endpoint,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${AWIN_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body,
+        },
+        AWIN_TIMEOUT_MS,
+      );
+
+      if (!response.ok) {
+        // Don't retry on client errors (4xx) except 429 (rate limit)
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          logAwinError({
+            timestamp: new Date().toISOString(),
+            attempt,
+            maxRetries: AWIN_MAX_RETRIES,
+            destinationUrl,
+            errorType: "http_error",
+            statusCode: response.status,
+            message: `Non-retryable HTTP ${response.status}`,
+          });
+          break;
+        }
+
+        logAwinError({
+          timestamp: new Date().toISOString(),
+          attempt,
+          maxRetries: AWIN_MAX_RETRIES,
+          destinationUrl,
+          errorType: "http_error",
+          statusCode: response.status,
+          message: `HTTP ${response.status} (will retry)`,
+        });
+
+        lastError = new Error(`HTTP ${response.status}`);
+
+        if (attempt <= AWIN_MAX_RETRIES) {
+          await sleep(AWIN_RETRY_BASE_MS * Math.pow(2, attempt - 1));
+          continue;
+        }
+        break;
+      }
+
+      const payload = (await response.json()) as { url?: string };
+
+      if (!payload.url) {
+        logAwinError({
+          timestamp: new Date().toISOString(),
+          attempt,
+          maxRetries: AWIN_MAX_RETRIES,
+          destinationUrl,
+          errorType: "parse_error",
+          message: "Response missing 'url' field",
+        });
+        break;
+      }
+
+      // Cache the successful result
+      setAwinCachedLink(destinationUrl, payload.url);
+      return payload.url;
+    } catch (error) {
+      lastError = error;
+
+      const isTimeout =
+        error instanceof DOMException && error.name === "AbortError";
+      const isAbortError =
+        error instanceof Error && error.name === "AbortError";
+
+      logAwinError({
+        timestamp: new Date().toISOString(),
+        attempt,
+        maxRetries: AWIN_MAX_RETRIES,
+        destinationUrl,
+        errorType: isTimeout || isAbortError ? "timeout" : "network_error",
+        message:
+          error instanceof Error ? error.message : "Unknown fetch error",
+      });
+
+      if (attempt <= AWIN_MAX_RETRIES) {
+        await sleep(AWIN_RETRY_BASE_MS * Math.pow(2, attempt - 1));
+        continue;
+      }
+    }
+  }
+
+  // All retries exhausted — use local fallback
+  const fallbackUrl = buildLocalAwinLink(destinationUrl);
+  setAwinCachedLink(destinationUrl, fallbackUrl);
+  return fallbackUrl;
 }
+
+// ─── Build Affiliate Links ─────────────────────────────────────────
 
 export function buildAffiliateLinks(
   cityName: string,

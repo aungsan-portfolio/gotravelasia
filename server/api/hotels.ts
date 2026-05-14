@@ -32,6 +32,12 @@ import {
   buildAffiliateLinks,
 } from "../../lib/hotels/affiliate.js";
 import { normalizeHotel } from "../hotels/normalize.js";
+import {
+  buildHotelSearchCacheKey,
+  hotelCacheGet,
+  hotelCacheSet,
+  getHotelCacheStats,
+} from "../hotels/cache.js";
 
 const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 const AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -52,7 +58,7 @@ const AGODA_SORT_MAP: Record<HotelSort, string> = {
   review_desc: "AllGuestsReviewScore",
 };
 
-const cache = new Map<string, { val: any; exp: number }>();
+const cache = new Map<string, { val: any; exp: number }>(); // Legacy: kept for non-hotel uses
 const warnedMessages = new Set<string>();
 
 function safeWarnOnce(message: string) {
@@ -150,10 +156,20 @@ async function fetchAgodaHotels(
   page: number,
   sort: HotelSort
 ) {
-  const cacheKey = `agoda_lt_v1_${ltCityId}_${checkIn}_${checkOut}_${adults}_${rooms}_${page}_${sort}`;
-  const cached = cache.get(cacheKey);
-  if (cached && cached.exp > Date.now()) {
-    return cached.val;
+  const cacheKey = buildHotelSearchCacheKey({
+    ltCityId,
+    checkIn,
+    checkOut,
+    adults,
+    rooms,
+    page,
+    sort,
+  });
+
+  const cached = await hotelCacheGet(cacheKey);
+  if (cached) {
+    console.log(`[Hotels] Cache ${cached.source} hit for ${cacheKey} (age=${cached.age}ms)`);
+    return cached.data;
   }
 
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
@@ -319,7 +335,7 @@ async function fetchAgodaHotels(
         hotels.length,
     };
 
-    cache.set(cacheKey, { val: result, exp: Date.now() + 1800 * 1000 });
+    await hotelCacheSet(cacheKey, result);
     return result;
   } catch (err) {
     console.error("[Hotels] Agoda lt_v1 search failed:", err);
@@ -821,4 +837,20 @@ export async function getHotelDetail(req: Request, res: Response) {
     }
     return res.status(500).json({ error: "Hotel detail lookup failed" });
   }
+}
+
+
+/**
+ * GET /api/hotels/cache-stats
+ * Returns hotel cache diagnostics (only in non-production or with debug flag).
+ */
+export function getHotelCacheStatsHandler(req: Request, res: Response) {
+  if (!shouldExposeHotelDiagnostics()) {
+    return res.status(403).json({ error: "Not available in production" });
+  }
+
+  return res.json({
+    ok: true,
+    stats: getHotelCacheStats(),
+  });
 }

@@ -1,11 +1,16 @@
-import { memo, useMemo } from "react";
-import { MapPin, Navigation } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 import type { HotelResult } from "@shared/hotels/types";
 import { trackHotelMarkerClick } from "@/lib/hotels/tracking";
 
-import { generateMapMarkers } from "@/features/hotels/mapView/markers";
-import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
+import { generateMapMarkers, deriveBoundsFromHotels } from "@/features/hotels/mapView/markers";
+import type { HotelMapMarker, MarkerBounds } from "@/features/hotels/mapView/markers.types";
+import { formatPriceLabel } from "@/features/hotels/mapView/formatPriceLabel";
+
+// ─── Props ─────────────────────────────────────────────────────────
 
 interface HotelMapPanelProps {
   hotels: HotelResult[];
@@ -18,6 +23,240 @@ interface HotelMapPanelProps {
   checkIn?: string;
   checkOut?: string;
 }
+
+// ─── Marker Icon Factories ─────────────────────────────────────────
+
+function createPriceMarkerIcon(
+  label: string,
+  variant: "default" | "hovered" | "selected" | "deal",
+): L.DivIcon {
+  const colorMap: Record<typeof variant, { bg: string; text: string; border: string; shadow: string }> = {
+    default: { bg: "bg-white", text: "text-slate-800", border: "border-slate-300", shadow: "shadow-sm" },
+    hovered: { bg: "bg-indigo-50", text: "text-indigo-800", border: "border-indigo-400", shadow: "shadow-md" },
+    selected: { bg: "bg-indigo-600", text: "text-white", border: "border-indigo-700", shadow: "shadow-lg" },
+    deal: { bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-400", shadow: "shadow-sm" },
+  };
+
+  const colors = colorMap[variant];
+  const pulseHtml = variant === "selected"
+    ? `<span class="absolute inset-0 animate-ping rounded-full bg-indigo-400 opacity-30"></span>`
+    : "";
+
+  return L.divIcon({
+    html: `
+      <div class="relative -translate-x-1/2 -translate-y-full">
+        ${pulseHtml}
+        <div class="relative flex items-center gap-1 rounded-full border ${colors.border} ${colors.bg} ${colors.shadow} px-2 py-1 text-xs font-semibold ${colors.text} whitespace-nowrap transition-all duration-150">
+          <span>${label}</span>
+        </div>
+        <div class="absolute left-1/2 -bottom-1 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r ${colors.border} ${colors.bg}"></div>
+      </div>
+    `,
+    className: "",
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+}
+
+function createClusterIcon(count: number, minPrice: number | null, currency?: string): L.DivIcon {
+  const priceLabel = minPrice != null ? `from ${formatPriceLabel(minPrice, currency)}` : "";
+
+  return L.divIcon({
+    html: `
+      <div class="relative -translate-x-1/2 -translate-y-1/2">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-indigo-300 bg-indigo-600 text-xs font-bold text-white shadow-lg">
+          ${count}
+        </div>
+        ${priceLabel ? `<div class="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600 shadow-sm">${priceLabel}</div>` : ""}
+      </div>
+    `,
+    className: "",
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+}
+
+// ─── Map Bounds Fitter ─────────────────────────────────────────────
+
+interface MapBoundsFitterProps {
+  hotels: HotelResult[];
+  selectedHotelId: string | null;
+}
+
+function MapBoundsFitter({ hotels, selectedHotelId }: MapBoundsFitterProps) {
+  const map = useMap();
+  const fittedRef = useRef(false);
+
+  useEffect(() => {
+    if (fittedRef.current || !hotels.length) return;
+
+    const bounds = deriveBoundsFromHotels(hotels);
+    if (!bounds) return;
+
+    const leafletBounds = L.latLngBounds(
+      [bounds.south, bounds.west],
+      [bounds.north, bounds.east],
+    );
+
+    map.fitBounds(leafletBounds, { padding: [40, 40], maxZoom: 15 });
+    fittedRef.current = true;
+  }, [hotels, map]);
+
+  // Fly to selected hotel
+  useEffect(() => {
+    if (!selectedHotelId) return;
+
+    const hotel = hotels.find((h) => h.hotelId === selectedHotelId);
+    if (!hotel?.coordinates) return;
+
+    map.flyTo(
+      [hotel.coordinates.lat, hotel.coordinates.lng],
+      Math.max(map.getZoom(), 14),
+      { duration: 0.5 },
+    );
+  }, [selectedHotelId, hotels, map]);
+
+  return null;
+}
+
+// ─── Map Event Handler ─────────────────────────────────────────────
+
+interface MapEventsProps {
+  onBoundsChange?: (bounds: MarkerBounds) => void;
+}
+
+function MapEvents({ onBoundsChange }: MapEventsProps) {
+  useMapEvents({
+    moveend(event) {
+      if (!onBoundsChange) return;
+      const map = event.target;
+      const leafletBounds = map.getBounds();
+      onBoundsChange({
+        north: leafletBounds.getNorth(),
+        south: leafletBounds.getSouth(),
+        east: leafletBounds.getEast(),
+        west: leafletBounds.getWest(),
+      });
+    },
+  });
+
+  return null;
+}
+
+// ─── Hotel Marker Component ────────────────────────────────────────
+
+interface HotelMarkerProps {
+  marker: HotelMapMarker;
+  hotel?: HotelResult;
+  city?: string;
+  checkIn?: string;
+  checkOut?: string;
+  onSelect: (hotelId: string) => void;
+  onHover: (hotelId: string | null) => void;
+}
+
+const HotelMarkerComponent = memo(function HotelMarkerComponent({
+  marker,
+  hotel,
+  city,
+  checkIn,
+  checkOut,
+  onSelect,
+  onHover,
+}: HotelMarkerProps) {
+  const icon = useMemo(
+    () => createPriceMarkerIcon(marker.label, marker.style.variant),
+    [marker.label, marker.style.variant],
+  );
+
+  const eventHandlers = useMemo(
+    () => ({
+      click: () => {
+        trackHotelMarkerClick({
+          hotelId: marker.hotelId,
+          city,
+          checkIn,
+          checkOut,
+          resultPosition: hotel?.rankingPosition,
+        });
+        onSelect(marker.hotelId);
+      },
+      mouseover: () => onHover(marker.hotelId),
+      mouseout: () => onHover(null),
+    }),
+    [marker.hotelId, city, checkIn, checkOut, hotel?.rankingPosition, onSelect, onHover],
+  );
+
+  return (
+    <Marker
+      position={[marker.position.lat, marker.position.lng]}
+      icon={icon}
+      zIndexOffset={marker.zIndex}
+      eventHandlers={eventHandlers}
+    >
+      {hotel && (
+        <Popup
+          offset={[0, -8]}
+          closeButton={false}
+          className="hotel-map-popup"
+        >
+          <div className="min-w-[200px] max-w-[260px]">
+            {hotel.imageUrl && (
+              <img
+                src={hotel.imageUrl}
+                alt={hotel.name}
+                className="h-24 w-full rounded-t-lg object-cover"
+                loading="lazy"
+              />
+            )}
+            <div className="p-2">
+              <p className="text-sm font-semibold text-slate-900 line-clamp-1">
+                {hotel.name}
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                {hotel.stars > 0 && (
+                  <span className="text-xs text-amber-500">
+                    {"★".repeat(Math.min(hotel.stars, 5))}
+                  </span>
+                )}
+                {hotel.reviewScore > 0 && (
+                  <span className="rounded bg-indigo-100 px-1 py-0.5 text-[10px] font-medium text-indigo-700">
+                    {hotel.reviewScore.toFixed(1)}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-slate-500 line-clamp-1">
+                {hotel.address || "Address unavailable"}
+              </p>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-900">
+                  {formatPriceLabel(hotel.lowestRate, hotel.currency)}
+                </span>
+                <span className="text-[10px] text-slate-500">/ night</span>
+              </div>
+              {(hotel.freeCancellation || hotel.breakfastIncluded) && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {hotel.freeCancellation && (
+                    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] text-emerald-700">
+                      Free cancel
+                    </span>
+                  )}
+                  {hotel.breakfastIncluded && (
+                    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[9px] text-amber-700">
+                      Breakfast
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </Popup>
+      )}
+    </Marker>
+  );
+});
+
+// ─── Main HotelMapPanel Component ──────────────────────────────────
 
 function HotelMapPanelComponent({
   hotels,
@@ -45,80 +284,110 @@ function HotelMapPanelComponent({
     [hotels],
   );
 
+  // Compute initial center from hotels or fallback to a default
+  const initialCenter = useMemo((): [number, number] => {
+    if (!hotels.length) return [13.7563, 100.5018]; // Bangkok fallback
+
+    const derived = deriveBoundsFromHotels(hotels);
+    if (derived) {
+      return [
+        (derived.north + derived.south) / 2,
+        (derived.east + derived.west) / 2,
+      ];
+    }
+
+    const first = hotels.find((h) => h.coordinates);
+    if (first?.coordinates) {
+      return [first.coordinates.lat, first.coordinates.lng];
+    }
+
+    return [13.7563, 100.5018];
+  }, [hotels]);
+
+  const handleBoundsChange = useCallback((_newBounds: MarkerBounds) => {
+    // Future: trigger search-as-map-moves if enabled
+  }, []);
+
+  if (!hotels.length) {
+    return (
+      <aside className="sticky top-20 h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex h-full items-center justify-center p-6 text-center text-sm text-slate-500">
+          No mappable hotel coordinates are available for the current result set.
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="sticky top-20 h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex h-full flex-col">
-        <header className="border-b border-slate-200 px-4 py-3">
-           <p className="text-sm font-semibold text-slate-900">Map preview</p>
-           <p className="text-xs text-slate-500">
-             {hotels.length} mapped hotels · {markers.length} generated markers
-           </p>
+        {/* Map Header */}
+        <header className="z-10 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-700">
+              {markers.length} hotel{markers.length !== 1 ? "s" : ""} on map
+            </p>
+            {selectedHotelId && (
+              <button
+                type="button"
+                onClick={() => onSelectHotel("")}
+                className="text-[10px] font-medium text-indigo-600 hover:text-indigo-800"
+              >
+                Clear selection
+              </button>
+            )}
+          </div>
         </header>
 
-        <div className="flex-1 overflow-auto p-3">
-          {!markers.length ? (
-            <div className="flex h-full min-h-[220px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-              No mappable hotel coordinates are available for the current result set.
+        {/* Interactive Leaflet Map */}
+        <div className="relative flex-1 z-0">
+          <MapContainer
+            center={initialCenter}
+            zoom={12}
+            style={{ height: "100%", width: "100%", zIndex: 0 }}
+            scrollWheelZoom={true}
+            zoomControl={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
+            />
+
+            <MapBoundsFitter hotels={hotels} selectedHotelId={selectedHotelId} />
+            <MapEvents onBoundsChange={handleBoundsChange} />
+
+            {markers.map((marker) => (
+              <HotelMarkerComponent
+                key={marker.hotelId}
+                marker={marker}
+                hotel={hotelsById.get(marker.hotelId)}
+                city={city}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                onSelect={onSelectHotel}
+                onHover={onHoverHotel}
+              />
+            ))}
+          </MapContainer>
+
+          {/* Legend overlay */}
+          <div className="absolute bottom-3 left-3 z-[1000] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center gap-3 text-[10px] text-slate-600">
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full border border-slate-300 bg-white"></span>
+                Hotel
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
+                Selected
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full border border-emerald-400 bg-emerald-50"></span>
+                Deal
+              </span>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {markers.map((marker) => {
-                const hotel = hotelsById.get(marker.hotelId);
-
-                return (
-                  <button
-                    key={marker.hotelId}
-                    type="button"
-                    onClick={() => {
-                      trackHotelMarkerClick({
-                        hotelId: marker.hotelId,
-                        city,
-                        checkIn,
-                        checkOut,
-                        resultPosition: hotel?.rankingPosition,
-                      });
-                      onSelectHotel(marker.hotelId);
-                    }}
-                    onMouseEnter={() => onHoverHotel(marker.hotelId)}
-                    onMouseLeave={() => onHoverHotel(null)}
-                    className={[
-                      "w-full rounded-lg border px-3 py-2 text-left text-sm transition",
-                      marker.isSelected
-                        ? "border-indigo-500 bg-indigo-50"
-                        : marker.isHovered
-                          ? "border-slate-400 bg-slate-50"
-                          : "border-slate-200 hover:bg-slate-50",
-                      marker.isVisible ? "opacity-100" : "opacity-60",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900">{hotel?.name ?? marker.hotelId}</p>
-                        <p className="line-clamp-1 text-xs text-slate-500">
-                          {hotel?.address || "Address unavailable"}
-                        </p>
-                      </div>
-
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {marker.label}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-slate-500">
-                      <span className="inline-flex items-center gap-1">
-                        <Navigation className="h-3.5 w-3.5" />
-                        {marker.position.lat.toFixed(4)}, {marker.position.lng.toFixed(4)}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-1.5 py-0.5 uppercase tracking-wide text-[10px] text-slate-600">
-                        {marker.style.variant}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </aside>
