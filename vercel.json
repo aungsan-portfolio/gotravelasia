@@ -37,6 +37,10 @@
     {
       "path": "/api/cron/send-alerts",
       "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/warm-hotels",
+      "schedule": "0 2 * * *"
     }
   ]
 }

@@ -38,6 +38,7 @@ import calendarPricesRouter from "../routes/calendarPrices.js";
 import flightsSearchRouter from "../routes/flightsSearch.js";
 import priceAlertsRouter from "../routes/priceAlerts.js";
 import cronRouter from "../routes/cron.js";
+import cronHotelWarmRouter from "../routes/cronHotelWarm.js";
 import hotelOutboundRouter from "../routes/hotelOutbound.js";
 console.log("[APP] All routes imported.\n");
 
@@ -78,6 +79,7 @@ app.use("/api/frontdoor/prices", searchFrontDoorPrices);
 app.use("/api/price-alerts", priceAlertsRouter);
 app.use("/api/alerts", priceAlertsRouter);
 app.use("/api/cron", cronRouter);
+app.use("/api/cron", cronHotelWarmRouter);
 app.use("/api/auth", handleAuth as any);
 
 app.get("/api/flights/price-calendar", async (req, res) => {
