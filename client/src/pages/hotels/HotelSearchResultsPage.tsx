@@ -6,6 +6,7 @@ import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
+import { useHotelUrlState, type HotelUrlFilterState } from "@/hooks/useHotelUrlState";
 import { getCityName } from "@/lib/cities";
 import { buildHotelDetailUrl } from "@/lib/hotels/buildHotelDetailUrl";
 import {
@@ -82,6 +83,43 @@ export default function HotelSearchResultsPage() {
   useEffect(() => {
     setAreaFilteredHotels(null);
   }, [visibleHotels]);
+
+  // ─── URL state sync (P3) ─────────────────────────────────────────
+  const handleRestoreFilters = useCallback((restored: HotelUrlFilterState) => {
+    // Restore quick filters
+    for (const filterId of restored.activeFilters) {
+      toggleFilter(filterId);
+    }
+    // Restore rich filters
+    if (restored.richFilters.priceRange) {
+      setPriceRange(restored.richFilters.priceRange);
+    }
+    if (restored.richFilters.starRatings) {
+      for (const star of restored.richFilters.starRatings) {
+        toggleStarRating(star);
+      }
+    }
+    if (restored.richFilters.minGuestRating != null) {
+      setMinGuestRating(restored.richFilters.minGuestRating);
+    }
+    if (restored.richFilters.amenities) {
+      for (const amenity of restored.richFilters.amenities) {
+        toggleAmenity(amenity);
+      }
+    }
+    // Restore map bounds (triggers area search)
+    if (restored.mapBounds) {
+      handleSearchArea(restored.mapBounds);
+    }
+  }, [toggleFilter, setPriceRange, toggleStarRating, setMinGuestRating, toggleAmenity, handleSearchArea]);
+
+  useHotelUrlState({
+    activeFilters,
+    richFilters,
+    mapBounds: bounds,
+    sort,
+    onRestoreFilters: handleRestoreFilters,
+  });
 
   // Use area-filtered hotels if active, otherwise all visible
   const displayHotels = areaFilteredHotels ?? visibleHotels;
