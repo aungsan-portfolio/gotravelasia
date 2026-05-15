@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -9,6 +9,7 @@ import { trackHotelMarkerClick } from "@/lib/hotels/tracking";
 import { generateMapMarkers, deriveBoundsFromHotels } from "@/features/hotels/mapView/markers";
 import type { HotelMapMarker, MarkerBounds } from "@/features/hotels/mapView/markers.types";
 import { formatPriceLabel } from "@/features/hotels/mapView/formatPriceLabel";
+import { Search, RotateCcw } from "lucide-react";
 
 // ─── Props ─────────────────────────────────────────────────────────
 
@@ -19,6 +20,8 @@ interface HotelMapPanelProps {
   bounds?: MarkerBounds | null;
   onSelectHotel: (hotelId: string) => void;
   onHoverHotel: (hotelId: string | null) => void;
+  onSearchArea?: (bounds: MarkerBounds) => void;
+  isSearchingArea?: boolean;
   city?: string;
   checkIn?: string;
   checkOut?: string;
@@ -55,24 +58,6 @@ function createPriceMarkerIcon(
     className: "",
     iconSize: [0, 0],
     iconAnchor: [0, 0],
-  });
-}
-
-function createClusterIcon(count: number, minPrice: number | null, currency?: string): L.DivIcon {
-  const priceLabel = minPrice != null ? `from ${formatPriceLabel(minPrice, currency)}` : "";
-
-  return L.divIcon({
-    html: `
-      <div class="relative -translate-x-1/2 -translate-y-1/2">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-indigo-300 bg-indigo-600 text-xs font-bold text-white shadow-lg">
-          ${count}
-        </div>
-        ${priceLabel ? `<div class="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600 shadow-sm">${priceLabel}</div>` : ""}
-      </div>
-    `,
-    className: "",
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
   });
 }
 
@@ -119,16 +104,18 @@ function MapBoundsFitter({ hotels, selectedHotelId }: MapBoundsFitterProps) {
   return null;
 }
 
-// ─── Map Event Handler ─────────────────────────────────────────────
+// ─── Map Event Handler (Bounds Tracking) ───────────────────────────
 
 interface MapEventsProps {
-  onBoundsChange?: (bounds: MarkerBounds) => void;
+  onBoundsChange: (bounds: MarkerBounds) => void;
+  onUserInteraction: () => void;
 }
 
-function MapEvents({ onBoundsChange }: MapEventsProps) {
+function MapEvents({ onBoundsChange, onUserInteraction }: MapEventsProps) {
+  const interactedRef = useRef(false);
+
   useMapEvents({
     moveend(event) {
-      if (!onBoundsChange) return;
       const map = event.target;
       const leafletBounds = map.getBounds();
       onBoundsChange({
@@ -137,6 +124,19 @@ function MapEvents({ onBoundsChange }: MapEventsProps) {
         east: leafletBounds.getEast(),
         west: leafletBounds.getWest(),
       });
+    },
+    dragend() {
+      if (!interactedRef.current) {
+        interactedRef.current = true;
+        onUserInteraction();
+      }
+    },
+    zoomend(event) {
+      // Only trigger on user-initiated zoom (not programmatic)
+      if (!interactedRef.current) {
+        interactedRef.current = true;
+        onUserInteraction();
+      }
     },
   });
 
@@ -265,10 +265,16 @@ function HotelMapPanelComponent({
   bounds,
   onSelectHotel,
   onHoverHotel,
+  onSearchArea,
+  isSearchingArea = false,
   city,
   checkIn,
   checkOut,
 }: HotelMapPanelProps) {
+  const [currentBounds, setCurrentBounds] = useState<MarkerBounds | null>(null);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
+  const [showSearchButton, setShowSearchButton] = useState(false);
+
   const markers = useMemo(
     () =>
       generateMapMarkers(hotels, {
@@ -284,9 +290,8 @@ function HotelMapPanelComponent({
     [hotels],
   );
 
-  // Compute initial center from hotels or fallback to a default
   const initialCenter = useMemo((): [number, number] => {
-    if (!hotels.length) return [13.7563, 100.5018]; // Bangkok fallback
+    if (!hotels.length) return [13.7563, 100.5018];
 
     const derived = deriveBoundsFromHotels(hotels);
     if (derived) {
@@ -304,9 +309,27 @@ function HotelMapPanelComponent({
     return [13.7563, 100.5018];
   }, [hotels]);
 
-  const handleBoundsChange = useCallback((_newBounds: MarkerBounds) => {
-    // Future: trigger search-as-map-moves if enabled
+  const handleBoundsChange = useCallback((newBounds: MarkerBounds) => {
+    setCurrentBounds(newBounds);
   }, []);
+
+  const handleUserInteraction = useCallback(() => {
+    setUserHasInteracted(true);
+    setShowSearchButton(true);
+  }, []);
+
+  const handleSearchThisArea = useCallback(() => {
+    if (!currentBounds || !onSearchArea) return;
+    onSearchArea(currentBounds);
+    setShowSearchButton(false);
+  }, [currentBounds, onSearchArea]);
+
+  // Hide the button when new results arrive (search completed)
+  useEffect(() => {
+    if (!isSearchingArea) {
+      setShowSearchButton(false);
+    }
+  }, [hotels.length, isSearchingArea]);
 
   if (!hotels.length) {
     return (
@@ -355,7 +378,10 @@ function HotelMapPanelComponent({
             />
 
             <MapBoundsFitter hotels={hotels} selectedHotelId={selectedHotelId} />
-            <MapEvents onBoundsChange={handleBoundsChange} />
+            <MapEvents
+              onBoundsChange={handleBoundsChange}
+              onUserInteraction={handleUserInteraction}
+            />
 
             {markers.map((marker) => (
               <HotelMarkerComponent
@@ -370,6 +396,30 @@ function HotelMapPanelComponent({
               />
             ))}
           </MapContainer>
+
+          {/* "Search this area" Button — Airbnb-style */}
+          {onSearchArea && showSearchButton && userHasInteracted && (
+            <div className="absolute top-3 left-1/2 z-[1000] -translate-x-1/2">
+              <button
+                type="button"
+                onClick={handleSearchThisArea}
+                disabled={isSearchingArea}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-lg transition-all hover:bg-slate-50 hover:shadow-xl active:scale-95 disabled:cursor-wait disabled:opacity-70"
+              >
+                {isSearchingArea ? (
+                  <>
+                    <RotateCcw className="h-3.5 w-3.5 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-3.5 w-3.5" />
+                    Search this area
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Legend overlay */}
           <div className="absolute bottom-3 left-3 z-[1000] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-sm">
