@@ -8,6 +8,9 @@ const HOTEL_DETAIL_NAMESPACE = "hotel:detail";
 /** L2 TTL for hotel search results (Redis/KV) */
 const L2_SEARCH_TTL_SECONDS = Number(process.env.HOTEL_CACHE_TTL_SECONDS) || 1800; // 30 min
 
+/** Maximum random jitter added to L2 TTL to prevent cache stampede (seconds) */
+const L2_TTL_JITTER_MAX_SECONDS = Number(process.env.HOTEL_CACHE_JITTER_SECONDS) || 120; // ±0-2 min
+
 /** L1 TTL for process-local cache (shorter to allow fresher data) */
 const L1_TTL_MS = Number(process.env.HOTEL_CACHE_L1_TTL_MS) || 5 * 60 * 1000; // 5 min
 
@@ -195,6 +198,7 @@ export async function hotelCacheGet<T = unknown>(
 
 /**
  * Set a value in both L1 and L2 caches.
+ * L2 TTL includes random jitter to prevent cache stampede (thundering herd).
  */
 export async function hotelCacheSet<T = unknown>(
   key: string,
@@ -204,7 +208,11 @@ export async function hotelCacheSet<T = unknown>(
   const now = Date.now();
   stats.sets++;
 
-  // Set L1
+  // Apply random jitter to L2 TTL to prevent all keys expiring simultaneously
+  const jitter = Math.floor(Math.random() * L2_TTL_JITTER_MAX_SECONDS);
+  const effectiveL2Ttl = ttlSeconds + jitter;
+
+  // Set L1 (no jitter needed — short-lived, process-local)
   l1Cache.set(key, {
     data,
     expiresAt: now + L1_TTL_MS,
@@ -217,7 +225,7 @@ export async function hotelCacheSet<T = unknown>(
   // Set L2 (fire-and-forget with error handling)
   try {
     const store = getStore();
-    await store.set(key, data, ttlSeconds);
+    await store.set(key, data, effectiveL2Ttl);
   } catch (error) {
     stats.l2Errors++;
     console.error(`[HotelCache:L2:SET:ERROR] key=${key}`, error instanceof Error ? error.message : error);
