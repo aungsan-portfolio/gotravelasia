@@ -1,4 +1,5 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, type MouseEvent } from "react";
+import { Heart } from "lucide-react";
 import { formatReviewLabel, formatStayNights } from "@/lib/hotels/formatters";
 import { HotelPriceComparison } from "@/components/hotels/results/HotelPriceComparison";
 import type { HotelPriceContext } from "@/lib/hotels/priceContext";
@@ -7,6 +8,7 @@ import {
   getLightweightHotelBadges,
   getPrimaryHotelExplanation,
 } from "@/components/hotels/results/hotelBadgeCopy";
+import { useWishlist } from "@/hooks/useWishlist";
 
 interface HotelCardProps {
   hotel: HotelResult;
@@ -35,6 +37,8 @@ function HotelCardComponent({
 }: HotelCardProps) {
   const hotelWithOffers = hotel as HotelResultWithOffers;
   const [imageFailed, setImageFailed] = useState(false);
+  const { isSaved, toggleSave } = useWishlist();
+  const saved = isSaved(hotel.hotelId);
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
   const explanation = useMemo(() => getPrimaryHotelExplanation(hotel), [hotel]);
@@ -50,10 +54,16 @@ function HotelCardComponent({
     onOpenDetail(hotel.hotelId);
   };
 
+  const handleToggleSave = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toggleSave(hotel);
+  };
+
   return (
     <article
       className={[
-        "overflow-hidden rounded-xl border bg-white shadow-sm transition",
+        "relative overflow-hidden rounded-xl border bg-white shadow-sm transition",
         isSelected
           ? "border-indigo-500 ring-2 ring-indigo-200"
           : isHovered
@@ -63,6 +73,28 @@ function HotelCardComponent({
       onMouseEnter={() => onHover(hotel.hotelId)}
       onMouseLeave={() => onHover(null)}
     >
+      <button
+        type="button"
+        onClick={handleToggleSave}
+        aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+        aria-pressed={saved}
+        data-testid={`hotel-wishlist-toggle-${hotel.hotelId}`}
+        className={[
+          "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-110 active:scale-95",
+          saved ? "" : "hover:bg-white",
+        ].join(" ")}
+      >
+        <Heart
+          className={[
+            "h-5 w-5 transition-colors",
+            saved
+              ? "fill-rose-500 text-rose-500"
+              : "text-slate-600 hover:text-rose-500",
+          ].join(" ")}
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+      </button>
       <button
         type="button"
         onClick={handleOpen}
