@@ -138,7 +138,7 @@ import { eq, and, asc, isNull, lte, or, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 
 // drizzle/schema.ts
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, uniqueIndex } from "drizzle-orm/mysql-core";
 var users = mysqlTable("users", {
   /**
    * Surrogate primary key. Auto-incremented numeric value managed by the database.
@@ -236,6 +236,28 @@ var hotelDeals = mysqlTable("hotelDeals", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
+var userHotelWishlists = mysqlTable("userHotelWishlists", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  hotelId: varchar("hotelId", { length: 64 }).notNull(),
+  provider: varchar("provider", { length: 20 }).notNull(),
+  hotelName: text("hotelName").notNull(),
+  city: varchar("city", { length: 255 }).notNull(),
+  country: varchar("country", { length: 100 }),
+  imageUrl: text("imageUrl"),
+  starRating: int("starRating"),
+  guestRating: varchar("guestRating", { length: 10 }),
+  // e.g. "9.2"
+  price: int("price"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  bookingUrl: text("bookingUrl"),
+  checkIn: varchar("checkIn", { length: 10 }),
+  checkOut: varchar("checkOut", { length: 10 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+}, (table) => ({
+  userHotelProviderIdx: uniqueIndex("user_hotel_provider_idx").on(table.userId, table.hotelId, table.provider)
+}));
 
 // server/db.ts
 var _db = null;
@@ -448,6 +470,61 @@ async function markEmailQueueAttemptFailed(params) {
     lastError: params.error,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(emailQueue.id, params.id));
+}
+async function getWishlistItems(userId) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(userHotelWishlists).where(eq(userHotelWishlists.userId, userId));
+  } catch (err) {
+    console.error("[Database] Failed to get wishlist items:", err);
+    return [];
+  }
+}
+async function saveWishlistItem(item) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.insert(userHotelWishlists).values({
+      ...item,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).onDuplicateKeyUpdate({
+      set: {
+        hotelName: item.hotelName,
+        city: item.city,
+        country: item.country,
+        imageUrl: item.imageUrl,
+        starRating: item.starRating,
+        guestRating: item.guestRating,
+        price: item.price,
+        currency: item.currency,
+        bookingUrl: item.bookingUrl,
+        checkIn: item.checkIn,
+        checkOut: item.checkOut,
+        updatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+  } catch (err) {
+    console.error("[Database] Failed to save wishlist item:", err);
+    throw err;
+  }
+}
+async function removeWishlistItem(userId, hotelId, provider) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.delete(userHotelWishlists).where(
+      and(
+        eq(userHotelWishlists.userId, userId),
+        eq(userHotelWishlists.hotelId, hotelId),
+        eq(userHotelWishlists.provider, provider)
+      )
+    );
+  } catch (err) {
+    console.error("[Database] Failed to remove wishlist item:", err);
+    throw err;
+  }
 }
 
 // server/_core/cookies.ts
@@ -2000,10 +2077,10 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
   const amadeus = getClient();
   if (!amadeus) return {};
   const cacheKey = `${origin}-${destination}-${month}-${currency}`;
-  const cached2 = cache.get(cacheKey);
-  if (cached2 && Date.now() - cached2.ts < CACHE_TTL) {
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
     console.log(`[Amadeus] Cache hit: ${cacheKey}`);
-    return cached2.data;
+    return cached.data;
   }
   try {
     const [year, mon] = month.split("-").map(Number);
@@ -2476,12 +2553,12 @@ async function searchFlights(raw) {
   const { params, currency, nonStopOnly } = parseSearchContext(raw);
   const cacheKey = JSON.stringify({ ...params, currency, nonStopOnly });
   const now = Date.now();
-  const cached2 = searchCache.get(cacheKey);
-  if (cached2 && cached2.expiresAt > now) {
+  const cached = searchCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
     return {
-      ...cached2.value,
+      ...cached.value,
       meta: {
-        ...cached2.value.meta,
+        ...cached.value.meta,
         cacheHit: true
       }
     };
@@ -2829,50 +2906,86 @@ function sanitizeCity(value) {
   return trimmed || void 0;
 }
 
-// server/api/hotels.ts
-var AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
-var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
-var AWIN_TOKEN = process.env.AWIN_TOKEN ?? "";
-var AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID ?? "";
-var BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID ?? "5910";
-var TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID ?? "";
-var KLOOK_ID = process.env.KLOOK_PARTNER_ID ?? "";
-var EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
-var PAGE_SIZE = 20;
-var AGODA_SORT_MAP = {
-  best: "Recommended",
-  rank: "Recommended",
-  price_asc: "PriceAsc",
-  price_desc: "PriceDesc",
-  stars_desc: "StarRatingDesc",
-  review_desc: "AllGuestsReviewScore"
-};
-var cache2 = /* @__PURE__ */ new Map();
-var warnedMessages = /* @__PURE__ */ new Set();
-async function cached(key, fn, ttlSeconds) {
-  const hit = cache2.get(key);
-  if (hit && Date.now() < hit.exp) return hit.val;
-  const val = await fn();
-  cache2.set(key, { val, exp: Date.now() + ttlSeconds * 1e3 });
-  return val;
+// server/hotels/identity.ts
+function normalizeHotelName(name) {
+  return name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
-function safeWarnOnce(message) {
-  if (warnedMessages.has(message)) return;
-  warnedMessages.add(message);
-  console.warn(`[Hotels] ${message}`);
+function normalizeHotelAddress(address) {
+  let normalized = address.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const mappings = {
+    "rd": "road",
+    "st": "street",
+    "ave": "avenue",
+    "blvd": "boulevard",
+    "dr": "drive"
+  };
+  return normalized.split(" ").map((word) => mappings[word] || word).join(" ");
 }
-function shouldUseMockHotelFallback() {
-  return process.env.ALLOW_HOTEL_MOCKS === "true";
+function createHotelOfferFromResult(provider, result) {
+  return {
+    provider,
+    hotelId: result.hotelId,
+    price: result.lowestRate,
+    currency: result.currency,
+    outboundLinks: result.outboundLinks,
+    freeCancellation: result.freeCancellation,
+    payLater: result.payLater,
+    breakfastIncluded: result.breakfastIncluded,
+    rank: result.rankingPosition || 0
+  };
 }
-function normalizeAgodaSiteId(rawValue) {
-  return rawValue.trim().replace(/,/g, "").replace(/\D/g, "");
+function createProviderHotelFromResult(provider, city, result) {
+  return {
+    provider,
+    city,
+    result,
+    offer: createHotelOfferFromResult(provider, result)
+  };
 }
-function normalizeAgodaApiKey(rawValue) {
-  return rawValue.trim();
+function buildCanonicalId(city, hotel) {
+  const name = normalizeHotelName(hotel.name).replace(/\s+/g, "-");
+  const address = normalizeHotelAddress(hotel.address ?? "").split(" ").slice(0, 6).join("-");
+  return `${city.toLowerCase()}::${name}::${address}`;
 }
-function shouldExposeHotelDiagnostics() {
-  return process.env.NODE_ENV !== "production" || process.env.HOTEL_DEBUG_DIAGNOSTICS === "true";
+function mergeProviderHotels(providerHotels) {
+  const canonicalMap = /* @__PURE__ */ new Map();
+  for (const providerHotel of providerHotels) {
+    const key = buildCanonicalId(providerHotel.city, providerHotel.result);
+    const found = canonicalMap.get(key);
+    if (!found) {
+      canonicalMap.set(key, {
+        canonicalId: key,
+        city: providerHotel.city,
+        name: providerHotel.result.name,
+        address: providerHotel.result.address,
+        coordinates: providerHotel.result.coordinates,
+        primaryHotel: providerHotel,
+        offers: [providerHotel.offer],
+        providers: [providerHotel]
+      });
+      continue;
+    }
+    found.offers.push(providerHotel.offer);
+    found.providers.push(providerHotel);
+    const currentPrice = found.primaryHotel.result.lowestRate;
+    if (providerHotel.result.lowestRate < currentPrice) {
+      found.primaryHotel = providerHotel;
+      found.name = providerHotel.result.name;
+      found.address = providerHotel.result.address;
+      found.coordinates = providerHotel.result.coordinates;
+    }
+  }
+  return Array.from(canonicalMap.values());
 }
+
+// lib/hotels/affiliate.ts
+var AGODA_SITE_ID = process.env.AGODA_SITE_ID?.replace(/,/g, "").trim() || "";
+var TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID || "";
+var KLOOK_ID = process.env.KLOOK_PARTNER_ID || "";
+var EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE || "ZZxDEika";
+var BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID || "5910";
+var AWIN_TOKEN = process.env.AWIN_TOKEN || "";
+var AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID || "";
 function agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms) {
   const params = new URLSearchParams({
     city: String(cityId),
@@ -2932,34 +3045,27 @@ function shouldIncludeExpediaLink(expediaCode) {
   return true;
 }
 async function awinDeepLink(destinationUrl) {
-  const key = `awin:${Buffer.from(destinationUrl).toString("base64").slice(0, 60)}`;
-  return cached(
-    key,
-    async () => {
-      if (!AWIN_TOKEN || !AWIN_PUB_ID) return destinationUrl;
-      try {
-        const response = await fetch(
-          `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${AWIN_TOKEN}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              advertiserId: parseInt(BOOKING_ADV, 10),
-              destinationUrl
-            })
-          }
-        );
-        const payload = await response.json();
-        return payload.url ?? destinationUrl;
-      } catch {
-        return destinationUrl;
+  if (!AWIN_TOKEN || !AWIN_PUB_ID) return destinationUrl;
+  try {
+    const response = await fetch(
+      `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${AWIN_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          advertiserId: parseInt(BOOKING_ADV, 10),
+          destinationUrl
+        })
       }
-    },
-    86400
-  );
+    );
+    const payload = await response.json();
+    return payload.url ?? destinationUrl;
+  } catch {
+    return destinationUrl;
+  }
 }
 function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, adults, rooms) {
   const links = {
@@ -2973,9 +3079,14 @@ function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, a
   }
   return links;
 }
+
+// server/hotels/normalize.ts
+var PAGE_SIZE = 20;
 function normalizeImageUrl(url) {
-  if (url.startsWith("http://")) return `https://${url.slice("http://".length)}`;
-  return url;
+  if (typeof url === "string" && url.startsWith("http://")) {
+    return `https://${url.slice("http://".length)}`;
+  }
+  return typeof url === "string" ? url : "";
 }
 function buildFallbackCoordinates(city, index) {
   const cityLat = city.lat;
@@ -2983,7 +3094,7 @@ function buildFallbackCoordinates(city, index) {
   if (typeof cityLat !== "number" || typeof cityLng !== "number") {
     return void 0;
   }
-  const angle = index * 137.5 * Math.PI / 180;
+  const angle = index * 137.5 * (Math.PI / 180);
   const radiusKm = 1.2 + index % 6 * 0.45;
   const latOffset = radiusKm / 111 * Math.cos(angle);
   const lngOffset = radiusKm / (111 * Math.max(0.3, Math.cos(cityLat * Math.PI / 180))) * Math.sin(angle);
@@ -3002,111 +3113,27 @@ function asPositiveFiniteNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : void 0;
 }
-function asSafeErrorValue(value) {
-  if (typeof value === "string") {
-    const normalized = value.trim();
-    return normalized.length > 0 ? normalized : void 0;
-  }
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-  return void 0;
-}
-function extractAgodaErrorDiagnostics(payload) {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return {};
-  }
-  const error = payload.error;
-  if (!error) {
-    return {};
-  }
-  if (typeof error === "string" || typeof error === "number") {
-    return {
-      agodaErrorMessage: asSafeErrorValue(error)
-    };
-  }
-  if (typeof error !== "object" || Array.isArray(error)) {
-    return {};
-  }
-  const errorObject = error;
-  const code = asSafeErrorValue(errorObject.code) ?? asSafeErrorValue(errorObject.errorCode) ?? asSafeErrorValue(errorObject.status);
-  const message = asSafeErrorValue(errorObject.message) ?? asSafeErrorValue(errorObject.errorMessage);
-  const type = asSafeErrorValue(errorObject.type);
-  return {
-    agodaErrorCode: code,
-    agodaErrorMessage: message,
-    agodaErrorType: type
-  };
-}
-var AGODA_LT_V1_ENDPOINT = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
-function buildAgodaLtV1RequestBody(params) {
-  return {
-    criteria: {
-      additional: {
-        currency: "USD",
-        dailyRate: {
-          minimum: 1,
-          maximum: 1e4
-        },
-        discountOnly: false,
-        language: "en-us",
-        maxResult: params.pageSize,
-        minimumReviewScore: 0,
-        minimumStarRating: 0,
-        occupancy: {
-          numberOfAdult: params.adults,
-          numberOfChildren: 0
-        },
-        sortBy: AGODA_SORT_MAP[params.sort] ?? "Recommended"
-      },
-      checkInDate: params.checkIn,
-      checkOutDate: params.checkOut,
-      cityId: params.cityId
-    }
-  };
-}
-function normalizeNeighborhood(rawHotel) {
-  return asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.district) ?? asNonEmptyString(rawHotel.neighborhood) ?? asNonEmptyString(rawHotel.zone) ?? asNonEmptyString(rawHotel.location?.district) ?? asNonEmptyString(rawHotel.location?.neighborhood);
-}
 function normalizeBreakfastIncluded(rawHotel) {
-  if (typeof rawHotel.breakfastIncluded === "boolean") {
-    return rawHotel.breakfastIncluded;
-  }
-  if (typeof rawHotel.includeBreakfast === "boolean") {
-    return rawHotel.includeBreakfast;
-  }
-  if (typeof rawHotel.mealPlan?.breakfastIncluded === "boolean") {
-    return rawHotel.mealPlan.breakfastIncluded;
-  }
-  if (typeof rawHotel.boardBasis?.breakfastIncluded === "boolean") {
-    return rawHotel.boardBasis.breakfastIncluded;
-  }
+  if (typeof rawHotel.breakfastIncluded === "boolean") return rawHotel.breakfastIncluded;
+  if (typeof rawHotel.includeBreakfast === "boolean") return rawHotel.includeBreakfast;
+  if (typeof rawHotel.mealPlan?.breakfastIncluded === "boolean") return rawHotel.mealPlan.breakfastIncluded;
+  if (typeof rawHotel.boardBasis?.breakfastIncluded === "boolean") return rawHotel.boardBasis.breakfastIncluded;
   const planText = asNonEmptyString(rawHotel.mealPlan) ?? asNonEmptyString(rawHotel.mealPlanName) ?? asNonEmptyString(rawHotel.boardBasis) ?? asNonEmptyString(rawHotel.boardType);
-  if (!planText) return void 0;
+  if (!planText) return false;
   const normalized = planText.toLowerCase();
-  if (!/\bbreakfast\b/.test(normalized)) return void 0;
-  if (/\b(no breakfast|without breakfast|breakfast excluded|room only)\b/.test(
-    normalized
-  )) {
+  if (!/\bbreakfast\b/.test(normalized)) return false;
+  if (/\b(no breakfast|without breakfast|breakfast excluded|room only)\b/.test(normalized)) {
     return false;
   }
   return true;
 }
 function normalizeFreeCancellation(rawHotel) {
-  if (typeof rawHotel.freeCancellation === "boolean") {
-    return rawHotel.freeCancellation;
-  }
-  if (typeof rawHotel.cancellation?.freeCancellation === "boolean") {
-    return rawHotel.cancellation.freeCancellation;
-  }
-  if (typeof rawHotel.refundable === "boolean") {
-    return rawHotel.refundable;
-  }
-  if (typeof rawHotel.isRefundable === "boolean") {
-    return rawHotel.isRefundable;
-  }
+  if (typeof rawHotel.freeCancellation === "boolean") return rawHotel.freeCancellation;
+  if (typeof rawHotel.cancellation?.freeCancellation === "boolean") return rawHotel.cancellation.freeCancellation;
+  if (typeof rawHotel.refundable === "boolean") return rawHotel.refundable;
+  if (typeof rawHotel.isRefundable === "boolean") return rawHotel.isRefundable;
   const policyText = asNonEmptyString(rawHotel.cancellationType) ?? asNonEmptyString(rawHotel.cancellationPolicy) ?? asNonEmptyString(rawHotel.ratePlan?.cancellationPolicy) ?? asNonEmptyString(rawHotel.refundType);
-  if (!policyText) return void 0;
+  if (!policyText) return false;
   const normalized = policyText.toLowerCase();
   if (/\bnon[- ]?refundable\b/.test(normalized) || /\bno free cancellation\b/.test(normalized)) {
     return false;
@@ -3114,26 +3141,16 @@ function normalizeFreeCancellation(rawHotel) {
   if (/\bfree cancellation\b/.test(normalized) || /\bfully refundable\b/.test(normalized)) {
     return true;
   }
-  return void 0;
+  return false;
 }
 function normalizePayLater(rawHotel) {
-  if (typeof rawHotel.payLater === "boolean") {
-    return rawHotel.payLater;
-  }
-  if (typeof rawHotel.payAtHotel === "boolean") {
-    return rawHotel.payAtHotel;
-  }
-  if (typeof rawHotel.payAtProperty === "boolean") {
-    return rawHotel.payAtProperty;
-  }
-  if (typeof rawHotel.payment?.payLater === "boolean") {
-    return rawHotel.payment.payLater;
-  }
-  if (typeof rawHotel.payment?.payAtHotel === "boolean") {
-    return rawHotel.payment.payAtHotel;
-  }
+  if (typeof rawHotel.payLater === "boolean") return rawHotel.payLater;
+  if (typeof rawHotel.payAtHotel === "boolean") return rawHotel.payAtHotel;
+  if (typeof rawHotel.payAtProperty === "boolean") return rawHotel.payAtProperty;
+  if (typeof rawHotel.payment?.payLater === "boolean") return rawHotel.payment.payLater;
+  if (typeof rawHotel.payment?.payAtHotel === "boolean") return rawHotel.payment.payAtHotel;
   const paymentText = asNonEmptyString(rawHotel.paymentType) ?? asNonEmptyString(rawHotel.paymentDescription) ?? asNonEmptyString(rawHotel.ratePlan?.paymentType) ?? asNonEmptyString(rawHotel.ratePlan?.paymentDescription);
-  if (!paymentText) return void 0;
+  if (!paymentText) return false;
   const normalized = paymentText.toLowerCase();
   if (/\bpay later\b/.test(normalized) || /\bpay at hotel\b/.test(normalized) || /\breserve now[, ]*pay later\b/.test(normalized)) {
     return true;
@@ -3141,20 +3158,18 @@ function normalizePayLater(rawHotel) {
   if (/\bprepaid\b/.test(normalized) || /\bpay now\b/.test(normalized) || /\bfull prepayment\b/.test(normalized)) {
     return false;
   }
-  return void 0;
+  return false;
 }
 function deriveCoordinatesConfidence(hasExactCoordinates, hasFallbackCoordinates) {
   if (hasExactCoordinates) return "exact";
   if (hasFallbackCoordinates) return "fallback";
-  return "missing";
+  return "approximate";
 }
 function calculateStayNights(checkIn, checkOut) {
   const checkInDate = /* @__PURE__ */ new Date(`${checkIn}T00:00:00Z`);
   const checkOutDate = /* @__PURE__ */ new Date(`${checkOut}T00:00:00Z`);
   const msPerNight = 24 * 60 * 60 * 1e3;
-  const nights = Math.round(
-    (checkOutDate.getTime() - checkInDate.getTime()) / msPerNight
-  );
+  const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / msPerNight);
   return nights > 0 ? nights : 0;
 }
 function formatMoney2(amount, currency) {
@@ -3169,9 +3184,7 @@ function formatMoney2(amount, currency) {
     } catch {
     }
   }
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
-    amount
-  );
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
 }
 function buildPriceDisplay(lowestRate, currency, nights) {
   if (!Number.isFinite(lowestRate) || lowestRate <= 0) return void 0;
@@ -3188,29 +3201,42 @@ function buildPriceDisplay(lowestRate, currency, nights) {
   }
   return priceDisplay;
 }
+function normalizeHotelImages(rawHotel) {
+  const rawImages = [
+    rawHotel.imageUrl,
+    rawHotel.imageURL,
+    rawHotel.photoURL,
+    rawHotel.photoUrl,
+    rawHotel.thumbnailURL,
+    rawHotel.thumbnailUrl,
+    rawHotel.mainPhotoUrl,
+    rawHotel.mainPhotoURL,
+    rawHotel.hotelImageUrl,
+    rawHotel.hotelImageURL,
+    rawHotel.image?.url,
+    ...Array.isArray(rawHotel.images) ? rawHotel.images.map((img) => img?.url ?? img) : [],
+    ...Array.isArray(rawHotel.photos) ? rawHotel.photos.map((img) => img?.url ?? img) : []
+  ];
+  return Array.from(
+    new Set(
+      rawImages.map(asNonEmptyString).filter((value) => Boolean(value)).map(normalizeImageUrl).filter(Boolean)
+    )
+  );
+}
 function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallbackLinks, index, page) {
   const hotelId = String(
     rawHotel.hotelId ?? rawHotel.propertyId ?? rawHotel.id ?? `${city.agodaCityId}-${index + 1}`
   );
-  const imageUrl = normalizeImageUrl(
-    asNonEmptyString(rawHotel.imageUrl) ?? asNonEmptyString(rawHotel.imageURL) ?? asNonEmptyString(rawHotel.photoURL) ?? asNonEmptyString(rawHotel.photoUrl) ?? asNonEmptyString(rawHotel.thumbnailURL) ?? asNonEmptyString(rawHotel.thumbnailUrl) ?? asNonEmptyString(rawHotel.mainPhotoUrl) ?? asNonEmptyString(rawHotel.mainPhotoURL) ?? asNonEmptyString(rawHotel.hotelImageUrl) ?? asNonEmptyString(rawHotel.hotelImageURL) ?? asNonEmptyString(rawHotel.images?.[0]?.url) ?? asNonEmptyString(rawHotel.images?.[0]) ?? asNonEmptyString(rawHotel.image?.url) ?? asNonEmptyString(rawHotel.photos?.[0]?.url) ?? asNonEmptyString(rawHotel.photos?.[0]) ?? ""
-  );
+  const images = normalizeHotelImages(rawHotel);
+  const imageUrl = images[0] ?? "";
   const amenities = Array.isArray(rawHotel.amenities) ? rawHotel.amenities.map((amenity) => String(amenity?.name ?? amenity)).filter(Boolean) : [];
   if (rawHotel.freeWifi === true && !amenities.includes("Free WiFi")) {
     amenities.push("Free WiFi");
   }
-  const reviewScore = Number(
-    rawHotel.reviewScore ?? rawHotel.reviewScoreRaw ?? rawHotel.review?.score ?? 0
-  );
-  const reviewCount = Number(
-    rawHotel.reviewCount ?? rawHotel.reviewCountRaw ?? rawHotel.review?.count ?? 0
-  );
-  const stars = Number(
-    rawHotel.stars ?? rawHotel.starRating ?? rawHotel.rating ?? 0
-  );
-  const lowestRate = Number(
-    rawHotel.lowestRate ?? rawHotel.price?.amount ?? rawHotel.displayPrice?.amount ?? rawHotel.priceDisplay?.amount ?? rawHotel.dailyRate ?? 0
-  );
+  const reviewScore = Number(rawHotel.reviewScore ?? rawHotel.reviewScoreRaw ?? rawHotel.review?.score ?? 0);
+  const reviewCount = Number(rawHotel.reviewCount ?? rawHotel.reviewCountRaw ?? rawHotel.review?.count ?? 0);
+  const stars = Number(rawHotel.stars ?? rawHotel.starRating ?? rawHotel.rating ?? 0);
+  const lowestRate = Number(rawHotel.lowestRate ?? rawHotel.price?.amount ?? rawHotel.displayPrice?.amount ?? rawHotel.priceDisplay?.amount ?? rawHotel.dailyRate ?? 0);
   const agodaUrl = rawHotel.landingURL ?? (hotelId ? agodaHotelUrl(
     hotelId,
     city.agodaLtCityId ?? city.agodaCityId,
@@ -3223,48 +3249,34 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     ...fallbackLinks,
     agoda: agodaUrl
   };
-  const lat = Number(
-    rawHotel.latitude ?? rawHotel.lat ?? rawHotel.coordinate?.lat ?? rawHotel.coordinates?.lat ?? rawHotel.location?.lat
-  );
-  const lng = Number(
-    rawHotel.longitude ?? rawHotel.lng ?? rawHotel.lon ?? rawHotel.coordinate?.lng ?? rawHotel.coordinates?.lng ?? rawHotel.location?.lng
-  );
+  const lat = Number(rawHotel.latitude ?? rawHotel.lat ?? rawHotel.coordinate?.lat ?? rawHotel.coordinates?.lat ?? rawHotel.location?.lat);
+  const lng = Number(rawHotel.longitude ?? rawHotel.lng ?? rawHotel.lon ?? rawHotel.coordinate?.lng ?? rawHotel.coordinates?.lng ?? rawHotel.location?.lng);
   const hasExactCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
   const fallbackCoordinates = buildFallbackCoordinates(city, index);
   const coordinates = hasExactCoordinates ? { lat, lng } : fallbackCoordinates;
   const hasFallbackCoordinates = !hasExactCoordinates && Boolean(fallbackCoordinates);
-  const coordinatesConfidence = deriveCoordinatesConfidence(
-    hasExactCoordinates,
-    hasFallbackCoordinates
-  );
+  const coordinatesConfidence = deriveCoordinatesConfidence(hasExactCoordinates, hasFallbackCoordinates);
   const rankingPosition = asPositiveFiniteNumber(rawHotel.rankingPosition) ?? asPositiveFiniteNumber(rawHotel.rank) ?? asPositiveFiniteNumber(rawHotel.ranking) ?? (page - 1) * PAGE_SIZE + index + 1;
-  const currency = asNonEmptyString(rawHotel.currency) ?? asNonEmptyString(rawHotel.price?.currency);
-  const neighborhood = normalizeNeighborhood(rawHotel);
+  const currency = asNonEmptyString(rawHotel.currency) ?? asNonEmptyString(rawHotel.price?.currency) ?? "USD";
   const breakfastIncluded = normalizeBreakfastIncluded(rawHotel);
   const freeCancellation = normalizeFreeCancellation(rawHotel);
   const payLater = normalizePayLater(rawHotel);
-  const priceDisplay = buildPriceDisplay(
-    lowestRate,
-    currency,
-    calculateStayNights(checkIn, checkOut)
-  );
+  const priceDisplay = buildPriceDisplay(lowestRate, currency, calculateStayNights(checkIn, checkOut));
   return {
     hotelId,
-    name: String(
-      rawHotel.name ?? rawHotel.hotelName ?? rawHotel.propertyName ?? "Hotel"
-    ),
+    name: String(rawHotel.name ?? rawHotel.hotelName ?? rawHotel.propertyName ?? "Hotel"),
     stars,
     reviewScore,
     reviewCount,
     address: asNonEmptyString(rawHotel.address) ?? asNonEmptyString(rawHotel.addressLine1) ?? asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.cityName) ?? asNonEmptyString(rawHotel.location?.address) ?? asNonEmptyString(rawHotel.location?.areaName) ?? asNonEmptyString(rawHotel.location?.cityName) ?? "",
     imageUrl,
+    images,
     amenities,
     lowestRate,
     currency,
     rankingPosition,
     coordinates,
     outboundLinks,
-    neighborhood,
     breakfastIncluded,
     freeCancellation,
     payLater,
@@ -3276,204 +3288,257 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     priceDisplay
   };
 }
-async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
-  const hasAgodaSiteId = Boolean(AGODA_SITE_ID);
-  const hasAgodaApiKey = Boolean(AGODA_API_KEY);
-  const allowMockFallback = shouldUseMockHotelFallback();
-  const requestShape = {
-    ltCityId,
-    cityId: agodaCityId,
-    checkIn,
-    checkOut,
-    adults,
-    rooms,
-    page,
-    pageSize: PAGE_SIZE,
-    authFormat: "siteid_colon_apikey",
-    requestFormat: "criteria_city_search"
+
+// server/api/hotels.ts
+var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
+var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
+var AWIN_TOKEN2 = process.env.AWIN_TOKEN ?? "";
+var AWIN_PUB_ID2 = process.env.AWIN_PUBLISHER_ID ?? "";
+var BOOKING_ADV2 = process.env.BOOKING_AWIN_ADV_ID ?? "5910";
+var TRIP_SITE_ID2 = process.env.TRIP_COM_SITE_ID ?? "";
+var KLOOK_ID2 = process.env.KLOOK_PARTNER_ID ?? "";
+var EXPEDIA_CODE2 = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
+var PAGE_SIZE2 = 20;
+var AGODA_SORT_MAP = {
+  best: "Recommended",
+  rank: "Recommended",
+  price_asc: "PriceAsc",
+  price_desc: "PriceDesc",
+  stars_desc: "StarRatingDesc",
+  review_desc: "AllGuestsReviewScore"
+};
+var cache2 = /* @__PURE__ */ new Map();
+var warnedMessages = /* @__PURE__ */ new Set();
+function safeWarnOnce(message) {
+  if (warnedMessages.has(message)) return;
+  warnedMessages.add(message);
+  console.warn(`[Hotels] ${message}`);
+}
+function normalizeAgodaSiteId(id) {
+  return id.replace(/,/g, "").trim();
+}
+function normalizeAgodaApiKey(key) {
+  return key.trim();
+}
+function shouldExposeHotelDiagnostics() {
+  return process.env.HOTEL_DEBUG_DIAGNOSTICS === "true" || process.env.NODE_ENV !== "production";
+}
+function buildAgodaLtV1RequestBody(params) {
+  return {
+    criteria: {
+      additional: {
+        currency: "USD",
+        dailyRate: { minimum: 1, maximum: 1e4 },
+        discountOnly: false,
+        language: "en-us",
+        maxResult: params.pageSize,
+        minimumReviewScore: 0,
+        minimumStarRating: 0,
+        occupancy: {
+          numberOfAdult: params.adults,
+          numberOfChildren: 0
+        },
+        sortBy: AGODA_SORT_MAP[params.sort] || "Recommended"
+      },
+      checkInDate: params.checkIn,
+      checkOutDate: params.checkOut,
+      cityId: params.cityId
+    }
   };
-  const buildDiagnostics = (reason, status, extras = {}) => ({
+}
+function buildDiagnostics(reason, status, extra = {}) {
+  return {
     reason,
     status,
-    hasAgodaSiteId,
-    hasAgodaApiKey,
-    siteIdLooksNumeric: /^\d+$/.test(AGODA_SITE_ID),
-    apiKeyPresent: hasAgodaApiKey,
+    apiKeyPresent: Boolean(AGODA_API_KEY),
+    siteIdLooksNumeric: /^\d+$/.test(AGODA_SITE_ID2),
     authFormat: "siteid_colon_apikey",
-    requestShape,
-    ...extras
-  });
+    requestFormat: "criteria_city_search",
+    hasAgodaSiteId: Boolean(AGODA_SITE_ID2),
+    hasAgodaApiKey: Boolean(AGODA_API_KEY),
+    ...extra
+  };
+}
+function extractAgodaErrorDiagnostics(payload) {
+  const error = payload.error;
+  if (!error) return {};
+  return {
+    agodaErrorCode: error.id,
+    agodaErrorMessage: error.message,
+    agodaErrorType: error.type
+  };
+}
+var AGODA_LT_V1_ENDPOINT = "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
+async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
+  const cacheKey = `agoda_lt_v1_${ltCityId}_${checkIn}_${checkOut}_${adults}_${rooms}_${page}_${sort}`;
+  const cached = cache2.get(cacheKey);
+  if (cached && cached.exp > Date.now()) {
+    return cached.val;
+  }
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
-  const key = `agoda-lt:${ltCityId}:${checkIn}:${checkOut}:${adults}:${rooms}:${page}:${sort}`;
-  return cached(
-    key,
-    async () => {
-      if (!hasAgodaSiteId || !hasAgodaApiKey) {
-        safeWarnOnce(
-          "Agoda credentials are missing; live results are unavailable."
-        );
-        const diagnostics = buildDiagnostics("missing_credentials");
-        if (allowMockFallback) {
-          return {
-            source: "mock",
-            hotels: getMockHotels(agodaCityId, page, sort),
-            warnings: [
-              "Live Agoda credentials are not configured. Showing fallback results."
-            ],
-            diagnostics
-          };
-        }
+  const allowMockFallback = process.env.ALLOW_HOTEL_MOCKS === "true";
+  try {
+    if (!AGODA_SITE_ID2 || !AGODA_API_KEY) {
+      console.warn("[Hotels] Missing Agoda credentials, skipping live search.");
+      const diagnostics = buildDiagnostics("missing_credentials");
+      if (allowMockFallback) {
         return {
-          source: "agoda",
-          hotels: [],
-          warning: liveAgodaWarning,
-          warnings: [liveAgodaWarning],
-          diagnostics,
-          totalCount: 0
+          source: "mock",
+          hotels: getMockHotels(agodaCityId, page, sort),
+          warnings: ["Missing Agoda credentials. Showing fallback results."],
+          diagnostics
         };
       }
-      try {
-        const body = buildAgodaLtV1RequestBody({
-          checkIn,
-          checkOut,
-          cityId: ltCityId,
-          adults,
-          pageSize: PAGE_SIZE,
-          sort
-        });
-        console.info("[Hotels] Agoda lt_v1 request", {
-          endpointUrl: AGODA_LT_V1_ENDPOINT,
-          ...requestShape,
-          hasAgodaSiteId,
-          hasAgodaApiKey
-        });
-        const response = await fetch(AGODA_LT_V1_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID}:`) ? AGODA_API_KEY : `${AGODA_SITE_ID}:${AGODA_API_KEY}`,
-            "Accept-Encoding": "gzip,deflate"
-          },
-          body: JSON.stringify(body)
-        });
-        if (!response.ok) {
-          const responseBody = await response.text();
-          const bodySnippet = responseBody.slice(0, 300).replace(/\s+/g, " ");
-          console.warn(
-            `[Hotels] Agoda lt_v1 non-ok response status=${response.status} body="${bodySnippet}"`
-          );
-          safeWarnOnce(
-            `Agoda lt_v1 search returned status ${response.status}.`
-          );
-          const diagnostics = buildDiagnostics("non_ok_response", response.status, {
-            agodaResponsePreview: bodySnippet
-          });
-          if (allowMockFallback) {
-            return {
-              source: "mock",
-              hotels: getMockHotels(agodaCityId, page, sort),
-              warnings: [
-                "Live Agoda search is temporarily unavailable. Showing fallback results."
-              ],
-              diagnostics
-            };
-          }
-          return {
-            source: "agoda",
-            hotels: [],
-            warning: liveAgodaWarning,
-            warnings: [liveAgodaWarning],
-            diagnostics,
-            totalCount: 0
-          };
-        }
-        const payload = await response.json();
-        const payloadTopLevelKeys = payload && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : [];
-        const hasErrorPayload = payloadTopLevelKeys.includes("error");
-        const agodaErrorDiagnostics = hasErrorPayload ? extractAgodaErrorDiagnostics(payload) : {};
-        const resultCandidateMap = {
-          results: payload?.results,
-          hotels: payload?.hotels,
-          properties: payload?.properties,
-          data: payload?.data,
-          dataResults: payload?.data?.results,
-          dataHotels: payload?.data?.hotels,
-          searchResults: payload?.searchResults,
-          hotelList: payload?.hotelList
-        };
-        const resultCandidateCounts = Object.entries(resultCandidateMap).reduce((acc, [candidateKey, candidateValue]) => {
-          if (Array.isArray(candidateValue)) {
-            acc[candidateKey] = candidateValue.length;
-          }
-          return acc;
-        }, {});
-        const hotels = Object.values(resultCandidateMap).find(
-          (candidate) => Array.isArray(candidate) && candidate.length > 0
-        ) ?? [];
-        if (!hotels.length) {
-          if (hasErrorPayload) {
-            console.warn("[Hotels] Agoda lt_v1 error payload", {
-              code: agodaErrorDiagnostics.agodaErrorCode,
-              message: agodaErrorDiagnostics.agodaErrorMessage,
-              type: agodaErrorDiagnostics.agodaErrorType
-            });
-          }
-          console.warn("[Hotels] Agoda lt_v1 empty results shape", {
-            payloadTopLevelKeys,
-            resultCandidateCounts
-          });
-          const diagnostics = buildDiagnostics("empty_results", void 0, {
-            payloadTopLevelKeys,
-            resultCandidateCounts,
-            ...agodaErrorDiagnostics
-          });
-          if (allowMockFallback) {
-            return {
-              source: "mock",
-              hotels: getMockHotels(agodaCityId, page, sort),
-              warnings: [
-                "No live Agoda hotels were returned for this criteria. Showing fallback results."
-              ],
-              diagnostics
-            };
-          }
-          return {
-            source: "agoda",
-            hotels: [],
-            warning: liveAgodaWarning,
-            warnings: [liveAgodaWarning],
-            diagnostics,
-            totalCount: 0
-          };
-        }
+      return {
+        source: "agoda",
+        hotels: [],
+        warning: liveAgodaWarning,
+        warnings: [liveAgodaWarning],
+        diagnostics,
+        totalCount: 0
+      };
+    }
+    const body = buildAgodaLtV1RequestBody({
+      checkIn,
+      checkOut,
+      cityId: ltCityId,
+      adults,
+      pageSize: PAGE_SIZE2,
+      sort
+    });
+    const hasAgodaApiKey = Boolean(AGODA_API_KEY);
+    const hasAgodaSiteId = Boolean(AGODA_SITE_ID2);
+    console.log(`[Hotels] Agoda search cityId=${ltCityId}`, {
+      hasAgodaSiteId,
+      hasAgodaApiKey
+    });
+    const response = await fetch(AGODA_LT_V1_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID2}:`) ? AGODA_API_KEY : `${AGODA_SITE_ID2}:${AGODA_API_KEY}`,
+        "Accept-Encoding": "gzip,deflate"
+      },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      const responseBody = await response.text();
+      const bodySnippet = responseBody.slice(0, 300).replace(/\s+/g, " ");
+      console.warn(`[Hotels] Agoda lt_v1 non-ok response status=${response.status}`);
+      safeWarnOnce(`Agoda lt_v1 search returned status ${response.status}.`);
+      const diagnostics = buildDiagnostics(
+        "non_ok_response",
+        response.status,
+        shouldExposeHotelDiagnostics() ? { agodaResponsePreview: bodySnippet } : {}
+      );
+      if (allowMockFallback) {
         return {
-          source: "agoda",
-          hotels,
-          totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
-        };
-      } catch (err) {
-        console.error("[Hotels] Agoda lt_v1 search failed:", err);
-        const diagnostics = buildDiagnostics("fetch_error");
-        if (allowMockFallback) {
-          return {
-            source: "mock",
-            hotels: getMockHotels(agodaCityId, page, sort),
-            warnings: ["Live Agoda search failed. Showing fallback results."],
-            diagnostics
-          };
-        }
-        return {
-          source: "agoda",
-          hotels: [],
-          warning: liveAgodaWarning,
-          warnings: [liveAgodaWarning],
-          diagnostics,
-          totalCount: 0
+          source: "mock",
+          hotels: getMockHotels(agodaCityId, page, sort),
+          warnings: ["Live Agoda search is temporarily unavailable. Showing fallback results."],
+          diagnostics
         };
       }
-    },
-    1800
-  );
+      return {
+        source: "agoda",
+        hotels: [],
+        warning: liveAgodaWarning,
+        warnings: [liveAgodaWarning],
+        diagnostics,
+        totalCount: 0
+      };
+    }
+    const payload = await response.json();
+    const payloadTopLevelKeys = payload && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : [];
+    const hasErrorPayload = payloadTopLevelKeys.includes("error");
+    const agodaErrorDiagnostics = hasErrorPayload ? extractAgodaErrorDiagnostics(payload) : {};
+    const resultCandidateMap = {
+      results: payload?.results,
+      hotels: payload?.hotels,
+      properties: payload?.properties,
+      data: payload?.data,
+      dataResults: payload?.data?.results,
+      dataHotels: payload?.data?.hotels,
+      searchResults: payload?.searchResults,
+      hotelList: payload?.hotelList
+    };
+    const resultCandidateCounts = Object.entries(resultCandidateMap).reduce(
+      (acc, [candidateKey, candidateValue]) => {
+        if (Array.isArray(candidateValue)) {
+          acc[candidateKey] = candidateValue.length;
+        }
+        return acc;
+      },
+      {}
+    );
+    const hotels = Object.values(resultCandidateMap).find(
+      (candidate) => Array.isArray(candidate) && candidate.length > 0
+    ) ?? [];
+    if (!hotels.length) {
+      if (hasErrorPayload) {
+        console.warn("[Hotels] Agoda lt_v1 error payload", {
+          code: agodaErrorDiagnostics.agodaErrorCode,
+          message: agodaErrorDiagnostics.agodaErrorMessage,
+          type: agodaErrorDiagnostics.agodaErrorType
+        });
+      }
+      console.warn("[Hotels] Agoda lt_v1 empty results shape", {
+        payloadTopLevelKeys,
+        resultCandidateCounts
+      });
+      const diagnostics = buildDiagnostics(
+        "empty_results",
+        void 0,
+        shouldExposeHotelDiagnostics() ? {
+          payloadTopLevelKeys,
+          resultCandidateCounts,
+          ...agodaErrorDiagnostics
+        } : {}
+      );
+      if (allowMockFallback) {
+        return {
+          source: "mock",
+          hotels: getMockHotels(agodaCityId, page, sort),
+          warnings: ["No live Agoda hotels were returned for this criteria. Showing fallback results."],
+          diagnostics
+        };
+      }
+      return {
+        source: "agoda",
+        hotels: [],
+        warning: liveAgodaWarning,
+        warnings: [liveAgodaWarning],
+        diagnostics,
+        totalCount: 0
+      };
+    }
+    const result = {
+      source: "agoda",
+      hotels,
+      totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
+    };
+    cache2.set(cacheKey, { val: result, exp: Date.now() + 1800 * 1e3 });
+    return result;
+  } catch (err) {
+    console.error("[Hotels] Agoda lt_v1 search failed:", err);
+    const diagnostics = buildDiagnostics("fetch_error");
+    if (allowMockFallback) {
+      return {
+        source: "mock",
+        hotels: getMockHotels(agodaCityId, page, sort),
+        warnings: ["Live Agoda search failed. Showing fallback results."],
+        diagnostics
+      };
+    }
+    return {
+      source: "agoda",
+      hotels: [],
+      warning: liveAgodaWarning,
+      warnings: [liveAgodaWarning],
+      diagnostics,
+      totalCount: 0
+    };
+  }
 }
 async function fetchAgodaHotelsWithCityCandidates(params) {
   const attemptedLtCityIds = [];
@@ -3523,7 +3588,7 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
     warnings: ["Live Agoda results are temporarily unavailable."],
     diagnostics: {
       ...latestDiagnostics ?? {
-        reason: "empty_results"
+        reason: "unresolved_city"
       },
       attemptedLtCityIds,
       resolvedLtCityId: params.ltCityCandidates[0]?.cityId,
@@ -3669,10 +3734,10 @@ function getMockHotels(cityId, page, sort) {
   }));
   return sortHotels(withLinks, sort);
 }
-async function searchHotels(req, res) {
-  const normalized = normalizeHotelSearchParams(req.query);
-  const rawCity = typeof req.query?.city === "string" ? req.query.city.trim() : "";
-  const rawCityName = typeof req.query?.cityName === "string" ? req.query.cityName.trim() : "";
+async function executeHotelSearch(reqQuery) {
+  const normalized = normalizeHotelSearchParams(reqQuery);
+  const rawCity = typeof reqQuery?.city === "string" ? reqQuery.city.trim() : "";
+  const rawCityName = typeof reqQuery?.cityName === "string" ? reqQuery.cityName.trim() : "";
   const hasRawCity = rawCity.length > 0;
   const hasRawCityName = rawCityName.length > 0;
   const isCityNameOnlySearch = !hasRawCity && hasRawCityName;
@@ -3692,7 +3757,7 @@ async function searchHotels(req, res) {
   } else if (isNumericCityId) {
     const agodaCityId = parseInt(normalized.city, 10);
     if (!Number.isFinite(agodaCityId)) {
-      return res.status(400).json({ error: `Invalid Agoda city id: ${normalized.city}` });
+      throw new Error(`Invalid Agoda city id: ${normalized.city}`);
     }
     const fallbackName = normalized.cityName?.trim() || `City ${normalized.city}`;
     city = {
@@ -3716,99 +3781,187 @@ async function searchHotels(req, res) {
           hasHotels: true
         };
       } else {
-        return res.status(404).json({ error: `City not found: ${normalized.city}` });
+        throw new Error(`City not found: ${normalized.city}`);
       }
     } else {
-      if (!localCity.hasHotels)
-        return res.status(400).json({ error: `No hotels available for ${localCity.name}` });
       city = localCity;
     }
   }
-  try {
-    const affiliateLinks = buildAffiliateLinks(
-      city.name,
-      city.bookingName,
-      city.agodaCityId,
-      normalized.checkIn,
-      normalized.checkOut,
-      normalized.adults,
-      normalized.rooms
-    );
-    const ltCityCandidates = buildAgodaLtCityCandidates({
-      city: isCityNameOnlySearch ? null : city,
-      queryCity: normalized.city,
-      queryCityName: normalized.cityName,
-      country: city.country
+  const affiliateLinks = buildAffiliateLinks(
+    city.name,
+    city.bookingName,
+    city.agodaCityId,
+    normalized.checkIn,
+    normalized.checkOut,
+    normalized.adults,
+    normalized.rooms
+  );
+  const ltCityCandidates = buildAgodaLtCityCandidates({
+    city: isCityNameOnlySearch ? null : city,
+    queryCity: normalized.city,
+    queryCityName: normalized.cityName,
+    country: city.country
+  });
+  if (ltCityCandidates.length === 0 && Number(city.agodaCityId) > 0) {
+    ltCityCandidates.push({
+      cityId: Number(city.agodaCityId),
+      source: "local_agoda_city_id",
+      verified: false
     });
-    const [bookingLink, result] = await Promise.all([
-      awinDeepLink(
-        affiliateLinks.booking ?? bookingUrl(
-          city.bookingName,
-          normalized.checkIn,
-          normalized.checkOut,
-          normalized.adults,
-          normalized.rooms
-        )
-      ),
-      fetchAgodaHotelsWithCityCandidates({
-        agodaCityId: city.agodaCityId,
-        ltCityCandidates,
-        checkIn: normalized.checkIn,
-        checkOut: normalized.checkOut,
-        adults: normalized.adults,
-        rooms: normalized.rooms,
-        page: normalized.page,
-        sort: normalized.sort
-      })
-    ]);
-    const normalizedHotels = sortHotels(
-      result.hotels.map(
-        (hotel, index) => normalizeHotel(
-          hotel,
-          city,
-          normalized.checkIn,
-          normalized.checkOut,
-          normalized.adults,
-          normalized.rooms,
-          affiliateLinks,
-          index,
-          normalized.page
-        )
-      ),
-      normalized.sort
-    );
-    const exposeDiagnostics = shouldExposeHotelDiagnostics();
-    const responseMeta = {
-      source: result.source,
+  }
+  const [bookingLink, result] = await Promise.all([
+    awinDeepLink(
+      affiliateLinks.booking ?? bookingUrl(
+        city.bookingName,
+        normalized.checkIn,
+        normalized.checkOut,
+        normalized.adults,
+        normalized.rooms
+      )
+    ),
+    fetchAgodaHotelsWithCityCandidates({
+      agodaCityId: city.agodaCityId,
+      ltCityCandidates,
       checkIn: normalized.checkIn,
       checkOut: normalized.checkOut,
       adults: normalized.adults,
       rooms: normalized.rooms,
       page: normalized.page,
-      sort: normalized.sort,
-      pageSize: PAGE_SIZE,
-      totalCount: result.totalCount ?? normalizedHotels.length,
-      totalPages: Math.max(
-        1,
-        Math.ceil((result.totalCount ?? normalizedHotels.length) / PAGE_SIZE)
-      ),
-      warning: result.warning,
-      warnings: result.warnings
-    };
-    if (exposeDiagnostics) {
-      responseMeta.diagnostics = result.diagnostics;
-    }
-    const response = {
+      sort: normalized.sort
+    })
+  ]);
+  const normalizedProviderHotels = result.hotels.map(
+    (hotel, index) => normalizeHotel(
+      hotel,
       city,
-      hotels: normalizedHotels,
-      affiliateLinks: { ...affiliateLinks, booking: bookingLink },
-      meta: responseMeta
-    };
+      normalized.checkIn,
+      normalized.checkOut,
+      normalized.adults,
+      normalized.rooms,
+      affiliateLinks,
+      index,
+      normalized.page
+    )
+  );
+  const canonicalHotels = mergeProviderHotels(
+    normalizedProviderHotels.map(
+      (hotel) => createProviderHotelFromResult("agoda", city.name, hotel)
+    )
+  );
+  const hotels = sortHotels(
+    canonicalHotels.map((canonical) => ({
+      ...canonical.primaryHotel.result,
+      offers: canonical.offers
+    })),
+    normalized.sort
+  );
+  return {
+    normalized,
+    city,
+    hotels,
+    result,
+    affiliateLinks: { ...affiliateLinks, booking: bookingLink }
+  };
+}
+function deriveEmptyStateReason(hotels, diagnostics) {
+  if (hotels.length > 0) return void 0;
+  if (!diagnostics) return "provider_unavailable";
+  switch (diagnostics.reason) {
+    case "unsupported_city":
+      return "unsupported_city";
+    case "unresolved_city":
+      return "unresolved_city";
+    case "missing_credentials":
+    case "non_ok_response":
+    case "fetch_error":
+      return "provider_unavailable";
+    case "empty_results":
+      return diagnostics.cityResolutionStatus === "resolved" ? "no_live_inventory" : "unresolved_city";
+    default:
+      return "no_live_inventory";
+  }
+}
+function buildHotelSearchResponsePayload(params) {
+  const exposeDiagnostics = shouldExposeHotelDiagnostics();
+  const diagnostics = params.result.diagnostics;
+  const responseMeta = {
+    source: params.result.source,
+    checkIn: params.normalized.checkIn,
+    checkOut: params.normalized.checkOut,
+    adults: params.normalized.adults,
+    rooms: params.normalized.rooms,
+    page: params.normalized.page,
+    sort: params.normalized.sort,
+    pageSize: PAGE_SIZE2,
+    totalCount: params.result.totalCount ?? params.hotels.length,
+    totalPages: Math.max(1, Math.ceil((params.result.totalCount ?? params.hotels.length) / PAGE_SIZE2)),
+    warning: params.result.warning,
+    warnings: params.result.warnings,
+    emptyStateReason: deriveEmptyStateReason(
+      params.hotels,
+      diagnostics
+    )
+  };
+  if (exposeDiagnostics) {
+    responseMeta.diagnostics = diagnostics;
+  }
+  return {
+    city: params.city,
+    hotels: params.hotels,
+    affiliateLinks: params.affiliateLinks,
+    meta: responseMeta
+  };
+}
+async function searchHotels(req, res) {
+  try {
+    const search = await executeHotelSearch(req.query);
+    const response = buildHotelSearchResponsePayload(search);
     return res.json(response);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[Hotels] Search failed:", message);
+    if (message.startsWith("City not found:")) {
+      return res.status(404).json({
+        error: message,
+        meta: { emptyStateReason: "unresolved_city" }
+      });
+    }
+    if (message.startsWith("Invalid Agoda city id:")) {
+      return res.status(400).json({ error: message });
+    }
     return res.status(500).json({ error: "Search failed" });
+  }
+}
+async function getHotelDetail(req, res) {
+  const hotelId = String(req.params.hotelId ?? "").trim();
+  if (!hotelId) {
+    return res.status(400).json({ error: "Missing hotelId path parameter." });
+  }
+  try {
+    const search = await executeHotelSearch(req.query);
+    const searchResponse = buildHotelSearchResponsePayload(search);
+    const hotel = searchResponse.hotels.find((item) => item.hotelId === hotelId) ?? null;
+    const response = {
+      city: searchResponse.city,
+      hotels: searchResponse.hotels,
+      hotel,
+      affiliateLinks: searchResponse.affiliateLinks,
+      meta: {
+        ...searchResponse.meta,
+        hotelId
+      }
+    };
+    return res.json(response);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Hotels] Hotel detail lookup failed:", message);
+    if (message.startsWith("City not found:")) {
+      return res.status(404).json({ error: message });
+    }
+    if (message.startsWith("Invalid Agoda city id:")) {
+      return res.status(400).json({ error: message });
+    }
+    return res.status(500).json({ error: "Hotel detail lookup failed" });
   }
 }
 
@@ -4530,10 +4683,10 @@ async function handleCalendarPrices(req, res, params) {
     return;
   }
   const cacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
-  const cached2 = await getCached(cacheKey);
-  if (cached2) {
+  const cached = await getCached(cacheKey);
+  if (cached) {
     res.setHeader("X-Cache", "HIT");
-    res.status(200).json(cached2);
+    res.status(200).json(cached);
     return;
   }
   const [yr, mn] = mo.split("-").map(Number);
@@ -4647,9 +4800,9 @@ async function handleCheapPrices(req, res, params) {
   const origin = normalized.origin || "RGN";
   const currency = String(params.currency || "thb");
   const cacheKey = `cheap-${origin}-${currency}`;
-  const cached2 = await getCached(cacheKey);
-  if (cached2) {
-    res.status(200).json(cached2);
+  const cached = await getCached(cacheKey);
+  if (cached) {
+    res.status(200).json(cached);
     return;
   }
   try {
@@ -4709,9 +4862,9 @@ async function handleSpecialOffers(req, res, params) {
   const origin = normalized.origin || "RGN";
   const currency = String(params.currency || "thb");
   const cacheKey = `special-offers-${origin}-${currency}`;
-  const cached2 = await getCached(cacheKey);
-  if (cached2) {
-    res.status(200).json(cached2.data || cached2);
+  const cached = await getCached(cacheKey);
+  if (cached) {
+    res.status(200).json(cached.data || cached);
     return;
   }
   const fetchOffers = async (orig) => {
@@ -4882,6 +5035,61 @@ async function handler4(req, res) {
   } catch (err) {
     console.error("[Newsletter] Error:", err);
     return res.status(500).json({ error: "Server error" });
+  }
+}
+
+// api/_lib/wishlist.ts
+async function handleGetWishlist(req, res) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    const items = await getWishlistItems(user.id);
+    return res.status(200).json(items);
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
+async function handleSaveToWishlist(req, res) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    const item = req.body;
+    if (!item.hotelId || !item.provider) {
+      return res.status(400).json({ error: "Missing hotelId or provider" });
+    }
+    await saveWishlistItem({
+      ...item,
+      userId: user.id
+    });
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
+async function handleRemoveFromWishlist(req, res) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    const { hotelId, provider } = req.query;
+    if (!hotelId || !provider) {
+      return res.status(400).json({ error: "Missing hotelId or provider query parameters" });
+    }
+    await removeWishlistItem(user.id, String(hotelId), String(provider));
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
+
+// api/_handlers/wishlist.ts
+async function handler5(req, res) {
+  if (setCors(req, res)) return;
+  switch (req.method) {
+    case "GET":
+      return handleGetWishlist(req, res);
+    case "POST":
+      return handleSaveToWishlist(req, res);
+    case "DELETE":
+      return handleRemoveFromWishlist(req, res);
+    default:
+      return res.status(405).json({ error: "Method not allowed" });
   }
 }
 
@@ -5161,11 +5369,11 @@ function fillMissingWithSeasonality(input, startDate, endDate) {
 var TTL_SECONDS = 300;
 async function getPriceCalendar(request) {
   const key = buildPriceCalendarCacheKey(request);
-  const cached2 = await getCached(key);
-  if (cached2) {
+  const cached = await getCached(key);
+  if (cached) {
     return {
-      ...cached2,
-      cache: { ...cached2.cache, hit: true }
+      ...cached,
+      cache: { ...cached.cache, hit: true }
     };
   }
   const sources = await fetchCalendarSources(request, key);
@@ -5220,9 +5428,9 @@ function deriveTrendPoints(calendarPoints, windowDays = 7) {
 var TTL_SECONDS2 = 300;
 async function getPriceTrend(request) {
   const key = buildPriceTrendCacheKey(request);
-  const cached2 = await getCached(key);
-  if (cached2) {
-    return { ...cached2, cache: { ...cached2.cache, hit: true } };
+  const cached = await getCached(key);
+  if (cached) {
+    return { ...cached, cache: { ...cached.cache, hit: true } };
   }
   const calendar = await getPriceCalendar({
     ...request,
@@ -5430,10 +5638,10 @@ router5.get(
       const origin = normalized.origin || "RGN";
       const currency = String(req.query.currency || "thb");
       const cacheKey = `cheap-${origin}-${currency}`;
-      const cached2 = await getCached2(cacheKey);
-      if (cached2) {
+      const cached = await getCached2(cacheKey);
+      if (cached) {
         res.set("Cache-Control", "public, max-age=1800");
-        res.json(cached2);
+        res.json(cached);
         return;
       }
       const url = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${new URLSearchParams({
@@ -5507,10 +5715,10 @@ router6.get(
         return;
       }
       const cacheKey = `cal-${orig}-${dest}-${mo}-${cur}`;
-      const cached2 = await getCached2(cacheKey);
-      if (cached2) {
+      const cached = await getCached2(cacheKey);
+      if (cached) {
         res.set("Cache-Control", "public, max-age=3600");
-        res.json(cached2);
+        res.json(cached);
         return;
       }
       const [yr, mn] = mo.split("-").map(Number);
@@ -6234,6 +6442,66 @@ router9.get("/send-alerts", async (req, res) => {
 });
 var cron_default = router9;
 
+// server/routes/hotelOutbound.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+import { Router as Router9 } from "express";
+var router10 = Router9();
+var ALLOWED_PROVIDERS = /* @__PURE__ */ new Set([
+  "agoda",
+  "booking",
+  "trip",
+  "expedia",
+  "klook"
+]);
+function getSingleQueryValue(value) {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return void 0;
+}
+function parseHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+router10.get("/hotels/out/:provider", (req, res) => {
+  const provider = req.params.provider;
+  if (!ALLOWED_PROVIDERS.has(provider)) {
+    return res.status(404).send("Unknown hotel provider");
+  }
+  const rawTargetUrl = getSingleQueryValue(req.query.url);
+  if (!rawTargetUrl) {
+    return res.status(400).send("Invalid outbound URL");
+  }
+  const targetUrl = parseHttpUrl(rawTargetUrl);
+  if (!targetUrl) {
+    return res.status(400).send("Invalid outbound URL");
+  }
+  const clickId = randomUUID2();
+  if (!targetUrl.searchParams.has("clickId")) {
+    targetUrl.searchParams.set("clickId", clickId);
+  }
+  console.info("[Hotels] outbound click", {
+    clickId,
+    provider,
+    host: targetUrl.host,
+    hotelId: getSingleQueryValue(req.query.hotelId),
+    city: getSingleQueryValue(req.query.city),
+    checkIn: getSingleQueryValue(req.query.checkIn),
+    checkOut: getSingleQueryValue(req.query.checkOut),
+    sort: getSingleQueryValue(req.query.sort),
+    position: getSingleQueryValue(req.query.position),
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  return res.redirect(302, targetUrl.toString());
+});
+var hotelOutbound_default = router10;
+
 // server/_core/app.ts
 console.log("[APP] Starting app.ts imports...\n");
 dotenv.config();
@@ -6251,18 +6519,21 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 registerOAuthRoutes(app);
 app.use(sitemap_default);
 app.use(["/", "/transport", "/hotels", "/flights"], cspOpen);
+app.use(hotelOutbound_default);
 app.use("/api/destination-landing", destinationLanding_default);
 app.use("/api/chat", chat_default);
 app.use("/api/cheap-prices", cheapPrices_default);
 app.use("/api/calendar-prices", calendarPrices_default);
 app.use("/api/flights/search", flightsSearch_default);
 app.use("/api/hotels/search", searchHotels);
+app.get("/api/hotels/detail/:hotelId", getHotelDetail);
 app.use("/api/autocomplete/hotels", searchAutocompleteHotels);
 app.use("/api/frontdoor/prices", searchFrontDoorPrices);
 app.use("/api/price-alerts", priceAlerts_default);
 app.use("/api/alerts", priceAlerts_default);
 app.use("/api/cron", cron_default);
 app.use("/api/auth", handler);
+app.use("/api/wishlist", handler5);
 app.get("/api/flights/price-calendar", async (req, res) => {
   const validation = validatePriceCalendarRequest(req.query);
   if (!validation.ok) return res.status(400).json({ error: { code: "BAD_REQUEST", message: validation.message } });

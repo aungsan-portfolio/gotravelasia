@@ -138,7 +138,7 @@ function extractAgodaErrorDiagnostics(
 }
 
 const AGODA_LT_V1_ENDPOINT =
-  "https://affiliateapi7643.agoda.com/api/v1/hostel/recommend";
+  "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
 
 async function fetchAgodaHotels(
   agodaCityId: number,
