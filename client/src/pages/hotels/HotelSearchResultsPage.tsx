@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { HotelFilterSidebar } from "@/components/hotels/results/HotelFilterSidebar";
 import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToolbar";
@@ -6,6 +6,7 @@ import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
+import { useHotelUrlState, type HotelUrlFilterState } from "@/hooks/useHotelUrlState";
 import { getCityName } from "@/lib/cities";
 import { buildHotelDetailUrl } from "@/lib/hotels/buildHotelDetailUrl";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
+import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
 import { ExternalLink, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -50,18 +52,88 @@ export default function HotelSearchResultsPage() {
     bounds,
     setSelectedHotelId,
     setHoveredHotelId,
+    setBounds,
   } = useHotelMapView(visibleHotels);
+
+  // ─── "Search this area" state ────────────────────────────────────
+  const [isSearchingArea, setIsSearchingArea] = useState(false);
+  const [areaFilteredHotels, setAreaFilteredHotels] = useState<typeof visibleHotels | null>(null);
+
+  const handleSearchArea = useCallback((mapBounds: MarkerBounds) => {
+    setIsSearchingArea(true);
+    setBounds(mapBounds);
+
+    // Client-side filter: show only hotels within the visible map bounds
+    const filtered = visibleHotels.filter((hotel) => {
+      if (!hotel.coordinates || hotel.coordinates.isFallback) return false;
+      const { lat, lng } = hotel.coordinates;
+      return (
+        lat >= mapBounds.south &&
+        lat <= mapBounds.north &&
+        lng >= mapBounds.west &&
+        lng <= mapBounds.east
+      );
+    });
+
+    setAreaFilteredHotels(filtered);
+    setIsSearchingArea(false);
+  }, [visibleHotels, setBounds]);
+
+  // Reset area filter when base results change (new search, filter change)
+  useEffect(() => {
+    setAreaFilteredHotels(null);
+  }, [visibleHotels]);
+
+  // ─── URL state sync (P3) ─────────────────────────────────────────
+  const handleRestoreFilters = useCallback((restored: HotelUrlFilterState) => {
+    // Restore quick filters
+    for (const filterId of restored.activeFilters) {
+      toggleFilter(filterId);
+    }
+    // Restore rich filters
+    if (restored.richFilters.priceRange) {
+      setPriceRange(restored.richFilters.priceRange);
+    }
+    if (restored.richFilters.starRatings) {
+      for (const star of restored.richFilters.starRatings) {
+        toggleStarRating(star);
+      }
+    }
+    if (restored.richFilters.minGuestRating != null) {
+      setMinGuestRating(restored.richFilters.minGuestRating);
+    }
+    if (restored.richFilters.amenities) {
+      for (const amenity of restored.richFilters.amenities) {
+        toggleAmenity(amenity);
+      }
+    }
+    // Restore map bounds (triggers area search)
+    if (restored.mapBounds) {
+      handleSearchArea(restored.mapBounds);
+    }
+  }, [toggleFilter, setPriceRange, toggleStarRating, setMinGuestRating, toggleAmenity, handleSearchArea]);
+
+  useHotelUrlState({
+    activeFilters,
+    richFilters,
+    mapBounds: bounds,
+    sort,
+    onRestoreFilters: handleRestoreFilters,
+  });
+
+  // Use area-filtered hotels if active, otherwise all visible
+  const displayHotels = areaFilteredHotels ?? visibleHotels;
 
   const mappedHotels = useMemo(
     () =>
-      visibleHotels.filter(
+      displayHotels.filter(
         hotel => hotel.coordinates && !hotel.coordinates.isFallback
       ),
-    [visibleHotels]
+    [displayHotels]
   );
   const shouldShowAgodaCtaFallback =
     meta?.source === "agoda" &&
-    visibleHotels.length === 0 &&
+    displayHotels.length === 0 &&
     Boolean(affiliateLinks?.agoda);
 
   const emptyStateContent = (() => {
@@ -92,7 +164,7 @@ export default function HotelSearchResultsPage() {
   })();
 
   const openHotelDetail = (hotelId: string) => {
-    const selectedHotel = visibleHotels.find(
+    const selectedHotel = displayHotels.find(
       hotel => hotel.hotelId === hotelId
     );
 
@@ -296,7 +368,7 @@ export default function HotelSearchResultsPage() {
 
                 <div className="min-w-0">
                   <HotelResultsList
-                    hotels={visibleHotels}
+                    hotels={displayHotels}
                     checkIn={query.checkIn}
                     checkOut={query.checkOut}
                     selectedHotelId={selectedHotelId}
@@ -314,6 +386,8 @@ export default function HotelSearchResultsPage() {
                     bounds={bounds}
                     onSelectHotel={setSelectedHotelId}
                     onHoverHotel={setHoveredHotelId}
+                    onSearchArea={handleSearchArea}
+                    isSearchingArea={isSearchingArea}
                     city={query.city}
                     checkIn={query.checkIn}
                     checkOut={query.checkOut}

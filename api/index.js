@@ -1772,16 +1772,16 @@ function isRedEyeDeparture(flight) {
   return hour >= 22 || hour < 5;
 }
 function computeRelativePricePosition(flight, allFlights) {
-  const stats = getPriceStats(allFlights);
-  if (!stats) {
+  const stats2 = getPriceStats(allFlights);
+  if (!stats2) {
     return { ratioToMedian: 1, savingsVsMedian: 0, isCheapest: false };
   }
-  const ratioToMedian = flight.price.total / stats.median;
-  const savingsVsMedian = (stats.median - flight.price.total) / stats.median;
+  const ratioToMedian = flight.price.total / stats2.median;
+  const savingsVsMedian = (stats2.median - flight.price.total) / stats2.median;
   return {
     ratioToMedian,
     savingsVsMedian,
-    isCheapest: flight.price.total <= stats.min
+    isCheapest: flight.price.total <= stats2.min
   };
 }
 function isEcoFriendlyHeuristic(flight, allFlights) {
@@ -1791,11 +1791,11 @@ function isEcoFriendlyHeuristic(flight, allFlights) {
   return flight.totalStops <= 1 && !flight.isSelfTransfer && isReasonablyEfficientDuration;
 }
 function getCompatibilityTag(flight, allFlights) {
-  const stats = getPriceStats(allFlights);
-  if (!stats) return "typical";
-  if (flight.price.total <= stats.min) return "best";
-  if (flight.price.total <= stats.median * 0.85) return "great";
-  if (flight.price.total <= stats.median * 1.15) return "typical";
+  const stats2 = getPriceStats(allFlights);
+  if (!stats2) return "typical";
+  if (flight.price.total <= stats2.min) return "best";
+  if (flight.price.total <= stats2.median * 0.85) return "great";
+  if (flight.price.total <= stats2.median * 1.15) return "typical";
   return "expensive";
 }
 function hasSupportedPriceDropSignal(flight, context) {
@@ -2756,6 +2756,7 @@ var cityByIata = new Map(CITIES.map((city) => [city.iata, city]));
 var cityByAgoda = new Map(CITIES.filter((city) => city.agodaCityId).map((city) => [city.agodaCityId, city]));
 var getCityBySlug = (slug) => cityBySlug.get(slug);
 var getHotelCities = () => CITIES.filter((city) => city.hasHotels);
+var getHubCities = () => CITIES.filter((city) => city.hub);
 var CITIES_BY_COUNTRY = CITIES.reduce((acc, city) => {
   if (!acc[city.country]) acc[city.country] = { flag: city.flag, cc: city.cc, cities: [] };
   acc[city.country].cities.push(city);
@@ -2986,6 +2987,59 @@ var EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE || "ZZxDEika";
 var BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID || "5910";
 var AWIN_TOKEN = process.env.AWIN_TOKEN || "";
 var AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID || "";
+var AWIN_TIMEOUT_MS = Number(process.env.AWIN_TIMEOUT_MS) || 5e3;
+var AWIN_MAX_RETRIES = Number(process.env.AWIN_MAX_RETRIES) || 2;
+var AWIN_RETRY_BASE_MS = 300;
+var AWIN_LINK_CACHE_TTL_MS = 60 * 60 * 1e3;
+var awinLinkCache = /* @__PURE__ */ new Map();
+function getAwinCachedLink(destinationUrl) {
+  const entry = awinLinkCache.get(destinationUrl);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    awinLinkCache.delete(destinationUrl);
+    return null;
+  }
+  return entry.url;
+}
+function setAwinCachedLink(destinationUrl, generatedUrl) {
+  awinLinkCache.set(destinationUrl, {
+    url: generatedUrl,
+    expiresAt: Date.now() + AWIN_LINK_CACHE_TTL_MS
+  });
+  if (awinLinkCache.size > 500) {
+    const oldest = awinLinkCache.keys().next().value;
+    if (oldest) awinLinkCache.delete(oldest);
+  }
+}
+function logAwinError(entry) {
+  console.error("[Awin]", JSON.stringify(entry));
+}
+function buildLocalAwinLink(destinationUrl) {
+  if (!AWIN_PUB_ID || !BOOKING_ADV) return destinationUrl;
+  const params = new URLSearchParams({
+    awinmid: BOOKING_ADV,
+    awinaffid: AWIN_PUB_ID,
+    ued: destinationUrl,
+    platform: "dl"
+  });
+  return `https://www.awin1.com/cread.php?${params.toString()}`;
+}
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 function agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms) {
   const params = new URLSearchParams({
     city: String(cityId),
@@ -3045,27 +3099,95 @@ function shouldIncludeExpediaLink(expediaCode) {
   return true;
 }
 async function awinDeepLink(destinationUrl) {
-  if (!AWIN_TOKEN || !AWIN_PUB_ID) return destinationUrl;
-  try {
-    const response = await fetch(
-      `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${AWIN_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          advertiserId: parseInt(BOOKING_ADV, 10),
-          destinationUrl
-        })
-      }
-    );
-    const payload = await response.json();
-    return payload.url ?? destinationUrl;
-  } catch {
-    return destinationUrl;
+  if (!AWIN_TOKEN || !AWIN_PUB_ID) {
+    return buildLocalAwinLink(destinationUrl);
   }
+  const cached = getAwinCachedLink(destinationUrl);
+  if (cached) return cached;
+  const endpoint = `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`;
+  const body = JSON.stringify({
+    advertiserId: parseInt(BOOKING_ADV, 10),
+    destinationUrl
+  });
+  let lastError;
+  for (let attempt = 1; attempt <= AWIN_MAX_RETRIES + 1; attempt++) {
+    try {
+      const response = await fetchWithTimeout(
+        endpoint,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${AWIN_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          body
+        },
+        AWIN_TIMEOUT_MS
+      );
+      if (!response.ok) {
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          logAwinError({
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            attempt,
+            maxRetries: AWIN_MAX_RETRIES,
+            destinationUrl,
+            errorType: "http_error",
+            statusCode: response.status,
+            message: `Non-retryable HTTP ${response.status}`
+          });
+          break;
+        }
+        logAwinError({
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          attempt,
+          maxRetries: AWIN_MAX_RETRIES,
+          destinationUrl,
+          errorType: "http_error",
+          statusCode: response.status,
+          message: `HTTP ${response.status} (will retry)`
+        });
+        lastError = new Error(`HTTP ${response.status}`);
+        if (attempt <= AWIN_MAX_RETRIES) {
+          await sleep(AWIN_RETRY_BASE_MS * Math.pow(2, attempt - 1));
+          continue;
+        }
+        break;
+      }
+      const payload = await response.json();
+      if (!payload.url) {
+        logAwinError({
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          attempt,
+          maxRetries: AWIN_MAX_RETRIES,
+          destinationUrl,
+          errorType: "parse_error",
+          message: "Response missing 'url' field"
+        });
+        break;
+      }
+      setAwinCachedLink(destinationUrl, payload.url);
+      return payload.url;
+    } catch (error) {
+      lastError = error;
+      const isTimeout = error instanceof DOMException && error.name === "AbortError";
+      const isAbortError = error instanceof Error && error.name === "AbortError";
+      logAwinError({
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        attempt,
+        maxRetries: AWIN_MAX_RETRIES,
+        destinationUrl,
+        errorType: isTimeout || isAbortError ? "timeout" : "network_error",
+        message: error instanceof Error ? error.message : "Unknown fetch error"
+      });
+      if (attempt <= AWIN_MAX_RETRIES) {
+        await sleep(AWIN_RETRY_BASE_MS * Math.pow(2, attempt - 1));
+        continue;
+      }
+    }
+  }
+  const fallbackUrl = buildLocalAwinLink(destinationUrl);
+  setAwinCachedLink(destinationUrl, fallbackUrl);
+  return fallbackUrl;
 }
 function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, adults, rooms) {
   const links = {
@@ -3289,6 +3411,239 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   };
 }
 
+// shared/utils/store.ts
+import { Redis } from "@upstash/redis";
+var MemoryStore = class {
+  cache = /* @__PURE__ */ new Map();
+  rateLimits = /* @__PURE__ */ new Map();
+  async get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt < Date.now()) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.value;
+  }
+  async set(key, value, ttlSeconds) {
+    const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1e3 : Number.MAX_SAFE_INTEGER;
+    this.cache.set(key, { value, expiresAt });
+  }
+  async delete(key) {
+    this.cache.delete(key);
+  }
+  async increment(key, windowMs) {
+    const now = Date.now();
+    const existing = this.rateLimits.get(key);
+    if (!existing || existing.resetAt <= now) {
+      const entry = { count: 1, resetAt: now + windowMs };
+      this.rateLimits.set(key, entry);
+      return entry;
+    }
+    existing.count++;
+    return existing;
+  }
+};
+var RedisStore = class {
+  client;
+  constructor(url, token) {
+    this.client = new Redis({ url, token });
+  }
+  async get(key) {
+    try {
+      return await this.client.get(key);
+    } catch (e) {
+      console.error("[RedisStore:get] Error:", e);
+      return null;
+    }
+  }
+  async set(key, value, ttlSeconds) {
+    try {
+      if (ttlSeconds) {
+        await this.client.set(key, value, { ex: ttlSeconds });
+      } else {
+        await this.client.set(key, value);
+      }
+    } catch (e) {
+      console.error("[RedisStore:set] Error:", e);
+    }
+  }
+  async delete(key) {
+    try {
+      await this.client.del(key);
+    } catch (e) {
+      console.error("[RedisStore:delete] Error:", e);
+    }
+  }
+  async increment(key, windowMs) {
+    try {
+      const count = await this.client.incr(key);
+      if (count === 1) {
+        await this.client.pexpire(key, windowMs);
+      }
+      const ttl = await this.client.pttl(key);
+      const now = Date.now();
+      return {
+        count,
+        resetAt: now + (ttl > 0 ? ttl : windowMs)
+      };
+    } catch (e) {
+      console.error("[RedisStore:increment] Error:", e);
+      return { count: 1, resetAt: Date.now() + windowMs };
+    }
+  }
+};
+var store = null;
+var IS_PROD = process.env.NODE_ENV === "production" || !!process.env.VERCEL_URL;
+function getStore() {
+  if (store) return store;
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (url && token) {
+    if (IS_PROD) {
+      console.log("[Store] Initializing SharedStore (Production KV/Redis)");
+    } else {
+      console.log("[Store] Initializing SharedStore (Development Shared)");
+    }
+    store = new RedisStore(url, token);
+  } else {
+    if (IS_PROD) {
+      console.warn("[Store] WARNING: Shared Store configuration missing in production! Falling back to process-local MemoryStore (Non-persistent).");
+    } else {
+      console.log("[Store] Initializing MemoryStore (Local Development)");
+    }
+    store = new MemoryStore();
+  }
+  return store;
+}
+
+// server/hotels/cache.ts
+var HOTEL_CACHE_NAMESPACE = "hotel:search";
+var L2_SEARCH_TTL_SECONDS = Number(process.env.HOTEL_CACHE_TTL_SECONDS) || 1800;
+var L2_TTL_JITTER_MAX_SECONDS = Number(process.env.HOTEL_CACHE_JITTER_SECONDS) || 120;
+var L1_TTL_MS = Number(process.env.HOTEL_CACHE_L1_TTL_MS) || 5 * 60 * 1e3;
+var L1_MAX_SIZE = Number(process.env.HOTEL_CACHE_L1_MAX_SIZE) || 200;
+var STALE_WHILE_REVALIDATE_MS = 60 * 1e3;
+var l1Cache = /* @__PURE__ */ new Map();
+var stats = {
+  l1Hits: 0,
+  l1Misses: 0,
+  l1StaleHits: 0,
+  l2Hits: 0,
+  l2Misses: 0,
+  l2Errors: 0,
+  sets: 0,
+  invalidations: 0,
+  evictions: 0
+};
+function buildHotelSearchCacheKey(params) {
+  return `${HOTEL_CACHE_NAMESPACE}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.page}:${params.sort}`;
+}
+function evictL1IfNeeded() {
+  if (l1Cache.size <= L1_MAX_SIZE) return;
+  const now = Date.now();
+  for (const [key, entry] of l1Cache) {
+    if (entry.staleUntil < now) {
+      l1Cache.delete(key);
+    }
+  }
+  if (l1Cache.size > L1_MAX_SIZE) {
+    const entries = Array.from(l1Cache.entries()).sort(([, a], [, b]) => {
+      const scoreA = a.hits * 0.3 + (a.expiresAt - now) * 0.7;
+      const scoreB = b.hits * 0.3 + (b.expiresAt - now) * 0.7;
+      return scoreA - scoreB;
+    });
+    const toRemove = entries.slice(0, l1Cache.size - L1_MAX_SIZE + 10);
+    for (const [key] of toRemove) {
+      l1Cache.delete(key);
+      stats.evictions++;
+    }
+  }
+}
+async function hotelCacheGet(key) {
+  const now = Date.now();
+  const l1Entry = l1Cache.get(key);
+  if (l1Entry) {
+    if (l1Entry.expiresAt > now) {
+      l1Entry.hits++;
+      stats.l1Hits++;
+      return {
+        data: l1Entry.data,
+        source: "l1",
+        age: now - l1Entry.createdAt
+      };
+    }
+    if (l1Entry.staleUntil > now) {
+      l1Entry.hits++;
+      stats.l1StaleHits++;
+      return {
+        data: l1Entry.data,
+        source: "l1_stale",
+        age: now - l1Entry.createdAt
+      };
+    }
+    l1Cache.delete(key);
+  }
+  stats.l1Misses++;
+  try {
+    const store2 = getStore();
+    const l2Value = await store2.get(key);
+    if (l2Value !== null && l2Value !== void 0) {
+      stats.l2Hits++;
+      l1Cache.set(key, {
+        data: l2Value,
+        expiresAt: now + L1_TTL_MS,
+        staleUntil: now + L1_TTL_MS + STALE_WHILE_REVALIDATE_MS,
+        hits: 1,
+        createdAt: now
+      });
+      evictL1IfNeeded();
+      return {
+        data: l2Value,
+        source: "l2",
+        age: 0
+        // Unknown exact L2 age without metadata
+      };
+    }
+    stats.l2Misses++;
+  } catch (error) {
+    stats.l2Errors++;
+    console.error(`[HotelCache:L2:ERROR] key=${key}`, error instanceof Error ? error.message : error);
+  }
+  return null;
+}
+async function hotelCacheSet(key, data, ttlSeconds = L2_SEARCH_TTL_SECONDS) {
+  const now = Date.now();
+  stats.sets++;
+  const jitter = Math.floor(Math.random() * L2_TTL_JITTER_MAX_SECONDS);
+  const effectiveL2Ttl = ttlSeconds + jitter;
+  l1Cache.set(key, {
+    data,
+    expiresAt: now + L1_TTL_MS,
+    staleUntil: now + L1_TTL_MS + STALE_WHILE_REVALIDATE_MS,
+    hits: 0,
+    createdAt: now
+  });
+  evictL1IfNeeded();
+  try {
+    const store2 = getStore();
+    await store2.set(key, data, effectiveL2Ttl);
+  } catch (error) {
+    stats.l2Errors++;
+    console.error(`[HotelCache:L2:SET:ERROR] key=${key}`, error instanceof Error ? error.message : error);
+  }
+}
+function getHotelCacheStats() {
+  const totalRequests = stats.l1Hits + stats.l1StaleHits + stats.l2Hits + stats.l2Misses;
+  const totalHits = stats.l1Hits + stats.l1StaleHits + stats.l2Hits;
+  const hitRate = totalRequests > 0 ? `${(totalHits / totalRequests * 100).toFixed(1)}%` : "N/A";
+  return {
+    ...stats,
+    l1Size: l1Cache.size,
+    hitRate
+  };
+}
+
 // server/api/hotels.ts
 var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -3307,7 +3662,6 @@ var AGODA_SORT_MAP = {
   stars_desc: "StarRatingDesc",
   review_desc: "AllGuestsReviewScore"
 };
-var cache2 = /* @__PURE__ */ new Map();
 var warnedMessages = /* @__PURE__ */ new Set();
 function safeWarnOnce(message) {
   if (warnedMessages.has(message)) return;
@@ -3370,10 +3724,19 @@ function extractAgodaErrorDiagnostics(payload) {
 }
 var AGODA_LT_V1_ENDPOINT = "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
 async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
-  const cacheKey = `agoda_lt_v1_${ltCityId}_${checkIn}_${checkOut}_${adults}_${rooms}_${page}_${sort}`;
-  const cached = cache2.get(cacheKey);
-  if (cached && cached.exp > Date.now()) {
-    return cached.val;
+  const cacheKey = buildHotelSearchCacheKey({
+    ltCityId,
+    checkIn,
+    checkOut,
+    adults,
+    rooms,
+    page,
+    sort
+  });
+  const cached = await hotelCacheGet(cacheKey);
+  if (cached) {
+    console.log(`[Hotels] Cache ${cached.source} hit for ${cacheKey} (age=${cached.age}ms)`);
+    return cached.data;
   }
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
   const allowMockFallback = process.env.ALLOW_HOTEL_MOCKS === "true";
@@ -3517,7 +3880,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       hotels,
       totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
     };
-    cache2.set(cacheKey, { val: result, exp: Date.now() + 1800 * 1e3 });
+    await hotelCacheSet(cacheKey, result);
     return result;
   } catch (err) {
     console.error("[Hotels] Agoda lt_v1 search failed:", err);
@@ -3964,6 +4327,15 @@ async function getHotelDetail(req, res) {
     return res.status(500).json({ error: "Hotel detail lookup failed" });
   }
 }
+function getHotelCacheStatsHandler(req, res) {
+  if (!shouldExposeHotelDiagnostics()) {
+    return res.status(403).json({ error: "Not available in production" });
+  }
+  return res.json({
+    ok: true,
+    stats: getHotelCacheStats()
+  });
+}
 
 // server/api/autocomplete.ts
 var AGODA_UNIFIED_SUGGEST_URL = "https://affiliateapi7643.agoda.com/api/v1/UnifiedSuggest";
@@ -4308,112 +4680,6 @@ var FX_RATES = {
   THB: { USD: 1 / 34 }
 };
 
-// shared/utils/store.ts
-import { Redis } from "@upstash/redis";
-var MemoryStore = class {
-  cache = /* @__PURE__ */ new Map();
-  rateLimits = /* @__PURE__ */ new Map();
-  async get(key) {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-    if (entry.expiresAt < Date.now()) {
-      this.cache.delete(key);
-      return null;
-    }
-    return entry.value;
-  }
-  async set(key, value, ttlSeconds) {
-    const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1e3 : Number.MAX_SAFE_INTEGER;
-    this.cache.set(key, { value, expiresAt });
-  }
-  async delete(key) {
-    this.cache.delete(key);
-  }
-  async increment(key, windowMs) {
-    const now = Date.now();
-    const existing = this.rateLimits.get(key);
-    if (!existing || existing.resetAt <= now) {
-      const entry = { count: 1, resetAt: now + windowMs };
-      this.rateLimits.set(key, entry);
-      return entry;
-    }
-    existing.count++;
-    return existing;
-  }
-};
-var RedisStore = class {
-  client;
-  constructor(url, token) {
-    this.client = new Redis({ url, token });
-  }
-  async get(key) {
-    try {
-      return await this.client.get(key);
-    } catch (e) {
-      console.error("[RedisStore:get] Error:", e);
-      return null;
-    }
-  }
-  async set(key, value, ttlSeconds) {
-    try {
-      if (ttlSeconds) {
-        await this.client.set(key, value, { ex: ttlSeconds });
-      } else {
-        await this.client.set(key, value);
-      }
-    } catch (e) {
-      console.error("[RedisStore:set] Error:", e);
-    }
-  }
-  async delete(key) {
-    try {
-      await this.client.del(key);
-    } catch (e) {
-      console.error("[RedisStore:delete] Error:", e);
-    }
-  }
-  async increment(key, windowMs) {
-    try {
-      const count = await this.client.incr(key);
-      if (count === 1) {
-        await this.client.pexpire(key, windowMs);
-      }
-      const ttl = await this.client.pttl(key);
-      const now = Date.now();
-      return {
-        count,
-        resetAt: now + (ttl > 0 ? ttl : windowMs)
-      };
-    } catch (e) {
-      console.error("[RedisStore:increment] Error:", e);
-      return { count: 1, resetAt: Date.now() + windowMs };
-    }
-  }
-};
-var store = null;
-var IS_PROD = process.env.NODE_ENV === "production" || !!process.env.VERCEL_URL;
-function getStore() {
-  if (store) return store;
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  if (url && token) {
-    if (IS_PROD) {
-      console.log("[Store] Initializing SharedStore (Production KV/Redis)");
-    } else {
-      console.log("[Store] Initializing SharedStore (Development Shared)");
-    }
-    store = new RedisStore(url, token);
-  } else {
-    if (IS_PROD) {
-      console.warn("[Store] WARNING: Shared Store configuration missing in production! Falling back to process-local MemoryStore (Non-persistent).");
-    } else {
-      console.log("[Store] Initializing MemoryStore (Local Development)");
-    }
-    store = new MemoryStore();
-  }
-  return store;
-}
-
 // shared/utils/liveFx.ts
 var fxCache = /* @__PURE__ */ new Map();
 var CACHE_TTL_SECONDS = 24 * 60 * 60;
@@ -4533,12 +4799,12 @@ async function getLiveFxRate(baseCurrency = "USD", quoteCurrency = "THB") {
 }
 
 // api/_lib/cache.ts
-var l1Cache = /* @__PURE__ */ new Map();
+var l1Cache2 = /* @__PURE__ */ new Map();
 var CACHE_TTL_SECONDS2 = 30 * 60;
 var CACHE_TTL_MS3 = CACHE_TTL_SECONDS2 * 1e3;
 async function getCached(key) {
   const now = Date.now();
-  const entry = l1Cache.get(key);
+  const entry = l1Cache2.get(key);
   if (entry && entry.expiresAt > now) {
     console.log(`[Cache:L1:HIT] ${key}`);
     return entry.data;
@@ -4548,7 +4814,7 @@ async function getCached(key) {
     const sharedValue = await store2.get(key);
     if (sharedValue) {
       console.log(`[Cache:L2:HIT] ${key}`);
-      l1Cache.set(key, { data: sharedValue, expiresAt: now + CACHE_TTL_MS3 });
+      l1Cache2.set(key, { data: sharedValue, expiresAt: now + CACHE_TTL_MS3 });
       return sharedValue;
     }
     console.log(`[Cache:L2:MISS] ${key}`);
@@ -4559,7 +4825,7 @@ async function getCached(key) {
 }
 async function setCache(key, data) {
   const expiresAt = Date.now() + CACHE_TTL_MS3;
-  l1Cache.set(key, { data, expiresAt });
+  l1Cache2.set(key, { data, expiresAt });
   try {
     const store2 = getStore();
     await store2.set(key, data, CACHE_TTL_SECONDS2);
@@ -5178,7 +5444,7 @@ function buildPriceTrendCacheKey(req) {
 
 // api/_lib/price-intelligence/sourceOrchestrator.ts
 var inflight = /* @__PURE__ */ new Map();
-async function fetchWithTimeout(fn, timeoutMs) {
+async function fetchWithTimeout2(fn, timeoutMs) {
   let timer = null;
   try {
     const timeoutPromise = new Promise((_, reject) => {
@@ -5194,7 +5460,7 @@ async function fetchWithTimeout(fn, timeoutMs) {
   }
 }
 async function fetchAmadeusRecords(input) {
-  const response = await fetchWithTimeout(
+  const response = await fetchWithTimeout2(
     () => searchCheapestDates(input.origin, input.destination),
     4e3
   );
@@ -5221,7 +5487,7 @@ async function fetchTravelPayoutsRecords(input) {
     month: input.departStartDate.slice(0, 7),
     currency: (input.currency ?? "USD").toLowerCase()
   });
-  const response = await fetchWithTimeout(
+  const response = await fetchWithTimeout2(
     async () => {
       const res = await fetch(`${process.env.INTERNAL_BASE_URL ?? ""}/api/calendar-prices?${qs.toString()}`);
       if (!res.ok) throw new Error(`travelpayouts_proxy_${res.status}`);
@@ -6442,10 +6708,144 @@ router9.get("/send-alerts", async (req, res) => {
 });
 var cron_default = router9;
 
-// server/routes/hotelOutbound.ts
-import { randomUUID as randomUUID2 } from "node:crypto";
+// server/routes/cronHotelWarm.ts
 import { Router as Router9 } from "express";
 var router10 = Router9();
+var MAX_CITIES_PER_RUN = Number(process.env.HOTEL_WARM_MAX_CITIES) || 10;
+var DELAY_BETWEEN_CITIES_MS = Number(process.env.HOTEL_WARM_DELAY_MS) || 2e3;
+var WARM_DAYS_AHEAD = [1, 3, 7, 14];
+function sleep2(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+function getWarmDates() {
+  const now = /* @__PURE__ */ new Date();
+  const MS_PER_DAY2 = 864e5;
+  return WARM_DAYS_AHEAD.map((daysAhead) => {
+    const checkInDate = new Date(now.getTime() + daysAhead * MS_PER_DAY2);
+    const checkOutDate = new Date(checkInDate.getTime() + 3 * MS_PER_DAY2);
+    return {
+      checkIn: checkInDate.toISOString().split("T")[0],
+      checkOut: checkOutDate.toISOString().split("T")[0]
+    };
+  });
+}
+function selectCitiesToWarm(maxCities) {
+  const hubs = getHubCities().filter((c) => c.hasHotels);
+  const verified = getHotelCities().filter(
+    (c) => !c.hub && c.agodaLtCityId && c.agodaLtCityId > 0
+  );
+  const remaining = getHotelCities().filter(
+    (c) => !c.hub && (!c.agodaLtCityId || c.agodaLtCityId <= 0)
+  );
+  const prioritized = [...hubs, ...verified, ...remaining];
+  return prioritized.slice(0, maxCities);
+}
+router10.get("/warm-hotels", async (req, res) => {
+  const startedAt = Date.now();
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const maxCities = Math.min(
+      Number(req.query.maxCities) || MAX_CITIES_PER_RUN,
+      30
+      // Hard cap
+    );
+    const useDefaultDatesOnly = req.query.datesOnly === "default";
+    const cities = selectCitiesToWarm(maxCities);
+    const datePairs = useDefaultDatesOnly ? [defaultHotelDates()] : getWarmDates();
+    const results = [];
+    let warmedCount = 0;
+    let failedCount = 0;
+    for (const city of cities) {
+      for (const dates of datePairs) {
+        const cityStart = Date.now();
+        try {
+          const search = await executeHotelSearch({
+            city: city.slug,
+            checkIn: dates.checkIn,
+            checkOut: dates.checkOut,
+            adults: "2",
+            rooms: "1",
+            page: "1",
+            sort: "best"
+          });
+          const hotelCount = search.hotels.length;
+          results.push({
+            city: city.slug,
+            checkIn: dates.checkIn,
+            checkOut: dates.checkOut,
+            success: true,
+            hotelCount,
+            durationMs: Date.now() - cityStart
+          });
+          warmedCount++;
+          console.log(
+            `[CronWarm] \u2713 ${city.slug} (${dates.checkIn}) \u2192 ${hotelCount} hotels (${Date.now() - cityStart}ms)`
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          results.push({
+            city: city.slug,
+            checkIn: dates.checkIn,
+            checkOut: dates.checkOut,
+            success: false,
+            durationMs: Date.now() - cityStart,
+            error: message
+          });
+          failedCount++;
+          console.error(
+            `[CronWarm] \u2717 ${city.slug} (${dates.checkIn}) \u2192 ${message}`
+          );
+        }
+        if (DELAY_BETWEEN_CITIES_MS > 0) {
+          await sleep2(DELAY_BETWEEN_CITIES_MS);
+        }
+      }
+    }
+    const totalDurationMs = Date.now() - startedAt;
+    const cacheStats = getHotelCacheStats();
+    console.info("[CronWarm] Completed", {
+      totalDurationMs,
+      citiesProcessed: cities.length,
+      datePairsPerCity: datePairs.length,
+      warmed: warmedCount,
+      failed: failedCount
+    });
+    return res.json({
+      ok: true,
+      message: `Cache warming complete: ${warmedCount} warmed, ${failedCount} failed`,
+      summary: {
+        citiesProcessed: cities.length,
+        datePairsPerCity: datePairs.length,
+        totalSearches: warmedCount + failedCount,
+        warmed: warmedCount,
+        failed: failedCount,
+        totalDurationMs
+      },
+      cacheStats: {
+        l1Size: cacheStats.l1Size,
+        hitRate: cacheStats.hitRate,
+        totalSets: cacheStats.sets
+      },
+      results
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[CronWarm] Fatal error:", message);
+    return res.status(500).json({
+      error: "Cache warming failed",
+      detail: message,
+      durationMs: Date.now() - startedAt
+    });
+  }
+});
+var cronHotelWarm_default = router10;
+
+// server/routes/hotelOutbound.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+import { Router as Router10 } from "express";
+var router11 = Router10();
 var ALLOWED_PROVIDERS = /* @__PURE__ */ new Set([
   "agoda",
   "booking",
@@ -6469,7 +6869,7 @@ function parseHttpUrl(value) {
     return null;
   }
 }
-router10.get("/hotels/out/:provider", (req, res) => {
+router11.get("/hotels/out/:provider", (req, res) => {
   const provider = req.params.provider;
   if (!ALLOWED_PROVIDERS.has(provider)) {
     return res.status(404).send("Unknown hotel provider");
@@ -6500,7 +6900,7 @@ router10.get("/hotels/out/:provider", (req, res) => {
   });
   return res.redirect(302, targetUrl.toString());
 });
-var hotelOutbound_default = router10;
+var hotelOutbound_default = router11;
 
 // server/_core/app.ts
 console.log("[APP] Starting app.ts imports...\n");
@@ -6527,11 +6927,13 @@ app.use("/api/calendar-prices", calendarPrices_default);
 app.use("/api/flights/search", flightsSearch_default);
 app.use("/api/hotels/search", searchHotels);
 app.get("/api/hotels/detail/:hotelId", getHotelDetail);
+app.get("/api/hotels/cache-stats", getHotelCacheStatsHandler);
 app.use("/api/autocomplete/hotels", searchAutocompleteHotels);
 app.use("/api/frontdoor/prices", searchFrontDoorPrices);
 app.use("/api/price-alerts", priceAlerts_default);
 app.use("/api/alerts", priceAlerts_default);
 app.use("/api/cron", cron_default);
+app.use("/api/cron", cronHotelWarm_default);
 app.use("/api/auth", handler);
 app.use("/api/wishlist", handler5);
 app.get("/api/flights/price-calendar", async (req, res) => {
