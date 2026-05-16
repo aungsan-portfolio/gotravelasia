@@ -138,7 +138,7 @@ import { eq, and, asc, isNull, lte, or, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 
 // drizzle/schema.ts
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, uniqueIndex } from "drizzle-orm/mysql-core";
 var users = mysqlTable("users", {
   /**
    * Surrogate primary key. Auto-incremented numeric value managed by the database.
@@ -236,6 +236,28 @@ var hotelDeals = mysqlTable("hotelDeals", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
+var userHotelWishlists = mysqlTable("userHotelWishlists", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  hotelId: varchar("hotelId", { length: 64 }).notNull(),
+  provider: varchar("provider", { length: 20 }).notNull(),
+  hotelName: text("hotelName").notNull(),
+  city: varchar("city", { length: 255 }).notNull(),
+  country: varchar("country", { length: 100 }),
+  imageUrl: text("imageUrl"),
+  starRating: int("starRating"),
+  guestRating: varchar("guestRating", { length: 10 }),
+  // e.g. "9.2"
+  price: int("price"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  bookingUrl: text("bookingUrl"),
+  checkIn: varchar("checkIn", { length: 10 }),
+  checkOut: varchar("checkOut", { length: 10 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+}, (table) => ({
+  userHotelProviderIdx: uniqueIndex("user_hotel_provider_idx").on(table.userId, table.hotelId, table.provider)
+}));
 
 // server/db.ts
 var _db = null;
@@ -448,6 +470,61 @@ async function markEmailQueueAttemptFailed(params) {
     lastError: params.error,
     updatedAt: /* @__PURE__ */ new Date()
   }).where(eq(emailQueue.id, params.id));
+}
+async function getWishlistItems(userId) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(userHotelWishlists).where(eq(userHotelWishlists.userId, userId));
+  } catch (err) {
+    console.error("[Database] Failed to get wishlist items:", err);
+    return [];
+  }
+}
+async function saveWishlistItem(item) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.insert(userHotelWishlists).values({
+      ...item,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    }).onDuplicateKeyUpdate({
+      set: {
+        hotelName: item.hotelName,
+        city: item.city,
+        country: item.country,
+        imageUrl: item.imageUrl,
+        starRating: item.starRating,
+        guestRating: item.guestRating,
+        price: item.price,
+        currency: item.currency,
+        bookingUrl: item.bookingUrl,
+        checkIn: item.checkIn,
+        checkOut: item.checkOut,
+        updatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+  } catch (err) {
+    console.error("[Database] Failed to save wishlist item:", err);
+    throw err;
+  }
+}
+async function removeWishlistItem(userId, hotelId, provider) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.delete(userHotelWishlists).where(
+      and(
+        eq(userHotelWishlists.userId, userId),
+        eq(userHotelWishlists.hotelId, hotelId),
+        eq(userHotelWishlists.provider, provider)
+      )
+    );
+  } catch (err) {
+    console.error("[Database] Failed to remove wishlist item:", err);
+    throw err;
+  }
 }
 
 // server/_core/cookies.ts
@@ -2854,7 +2931,12 @@ function createHotelOfferFromResult(provider, result) {
     outboundLinks: result.outboundLinks,
     freeCancellation: result.freeCancellation,
     payLater: result.payLater,
+<<<<<<< Updated upstream
     breakfastIncluded: result.breakfastIncluded
+=======
+    breakfastIncluded: result.breakfastIncluded,
+    rank: result.rankingPosition || 0
+>>>>>>> Stashed changes
   };
 }
 function createProviderHotelFromResult(provider, city, result) {
@@ -2899,6 +2981,7 @@ function mergeProviderHotels(providerHotels) {
     }
   }
   return Array.from(canonicalMap.values());
+<<<<<<< Updated upstream
 }
 
 // lib/hotels/affiliate.ts
@@ -2961,7 +3044,18 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 }
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+=======
+>>>>>>> Stashed changes
 }
+
+// lib/hotels/affiliate.ts
+var AGODA_SITE_ID = process.env.AGODA_SITE_ID?.replace(/,/g, "").trim() || "";
+var TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID || "";
+var KLOOK_ID = process.env.KLOOK_PARTNER_ID || "";
+var EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE || "ZZxDEika";
+var BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID || "5910";
+var AWIN_TOKEN = process.env.AWIN_TOKEN || "";
+var AWIN_PUB_ID = process.env.AWIN_PUBLISHER_ID || "";
 function agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms) {
   const params = new URLSearchParams({
     city: String(cityId),
@@ -3021,6 +3115,7 @@ function shouldIncludeExpediaLink(expediaCode) {
   return true;
 }
 async function awinDeepLink(destinationUrl) {
+<<<<<<< Updated upstream
   if (!AWIN_TOKEN || !AWIN_PUB_ID) {
     return buildLocalAwinLink(destinationUrl);
   }
@@ -3110,6 +3205,29 @@ async function awinDeepLink(destinationUrl) {
   const fallbackUrl = buildLocalAwinLink(destinationUrl);
   setAwinCachedLink(destinationUrl, fallbackUrl);
   return fallbackUrl;
+=======
+  if (!AWIN_TOKEN || !AWIN_PUB_ID) return destinationUrl;
+  try {
+    const response = await fetch(
+      `https://api.awin.com/publishers/${AWIN_PUB_ID}/linkbuilder/generate`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${AWIN_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          advertiserId: parseInt(BOOKING_ADV, 10),
+          destinationUrl
+        })
+      }
+    );
+    const payload = await response.json();
+    return payload.url ?? destinationUrl;
+  } catch {
+    return destinationUrl;
+  }
+>>>>>>> Stashed changes
 }
 function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, adults, rooms) {
   const links = {
@@ -3333,6 +3451,7 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   };
 }
 
+<<<<<<< Updated upstream
 // shared/utils/store.ts
 import { Redis } from "@upstash/redis";
 var MemoryStore = class {
@@ -3566,6 +3685,8 @@ function getHotelCacheStats() {
   };
 }
 
+=======
+>>>>>>> Stashed changes
 // server/api/hotels.ts
 var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -3584,6 +3705,10 @@ var AGODA_SORT_MAP = {
   stars_desc: "StarRatingDesc",
   review_desc: "AllGuestsReviewScore"
 };
+<<<<<<< Updated upstream
+=======
+var cache2 = /* @__PURE__ */ new Map();
+>>>>>>> Stashed changes
 var warnedMessages = /* @__PURE__ */ new Set();
 function safeWarnOnce(message) {
   if (warnedMessages.has(message)) return;
@@ -3644,6 +3769,7 @@ function extractAgodaErrorDiagnostics(payload) {
     agodaErrorType: error.type
   };
 }
+<<<<<<< Updated upstream
 var AGODA_LT_V1_ENDPOINT = "https://affiliateapi7643.agoda.com/api/v1/hostel/recommend";
 async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
   const cacheKey = buildHotelSearchCacheKey({
@@ -3659,6 +3785,14 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
   if (cached) {
     console.log(`[Hotels] Cache ${cached.source} hit for ${cacheKey} (age=${cached.age}ms)`);
     return cached.data;
+=======
+var AGODA_LT_V1_ENDPOINT = "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
+async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
+  const cacheKey = `agoda_lt_v1_${ltCityId}_${checkIn}_${checkOut}_${adults}_${rooms}_${page}_${sort}`;
+  const cached = cache2.get(cacheKey);
+  if (cached && cached.exp > Date.now()) {
+    return cached.val;
+>>>>>>> Stashed changes
   }
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
   const allowMockFallback = process.env.ALLOW_HOTEL_MOCKS === "true";
@@ -3802,7 +3936,11 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       hotels,
       totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
     };
+<<<<<<< Updated upstream
     await hotelCacheSet(cacheKey, result);
+=======
+    cache2.set(cacheKey, { val: result, exp: Date.now() + 1800 * 1e3 });
+>>>>>>> Stashed changes
     return result;
   } catch (err) {
     console.error("[Hotels] Agoda lt_v1 search failed:", err);
@@ -4249,6 +4387,7 @@ async function getHotelDetail(req, res) {
     return res.status(500).json({ error: "Hotel detail lookup failed" });
   }
 }
+<<<<<<< Updated upstream
 function getHotelCacheStatsHandler(req, res) {
   if (!shouldExposeHotelDiagnostics()) {
     return res.status(403).json({ error: "Not available in production" });
@@ -4258,6 +4397,8 @@ function getHotelCacheStatsHandler(req, res) {
     stats: getHotelCacheStats()
   });
 }
+=======
+>>>>>>> Stashed changes
 
 // server/api/autocomplete.ts
 var AGODA_UNIFIED_SUGGEST_URL = "https://affiliateapi7643.agoda.com/api/v1/UnifiedSuggest";
@@ -5223,6 +5364,61 @@ async function handler4(req, res) {
   } catch (err) {
     console.error("[Newsletter] Error:", err);
     return res.status(500).json({ error: "Server error" });
+  }
+}
+
+// api/_lib/wishlist.ts
+async function handleGetWishlist(req, res) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    const items = await getWishlistItems(user.id);
+    return res.status(200).json(items);
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
+async function handleSaveToWishlist(req, res) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    const item = req.body;
+    if (!item.hotelId || !item.provider) {
+      return res.status(400).json({ error: "Missing hotelId or provider" });
+    }
+    await saveWishlistItem({
+      ...item,
+      userId: user.id
+    });
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
+async function handleRemoveFromWishlist(req, res) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    const { hotelId, provider } = req.query;
+    if (!hotelId || !provider) {
+      return res.status(400).json({ error: "Missing hotelId or provider query parameters" });
+    }
+    await removeWishlistItem(user.id, String(hotelId), String(provider));
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
+
+// api/_handlers/wishlist.ts
+async function handler5(req, res) {
+  if (setCors(req, res)) return;
+  switch (req.method) {
+    case "GET":
+      return handleGetWishlist(req, res);
+    case "POST":
+      return handleSaveToWishlist(req, res);
+    case "DELETE":
+      return handleRemoveFromWishlist(req, res);
+    default:
+      return res.status(405).json({ error: "Method not allowed" });
   }
 }
 
@@ -6575,6 +6771,7 @@ router9.get("/send-alerts", async (req, res) => {
 });
 var cron_default = router9;
 
+<<<<<<< Updated upstream
 // server/routes/cronHotelWarm.ts
 import { Router as Router9 } from "express";
 var router10 = Router9();
@@ -6713,6 +6910,12 @@ var cronHotelWarm_default = router10;
 import { randomUUID as randomUUID2 } from "node:crypto";
 import { Router as Router10 } from "express";
 var router11 = Router10();
+=======
+// server/routes/hotelOutbound.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+import { Router as Router9 } from "express";
+var router10 = Router9();
+>>>>>>> Stashed changes
 var ALLOWED_PROVIDERS = /* @__PURE__ */ new Set([
   "agoda",
   "booking",
@@ -6736,7 +6939,11 @@ function parseHttpUrl(value) {
     return null;
   }
 }
+<<<<<<< Updated upstream
 router11.get("/hotels/out/:provider", (req, res) => {
+=======
+router10.get("/hotels/out/:provider", (req, res) => {
+>>>>>>> Stashed changes
   const provider = req.params.provider;
   if (!ALLOWED_PROVIDERS.has(provider)) {
     return res.status(404).send("Unknown hotel provider");
@@ -6767,7 +6974,11 @@ router11.get("/hotels/out/:provider", (req, res) => {
   });
   return res.redirect(302, targetUrl.toString());
 });
+<<<<<<< Updated upstream
 var hotelOutbound_default = router11;
+=======
+var hotelOutbound_default = router10;
+>>>>>>> Stashed changes
 
 // server/_core/app.ts
 console.log("[APP] Starting app.ts imports...\n");
@@ -6794,7 +7005,10 @@ app.use("/api/calendar-prices", calendarPrices_default);
 app.use("/api/flights/search", flightsSearch_default);
 app.use("/api/hotels/search", searchHotels);
 app.get("/api/hotels/detail/:hotelId", getHotelDetail);
+<<<<<<< Updated upstream
 app.get("/api/hotels/cache-stats", getHotelCacheStatsHandler);
+=======
+>>>>>>> Stashed changes
 app.use("/api/autocomplete/hotels", searchAutocompleteHotels);
 app.use("/api/frontdoor/prices", searchFrontDoorPrices);
 app.use("/api/price-alerts", priceAlerts_default);
@@ -6802,6 +7016,7 @@ app.use("/api/alerts", priceAlerts_default);
 app.use("/api/cron", cron_default);
 app.use("/api/cron", cronHotelWarm_default);
 app.use("/api/auth", handler);
+app.use("/api/wishlist", handler5);
 app.get("/api/flights/price-calendar", async (req, res) => {
   const validation = validatePriceCalendarRequest(req.query);
   if (!validation.ok) return res.status(400).json({ error: { code: "BAD_REQUEST", message: validation.message } });
