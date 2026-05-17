@@ -1,6 +1,6 @@
 import type { City } from "./cities";
 
-export type HotelSearchSource = "agoda" | "booking" | "trip" | "expedia" | "klook" | "metasearch" | "mock";
+export type HotelSearchSource = "agoda" | "hotellook" | "booking" | "trip" | "expedia" | "klook" | "metasearch" | "mock";
 export type HotelSort = "best" | "rank" | "price_asc" | "price_desc" | "stars_desc" | "review_desc";
 export type HotelViewMode = "list" | "map";
 
@@ -26,6 +26,7 @@ export interface HotelPriceDisplay {
 
 export interface HotelOutboundLinks {
   agoda?: string;
+  hotellook?: string;
   booking?: string;
   trip?: string;
   expedia?: string;

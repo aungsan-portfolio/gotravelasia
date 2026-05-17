@@ -276,6 +276,22 @@ export default function HotelSearchResultsPage() {
           </div>
         )}
 
+        {meta?.source === "hotellook" && (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm animate-in fade-in slide-in-from-top-1">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-lg">💡</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-amber-900">
+                  Alternative Live Inventory
+                </h3>
+                <p className="mt-1 text-sm text-amber-800">
+                  {meta.warning || "Live Agoda search is temporarily unavailable. We are showing alternative inventory from Hotellook."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 xl:hidden">
           <HotelFilterSidebar
             activeFilters={activeFilters}

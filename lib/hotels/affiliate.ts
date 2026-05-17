@@ -303,6 +303,21 @@ export async function awinDeepLink(destinationUrl: string): Promise<string> {
 
 // ─── Build Affiliate Links ─────────────────────────────────────────
 
+export function hotellookUrl(cityName: string, checkIn: string, checkOut: string, adults: number) {
+  const marker = process.env.TRAVELPAYOUTS_MARKER ?? "gotravelasia";
+  const params = new URLSearchParams({
+    marker,
+    check_in: checkIn,
+    check_out: checkOut,
+    adults: String(adults),
+    children: "0",
+    locale: "en",
+    currency: "USD",
+  });
+  params.set("q", cityName);
+  return `https://search.hotellook.com/?${params.toString()}`;
+}
+
 export function buildAffiliateLinks(
   cityName: string,
   bookingName: string,
@@ -314,6 +329,7 @@ export function buildAffiliateLinks(
 ): HotelOutboundLinks {
   const links: HotelOutboundLinks = {
     agoda: agodaSearchUrl(cityId, checkIn, checkOut, adults, rooms),
+    hotellook: hotellookUrl(cityName, checkIn, checkOut, adults),
     booking: bookingUrl(bookingName, checkIn, checkOut, adults, rooms),
     trip: tripUrl(cityName, checkIn, checkOut, adults),
     klook: klookUrl(cityName, checkIn, checkOut, adults),

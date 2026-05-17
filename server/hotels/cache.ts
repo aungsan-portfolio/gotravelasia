@@ -61,6 +61,7 @@ const stats: HotelCacheStats = {
 // ─── Key Builders ──────────────────────────────────────────────────
 
 export interface HotelSearchCacheKeyParams {
+  source: string;
   ltCityId: number;
   checkIn: string;
   checkOut: string;
@@ -71,7 +72,17 @@ export interface HotelSearchCacheKeyParams {
 }
 
 export function buildHotelSearchCacheKey(params: HotelSearchCacheKeyParams): string {
-  return `${HOTEL_CACHE_NAMESPACE}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.page}:${params.sort}`;
+  return `${HOTEL_CACHE_NAMESPACE}:${params.source}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.page}:${params.sort}`;
+}
+
+const TTL_BY_SOURCE: Record<string, number> = {
+  agoda: 30 * 60,      // 30 min in seconds
+  hotellook: 15 * 60,  // 15 min in seconds
+  mock: 5 * 60,        // 5 min in seconds
+};
+
+export function getCacheTtlSeconds(source: string): number {
+  return TTL_BY_SOURCE[source] ?? 30 * 60;
 }
 
 export function buildHotelDetailCacheKey(hotelId: string, city: string): string {
@@ -272,6 +283,7 @@ export function hotelCacheInvalidateCity(cityIdentifier: string): void {
 // ─── Cache Warming ─────────────────────────────────────────────────
 
 export interface HotelCacheWarmParams {
+  source: string;
   ltCityId: number;
   checkIn: string;
   checkOut: string;
@@ -290,6 +302,7 @@ export async function hotelCacheWarm(
   fetchFn: () => Promise<unknown>,
 ): Promise<void> {
   const key = buildHotelSearchCacheKey({
+    source: params.source,
     ltCityId: params.ltCityId,
     checkIn: params.checkIn,
     checkOut: params.checkOut,

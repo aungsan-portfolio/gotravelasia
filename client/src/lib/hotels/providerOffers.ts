@@ -7,6 +7,7 @@ import type {
 
 export const HOTEL_OFFER_PROVIDER_LABELS: Record<HotelSearchSource, string> = {
   agoda: "Agoda",
+  hotellook: "Hotellook",
   booking: "Booking.com",
   trip: "Trip.com",
   expedia: "Expedia",
@@ -17,6 +18,7 @@ export const HOTEL_OFFER_PROVIDER_LABELS: Record<HotelSearchSource, string> = {
 
 const HOTEL_OFFER_PROVIDERS = new Set<HotelOfferProvider>([
   "agoda",
+  "hotellook",
   "booking",
   "trip",
   "expedia",

@@ -37,11 +37,16 @@ import {
   hotelCacheGet,
   hotelCacheSet,
   getHotelCacheStats,
+  getCacheTtlSeconds,
 } from "../hotels/cache.js";
 import { ProviderOrchestrator } from "../hotels/providerOrchestrator.js";
 import { AgodaProvider } from "../hotels/providers/agodaAdapter.js";
+import { HotellookProvider } from "../hotels/providers/hotellookAdapter.js";
 
-const orchestrator = new ProviderOrchestrator(new AgodaProvider());
+const orchestrator = new ProviderOrchestrator([
+  new AgodaProvider(),
+  new HotellookProvider(),
+]);
 
 const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 const AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -161,6 +166,7 @@ async function fetchAgodaHotels(
   sort: HotelSort
 ) {
   const cacheKey = buildHotelSearchCacheKey({
+    source: "agoda",
     ltCityId,
     checkIn,
     checkOut,
@@ -339,7 +345,7 @@ async function fetchAgodaHotels(
         hotels.length,
     };
 
-    await hotelCacheSet(cacheKey, result);
+    await hotelCacheSet(cacheKey, result, getCacheTtlSeconds("agoda"));
     return result;
   } catch (err) {
     console.error("[Hotels] Agoda lt_v1 search failed:", err);

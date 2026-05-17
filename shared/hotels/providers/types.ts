@@ -21,16 +21,33 @@ export interface HotelProviderResponse<T> {
   isFallback?: boolean;
 }
 
+export type HotelProviderId = 'agoda' | 'hotellook' | 'amadeus' | 'mock';
+
 export interface HotelProvider {
   /**
-   * Unique identifier for the provider (e.g. 'agoda', 'travelpayouts')
+   * Unique identifier for the provider
    */
-  readonly id: string;
+  readonly id: HotelProviderId;
+
+  /**
+   * Priority: 1 is primary, 2 is secondary, etc.
+   */
+  readonly priority: number;
+
+  /**
+   * Per-provider timeout in milliseconds
+   */
+  readonly timeoutMs: number;
+
+  /**
+   * Per-provider cache TTL in milliseconds
+   */
+  readonly cacheTtlMs: number;
 
   /**
    * Search for hotels matching the criteria
    */
-  searchHotels(criteria: HotelSearchCriteria): Promise<any>; // Can return the full result object for 1:1 wrapper matching
+  searchHotels(criteria: HotelSearchCriteria): Promise<any>;
 
   /**
    * Get detailed information for a specific hotel

@@ -4,6 +4,9 @@ import { fetchAgodaHotelsWithCityCandidates } from "../../api/hotels.js";
 // AgodaProvider adapter wraps existing fetchAgodaHotelsWithCityCandidates 1:1
 export class AgodaProvider implements HotelProvider {
   readonly id = "agoda";
+  readonly priority = 1;
+  readonly timeoutMs = 4000; // 4 seconds
+  readonly cacheTtlMs = 30 * 60 * 1000; // 30 minutes
 
   async searchHotels(criteria: HotelSearchCriteria): Promise<any> {
     if (criteria.agodaCityId === undefined || !criteria.ltCityCandidates) {
