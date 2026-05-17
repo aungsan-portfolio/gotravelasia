@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
-import { initSentryServer } from "../api/_lib/sentry.js";
+import { initSentryServer } from "../../api/_lib/sentry.js";
 
 console.log("[APP] Starting app.ts imports...\n");
 initSentryServer();

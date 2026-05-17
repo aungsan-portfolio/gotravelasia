@@ -123,6 +123,36 @@ var init_destination_landing = __esm({
 // server/_core/app.ts
 import dotenv from "dotenv";
 import path3 from "path";
+
+// api/_lib/sentry.ts
+import * as Sentry from "@sentry/node";
+function initSentryServer() {
+  const dsn = process.env.SENTRY_DSN || process.env.VITE_SENTRY_DSN;
+  if (dsn && process.env.NODE_ENV === "production") {
+    Sentry.init({
+      dsn,
+      tracesSampleRate: 0.1,
+      beforeSend(event, hint) {
+        const error = hint.originalException;
+        if (error && error.status) {
+          const status = error.status;
+          if (status === 401 || status === 403 || status === 404) {
+            return null;
+          }
+        }
+        if (event.request && event.request.headers) {
+          delete event.request.headers["authorization"];
+          delete event.request.headers["cookie"];
+          delete event.request.headers["x-api-key"];
+        }
+        return event;
+      }
+    });
+    console.log("[Sentry] Node SDK initialized with filters");
+  }
+}
+
+// server/_core/app.ts
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
@@ -6903,7 +6933,9 @@ router11.get("/hotels/out/:provider", (req, res) => {
 var hotelOutbound_default = router11;
 
 // server/_core/app.ts
+import * as Sentry2 from "@sentry/node";
 console.log("[APP] Starting app.ts imports...\n");
+initSentryServer();
 dotenv.config();
 dotenv.config({ path: path3.resolve(process.cwd(), ".env.local"), override: true });
 console.log("[APP] Environment loaded.\n");
@@ -6969,6 +7001,7 @@ app.use(
   })
 );
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
+Sentry2.setupExpressErrorHandler(app);
 console.log("[APP] App setup complete, exporting app.\n");
 var app_default = app;
 
