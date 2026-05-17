@@ -34,6 +34,7 @@ import {
 import { normalizeHotel } from "../hotels/normalize.js";
 import {
   buildHotelSearchCacheKey,
+  buildHotelDetailCacheKey,
   hotelCacheGet,
   hotelCacheSet,
   getHotelCacheStats,
@@ -721,6 +722,16 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
     normalized.sort
   );
 
+  // Instant Cache Warming for Hotel Details
+  // Fire and forget cache sets for each hotel so that detail lookups are instant O(1)
+  hotels.forEach(hotel => {
+    hotelCacheSet(
+      buildHotelDetailCacheKey(hotel.hotelId, (city as any).name),
+      hotel,
+      getCacheTtlSeconds(result.source)
+    ).catch(e => console.error("[HotelDetail] Warming failed:", e));
+  });
+
   return {
     normalized,
     city,
@@ -825,28 +836,65 @@ export async function getHotelDetail(req: Request, res: Response) {
   }
 
   try {
-    const search = await executeHotelSearch(req.query as Record<string, unknown>);
-    const searchResponse = buildHotelSearchResponsePayload(search);
-    const hotel = searchResponse.hotels.find((item) => item.hotelId === hotelId) ?? null;
-    const response: HotelDetailResponse = {
-      city: searchResponse.city,
-      hotels: searchResponse.hotels,
-      hotel,
-      affiliateLinks: searchResponse.affiliateLinks,
-      meta: {
-        ...searchResponse.meta,
-        hotelId,
-      },
+    const reqQuery = req.query as Record<string, unknown>;
+    const normalizedParams = normalizeHotelSearchParams(reqQuery);
+    
+    // Resolve city name for cache key
+    const rawCityName = typeof reqQuery?.cityName === "string" ? reqQuery.cityName.trim() : "";
+    let cacheCityName = rawCityName;
+    if (!cacheCityName) {
+        // Fallback to resolving the city if only numeric ID was passed
+        if (/^\d+$/.test(normalizedParams.city)) {
+           // We could try to resolve it, but for cache lookup we just use the original param if name is missing
+           cacheCityName = normalizedParams.city;
+        } else {
+           cacheCityName = normalizedParams.city;
+        }
+    }
+
+    const cacheKey = buildHotelDetailCacheKey(hotelId, cacheCityName);
+    const cached = await hotelCacheGet(cacheKey);
+
+    if (cached && cached.data) {
+      console.log(`[Hotels] Detail Cache hit for ${cacheKey} (age=${cached.age}ms)`);
+      return res.json({
+        city: { id: 0, name: cacheCityName, type: "cache_hit" },
+        hotels: [],
+        hotel: cached.data,
+        affiliateLinks: {},
+        meta: { source: "cache", hotelId }
+      });
+    }
+
+    console.log(`[Hotels] Detail Cache miss for ${cacheKey}. Executing orchestrator fallback...`);
+    
+    // Fallback: Use orchestrator for robust detail fetch
+    const criteria = {
+        city: normalizedParams.city,
+        checkIn: normalizedParams.checkIn,
+        checkOut: normalizedParams.checkOut,
+        adults: normalizedParams.adults,
+        rooms: normalizedParams.rooms,
+        currency: "USD",
+        language: "en",
+        agodaCityId: typeof reqQuery.agodaCityId === "string" ? Number(reqQuery.agodaCityId) : undefined,
+        ltCityCandidates: [] // Optional since it's a fallback
     };
-    return res.json(response);
+
+    const orchestratorResult = await orchestrator.getHotelDetail(hotelId, criteria);
+    
+    return res.json({
+      city: { id: 0, name: cacheCityName, type: "orchestrator_fallback" },
+      hotels: [],
+      hotel: orchestratorResult.data,
+      affiliateLinks: {},
+      meta: { source: orchestratorResult.source, isFallback: orchestratorResult.isFallback, hotelId }
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[Hotels] Hotel detail lookup failed:", message);
     if (message.startsWith("City not found:")) {
       return res.status(404).json({ error: message });
-    }
-    if (message.startsWith("Invalid Agoda city id:")) {
-      return res.status(400).json({ error: message });
     }
     return res.status(500).json({ error: "Hotel detail lookup failed" });
   }

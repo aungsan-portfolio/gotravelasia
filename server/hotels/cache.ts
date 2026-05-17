@@ -86,7 +86,8 @@ export function getCacheTtlSeconds(source: string): number {
 }
 
 export function buildHotelDetailCacheKey(hotelId: string, city: string): string {
-  return `${HOTEL_DETAIL_NAMESPACE}:${city}:${hotelId}`;
+  const normalizedCity = city.trim().toLowerCase();
+  return `${HOTEL_DETAIL_NAMESPACE}:${normalizedCity}:${hotelId}`;
 }
 
 function buildCityInvalidationPattern(city: string): string {

@@ -104,6 +104,14 @@ export class ProviderOrchestrator {
         ]);
         
         if (detail) {
+          if (provider.priority > 1) {
+            Sentry.addBreadcrumb({
+              category: "hotels.detail.fallback",
+              message: `Primary provider detail fetch failed. Falling back to ${provider.id}.`,
+              level: "warning",
+            });
+          }
+          Sentry.setTag("hotels.detail.source", provider.id);
           return {
             data: detail,
             source: provider.id,
@@ -112,9 +120,11 @@ export class ProviderOrchestrator {
         }
       } catch (error) {
         console.error(`[Orchestrator] Provider ${provider.id} detail fetch failed:`, error);
+        Sentry.captureException(error, { tags: { provider: provider.id, context: "detail_lookup" } });
       }
     }
 
+    Sentry.setTag("hotels.detail.source", "failed");
     return {
       data: null,
       source: this.providers[0]?.id ?? "agoda",
