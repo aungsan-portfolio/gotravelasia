@@ -106,7 +106,7 @@ export default function HotelDetailPage() {
   return (
     <>
       {hotel && !isLoading && (
-        <StructuredData schema={buildHotelLodgingSchema(hotel as any, window.location.href)} />
+        <StructuredData schema={buildHotelLodgingSchema(hotel, window.location.href, cityName)} />
       )}
       <main className="min-h-screen bg-slate-100">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-6 lg:py-8">

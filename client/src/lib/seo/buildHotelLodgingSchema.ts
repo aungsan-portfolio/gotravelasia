@@ -1,11 +1,19 @@
-import type { HotelDetail } from "@shared/hotels/types";
+import type { HotelResult } from "@shared/hotels/types";
 
-export function buildHotelLodgingSchema(hotel: HotelDetail, url: string) {
+export function buildHotelLodgingSchema(hotel: HotelResult, url: string, cityName?: string) {
+  const absoluteImageUrl = hotel.imageUrl?.startsWith("http")
+    ? hotel.imageUrl
+    : new URL(hotel.imageUrl || "", url).toString();
+
+  const absoluteImages = hotel.images?.map((img) =>
+    img.startsWith("http") ? img : new URL(img, url).toString()
+  ) || [absoluteImageUrl];
+
   return {
     "@context": "https://schema.org",
     "@type": "LodgingBusiness",
     name: hotel.name,
-    image: hotel.images?.[0] || hotel.imageUrl,
+    image: absoluteImages,
     url,
     starRating: hotel.stars
       ? {
@@ -13,24 +21,24 @@ export function buildHotelLodgingSchema(hotel: HotelDetail, url: string) {
           ratingValue: hotel.stars,
         }
       : undefined,
-    aggregateRating: hotel.rating
+    aggregateRating: hotel.reviewScore
       ? {
           "@type": "AggregateRating",
-          ratingValue: hotel.rating,
+          ratingValue: hotel.reviewScore,
+          bestRating: 10,
           reviewCount: hotel.reviewCount || 1,
         }
       : undefined,
     address: {
       "@type": "PostalAddress",
       streetAddress: hotel.address,
-      addressLocality: hotel.city,
-      addressCountry: hotel.country,
+      addressLocality: cityName || undefined,
     },
-    geo: (hotel.latitude && hotel.longitude)
+    geo: (hotel.coordinates && !hotel.coordinates.isFallback)
       ? {
           "@type": "GeoCoordinates",
-          latitude: hotel.latitude,
-          longitude: hotel.longitude,
+          latitude: hotel.coordinates.lat,
+          longitude: hotel.coordinates.lng,
         }
       : undefined,
     amenityFeature: hotel.amenities?.map((amenity) => ({
