@@ -272,7 +272,7 @@ export default function HotelSearchResultsPage() {
 
         {meta?.source === "mock" && (
           <div className="mt-4">
-            <MockDataBanner />
+            <MockDataBanner affiliateUrl={affiliateLinks?.agoda} />
           </div>
         )}
 
