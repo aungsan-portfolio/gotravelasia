@@ -38,6 +38,10 @@ import {
   hotelCacheSet,
   getHotelCacheStats,
 } from "../hotels/cache.js";
+import { ProviderOrchestrator } from "../hotels/providerOrchestrator.js";
+import { AgodaProvider } from "../hotels/providers/agodaAdapter.js";
+
+const orchestrator = new ProviderOrchestrator(new AgodaProvider());
 
 const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 const AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -359,7 +363,7 @@ async function fetchAgodaHotels(
   }
 }
 
-async function fetchAgodaHotelsWithCityCandidates(params: {
+export async function fetchAgodaHotelsWithCityCandidates(params: {
   agodaCityId: number;
   ltCityCandidates: AgodaLtCityCandidate[];
   checkIn: string;
@@ -376,7 +380,7 @@ async function fetchAgodaHotelsWithCityCandidates(params: {
 
   for (const candidate of params.ltCityCandidates) {
     attemptedLtCityIds.push(candidate.cityId);
-    const result = await fetchAgodaHotels(
+    const result = (await fetchAgodaHotels(
       params.agodaCityId,
       candidate.cityId,
       params.checkIn,
@@ -385,7 +389,7 @@ async function fetchAgodaHotelsWithCityCandidates(params: {
       params.rooms,
       params.page,
       params.sort
-    );
+    )) as any;
 
     const candidateDiagnostics = (result as any).diagnostics as HotelSearchDiagnostics | undefined;
     latestDiagnostics = candidateDiagnostics ?? latestDiagnostics;
@@ -657,7 +661,7 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
     });
   }
 
-  const [bookingLink, result] = await Promise.all([
+  const [bookingLink, orchestratorResult] = await Promise.all([
     awinDeepLink(
       affiliateLinks.booking ??
         bookingUrl(
@@ -668,17 +672,20 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
           normalized.rooms
         )
     ),
-    fetchAgodaHotelsWithCityCandidates({
-      agodaCityId: (city as any).agodaCityId,
-      ltCityCandidates,
+    orchestrator.searchHotels({
+      city: normalized.city,
       checkIn: normalized.checkIn,
       checkOut: normalized.checkOut,
       adults: normalized.adults,
       rooms: normalized.rooms,
+      agodaCityId: (city as any).agodaCityId,
+      ltCityCandidates,
       page: normalized.page,
       sort: normalized.sort,
     }),
   ]);
+
+  const result = orchestratorResult.data;
 
   const normalizedProviderHotels = result.hotels.map((hotel: any, index: number) =>
     normalizeHotel(

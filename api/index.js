@@ -3674,7 +3674,91 @@ function getHotelCacheStats() {
   };
 }
 
+// server/hotels/providerOrchestrator.ts
+var ProviderOrchestrator = class {
+  primaryProvider;
+  secondaryProviders;
+  constructor(primaryProvider, secondaryProviders = []) {
+    this.primaryProvider = primaryProvider;
+    this.secondaryProviders = secondaryProviders;
+  }
+  async searchHotels(criteria) {
+    try {
+      const results = await this.primaryProvider.searchHotels(criteria);
+      return {
+        data: results,
+        source: this.primaryProvider.id,
+        isFallback: false
+      };
+    } catch (error) {
+      console.error(`[Orchestrator] Primary provider ${this.primaryProvider.id} failed:`, error);
+      for (const provider of this.secondaryProviders) {
+        try {
+          const fallbackResults = await provider.searchHotels(criteria);
+          return {
+            data: fallbackResults,
+            source: provider.id,
+            isFallback: true
+          };
+        } catch (fallbackError) {
+          console.error(`[Orchestrator] Fallback provider ${provider.id} failed:`, fallbackError);
+        }
+      }
+      throw error;
+    }
+  }
+  async getHotelDetail(hotelId, criteria) {
+    try {
+      const detail = await this.primaryProvider.getHotelDetail(hotelId, criteria);
+      return {
+        data: detail,
+        source: this.primaryProvider.id,
+        isFallback: false
+      };
+    } catch (error) {
+      console.error(`[Orchestrator] Primary provider ${this.primaryProvider.id} failed:`, error);
+      for (const provider of this.secondaryProviders) {
+        try {
+          const detail = await provider.getHotelDetail(hotelId, criteria);
+          return {
+            data: detail,
+            source: provider.id,
+            isFallback: true
+          };
+        } catch (fallbackError) {
+          console.error(`[Orchestrator] Fallback provider ${provider.id} failed:`, fallbackError);
+        }
+      }
+      throw error;
+    }
+  }
+};
+
+// server/hotels/providers/agodaAdapter.ts
+var AgodaProvider = class {
+  id = "agoda";
+  async searchHotels(criteria) {
+    if (criteria.agodaCityId === void 0 || !criteria.ltCityCandidates) {
+      throw new Error("AgodaProvider requires agodaCityId and ltCityCandidates");
+    }
+    return fetchAgodaHotelsWithCityCandidates({
+      agodaCityId: criteria.agodaCityId,
+      ltCityCandidates: criteria.ltCityCandidates,
+      checkIn: criteria.checkIn,
+      checkOut: criteria.checkOut,
+      adults: criteria.adults,
+      rooms: criteria.rooms,
+      page: criteria.page ?? 1,
+      sort: criteria.sort ?? "best"
+    });
+  }
+  async getHotelDetail(hotelId, criteria) {
+    return null;
+  }
+};
+
 // server/api/hotels.ts
+var orchestrator = new ProviderOrchestrator(new AgodaProvider());
 var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
 var AWIN_TOKEN2 = process.env.AWIN_TOKEN ?? "";
@@ -4202,7 +4286,7 @@ async function executeHotelSearch(reqQuery) {
       verified: false
     });
   }
-  const [bookingLink, result] = await Promise.all([
+  const [bookingLink, orchestratorResult] = await Promise.all([
     awinDeepLink(
       affiliateLinks.booking ?? bookingUrl(
         city.bookingName,
@@ -4212,17 +4296,19 @@ async function executeHotelSearch(reqQuery) {
         normalized.rooms
       )
     ),
-    fetchAgodaHotelsWithCityCandidates({
-      agodaCityId: city.agodaCityId,
-      ltCityCandidates,
+    orchestrator.searchHotels({
+      city: normalized.city,
       checkIn: normalized.checkIn,
       checkOut: normalized.checkOut,
       adults: normalized.adults,
       rooms: normalized.rooms,
+      agodaCityId: city.agodaCityId,
+      ltCityCandidates,
       page: normalized.page,
       sort: normalized.sort
     })
   ]);
+  const result = orchestratorResult.data;
   const normalizedProviderHotels = result.hotels.map(
     (hotel, index) => normalizeHotel(
       hotel,

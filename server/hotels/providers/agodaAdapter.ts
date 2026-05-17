@@ -1,18 +1,29 @@
 import type { HotelProvider, HotelSearchCriteria } from "../../../shared/hotels/providers/types.js";
-import type { HotelResult, HotelDetail } from "../../../shared/hotels/types.js";
+import { fetchAgodaHotelsWithCityCandidates } from "../../api/hotels.js";
 
-// Currently just a stub wrapper around the existing Agoda implementation
+// AgodaProvider adapter wraps existing fetchAgodaHotelsWithCityCandidates 1:1
 export class AgodaProvider implements HotelProvider {
   readonly id = "agoda";
 
-  async searchHotels(criteria: HotelSearchCriteria): Promise<HotelResult[]> {
-    // Phase 2: Move logic from api/hotels.ts here
-    // For now, return empty or throw error to indicate this is a stub
-    throw new Error("Not implemented yet - stub for Phase 2");
+  async searchHotels(criteria: HotelSearchCriteria): Promise<any> {
+    if (criteria.agodaCityId === undefined || !criteria.ltCityCandidates) {
+      throw new Error("AgodaProvider requires agodaCityId and ltCityCandidates");
+    }
+
+    return fetchAgodaHotelsWithCityCandidates({
+      agodaCityId: criteria.agodaCityId,
+      ltCityCandidates: criteria.ltCityCandidates,
+      checkIn: criteria.checkIn,
+      checkOut: criteria.checkOut,
+      adults: criteria.adults,
+      rooms: criteria.rooms,
+      page: criteria.page ?? 1,
+      sort: criteria.sort ?? "best",
+    });
   }
 
-  async getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<HotelDetail | null> {
-    // Phase 2: Move logic from api/hotels.ts here
-    throw new Error("Not implemented yet - stub for Phase 2");
+  async getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<any | null> {
+    // Skeleton placeholder for detail lookups
+    return null;
   }
 }

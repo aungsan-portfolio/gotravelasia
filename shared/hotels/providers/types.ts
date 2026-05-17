@@ -1,4 +1,4 @@
-import type { HotelResult, HotelDetail } from "../types.js";
+import type { HotelResult } from "../types.js";
 
 export interface HotelSearchCriteria {
   city: string;
@@ -8,6 +8,11 @@ export interface HotelSearchCriteria {
   rooms: number;
   currency?: string;
   language?: string;
+  // Provider-specific/extra params for 1:1 adaptation
+  agodaCityId?: number;
+  ltCityCandidates?: any[];
+  page?: number;
+  sort?: any;
 }
 
 export interface HotelProviderResponse<T> {
@@ -25,10 +30,10 @@ export interface HotelProvider {
   /**
    * Search for hotels matching the criteria
    */
-  searchHotels(criteria: HotelSearchCriteria): Promise<HotelResult[]>;
+  searchHotels(criteria: HotelSearchCriteria): Promise<any>; // Can return the full result object for 1:1 wrapper matching
 
   /**
    * Get detailed information for a specific hotel
    */
-  getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<HotelDetail | null>;
+  getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<HotelResult | null>;
 }

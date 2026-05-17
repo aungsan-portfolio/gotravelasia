@@ -1,5 +1,5 @@
 import type { HotelProvider, HotelSearchCriteria, HotelProviderResponse } from "../../shared/hotels/providers/types.js";
-import type { HotelResult, HotelDetail } from "../../shared/hotels/types.js";
+import type { HotelResult } from "../../shared/hotels/types.js";
 
 /**
  * Coordinates multiple hotel providers to add fallback capabilities.
@@ -13,12 +13,9 @@ export class ProviderOrchestrator {
     this.secondaryProviders = secondaryProviders;
   }
 
-  async searchHotels(criteria: HotelSearchCriteria): Promise<HotelProviderResponse<HotelResult[]>> {
+  async searchHotels(criteria: HotelSearchCriteria): Promise<HotelProviderResponse<any>> {
     try {
       const results = await this.primaryProvider.searchHotels(criteria);
-      
-      // If primary succeeds but returns no inventory, we might still fallback 
-      // (Implementation detail for Phase 2)
       
       return {
         data: results,
@@ -47,7 +44,7 @@ export class ProviderOrchestrator {
     }
   }
 
-  async getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<HotelProviderResponse<HotelDetail | null>> {
+  async getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<HotelProviderResponse<HotelResult | null>> {
     try {
       const detail = await this.primaryProvider.getHotelDetail(hotelId, criteria);
       return {
