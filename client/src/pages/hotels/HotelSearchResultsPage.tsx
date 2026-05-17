@@ -5,6 +5,7 @@ import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToo
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
 import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
+import { MockDataBanner } from "@/components/hotels/results/MockDataBanner";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { useHotelUrlState, type HotelUrlFilterState } from "@/hooks/useHotelUrlState";
 import { getCityName } from "@/lib/cities";
@@ -268,6 +269,12 @@ export default function HotelSearchResultsPage() {
             mappedCount={mappedHotels.length}
           />
         </div>
+
+        {meta?.source === "mock" && (
+          <div className="mt-4">
+            <MockDataBanner />
+          </div>
+        )}
 
         <div className="mt-4 xl:hidden">
           <HotelFilterSidebar
