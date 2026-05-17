@@ -94,7 +94,9 @@ export default function HotelSearchBox({
                     className="flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors hover:bg-gray-50"
                     onClick={() => {
                       const suggestion: AutocompleteSuggestion = {
-                        locationId: String(city.agodaCityId || city.agodaLtCityId || city.slug),
+                        // Prefer agodaLtCityId (Affiliate API ID) over agodaCityId (Standard ID)
+                        // to ensure live searches do not fail with "0 hotels found" regression.
+                        locationId: String(city.agodaLtCityId || city.agodaCityId || city.slug),
                         displayName: city.name,
                         locationType: LocationType.CITY,
                         subtitle: city.country,
