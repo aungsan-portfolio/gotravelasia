@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useAutocomplete } from "../../hooks/useAutocomplete";
-import { useHotelGeoDestination } from "../../hooks/useHotelGeoDestination";
 import { GeoDestinationResult } from "../../hooks/useHotelGeoDestination";
 import { AutocompleteSuggestion, LocationType } from "../../types/hotel-search.types";
 
@@ -22,7 +21,7 @@ interface Props {
   onSelect: (payload: SelectionPayload) => void;
   onInputChange: (value: string) => void;
   placeholder?: string;
-  geoResult?: GeoDestinationResult;
+  geoResult: GeoDestinationResult;
 }
 
 export default function HotelSearchBox({
@@ -35,8 +34,7 @@ export default function HotelSearchBox({
   const [query, setQuery] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const { suggestions, isLoading } = useAutocomplete(query);
-  const fallbackGeo = useHotelGeoDestination();
-  const geo = geoResult || fallbackGeo;
+  const geo = geoResult;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

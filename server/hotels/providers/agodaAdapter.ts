@@ -23,7 +23,8 @@ export class AgodaProvider implements HotelProvider {
   }
 
   async getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<any | null> {
-    // Skeleton placeholder for detail lookups
-    return null;
+    if (!criteria) return null;
+    const searchResult = await this.searchHotels(criteria);
+    return searchResult.hotels.find((h: any) => h.hotelId === hotelId) ?? null;
   }
 }

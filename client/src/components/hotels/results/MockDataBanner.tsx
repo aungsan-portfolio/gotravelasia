@@ -7,21 +7,18 @@ interface MockDataBannerProps {
 }
 
 export function MockDataBanner({ affiliateUrl }: MockDataBannerProps) {
-  const [isDismissed, setIsDismissed] = useState(true);
+  const SESSION_KEY = "mock_data_banner_dismissed";
+
+  const [isDismissed, setIsDismissed] = useState(() => {
+    if (typeof window === "undefined") return false; // SSR safe
+    return sessionStorage.getItem(SESSION_KEY) === "true";
+  });
 
   useEffect(() => {
-    // Only display in production as per plan requirements
-    if (!import.meta.env.PROD) {
-      return;
-    }
-
-    const dismissed = sessionStorage.getItem("mock_data_banner_dismissed");
-    if (!dismissed) {
-      setIsDismissed(false);
-      
+    if (!isDismissed && import.meta.env.PROD) {
       // Sentry breadcrumb requirement
       Sentry.addBreadcrumb({
-        category: "ux",
+        category: "mock-data",
         message: "Rendered mock data banner in production",
         level: "info",
       });
@@ -34,7 +31,7 @@ export function MockDataBanner({ affiliateUrl }: MockDataBannerProps) {
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    sessionStorage.setItem("mock_data_banner_dismissed", "true");
+    sessionStorage.setItem(SESSION_KEY, "true");
   };
 
   return (
