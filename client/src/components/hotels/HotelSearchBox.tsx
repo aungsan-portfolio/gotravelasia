@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useAutocomplete } from "../../hooks/useAutocomplete";
 import { useHotelGeoDestination } from "../../hooks/useHotelGeoDestination";
+import { GeoDestinationResult } from "../../hooks/useHotelGeoDestination";
 import { AutocompleteSuggestion, LocationType } from "../../types/hotel-search.types";
 
 const LOCATION_ICONS: Record<string, string> = {
@@ -21,6 +22,7 @@ interface Props {
   onSelect: (payload: SelectionPayload) => void;
   onInputChange: (value: string) => void;
   placeholder?: string;
+  geoResult?: GeoDestinationResult;
 }
 
 export default function HotelSearchBox({
@@ -28,11 +30,13 @@ export default function HotelSearchBox({
   onSelect,
   onInputChange,
   placeholder = "Where are you going?",
+  geoResult,
 }: Props) {
   const [query, setQuery] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const { suggestions, isLoading } = useAutocomplete(query);
-  const geoResult = useHotelGeoDestination();
+  const fallbackGeo = useHotelGeoDestination();
+  const geo = geoResult || fallbackGeo;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +81,7 @@ export default function HotelSearchBox({
 
       {isOpen && query.length < 2 && (
         <div className="absolute top-full z-[100] mt-2 w-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl animate-in fade-in slide-in-from-top-2">
-          {geoResult.isLoading ? (
+          {geo.isLoading ? (
             <div className="flex items-center gap-3 px-4 py-3 text-sm text-gray-400">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
               Loading suggestions...
@@ -85,10 +89,10 @@ export default function HotelSearchBox({
           ) : (
             <>
               <div className="bg-gray-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Popular in {geoResult.countryCode || "Asia"}
+                Popular in {geo.countryCode || "Asia"}
               </div>
               <ul className="max-h-[320px] overflow-y-auto py-2">
-                {geoResult.popularCities.map((city) => (
+                {geo.popularCities.map((city) => (
                   <li
                     key={city.slug}
                     className="flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors hover:bg-gray-50"

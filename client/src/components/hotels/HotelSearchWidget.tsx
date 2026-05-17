@@ -27,6 +27,7 @@ export default function HotelSearchWidget() {
           onInputChange={handleDestinationInputChange}
           onSelect={handleDestinationSelect}
           placeholder={geoResult.isLoading ? "Where are you going?" : `e.g., ${geoResult.popularCities[0]?.name || "Bangkok"}`}
+          geoResult={geoResult}
         />
         <SmartDatePicker
           checkIn={params.checkIn}
