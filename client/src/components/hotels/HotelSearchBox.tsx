@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useAutocomplete } from "../../hooks/useAutocomplete";
+import { useHotelGeoDestination } from "../../hooks/useHotelGeoDestination";
 import { AutocompleteSuggestion, LocationType } from "../../types/hotel-search.types";
 
 const LOCATION_ICONS: Record<string, string> = {
@@ -31,6 +32,7 @@ export default function HotelSearchBox({
   const [query, setQuery] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const { suggestions, isLoading } = useAutocomplete(query);
+  const geoResult = useHotelGeoDestination();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,6 +74,50 @@ export default function HotelSearchBox({
           />
         </div>
       </div>
+
+      {isOpen && query.length < 2 && (
+        <div className="absolute top-full z-[100] mt-2 w-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl animate-in fade-in slide-in-from-top-2">
+          {geoResult.isLoading ? (
+            <div className="flex items-center gap-3 px-4 py-3 text-sm text-gray-400">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+              Loading suggestions...
+            </div>
+          ) : (
+            <>
+              <div className="bg-gray-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Popular in {geoResult.countryCode || "Asia"}
+              </div>
+              <ul className="max-h-[320px] overflow-y-auto py-2">
+                {geoResult.popularCities.map((city) => (
+                  <li
+                    key={city.slug}
+                    className="flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors hover:bg-gray-50"
+                    onClick={() => {
+                      const suggestion: AutocompleteSuggestion = {
+                        locationId: String(city.agodaCityId || city.agodaLtCityId || city.slug),
+                        displayName: city.name,
+                        locationType: LocationType.CITY,
+                        subtitle: city.country,
+                      };
+                      onSelect({ suggestion });
+                      setQuery(city.name);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">🏙️</span>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{city.name}</p>
+                        <p className="text-xs text-gray-500">{city.country}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
 
       {isOpen && (query.length >= 2) && (
         <div className="absolute top-full z-[100] mt-2 w-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl animate-in fade-in slide-in-from-top-2">

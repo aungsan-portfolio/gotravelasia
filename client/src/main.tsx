@@ -11,7 +11,9 @@ import "./i18n"; // Initialize i18next
 import "./index.css";
 import { HelmetProvider } from "react-helmet-async";
 import { trackWebVitals } from "@/seo/performance";
+import { initSentry } from "@/lib/sentry";
 
+initSentry();
 trackWebVitals();
 
 const queryClient = new QueryClient();

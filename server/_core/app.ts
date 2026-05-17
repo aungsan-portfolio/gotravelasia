@@ -2,7 +2,10 @@
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
+import { initSentryServer } from "../api/_lib/sentry.js";
+
 console.log("[APP] Starting app.ts imports...\n");
+initSentryServer();
 dotenv.config();
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
 console.log("[APP] Environment loaded.\n");
@@ -120,6 +123,9 @@ app.use(
 );
 
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
+
+import * as Sentry from "@sentry/node";
+Sentry.setupExpressErrorHandler(app);
 
 console.log("[APP] App setup complete, exporting app.\n");
 export default app;

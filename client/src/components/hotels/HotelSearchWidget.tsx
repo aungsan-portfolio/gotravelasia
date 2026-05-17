@@ -5,8 +5,10 @@ import SmartDatePicker from "./SmartDatePicker";
 import GuestSelector from "./GuestSelector";
 
 import { useHotelSearchState } from "@/features/hotels/frontdoor/useHotelSearchState";
+import { useHotelGeoDestination } from "@/hooks/useHotelGeoDestination";
 
 export default function HotelSearchWidget() {
+  const geoResult = useHotelGeoDestination();
   const {
     params,
     validation,
@@ -24,6 +26,7 @@ export default function HotelSearchWidget() {
           value={params.destinationLabel}
           onInputChange={handleDestinationInputChange}
           onSelect={handleDestinationSelect}
+          placeholder={geoResult.isLoading ? "Where are you going?" : `e.g., ${geoResult.popularCities[0]?.name || "Bangkok"}`}
         />
         <SmartDatePicker
           checkIn={params.checkIn}
