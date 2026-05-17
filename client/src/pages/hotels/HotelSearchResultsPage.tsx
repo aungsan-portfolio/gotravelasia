@@ -21,6 +21,9 @@ import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
 import { ExternalLink, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { StructuredData } from "@/components/seo/StructuredData";
+import { buildHotelSearchResultSchema } from "@/lib/seo/buildHotelSearchResultSchema";
+
 export default function HotelSearchResultsPage() {
   const { query, routeMode, routeMeta } = useHotelRouteState();
   const cityName = query.cityName || getCityName(query.city) || query.city;
@@ -239,7 +242,11 @@ export default function HotelSearchResultsPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <>
+      {displayHotels.length > 0 && !isLoading && (
+        <StructuredData schema={buildHotelSearchResultSchema(displayHotels, window.location.href)} />
+      )}
+      <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
           Hotels in {cityName}
@@ -399,5 +406,6 @@ export default function HotelSearchResultsPage() {
         )}
       </div>
     </main>
+    </>
   );
 }

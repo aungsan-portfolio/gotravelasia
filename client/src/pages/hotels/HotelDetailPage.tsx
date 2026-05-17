@@ -14,6 +14,9 @@ import { formatStayNights } from "@/lib/hotels/formatters";
 import { trackHotelDetailView } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 
+import { StructuredData } from "@/components/seo/StructuredData";
+import { buildHotelLodgingSchema } from "@/lib/seo/buildHotelLodgingSchema";
+
 export default function HotelDetailPage() {
   const [match, params] = useRoute<{ hotelId: string }>("/hotels/detail/:hotelId");
   const { query, routeMode, routeMeta } = useHotelRouteState();
@@ -101,20 +104,24 @@ export default function HotelDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-6 lg:py-8">
-        <a href={backToResultsUrl} className="text-sm font-semibold text-indigo-700 hover:text-indigo-900">
-          ← Back to results
-        </a>
+    <>
+      {hotel && !isLoading && (
+        <StructuredData schema={buildHotelLodgingSchema(hotel as any, window.location.href)} />
+      )}
+      <main className="min-h-screen bg-slate-100">
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-6 lg:py-8">
+          <a href={backToResultsUrl} className="text-sm font-semibold text-indigo-700 hover:text-indigo-900">
+            ← Back to results
+          </a>
 
-        <section className="mt-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
-          <p>
-            {cityName} · {query.checkIn} to {query.checkOut} · {formatStayNights(query.checkIn, query.checkOut)} · {query.adults} guest
-            {query.adults > 1 ? "s" : ""} · {query.rooms} room{query.rooms > 1 ? "s" : ""}
-          </p>
-        </section>
+          <section className="mt-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
+            <p>
+              {cityName} · {query.checkIn} to {query.checkOut} · {formatStayNights(query.checkIn, query.checkOut)} · {query.adults} guest
+              {query.adults > 1 ? "s" : ""} · {query.rooms} room{query.rooms > 1 ? "s" : ""}
+            </p>
+          </section>
 
-        {isLoading && (
+          {isLoading && (
           <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
             Loading hotel details…
           </div>
@@ -221,5 +228,6 @@ export default function HotelDetailPage() {
         )}
       </div>
     </main>
+    </>
   );
 }
