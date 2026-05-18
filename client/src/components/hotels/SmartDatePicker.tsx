@@ -165,7 +165,7 @@ export default function SmartDatePicker({ checkIn, checkOut, onChange }: Props) 
   const calendarPanel = (
     <div
       ref={popoverRef}
-      className="w-full overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl animate-in fade-in zoom-in-95"
+      className="w-full overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 text-gray-900 shadow-2xl animate-in fade-in zoom-in-95"
       style={isMobile ? undefined : { width: 340 }}
     >
       <div className="mb-3 grid grid-cols-2 gap-2 rounded-xl bg-gray-50 p-2">
@@ -217,7 +217,7 @@ export default function SmartDatePicker({ checkIn, checkOut, onChange }: Props) 
               key={formatted}
               onClick={() => handleDateClick(date)}
               className={`relative flex flex-col items-center justify-center rounded-lg py-1.5 transition-all
-                ${isSelected ? "bg-blue-600 text-white shadow-md shadow-blue-200" : inRange ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"}`}
+                ${isSelected ? "bg-blue-600 text-white shadow-md shadow-blue-200" : inRange ? "bg-blue-50 text-blue-700" : "text-gray-900 hover:bg-gray-50"}`}
             >
               <span className="text-xs font-bold">{date.getDate()}</span>
               {price && !isSelected && (
