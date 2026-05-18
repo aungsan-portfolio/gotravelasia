@@ -127,5 +127,4 @@ job_logs.txt
 test-results/
 playwright-report/
 blob-report/
-# Vercel api build
-api/index.js
+
