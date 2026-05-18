@@ -5,7 +5,7 @@ import { fetchAgodaHotelsWithCityCandidates } from "../../api/hotels.js";
 export class AgodaProvider implements HotelProvider {
   readonly id = "agoda";
   readonly priority = 1;
-  readonly timeoutMs = 4000; // 4 seconds
+  readonly timeoutMs = 9000; // 9 seconds to allow for slower Agoda responses
   readonly cacheTtlMs = 30 * 60 * 1000; // 30 minutes
 
   async searchHotels(criteria: HotelSearchCriteria): Promise<any> {

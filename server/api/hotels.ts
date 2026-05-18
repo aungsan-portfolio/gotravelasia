@@ -42,11 +42,9 @@ import {
 } from "../hotels/cache.js";
 import { ProviderOrchestrator } from "../hotels/providerOrchestrator.js";
 import { AgodaProvider } from "../hotels/providers/agodaAdapter.js";
-import { HotellookProvider } from "../hotels/providers/hotellookAdapter.js";
 
 const orchestrator = new ProviderOrchestrator([
   new AgodaProvider(),
-  new HotellookProvider(),
 ]);
 
 const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");

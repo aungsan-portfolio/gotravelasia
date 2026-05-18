@@ -3815,8 +3815,8 @@ var ProviderOrchestrator = class {
 var AgodaProvider = class {
   id = "agoda";
   priority = 1;
-  timeoutMs = 4e3;
-  // 4 seconds
+  timeoutMs = 9e3;
+  // 9 seconds to allow for slower Agoda responses
   cacheTtlMs = 30 * 60 * 1e3;
   // 30 minutes
   async searchHotels(criteria) {
@@ -3841,272 +3841,9 @@ var AgodaProvider = class {
   }
 };
 
-// server/hotels/providers/hotellookClient.ts
-import crypto from "crypto";
-var BASE_URL = "https://engine.hotellook.com/api/v2";
-var COMMON_CITY_IATA = {
-  bangkok: "BKK",
-  yangon: "RGN",
-  singapore: "SIN",
-  tokyo: "TYO",
-  "kuala lumpur": "KUL",
-  hanoi: "HAN",
-  phuket: "HKT",
-  bali: "DPS",
-  manila: "MNL"
-};
-var HotellookClient = class {
-  marker;
-  token;
-  constructor() {
-    this.marker = process.env.TRAVELPAYOUTS_MARKER ?? "gotravelasia";
-    this.token = process.env.TRAVELPAYOUTS_TOKEN ?? process.env.TRAVELPAYOUTS_API_TOKEN ?? "";
-  }
-  /**
-   * Helper to sign request parameters alphabetically using MD5
-   */
-  generateSignature(params) {
-    const sortedKeys = Object.keys(params).sort();
-    const sortedValues = sortedKeys.map((key) => {
-      const val = params[key];
-      return val === void 0 || val === null ? "" : String(val);
-    });
-    const rawString = `${this.token}:${this.marker}:${sortedValues.join(":")}`;
-    return crypto.createHash("md5").update(rawString).digest("hex");
-  }
-  /**
-   * Try to resolve destination name to Hotellook city ID or IATA code
-   */
-  async resolveCity(cityName) {
-    const cleanName = cityName.trim().toLowerCase();
-    if (COMMON_CITY_IATA[cleanName]) {
-      return { iata: COMMON_CITY_IATA[cleanName] };
-    }
-    try {
-      const url = new URL(`${BASE_URL}/lookup.json`);
-      url.searchParams.set("query", cityName);
-      url.searchParams.set("lang", "en");
-      url.searchParams.set("lookFor", "city");
-      url.searchParams.set("limit", "1");
-      const res = await fetch(url.toString());
-      if (res.ok) {
-        const json2 = await res.json();
-        const city = json2.results?.cities?.[0];
-        if (city) {
-          return {
-            cityId: Number(city.id),
-            iata: city.iata?.[0] || void 0
-          };
-        }
-      }
-    } catch (error) {
-      console.error(`[Hotellook] City lookup failed for query "${cityName}":`, error);
-    }
-    return { iata: "BKK" };
-  }
-  /**
-   * Starts Hotellook async search
-   */
-  async startSearch(params) {
-    if (!this.token) {
-      throw new Error("[Hotellook] Cannot start search without TRAVELPAYOUTS_TOKEN");
-    }
-    const payload = {
-      adultsCount: params.adultsCount,
-      checkIn: params.checkIn,
-      checkOut: params.checkOut,
-      childrenCount: params.childrenCount,
-      currency: params.currency ?? "USD",
-      customerIP: params.customerIP ?? "127.0.0.1",
-      lang: params.lang ?? "en",
-      waitForResult: 0
-    };
-    if (params.cityId !== void 0) {
-      payload.cityId = params.cityId;
-    } else if (params.iata) {
-      payload.iata = params.iata;
-    } else {
-      throw new Error("[Hotellook] iata or cityId required to start search");
-    }
-    const signature = this.generateSignature(payload);
-    const startUrl = new URL(`${BASE_URL}/search/start.json`);
-    Object.entries(payload).forEach(([k, v]) => startUrl.searchParams.set(k, String(v)));
-    startUrl.searchParams.set("marker", this.marker);
-    startUrl.searchParams.set("signature", signature);
-    const res = await fetch(startUrl.toString());
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`[Hotellook] Search start failed with status ${res.status}: ${errorText}`);
-    }
-    const json2 = await res.json();
-    if (!json2.search_id) {
-      throw new Error("[Hotellook] Response did not contain search_id");
-    }
-    return json2.search_id;
-  }
-  /**
-   * Retrieves results of the search by searchId
-   */
-  async getResults(searchId) {
-    const url = new URL(`${BASE_URL}/search/getResult.json`);
-    url.searchParams.set("searchId", searchId);
-    url.searchParams.set("limit", "50");
-    url.searchParams.set("sortBy", "popularity");
-    url.searchParams.set("sortAsc", "0");
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      throw new Error(`[Hotellook] Get results failed with status ${res.status}`);
-    }
-    return await res.json();
-  }
-};
-
-// server/hotels/providers/hotellookNormalize.ts
-var AMENITY_MAP = {
-  has_internet: "Free Wi-Fi",
-  has_wifi: "Free Wi-Fi",
-  has_parking: "Parking",
-  has_pool: "Swimming pool",
-  has_gym: "Fitness center",
-  has_restaurant: "Restaurant",
-  has_bar: "Bar",
-  has_ac: "Air conditioning",
-  has_airport_transfer: "Airport transfer",
-  has_spa: "Spa"
-};
-function extractAmenities(props) {
-  const amenities = [];
-  Object.entries(AMENITY_MAP).forEach(([propKey, label]) => {
-    if (props[propKey] === true || props[propKey] === 1 || props[propKey] === "1") {
-      if (!amenities.includes(label)) {
-        amenities.push(label);
-      }
-    }
-  });
-  if (amenities.length === 0) {
-    amenities.push("Free Wi-Fi", "Air conditioning");
-  }
-  return amenities;
-}
-function normalizeHotellookHotel(h, criteria, marker) {
-  const hotelId = `hotellook-${h.hotelId}`;
-  const queryParams = new URLSearchParams({
-    marker,
-    hotel_id: String(h.hotelId),
-    check_in: criteria.checkIn,
-    check_out: criteria.checkOut,
-    adults: String(criteria.adults),
-    children: "0",
-    locale: "en",
-    currency: "USD"
-  });
-  const outboundUrl = `https://search.hotellook.com/?${queryParams.toString()}`;
-  return {
-    hotelId,
-    name: h.hotelName,
-    stars: h.stars || 3,
-    reviewScore: h.rating ? Number((h.rating / 10).toFixed(1)) : 7,
-    // Hotellook scales 0-100 -> convert to 0-10
-    reviewCount: h.popularity || 10,
-    address: h.location?.name || "Destination Area",
-    imageUrl: `https://photo.hotellook.com/image_v2/limit/h${h.hotelId}_1/800/520.auto`,
-    images: [`https://photo.hotellook.com/image_v2/limit/h${h.hotelId}_1/800/520.auto`],
-    amenities: extractAmenities(h.props || {}),
-    lowestRate: h.priceFrom || 0,
-    currency: "USD",
-    rankingPosition: h.popularity || 99,
-    breakfastIncluded: Boolean(h.props?.has_breakfast),
-    freeCancellation: Boolean(h.props?.has_free_cancellation),
-    payLater: false,
-    // Default fallback
-    outboundLinks: {
-      hotellook: outboundUrl,
-      metasearch: outboundUrl
-    },
-    coordinates: h.location?.geo ? {
-      lat: h.location.geo.lat,
-      lng: h.location.geo.lon,
-      confidence: "exact"
-    } : void 0,
-    provider: "hotellook"
-  };
-}
-
-// server/hotels/providers/hotellookAdapter.ts
-var sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-var HotellookProvider = class {
-  id = "hotellook";
-  priority = 2;
-  timeoutMs = 4e3;
-  // 4 seconds
-  cacheTtlMs = 15 * 60 * 1e3;
-  // 15 minutes
-  client;
-  constructor() {
-    this.client = new HotellookClient();
-  }
-  async searchHotels(criteria) {
-    try {
-      const resolution = await this.client.resolveCity(criteria.city);
-      const searchId = await this.client.startSearch({
-        checkIn: criteria.checkIn,
-        checkOut: criteria.checkOut,
-        adultsCount: criteria.adults,
-        childrenCount: 0,
-        // Default fallback
-        iata: resolution.iata,
-        cityId: resolution.cityId,
-        currency: criteria.currency ?? "USD",
-        lang: criteria.language ?? "en"
-      });
-      let results = await this.client.getResults(searchId);
-      for (let i = 0; i < 3; i++) {
-        if (results.status === "ok" && results.hotels && results.hotels.length > 0) {
-          break;
-        }
-        await sleep2(1200);
-        results = await this.client.getResults(searchId);
-      }
-      const rawHotels = results.hotels ?? [];
-      const marker = process.env.TRAVELPAYOUTS_MARKER ?? "gotravelasia";
-      const normalizedHotels = rawHotels.map(
-        (h) => normalizeHotellookHotel(h, {
-          city: criteria.city,
-          checkIn: criteria.checkIn,
-          checkOut: criteria.checkOut,
-          adults: criteria.adults,
-          rooms: criteria.rooms,
-          sort: "best",
-          page: criteria.page ?? 1
-        }, marker)
-      );
-      return {
-        source: "hotellook",
-        hotels: normalizedHotels,
-        totalCount: normalizedHotels.length
-      };
-    } catch (error) {
-      console.error("[HotellookProvider] Search failed:", error);
-      return {
-        source: "hotellook",
-        hotels: [],
-        totalCount: 0,
-        warning: "Hotellook search failed."
-      };
-    }
-  }
-  async getHotelDetail(hotelId, criteria) {
-    if (!criteria) return null;
-    const result2 = await this.searchHotels(criteria);
-    if (!result2 || !result2.hotels) return null;
-    return result2.hotels.find((h) => h.hotelId === hotelId) ?? null;
-  }
-};
-
 // server/api/hotels.ts
 var orchestrator = new ProviderOrchestrator([
-  new AgodaProvider(),
-  new HotellookProvider()
+  new AgodaProvider()
 ]);
 var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -7214,7 +6951,7 @@ var router10 = Router9();
 var MAX_CITIES_PER_RUN = Number(process.env.HOTEL_WARM_MAX_CITIES) || 10;
 var DELAY_BETWEEN_CITIES_MS = Number(process.env.HOTEL_WARM_DELAY_MS) || 2e3;
 var WARM_DAYS_AHEAD = [1, 3, 7, 14];
-function sleep3(ms) {
+function sleep2(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 function getWarmDates() {
@@ -7299,7 +7036,7 @@ router10.get("/warm-hotels", async (req, res) => {
           );
         }
         if (DELAY_BETWEEN_CITIES_MS > 0) {
-          await sleep3(DELAY_BETWEEN_CITIES_MS);
+          await sleep2(DELAY_BETWEEN_CITIES_MS);
         }
       }
     }
