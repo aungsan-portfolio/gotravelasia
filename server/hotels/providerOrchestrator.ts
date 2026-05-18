@@ -45,7 +45,17 @@ export class ProviderOrchestrator {
       console.error("[Orchestrator] All hotel search providers failed.");
       Sentry.setTag("hotels.source", "failed");
       Sentry.setTag("provider.primary.healthy", "false");
-      throw new Error("All hotel search providers failed or timed out.");
+      return {
+        data: {
+          source: this.providers[0]?.id || "agoda",
+          hotels: [],
+          totalCount: 0,
+          warning: "Live hotel results are temporarily unavailable.",
+          warnings: ["All hotel search providers failed or timed out."],
+        },
+        source: this.providers[0]?.id || "agoda",
+        isFallback: false,
+      };
     }
 
     // Sort by priority to find primary first
