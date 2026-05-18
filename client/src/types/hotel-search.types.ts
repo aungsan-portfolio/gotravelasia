@@ -28,15 +28,6 @@ export interface GuestConfig {
   children: number;
 }
 
-export interface HotelSearchParams {
-  destination:  string;
-  locationId:   string;
-  locationType: string;
-  checkIn:      string; // YYYY-MM-DD
-  checkOut:     string; // YYYY-MM-DD
-  guests:       GuestConfig;
-}
-
 export interface DatePriceData {
   date:      string;
   score:     number; // 0-100 indicating "deal" quality
@@ -47,17 +38,4 @@ export enum PageType {
   FRONT_DOOR = "FD",    // Landing page
   RESULTS_PAGE = "RP",  // Search results
   DETAIL_PAGE = "DP",   // Hotel details
-}
-
-export interface HotelResult {
-  id:            string;
-  name:          string;
-  stars:         number;
-  rating:        number;
-  reviewCount:   number;
-  pricePerNight: number;
-  currency:      string;
-  imageUrl:      string;
-  district?:     string;
-  amenities:     string[];
 }
