@@ -143,6 +143,24 @@ function MapEvents({ onBoundsChange, onUserInteraction }: MapEventsProps) {
   return null;
 }
 
+// ─── Map Size Invalidator ──────────────────────────────────────────
+
+function MapSizeInvalidator() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    if (!container) return;
+    
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [map]);
+  return null;
+}
+
 // ─── Hotel Marker Component ────────────────────────────────────────
 
 interface HotelMarkerProps {
@@ -382,6 +400,7 @@ function HotelMapPanelComponent({
               onBoundsChange={handleBoundsChange}
               onUserInteraction={handleUserInteraction}
             />
+            <MapSizeInvalidator />
 
             {markers.map((marker) => (
               <HotelMarkerComponent
