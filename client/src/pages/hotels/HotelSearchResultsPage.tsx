@@ -4,7 +4,6 @@ import { HotelFilterSidebar } from "@/components/hotels/results/HotelFilterSideb
 import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
-import { HotelResultsSummaryRow } from "@/components/hotels/results/HotelResultsSummaryRow";
 import { MockDataBanner } from "@/components/hotels/results/MockDataBanner";
 import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { useHotelUrlState, type HotelUrlFilterState } from "@/hooks/useHotelUrlState";
@@ -19,8 +18,10 @@ import {
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
-import { ExternalLink, SearchX } from "lucide-react";
+import { ExternalLink, SearchX, List, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HotelPagination } from "@/components/hotels/results/HotelPagination";
+import { HotelAffiliateStrip } from "@/components/hotels/results/HotelAffiliateStrip";
 
 import { StructuredData } from "@/components/seo/StructuredData";
 import { buildHotelSearchResultSchema } from "@/lib/seo/buildHotelSearchResultSchema";
@@ -33,6 +34,7 @@ export default function HotelSearchResultsPage() {
   const {
     isLoading,
     errorMessage,
+    allHotels,
     visibleHotels,
     meta,
     affiliateLinks,
@@ -40,6 +42,9 @@ export default function HotelSearchResultsPage() {
     activeFilters,
     totalFound,
     richFilters,
+    currentPage,
+    totalPages,
+    setPage,
     setSort,
     toggleFilter,
     setPriceRange,
@@ -62,6 +67,7 @@ export default function HotelSearchResultsPage() {
   // ─── "Search this area" state ────────────────────────────────────
   const [isSearchingArea, setIsSearchingArea] = useState(false);
   const [areaFilteredHotels, setAreaFilteredHotels] = useState<typeof visibleHotels | null>(null);
+  const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
   const handleSearchArea = useCallback((mapBounds: MarkerBounds) => {
     setIsSearchingArea(true);
@@ -137,7 +143,7 @@ export default function HotelSearchResultsPage() {
   );
   const shouldShowAgodaCtaFallback =
     meta?.source === "agoda" &&
-    displayHotels.length === 0 &&
+    allHotels.length === 0 &&
     Boolean(affiliateLinks?.agoda);
 
   const emptyStateContent = (() => {
@@ -253,18 +259,10 @@ export default function HotelSearchResultsPage() {
           Hotels in {cityName}
         </h1>
 
-        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6">
           <HotelResultsToolbar
             sort={sort}
             onSortChange={setSort}
-            totalFound={totalFound}
-            mappedCount={mappedHotels.length}
-          />
-        </div>
-
-        <div className="mt-6">
-          <HotelResultsSummaryRow
-            cityName={cityName}
             totalFound={totalFound}
             mappedCount={mappedHotels.length}
           />
@@ -381,48 +379,107 @@ export default function HotelSearchResultsPage() {
             )}
 
             {!shouldShowAgodaCtaFallback && (
-              <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
-                <div className="hidden xl:block">
-                  <HotelFilterSidebar
-                    activeFilters={activeFilters}
-                    richFilters={richFilters}
-                    onToggleFilter={toggleFilter}
-                    onClearFilters={clearFilters}
-                    onSetPriceRange={setPriceRange}
-                    onToggleStarRating={toggleStarRating}
-                    onSetMinGuestRating={setMinGuestRating}
-                    onToggleAmenity={toggleAmenity}
-                    totalFound={totalFound}
-                  />
+              <>
+                <div className="mt-4 xl:hidden">
+                  <div className="inline-flex w-full rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setMobileView("list")}
+                      className={[
+                        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
+                        mobileView === "list"
+                          ? "bg-indigo-600 text-white"
+                          : "text-slate-700 hover:bg-slate-50",
+                      ].join(" ")}
+                    >
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <List className="h-4 w-4" />
+                        List
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setMobileView("map")}
+                      className={[
+                        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
+                        mobileView === "map"
+                          ? "bg-indigo-600 text-white"
+                          : "text-slate-700 hover:bg-slate-50",
+                      ].join(" ")}
+                    >
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <MapIcon className="h-4 w-4" />
+                        Map
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="min-w-0">
-                  <HotelResultsList
-                    hotels={displayHotels}
-                    checkIn={query.checkIn}
-                    checkOut={query.checkOut}
-                    selectedHotelId={selectedHotelId}
-                    hoveredHotelId={hoveredHotelId}
-                    onSelectHotel={setSelectedHotelId}
-                    onHoverHotel={setHoveredHotelId}
-                    onOpenHotelDetail={openHotelDetail}
-                  />
+                <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+                  <div className="hidden xl:block">
+                    <HotelFilterSidebar
+                      activeFilters={activeFilters}
+                      richFilters={richFilters}
+                      onToggleFilter={toggleFilter}
+                      onClearFilters={clearFilters}
+                      onSetPriceRange={setPriceRange}
+                      onToggleStarRating={toggleStarRating}
+                      onSetMinGuestRating={setMinGuestRating}
+                      onToggleAmenity={toggleAmenity}
+                      totalFound={totalFound}
+                    />
+                  </div>
+
+                  <div className={mobileView === "list" ? "min-w-0" : "hidden xl:block min-w-0"}>
+                    <HotelResultsList
+                      hotels={displayHotels}
+                      checkIn={query.checkIn}
+                      checkOut={query.checkOut}
+                      selectedHotelId={selectedHotelId}
+                      hoveredHotelId={hoveredHotelId}
+                      onSelectHotel={setSelectedHotelId}
+                      onHoverHotel={setHoveredHotelId}
+                      onOpenHotelDetail={openHotelDetail}
+                    />
+                  </div>
+                  <div className={mobileView === "map" ? "min-w-0" : "hidden xl:block min-w-0"}>
+                    <HotelMapPanel
+                      hotels={mappedHotels}
+                      selectedHotelId={selectedHotelId}
+                      hoveredHotelId={hoveredHotelId}
+                      bounds={bounds}
+                      onSelectHotel={setSelectedHotelId}
+                      onHoverHotel={setHoveredHotelId}
+                      onSearchArea={handleSearchArea}
+                      isSearchingArea={isSearchingArea}
+                      city={query.city}
+                      checkIn={query.checkIn}
+                      checkOut={query.checkOut}
+                    />
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <HotelMapPanel
-                    hotels={mappedHotels}
-                    selectedHotelId={selectedHotelId}
-                    hoveredHotelId={hoveredHotelId}
-                    bounds={bounds}
-                    onSelectHotel={setSelectedHotelId}
-                    onHoverHotel={setHoveredHotelId}
-                    onSearchArea={handleSearchArea}
-                    isSearchingArea={isSearchingArea}
-                    city={query.city}
-                    checkIn={query.checkIn}
-                    checkOut={query.checkOut}
-                  />
-                </div>
+              </>
+            )}
+            
+            {!shouldShowAgodaCtaFallback && displayHotels.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <HotelAffiliateStrip affiliateLinks={affiliateLinks} cityName={cityName} />
+
+                <footer className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="text-sm text-slate-500">
+                      Showing page <span className="font-semibold text-slate-900">{currentPage}</span> of{" "}
+                      <span className="font-semibold text-slate-900">{totalPages}</span>
+                    </div>
+
+                    <HotelPagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setPage}
+                    />
+                  </div>
+                </footer>
               </div>
             )}
           </>

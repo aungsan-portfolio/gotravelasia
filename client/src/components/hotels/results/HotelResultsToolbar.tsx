@@ -18,28 +18,14 @@ function HotelResultsToolbarComponent({
   mappedCount = 0,
 }: HotelResultsToolbarProps) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
-        <img
-          src="/images/logo.png"
-          alt="GoTravelAsia Logo"
-          className="h-10 w-10 object-contain"
-        />
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-indigo-600">
-            GOTRAVELASIA
-          </h1>
-          <p className="text-xs text-slate-500">Hotels results toolbar</p>
-        </div>
-      </div>
-
+    <section className="w-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900">Hotel results</p>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
             <span className="inline-flex items-center gap-1">
               <ListFilter className="h-4 w-4" />
-              {totalFound} properties match your current filters
+              {totalFound} visible properties
             </span>
             <span className="inline-flex items-center gap-1">
               <Map className="h-4 w-4" />
@@ -54,7 +40,7 @@ function HotelResultsToolbarComponent({
             Sort by
           </span>
           <select
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-500"
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"
             value={sort}
             onChange={(event) => onSortChange(event.target.value as HotelSort)}
             aria-label="Sort hotel results"
