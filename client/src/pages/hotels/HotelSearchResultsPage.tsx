@@ -152,7 +152,7 @@ export default function HotelSearchResultsPage() {
       case "provider_unavailable":
         return {
           title: "Live hotel results are temporarily unavailable",
-          body: "You can still compare hotels directly with our partner links.",
+          body: meta?.warning || "You can still compare hotels directly with our partner links.",
         };
       case "unsupported_city":
       case "unresolved_city":

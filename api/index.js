@@ -337,8 +337,8 @@ async function getUserByOpenId(openId) {
     console.warn("[Database] Cannot get user: database not available");
     return void 0;
   }
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : void 0;
+  const result2 = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result2.length > 0 ? result2[0] : void 0;
 }
 async function getActivePriceAlerts() {
   const db = await getDb();
@@ -467,14 +467,14 @@ async function getDueEmailQueueItems(batchSize, maxAttempts) {
 async function claimEmailQueueItem(id, expectedAttempts) {
   const db = await getDb();
   if (!db) return false;
-  const result = await db.execute(sql`
+  const result2 = await db.execute(sql`
     UPDATE emailQueue
     SET status = 'processing', updatedAt = NOW()
     WHERE id = ${id}
       AND status IN ('pending', 'pending_retry')
       AND attempts = ${expectedAttempts}
   `);
-  const affectedRows = Number(result?.[0]?.affectedRows ?? 0);
+  const affectedRows = Number(result2?.[0]?.affectedRows ?? 0);
   return affectedRows > 0;
 }
 async function markEmailQueueSent(id) {
@@ -1295,9 +1295,9 @@ var destinationRouter = router({
     if (!db) return null;
     const slug = input.toLowerCase();
     try {
-      const result = await db.select().from(destinations).where(eq2(destinations.slug, slug)).limit(1);
-      if (result.length > 0) {
-        return result[0];
+      const result2 = await db.select().from(destinations).where(eq2(destinations.slug, slug)).limit(1);
+      if (result2.length > 0) {
+        return result2[0];
       }
       const apiData = await amadeusAPI.fetchDestinationData(slug);
       if (!apiData) return null;
@@ -1833,19 +1833,19 @@ function hasSupportedPriceDropSignal(flight, context) {
   const simplePoint = context?.historicalPriceByFlightId?.[flight.id];
   if (!series && !simplePoint) return false;
   const historicalPrices = series ? series : [{ price: simplePoint.previousTotal, observedAt: simplePoint.observedAt }];
-  const result = analyzePriceTrend({
+  const result2 = analyzePriceTrend({
     currentPrice: flight.price.total,
     currency: flight.price.currency,
     historicalPrices
   });
-  const isBuySignal = result.recommendation === "buy_now";
-  const isHistoricalDrop = result.currentPrice < (result.historicalMedian ?? result.currentPrice);
+  const isBuySignal = result2.recommendation === "buy_now";
+  const isHistoricalDrop = result2.currentPrice < (result2.historicalMedian ?? result2.currentPrice);
   if (!series && simplePoint) {
     const dropRatio = (simplePoint.previousTotal - flight.price.total) / simplePoint.previousTotal;
     const confidence = simplePoint.confidence ?? 0.5;
     return dropRatio >= 0.05 && confidence >= 0.5;
   }
-  return isBuySignal && isHistoricalDrop && result.confidence >= 0.4;
+  return isBuySignal && isHistoricalDrop && result2.confidence >= 0.4;
 }
 function hasWorthItSignal(flight, allFlights, context) {
   if (!context?.layoverAnalysisSupported) return false;
@@ -2168,9 +2168,9 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
       cache.set(cacheKey, { data: {}, ts: Date.now() });
       return {};
     }
-    const result = {};
+    const result2 = {};
     for (const sp of samplePrices) {
-      result[sp.date] = {
+      result2[sp.date] = {
         price: sp.price,
         origin,
         destination,
@@ -2191,9 +2191,9 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
         const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(
           nearby.getDate()
         ).padStart(2, "0")}`;
-        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
+        if (result2[nearbyKey] && !result2[nearbyKey].is_estimated_amadeus) continue;
         const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
-        result[nearbyKey] = {
+        result2[nearbyKey] = {
           price: Math.round(sp.price * variance * 100) / 100,
           origin,
           destination,
@@ -2206,12 +2206,12 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
       }
     }
     const realCount = samplePrices.length;
-    const totalCount = Object.keys(result).length;
+    const totalCount = Object.keys(result2).length;
     console.log(
       `[Amadeus] ${origin}\u2192${destination} (${month}): ${realCount} real + ${totalCount - realCount} interpolated = ${totalCount} prices`
     );
-    cache.set(cacheKey, { data: result, ts: Date.now() });
-    return result;
+    cache.set(cacheKey, { data: result2, ts: Date.now() });
+    return result2;
   } catch (error) {
     console.error(
       "[Amadeus] Fetch error:",
@@ -2595,12 +2595,12 @@ async function searchFlights(raw) {
   }
   const running = inflightSearches.get(cacheKey);
   if (running) return running;
-  const task = buildFlightSearchResult(raw).then((result) => {
-    searchCache.set(cacheKey, { value: result, expiresAt: Date.now() + CACHE_TTL_MS });
+  const task = buildFlightSearchResult(raw).then((result2) => {
+    searchCache.set(cacheKey, { value: result2, expiresAt: Date.now() + CACHE_TTL_MS });
     return {
-      ...result,
+      ...result2,
       meta: {
-        ...result.meta,
+        ...result2.meta,
         cacheHit: false
       }
     };
@@ -2952,25 +2952,25 @@ function normalizeHotelAddress(address) {
   };
   return normalized.split(" ").map((word) => mappings[word] || word).join(" ");
 }
-function createHotelOfferFromResult(provider, result) {
+function createHotelOfferFromResult(provider, result2) {
   return {
     provider,
-    hotelId: result.hotelId,
-    price: result.lowestRate,
-    currency: result.currency,
-    outboundLinks: result.outboundLinks,
-    freeCancellation: result.freeCancellation,
-    payLater: result.payLater,
-    breakfastIncluded: result.breakfastIncluded,
-    rank: result.rankingPosition || 0
+    hotelId: result2.hotelId,
+    price: result2.lowestRate,
+    currency: result2.currency,
+    outboundLinks: result2.outboundLinks,
+    freeCancellation: result2.freeCancellation,
+    payLater: result2.payLater,
+    breakfastIncluded: result2.breakfastIncluded,
+    rank: result2.rankingPosition || 0
   };
 }
-function createProviderHotelFromResult(provider, city, result) {
+function createProviderHotelFromResult(provider, city, result2) {
   return {
     provider,
     city,
-    result,
-    offer: createHotelOfferFromResult(provider, result)
+    result: result2,
+    offer: createHotelOfferFromResult(provider, result2)
   };
 }
 function buildCanonicalId(city, hotel) {
@@ -3727,9 +3727,9 @@ var ProviderOrchestrator = class {
         ])
       )
     );
-    const successful = results.map((r, idx) => ({ result: r, provider: this.providers[idx] })).filter(({ result }) => result.status === "fulfilled").map(({ result, provider }) => ({
+    const successful = results.map((r, idx) => ({ result: r, provider: this.providers[idx] })).filter(({ result: result2 }) => result2.status === "fulfilled").map(({ result: result2, provider }) => ({
       provider: provider.id,
-      data: result.value
+      data: result2.value
     }));
     if (successful.length === 0) {
       console.error("[Orchestrator] All hotel search providers failed.");
@@ -4097,9 +4097,9 @@ var HotellookProvider = class {
   }
   async getHotelDetail(hotelId, criteria) {
     if (!criteria) return null;
-    const result = await this.searchHotels(criteria);
-    if (!result || !result.hotels) return null;
-    return result.hotels.find((h) => h.hotelId === hotelId) ?? null;
+    const result2 = await this.searchHotels(criteria);
+    if (!result2 || !result2.hotels) return null;
+    return result2.hotels.find((h) => h.hotelId === hotelId) ?? null;
   }
 };
 
@@ -4268,8 +4268,8 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       return {
         source: "agoda",
         hotels: [],
-        warning: liveAgodaWarning,
-        warnings: [liveAgodaWarning],
+        warning: `Agoda API Error: ${response.status} - ${bodySnippet}`,
+        warnings: [`Agoda API Error: ${response.status}`],
         diagnostics,
         totalCount: 0
       };
@@ -4338,13 +4338,13 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
         totalCount: 0
       };
     }
-    const result = {
+    const result2 = {
       source: "agoda",
       hotels,
       totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
     };
-    await hotelCacheSet(cacheKey, result, getCacheTtlSeconds("agoda"));
-    return result;
+    await hotelCacheSet(cacheKey, result2, getCacheTtlSeconds("agoda"));
+    return result2;
   } catch (err) {
     console.error("[Hotels] Agoda lt_v1 search failed:", err);
     const diagnostics = buildDiagnostics("fetch_error");
@@ -4372,7 +4372,7 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
   let cityResolutionStatus = "unresolved_empty_results";
   for (const candidate of params.ltCityCandidates) {
     attemptedLtCityIds.push(candidate.cityId);
-    const result = await fetchAgodaHotels(
+    const result2 = await fetchAgodaHotels(
       params.agodaCityId,
       candidate.cityId,
       params.checkIn,
@@ -4382,13 +4382,13 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
       params.page,
       params.sort
     );
-    const candidateDiagnostics = result.diagnostics;
+    const candidateDiagnostics = result2.diagnostics;
     latestDiagnostics = candidateDiagnostics ?? latestDiagnostics;
     const responseStatus = candidateDiagnostics?.status;
-    if (result.hotels.length > 0) {
+    if (result2.hotels.length > 0) {
       cityResolutionStatus = "resolved";
       return {
-        ...result,
+        ...result2,
         diagnostics: {
           ...candidateDiagnostics ?? {},
           attemptedLtCityIds,
@@ -4406,12 +4406,13 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
       cityResolutionStatus = "api_error";
     }
   }
+  const finalWarning = result?.warning || "Live Agoda results are temporarily unavailable.";
   return {
     source: "agoda",
     hotels: [],
     totalCount: 0,
-    warning: "Live Agoda results are temporarily unavailable.",
-    warnings: ["Live Agoda results are temporarily unavailable."],
+    warning: finalWarning,
+    warnings: [finalWarning],
     diagnostics: {
       ...latestDiagnostics ?? {
         reason: "unresolved_city"
@@ -4657,8 +4658,8 @@ async function executeHotelSearch(reqQuery) {
       sort: normalized.sort
     })
   ]);
-  const result = orchestratorResult.data;
-  const normalizedProviderHotels = result.hotels.map(
+  const result2 = orchestratorResult.data;
+  const normalizedProviderHotels = result2.hotels.map(
     (hotel, index) => normalizeHotel(
       hotel,
       city,
@@ -4687,14 +4688,14 @@ async function executeHotelSearch(reqQuery) {
     hotelCacheSet(
       buildHotelDetailCacheKey(hotel.hotelId, city.name),
       hotel,
-      getCacheTtlSeconds(result.source)
+      getCacheTtlSeconds(result2.source)
     ).catch((e) => console.error("[HotelDetail] Warming failed:", e));
   });
   return {
     normalized,
     city,
     hotels,
-    result,
+    result: result2,
     affiliateLinks: { ...affiliateLinks, booking: bookingLink }
   };
 }
@@ -5008,11 +5009,11 @@ function setCors(req, res) {
 }
 function parseRequest(req) {
   const raw = req.query;
-  const result = {};
+  const result2 = {};
   for (const [k, v] of Object.entries(raw)) {
-    result[k] = Array.isArray(v) ? v[0] : v ?? "";
+    result2[k] = Array.isArray(v) ? v[0] : v ?? "";
   }
-  return result;
+  return result2;
 }
 
 // api/_lib/authMe.ts
@@ -5362,9 +5363,9 @@ async function fetchAmadeusCalendarPrices2(origin, destination, month, currency 
     );
     const samplePrices = sampleResults.filter((r) => r.status === "fulfilled").map((r) => r.value).filter((v) => !!v && v.price > 0);
     if (!samplePrices.length) return {};
-    const result = {};
+    const result2 = {};
     for (const sp of samplePrices) {
-      result[sp.date] = {
+      result2[sp.date] = {
         price: sp.price,
         origin,
         destination,
@@ -5383,9 +5384,9 @@ async function fetchAmadeusCalendarPrices2(origin, destination, month, currency 
         nearby.setDate(nearby.getDate() + offset);
         if (nearby.getMonth() + 1 !== mon || nearby.getFullYear() !== year) continue;
         const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(nearby.getDate()).padStart(2, "0")}`;
-        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
+        if (result2[nearbyKey] && !result2[nearbyKey].is_estimated_amadeus) continue;
         const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
-        result[nearbyKey] = {
+        result2[nearbyKey] = {
           price: Math.round(sp.price * variance * 100) / 100,
           origin,
           destination,
@@ -5397,7 +5398,7 @@ async function fetchAmadeusCalendarPrices2(origin, destination, month, currency 
         };
       }
     }
-    return result;
+    return result2;
   } catch {
     return {};
   }
@@ -5469,8 +5470,8 @@ async function handleCalendarPrices(req, res, params) {
       getLiveFxRate(cur, "THB")
     ]);
     const merged = {};
-    for (const result2 of [v3Mo1, v3Mo2]) {
-      const arr = result2.status === "fulfilled" && result2.value?.data;
+    for (const result3 of [v3Mo1, v3Mo2]) {
+      const arr = result3.status === "fulfilled" && result3.value?.data;
       if (Array.isArray(arr)) {
         for (const e of arr) {
           addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
@@ -5524,8 +5525,8 @@ async function handleCalendarPrices(req, res, params) {
         }, "legacy");
       }
     }
-    for (const result2 of [amadeusMo1, amadeusMo2]) {
-      const data = result2.status === "fulfilled" ? result2.value : null;
+    for (const result3 of [amadeusMo1, amadeusMo2]) {
+      const data = result3.status === "fulfilled" ? result3.value : null;
       if (data && typeof data === "object") {
         for (const [dateStr, entry] of Object.entries(data)) {
           entry.currency = cur;
@@ -5540,14 +5541,14 @@ async function handleCalendarPrices(req, res, params) {
       source: "fallback_static",
       asOf: null
     };
-    const result = {
+    const result2 = {
       success: true,
       data: merged,
       currency: cur,
       fx
     };
-    await setCache(cacheKey, result);
-    res.status(200).json(result);
+    await setCache(cacheKey, result2);
+    res.status(200).json(result2);
   } catch (error) {
     console.error("Calendar prices error:", error);
     res.status(500).json({ error: "Failed to fetch calendar prices" });
@@ -5607,9 +5608,9 @@ async function handleCheapPrices(req, res, params) {
         };
       });
     }
-    const result = { success: true, data: mappedData, currency, fx };
-    await setCache(cacheKey, result);
-    res.status(200).json(result);
+    const result2 = { success: true, data: mappedData, currency, fx };
+    await setCache(cacheKey, result2);
+    res.status(200).json(result2);
   } catch (error) {
     console.error("Cheap prices error:", error);
     res.status(500).json({ error: "Failed to fetch cheap prices" });
@@ -5655,9 +5656,9 @@ async function handleSpecialOffers(req, res, params) {
         offers = [...offers, ...moreOffers];
       }
     }
-    const result = { success: true, data: offers };
-    await setCache(cacheKey, result);
-    res.status(200).json(result);
+    const result2 = { success: true, data: offers };
+    await setCache(cacheKey, result2);
+    res.status(200).json(result2);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -6442,10 +6443,10 @@ router5.get(
           };
         });
       }
-      const result = { success: true, data: mappedData, currency, fx };
-      await setCache2(cacheKey, result);
+      const result2 = { success: true, data: mappedData, currency, fx };
+      await setCache2(cacheKey, result2);
       res.set("Cache-Control", "public, max-age=1800");
-      res.json(result);
+      res.json(result2);
     } catch (error) {
       console.error("Cheap prices error:", error);
       res.status(500).json({ error: "Failed to fetch cheap prices" });
@@ -6500,8 +6501,8 @@ router6.get(
         getLiveFxRate(cur, "THB")
       ]);
       const merged = {};
-      for (const result2 of [v3Mo1, v3Mo2]) {
-        const arr = result2.status === "fulfilled" && result2.value?.data;
+      for (const result3 of [v3Mo1, v3Mo2]) {
+        const arr = result3.status === "fulfilled" && result3.value?.data;
         if (Array.isArray(arr)) {
           for (const e of arr) {
             addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
@@ -6565,8 +6566,8 @@ router6.get(
           }, "legacy");
         }
       }
-      for (const result2 of [amadeusMo1, amadeusMo2]) {
-        const data = result2.status === "fulfilled" ? result2.value : null;
+      for (const result3 of [amadeusMo1, amadeusMo2]) {
+        const data = result3.status === "fulfilled" ? result3.value : null;
         if (data && typeof data === "object") {
           for (const [dateStr, entry] of Object.entries(data)) {
             entry.currency = cur;
@@ -6581,10 +6582,10 @@ router6.get(
         source: "fallback_static",
         asOf: null
       };
-      const result = { success: true, data: merged, currency: cur, fx };
-      await setCache2(cacheKey, result);
+      const result2 = { success: true, data: merged, currency: cur, fx };
+      await setCache2(cacheKey, result2);
       res.set("Cache-Control", "public, max-age=3600");
-      res.json(result);
+      res.json(result2);
     } catch (error) {
       console.error("Calendar prices error:", error);
       res.status(500).json({ error: "Failed to fetch calendar prices" });
@@ -6598,8 +6599,8 @@ import { Router as Router6 } from "express";
 var router7 = Router6();
 router7.get("/", async (req, res) => {
   try {
-    const result = await searchFlights(req.query);
-    res.json(result);
+    const result2 = await searchFlights(req.query);
+    res.json(result2);
   } catch (error) {
     console.error("[FlightsSearch] error:", error);
     res.status(500).json({
@@ -6986,7 +6987,7 @@ router8.post("/submit", async (req, res) => {
         });
         return;
       }
-      const result2 = await createPriceAlert({
+      const result3 = await createPriceAlert({
         email,
         origin,
         destination,
@@ -6997,7 +6998,7 @@ router8.post("/submit", async (req, res) => {
         source: "popup_route_submit",
         isActive: true
       });
-      if (!result2.success) {
+      if (!result3.success) {
         res.status(503).json({
           success: false,
           error: "Price alert service is temporarily unavailable."
@@ -7007,13 +7008,13 @@ router8.post("/submit", async (req, res) => {
       res.json({
         success: true,
         flow: "auto-saved",
-        alreadyExists: result2.alreadyExists
+        alreadyExists: result3.alreadyExists
       });
       return;
     }
-    const result = await saveSubscriber({ email, source });
+    const result2 = await saveSubscriber({ email, source });
     const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey && !result.alreadyExists) {
+    if (resendApiKey && !result2.alreadyExists) {
       new Resend(resendApiKey).emails.send({
         from: process.env.EMAIL_FROM || "GoTravel Asia <onboarding@resend.dev>",
         to: email,
@@ -7026,7 +7027,7 @@ router8.post("/submit", async (req, res) => {
     res.json({
       success: true,
       flow: "welcome-email",
-      alreadyExists: result.alreadyExists
+      alreadyExists: result2.alreadyExists
     });
   } catch (error) {
     console.error("[price-alerts] submit error:", error);

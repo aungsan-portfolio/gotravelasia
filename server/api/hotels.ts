@@ -257,8 +257,8 @@ async function fetchAgodaHotels(
       return {
         source: "agoda" as const,
         hotels: [],
-        warning: liveAgodaWarning,
-        warnings: [liveAgodaWarning],
+        warning: `Agoda API Error: ${response.status} - ${bodySnippet}`,
+        warnings: [`Agoda API Error: ${response.status}`],
         diagnostics,
         totalCount: 0,
       };
@@ -425,12 +425,14 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
     }
   }
 
+  const finalWarning = (result as any)?.warning || "Live Agoda results are temporarily unavailable.";
+
   return {
     source: "agoda" as const,
     hotels: [],
     totalCount: 0,
-    warning: "Live Agoda results are temporarily unavailable.",
-    warnings: ["Live Agoda results are temporarily unavailable."],
+    warning: finalWarning,
+    warnings: [finalWarning],
     diagnostics: {
       ...(latestDiagnostics ?? {
         reason: "unresolved_city" as const,
