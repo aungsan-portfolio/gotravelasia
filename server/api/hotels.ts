@@ -232,7 +232,6 @@ async function fetchAgodaHotels(
         Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID}:`)
           ? AGODA_API_KEY
           : `${AGODA_SITE_ID}:${AGODA_API_KEY}`,
-        "Accept-Encoding": "gzip,deflate",
       },
       body: JSON.stringify(body),
     });
