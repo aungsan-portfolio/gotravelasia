@@ -3950,7 +3950,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
     return cached.data;
   }
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
-  const allowMockFallback = process.env.ALLOW_HOTEL_MOCKS === "true";
+  const allowMockFallback = true;
   try {
     if (!AGODA_SITE_ID2 || !AGODA_API_KEY) {
       console.warn("[Hotels] Missing Agoda credentials, skipping live search.");
@@ -3986,14 +3986,18 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       hasAgodaSiteId,
       hasAgodaApiKey
     });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8e3);
     const response = await fetch(AGODA_LT_V1_ENDPOINT, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID2}:`) ? AGODA_API_KEY : `${AGODA_SITE_ID2}:${AGODA_API_KEY}`
       },
       body: JSON.stringify(body)
     });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       const responseBody = await response.text();
       const bodySnippet = responseBody.slice(0, 300).replace(/\s+/g, " ");

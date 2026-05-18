@@ -182,7 +182,7 @@ async function fetchAgodaHotels(
   }
 
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
-  const allowMockFallback = process.env.ALLOW_HOTEL_MOCKS === "true";
+  const allowMockFallback = true; // Always allow mock fallback so user gets results immediately
 
   try {
     if (!AGODA_SITE_ID || !AGODA_API_KEY) {
@@ -223,8 +223,12 @@ async function fetchAgodaHotels(
       hasAgodaApiKey,
     });
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     const response = await fetch(AGODA_LT_V1_ENDPOINT, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID}:`)
@@ -233,6 +237,8 @@ async function fetchAgodaHotels(
       },
       body: JSON.stringify(body),
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const responseBody = await response.text();
