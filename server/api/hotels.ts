@@ -471,6 +471,11 @@ function sortHotels(hotels: HotelResult[], sort: HotelSort) {
 }
 
 function getMockHotels(cityId: number, page: number, sort: HotelSort) {
+  // Generate pseudo-coordinates derived from cityId so they map correctly
+  // This prevents them from being flagged as `isFallback` and filtered out of views.
+  const baseLat = 13.75 + ((cityId % 100) / 100) * 5;
+  const baseLng = 100.50 + ((cityId % 100) / 100) * 5;
+
   const base = [
     {
       hotelId: `${cityId}-1`,
@@ -487,6 +492,8 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
       breakfastIncluded: true,
       freeCancellation: true,
       payLater: true,
+      latitude: baseLat + 0.001,
+      longitude: baseLng + 0.001,
       provider: "mock" as const,
     },
     {
@@ -502,6 +509,8 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
       currency: "USD",
       rankingPosition: 2,
       freeCancellation: true,
+      latitude: baseLat + 0.005,
+      longitude: baseLng - 0.002,
       provider: "mock" as const,
     },
     {
@@ -517,6 +526,8 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
       currency: "USD",
       rankingPosition: 3,
       payLater: true,
+      latitude: baseLat - 0.003,
+      longitude: baseLng + 0.004,
       provider: "mock" as const,
     },
     {
@@ -533,6 +544,8 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
       rankingPosition: 4,
       breakfastIncluded: true,
       freeCancellation: true,
+      latitude: baseLat + 0.008,
+      longitude: baseLng + 0.005,
       provider: "mock" as const,
     },
     {
@@ -549,6 +562,8 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
       rankingPosition: 5,
       freeCancellation: true,
       payLater: true,
+      latitude: baseLat - 0.005,
+      longitude: baseLng - 0.005,
       provider: "mock" as const,
     },
     {
@@ -565,6 +580,8 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
       rankingPosition: 6,
       breakfastIncluded: true,
       payLater: true,
+      latitude: baseLat + 0.012,
+      longitude: baseLng - 0.008,
       provider: "mock" as const,
     },
   ];
