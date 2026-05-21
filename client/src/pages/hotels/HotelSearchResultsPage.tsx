@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { HotelFilterSidebar } from "@/components/hotels/results/HotelFilterSidebar";
+import { HotelQuickFilterPills } from "@/components/hotels/results/HotelQuickFilterPills";
 import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToolbar";
 import { HotelMapPanel } from "@/components/hotels/map/HotelMapPanel";
 import { HotelResultsList } from "@/components/hotels/results/HotelResultsList";
@@ -253,18 +254,32 @@ export default function HotelSearchResultsPage() {
       {displayHotels.length > 0 && !isLoading && (
         <StructuredData schema={buildHotelSearchResultSchema(displayHotels, window.location.href)} />
       )}
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-slate-50 pb-24 xl:pb-6">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-          Hotels in {cityName}
-        </h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-balance text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Hotels in {cityName}
+          </h1>
+          <p className="text-sm text-slate-500">
+            {totalFound} {totalFound === 1 ? "property" : "properties"} found
+            {query.checkIn && query.checkOut ? ` · ${query.checkIn} → ${query.checkOut}` : ""}
+          </p>
+        </div>
 
-        <div className="mt-6">
+        <div className="mt-5">
           <HotelResultsToolbar
             sort={sort}
             onSortChange={setSort}
             totalFound={totalFound}
             mappedCount={mappedHotels.length}
+          />
+        </div>
+
+        {/* Quick filter pills (always visible) */}
+        <div className="mt-3">
+          <HotelQuickFilterPills
+            activeFilters={activeFilters}
+            onToggleFilter={toggleFilter}
           />
         </div>
 
@@ -274,19 +289,31 @@ export default function HotelSearchResultsPage() {
           </div>
         )}
 
-        <div className="mt-4 xl:hidden">
-          <HotelFilterSidebar
-            activeFilters={activeFilters}
-            richFilters={richFilters}
-            onToggleFilter={toggleFilter}
-            onClearFilters={clearFilters}
-            onSetPriceRange={setPriceRange}
-            onToggleStarRating={toggleStarRating}
-            onSetMinGuestRating={setMinGuestRating}
-            onToggleAmenity={toggleAmenity}
-            totalFound={totalFound}
-          />
-        </div>
+        {/* Mobile rich filter sidebar (collapsed via <details>) */}
+        <details className="group mt-4 rounded-xl border border-slate-200 bg-white shadow-sm xl:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-slate-900">
+            <span className="inline-flex items-center gap-2">
+              More filters (price, stars, amenities)
+            </span>
+            <span className="text-xs font-medium text-indigo-600 group-open:hidden">
+              Show
+            </span>
+            <span className="hidden text-xs font-medium text-indigo-600 group-open:inline">
+              Hide
+            </span>
+          </summary>
+          <div className="border-t border-slate-200 p-3">
+            <HotelFilterSidebar
+              richFilters={richFilters}
+              onClearFilters={clearFilters}
+              onSetPriceRange={setPriceRange}
+              onToggleStarRating={toggleStarRating}
+              onSetMinGuestRating={setMinGuestRating}
+              onToggleAmenity={toggleAmenity}
+              totalFound={totalFound}
+            />
+          </div>
+        </details>
 
         {isLoading && (
           <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
@@ -364,55 +391,19 @@ export default function HotelSearchResultsPage() {
 
             {!shouldShowAgodaCtaFallback && (
               <>
-                <div className="mt-4 xl:hidden">
-                  <div className="inline-flex w-full rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-                    <button
-                      type="button"
-                      onClick={() => setMobileView("list")}
-                      className={[
-                        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
-                        mobileView === "list"
-                          ? "bg-indigo-600 text-white"
-                          : "text-slate-700 hover:bg-slate-50",
-                      ].join(" ")}
-                    >
-                      <span className="inline-flex items-center justify-center gap-2">
-                        <List className="h-4 w-4" />
-                        List
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMobileView("map")}
-                      className={[
-                        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
-                        mobileView === "map"
-                          ? "bg-indigo-600 text-white"
-                          : "text-slate-700 hover:bg-slate-50",
-                      ].join(" ")}
-                    >
-                      <span className="inline-flex items-center justify-center gap-2">
-                        <MapIcon className="h-4 w-4" />
-                        Map
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+                <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_400px]">
                   <div className="hidden xl:block">
-                    <HotelFilterSidebar
-                      activeFilters={activeFilters}
-                      richFilters={richFilters}
-                      onToggleFilter={toggleFilter}
-                      onClearFilters={clearFilters}
-                      onSetPriceRange={setPriceRange}
-                      onToggleStarRating={toggleStarRating}
-                      onSetMinGuestRating={setMinGuestRating}
-                      onToggleAmenity={toggleAmenity}
-                      totalFound={totalFound}
-                    />
+                    <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+                      <HotelFilterSidebar
+                        richFilters={richFilters}
+                        onClearFilters={clearFilters}
+                        onSetPriceRange={setPriceRange}
+                        onToggleStarRating={toggleStarRating}
+                        onSetMinGuestRating={setMinGuestRating}
+                        onToggleAmenity={toggleAmenity}
+                        totalFound={totalFound}
+                      />
+                    </div>
                   </div>
 
                   <div className={mobileView === "list" ? "min-w-0" : "hidden xl:block min-w-0"}>
@@ -469,6 +460,42 @@ export default function HotelSearchResultsPage() {
           </>
         )}
       </div>
+
+      {/* Floating mobile List/Map toggle */}
+      {!isLoading && !errorMessage && !shouldShowAgodaCtaFallback && displayHotels.length > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-5 z-40 flex justify-center px-4 xl:hidden">
+          <div className="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-black/5">
+            <button
+              type="button"
+              onClick={() => setMobileView("list")}
+              aria-pressed={mobileView === "list"}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition",
+                mobileView === "list"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "text-slate-700 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              <List className="h-4 w-4" aria-hidden="true" />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileView("map")}
+              aria-pressed={mobileView === "map"}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition",
+                mobileView === "map"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "text-slate-700 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              <MapIcon className="h-4 w-4" aria-hidden="true" />
+              Map
+            </button>
+          </div>
+        </div>
+      )}
     </main>
     </>
   );

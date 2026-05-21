@@ -1,13 +1,9 @@
 import { memo } from "react";
 
 import type { HotelRichFilters } from "@/lib/hotels/filterEngine";
-import { HOTEL_FILTER_OPTIONS } from "@/hooks/useHotelSearch";
-import type { HotelFilterId } from "@/types/hotels";
 
 export interface HotelFilterSidebarProps {
-  activeFilters: HotelFilterId[];
   richFilters: HotelRichFilters;
-  onToggleFilter: (filterId: HotelFilterId) => void;
   onClearFilters: () => void;
   onSetPriceRange: (range: HotelRichFilters["priceRange"]) => void;
   onToggleStarRating: (stars: number) => void;
@@ -26,13 +22,12 @@ function parsePriceInput(value: string) {
 }
 
 /**
- * Enhanced Sidebar component for filtering hotel results.
- * Includes both "Quick Filters" (pills) and "Rich Filters" (price, stars, rating, amenities).
+ * Sidebar for "rich" hotel filters: price range, star rating, guest rating,
+ * amenities. Quick-filter pills (e.g. Free breakfast, Highly rated) live
+ * separately above the results list in `HotelQuickFilterPills`.
  */
 function HotelFilterSidebarComponent({
-  activeFilters,
   richFilters,
-  onToggleFilter,
   onClearFilters,
   onSetPriceRange,
   onToggleStarRating,
@@ -51,42 +46,27 @@ function HotelFilterSidebarComponent({
       richFilters.amenities?.length,
   );
 
-  const hasAnyFilters = activeFilters.length > 0 || hasRichFilters;
-
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3">
-        <p className="text-sm font-semibold text-slate-900">Filters</p>
-        <p className="mt-1 text-xs text-slate-500">
-          {totalFound} properties match your current filters
-        </p>
+      <div className="mb-4 flex items-baseline justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">Filters</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {totalFound} {totalFound === 1 ? "property" : "properties"}
+          </p>
+        </div>
+        {hasRichFilters && (
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+          >
+            Clear all
+          </button>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-2 xl:flex-col">
-        {HOTEL_FILTER_OPTIONS.map((filter) => {
-          const isActive = activeFilters.includes(filter.id);
-
-          return (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={() => onToggleFilter(filter.id)}
-              title={filter.description}
-              aria-pressed={isActive}
-              className={[
-                "rounded-full border px-3 py-1.5 text-left text-sm transition xl:w-full",
-                isActive
-                  ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              {filter.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
+      <div className="space-y-5 border-t border-slate-200 pt-4">
         <section>
           <p className="mb-2 text-sm font-medium text-slate-900">Price per night</p>
           <div className="grid grid-cols-2 gap-2">
@@ -95,6 +75,7 @@ function HotelFilterSidebarComponent({
               <input
                 type="number"
                 min={0}
+                placeholder="$0"
                 value={priceMin ?? ""}
                 onChange={(event) =>
                   onSetPriceRange({ min: parsePriceInput(event.target.value), max: priceMax })
@@ -107,6 +88,7 @@ function HotelFilterSidebarComponent({
               <input
                 type="number"
                 min={0}
+                placeholder="Any"
                 value={priceMax ?? ""}
                 onChange={(event) =>
                   onSetPriceRange({ min: priceMin, max: parsePriceInput(event.target.value) })
@@ -196,16 +178,6 @@ function HotelFilterSidebarComponent({
           </div>
         </section>
       </div>
-
-      {hasAnyFilters && (
-        <button
-          type="button"
-          onClick={onClearFilters}
-          className="mt-4 rounded-full border border-transparent px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 xl:w-full"
-        >
-          Clear all
-        </button>
-      )}
     </aside>
   );
 }
