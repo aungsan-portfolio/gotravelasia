@@ -21,7 +21,6 @@ import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
 import { ExternalLink, SearchX, List, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HotelPagination } from "@/components/hotels/results/HotelPagination";
-import { HotelFilterSidebar } from "@/components/hotels/results/HotelFilterSidebar";
 import { HotelAffiliateStrip } from "@/components/hotels/results/HotelAffiliateStrip";
 
 import { StructuredData } from "@/components/seo/StructuredData";

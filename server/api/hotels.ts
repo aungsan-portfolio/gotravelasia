@@ -387,6 +387,7 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
   let latestDiagnostics: HotelSearchDiagnostics | undefined;
   let cityResolutionStatus: "resolved" | "unresolved_empty_results" | "auth_error" | "api_error" =
     "unresolved_empty_results";
+  let lastResult: any;
 
   for (const candidate of params.ltCityCandidates) {
     attemptedLtCityIds.push(candidate.cityId);
@@ -400,6 +401,7 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
       params.page,
       params.sort
     )) as any;
+    lastResult = result;
 
     const candidateDiagnostics = (result as any).diagnostics as HotelSearchDiagnostics | undefined;
     latestDiagnostics = candidateDiagnostics ?? latestDiagnostics;
@@ -429,7 +431,7 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
     }
   }
 
-  const finalWarning = (result as any)?.warning || "Live Agoda results are temporarily unavailable.";
+  const finalWarning = lastResult?.warning || "Live Agoda results are temporarily unavailable.";
 
   return {
     source: "agoda" as const,

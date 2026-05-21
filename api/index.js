@@ -4196,6 +4196,8 @@ function sortHotels(hotels, sort) {
   return sorted;
 }
 function getMockHotels(cityId, page, sort) {
+  const baseLat = 13.75 + cityId % 100 / 100 * 5;
+  const baseLng = 100.5 + cityId % 100 / 100 * 5;
   const base = [
     {
       hotelId: `${cityId}-1`,
@@ -4212,6 +4214,8 @@ function getMockHotels(cityId, page, sort) {
       breakfastIncluded: true,
       freeCancellation: true,
       payLater: true,
+      latitude: baseLat + 1e-3,
+      longitude: baseLng + 1e-3,
       provider: "mock"
     },
     {
@@ -4227,6 +4231,8 @@ function getMockHotels(cityId, page, sort) {
       currency: "USD",
       rankingPosition: 2,
       freeCancellation: true,
+      latitude: baseLat + 5e-3,
+      longitude: baseLng - 2e-3,
       provider: "mock"
     },
     {
@@ -4242,6 +4248,8 @@ function getMockHotels(cityId, page, sort) {
       currency: "USD",
       rankingPosition: 3,
       payLater: true,
+      latitude: baseLat - 3e-3,
+      longitude: baseLng + 4e-3,
       provider: "mock"
     },
     {
@@ -4258,6 +4266,8 @@ function getMockHotels(cityId, page, sort) {
       rankingPosition: 4,
       breakfastIncluded: true,
       freeCancellation: true,
+      latitude: baseLat + 8e-3,
+      longitude: baseLng + 5e-3,
       provider: "mock"
     },
     {
@@ -4274,6 +4284,8 @@ function getMockHotels(cityId, page, sort) {
       rankingPosition: 5,
       freeCancellation: true,
       payLater: true,
+      latitude: baseLat - 5e-3,
+      longitude: baseLng - 5e-3,
       provider: "mock"
     },
     {
@@ -4290,6 +4302,8 @@ function getMockHotels(cityId, page, sort) {
       rankingPosition: 6,
       breakfastIncluded: true,
       payLater: true,
+      latitude: baseLat + 0.012,
+      longitude: baseLng - 8e-3,
       provider: "mock"
     }
   ];
