@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, type MouseEvent } from "react";
-import { Heart, MapPin, Star } from "lucide-react";
+import { Heart, MapPin, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatReviewLabel, formatStayNights } from "@/lib/hotels/formatters";
 import { HotelPriceComparison } from "@/components/hotels/results/HotelPriceComparison";
 import type { HotelPriceContext } from "@/lib/hotels/priceContext";
@@ -36,18 +36,24 @@ function HotelCardComponent({
 }: HotelCardProps) {
   const hotelWithOffers = hotel as HotelResultWithOffers;
   const [imageFailed, setImageFailed] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { isSaved, toggleSave } = useWishlist();
   const saved = isSaved(hotel.hotelId);
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
   const explanation = useMemo(() => getPrimaryHotelExplanation(hotel), [hotel]);
 
-  const hasProviderImage =
-    hotel.provider !== "mock" &&
-    typeof hotel.imageUrl === "string" &&
-    hotel.imageUrl.trim().length > 0;
+  const carouselImages = useMemo(() => {
+    if (hotel.provider === "mock") return hotel.imageUrl ? [hotel.imageUrl] : [];
+    if (hotel.images && hotel.images.length > 0) {
+      return hotel.images.slice(0, 5); // Limit to 5 images for the carousel
+    }
+    return hotel.imageUrl ? [hotel.imageUrl] : [];
+  }, [hotel.images, hotel.imageUrl, hotel.provider]);
 
-  const shouldShowImage = hasProviderImage && !imageFailed;
+  const hasImages = carouselImages.length > 0;
+  const shouldShowImage = hasImages && !imageFailed;
+
   const handleOpen = () => {
     onSelect(hotel.hotelId);
     onOpenDetail(hotel.hotelId);
@@ -57,6 +63,18 @@ function HotelCardComponent({
     e.stopPropagation();
     e.preventDefault();
     toggleSave(hotel);
+  };
+
+  const nextImage = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex((prev) => (prev === carouselImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevImage = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex((prev) => (prev === 0 ? carouselImages.length - 1 : prev - 1));
   };
 
   return (
@@ -99,15 +117,54 @@ function HotelCardComponent({
         onClick={handleOpen}
         className="flex flex-col sm:flex-row w-full text-left"
       >
-        <div className="relative w-full sm:w-[260px] shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto bg-slate-100 overflow-hidden">
+        <div className="relative w-full sm:w-[260px] shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto bg-slate-100 overflow-hidden group/image">
           {shouldShowImage ? (
-            <img
-              src={hotel.imageUrl}
-              alt={hotel.name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              onError={() => setImageFailed(true)}
-            />
+            <>
+              <img
+                src={carouselImages[currentImageIndex]}
+                alt={`${hotel.name} - image ${currentImageIndex + 1}`}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                onError={() => setImageFailed(true)}
+              />
+              
+              {/* Carousel Controls */}
+              {carouselImages.length > 1 && (
+                <>
+                  <div className="absolute inset-y-0 left-0 flex items-center px-2 opacity-0 transition-opacity group-hover/image:opacity-100 z-10">
+                    <button
+                      type="button"
+                      onClick={prevImage}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-sm hover:bg-white hover:scale-110 active:scale-95 backdrop-blur-sm transition-all"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 opacity-0 transition-opacity group-hover/image:opacity-100 z-10">
+                    <button
+                      type="button"
+                      onClick={nextImage}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-sm hover:bg-white hover:scale-110 active:scale-95 backdrop-blur-sm transition-all"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Dots */}
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 z-10">
+                    {carouselImages.map((_, i) => (
+                      <div
+                        key={i}
+                        className={[
+                          "h-1.5 rounded-full transition-all shadow-sm",
+                          i === currentImageIndex ? "w-3 bg-white" : "w-1.5 bg-white/60",
+                        ].join(" ")}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-1 text-slate-400">
               <span className="text-3xl">🏨</span>
