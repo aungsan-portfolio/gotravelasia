@@ -1,7 +1,6 @@
 import { memo } from "react";
 
 import type { HotelRichFilters } from "@/lib/hotels/filterEngine";
-import { HOTEL_FILTER_OPTIONS } from "@/hooks/useHotelSearch";
 import type { HotelFilterId } from "@/types/hotels";
 
 export interface HotelFilterSidebarProps {
@@ -62,29 +61,6 @@ function HotelFilterSidebarComponent({
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 xl:flex-col">
-        {HOTEL_FILTER_OPTIONS.map((filter) => {
-          const isActive = activeFilters.includes(filter.id);
-
-          return (
-            <button
-              key={filter.id}
-              type="button"
-              onClick={() => onToggleFilter(filter.id)}
-              title={filter.description}
-              aria-pressed={isActive}
-              className={[
-                "rounded-full border px-3 py-1.5 text-left text-sm transition xl:w-full",
-                isActive
-                  ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              {filter.label}
-            </button>
-          );
-        })}
-      </div>
 
       <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
         <section>

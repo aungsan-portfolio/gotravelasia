@@ -22,6 +22,7 @@ import { ExternalLink, SearchX, List, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HotelPagination } from "@/components/hotels/results/HotelPagination";
 import { HotelAffiliateStrip } from "@/components/hotels/results/HotelAffiliateStrip";
+import { HotelQuickFilterPills } from "@/components/hotels/results/HotelQuickFilterPills";
 
 import { StructuredData } from "@/components/seo/StructuredData";
 import { buildHotelSearchResultSchema } from "@/lib/seo/buildHotelSearchResultSchema";
@@ -253,8 +254,8 @@ export default function HotelSearchResultsPage() {
       {displayHotels.length > 0 && !isLoading && (
         <StructuredData schema={buildHotelSearchResultSchema(displayHotels, window.location.href)} />
       )}
-      <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-slate-50 relative pb-20 xl:pb-6">
+      <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
           Hotels in {cityName}
         </h1>
@@ -364,58 +365,30 @@ export default function HotelSearchResultsPage() {
 
             {!shouldShowAgodaCtaFallback && (
               <>
-                <div className="mt-4 xl:hidden">
-                  <div className="inline-flex w-full rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-                    <button
-                      type="button"
-                      onClick={() => setMobileView("list")}
-                      className={[
-                        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
-                        mobileView === "list"
-                          ? "bg-indigo-600 text-white"
-                          : "text-slate-700 hover:bg-slate-50",
-                      ].join(" ")}
-                    >
-                      <span className="inline-flex items-center justify-center gap-2">
-                        <List className="h-4 w-4" />
-                        List
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMobileView("map")}
-                      className={[
-                        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
-                        mobileView === "map"
-                          ? "bg-indigo-600 text-white"
-                          : "text-slate-700 hover:bg-slate-50",
-                      ].join(" ")}
-                    >
-                      <span className="inline-flex items-center justify-center gap-2">
-                        <MapIcon className="h-4 w-4" />
-                        Map
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
-                  <div className="hidden xl:block">
-                    <HotelFilterSidebar
-                      activeFilters={activeFilters}
-                      richFilters={richFilters}
-                      onToggleFilter={toggleFilter}
-                      onClearFilters={clearFilters}
-                      onSetPriceRange={setPriceRange}
-                      onToggleStarRating={toggleStarRating}
-                      onSetMinGuestRating={setMinGuestRating}
-                      onToggleAmenity={toggleAmenity}
-                      totalFound={totalFound}
-                    />
+                <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[240px_420px_minmax(0,1fr)] 2xl:grid-cols-[280px_460px_minmax(0,1fr)]">
+                  <div className="hidden xl:block relative">
+                    <div className="sticky top-4">
+                      <HotelFilterSidebar
+                        activeFilters={activeFilters}
+                        richFilters={richFilters}
+                        onToggleFilter={toggleFilter}
+                        onClearFilters={clearFilters}
+                        onSetPriceRange={setPriceRange}
+                        onToggleStarRating={toggleStarRating}
+                        onSetMinGuestRating={setMinGuestRating}
+                        onToggleAmenity={toggleAmenity}
+                        totalFound={totalFound}
+                      />
+                    </div>
                   </div>
 
-                  <div className={mobileView === "list" ? "min-w-0" : "hidden xl:block min-w-0"}>
+                  <div className={mobileView === "list" ? "min-w-0 flex flex-col" : "hidden xl:flex min-w-0 flex-col"}>
+                    <div className="mb-4">
+                      <HotelQuickFilterPills
+                        activeFilters={activeFilters}
+                        onToggleFilter={toggleFilter}
+                      />
+                    </div>
                     <HotelResultsList
                       hotels={displayHotels}
                       checkIn={query.checkIn}
@@ -427,7 +400,8 @@ export default function HotelSearchResultsPage() {
                       onOpenHotelDetail={openHotelDetail}
                     />
                   </div>
-                  <div className={mobileView === "map" ? "min-w-0" : "hidden xl:block min-w-0"}>
+
+                  <div className={mobileView === "map" ? "min-w-0 h-[calc(100vh-160px)]" : "hidden xl:block min-w-0 h-[calc(100vh-80px)] sticky top-4"}>
                     <HotelMapPanel
                       hotels={mappedHotels}
                       selectedHotelId={selectedHotelId}
@@ -469,6 +443,29 @@ export default function HotelSearchResultsPage() {
           </>
         )}
       </div>
+      
+      {/* Floating Mobile Toggle Button */}
+      {!shouldShowAgodaCtaFallback && displayHotels.length > 0 && (
+        <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center xl:hidden pointer-events-none">
+          <button
+            type="button"
+            onClick={() => setMobileView(mobileView === "list" ? "map" : "list")}
+            className="pointer-events-auto flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-xl ring-1 ring-white/10 transition-transform active:scale-95"
+          >
+            {mobileView === "list" ? (
+              <>
+                <MapIcon className="h-4 w-4" />
+                Map
+              </>
+            ) : (
+              <>
+                <List className="h-4 w-4" />
+                List
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </main>
     </>
   );

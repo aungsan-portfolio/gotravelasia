@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, type MouseEvent } from "react";
-import { Heart } from "lucide-react";
+import { Heart, MapPin, Star } from "lucide-react";
 import { formatReviewLabel, formatStayNights } from "@/lib/hotels/formatters";
 import { HotelPriceComparison } from "@/components/hotels/results/HotelPriceComparison";
 import type { HotelPriceContext } from "@/lib/hotels/priceContext";
@@ -22,7 +22,6 @@ interface HotelCardProps {
   priceContext: HotelPriceContext;
 }
 type HotelResultWithOffers = HotelResult & { offers?: HotelOffer[] };
-
 
 function HotelCardComponent({
   hotel,
@@ -63,12 +62,12 @@ function HotelCardComponent({
   return (
     <article
       className={[
-        "relative overflow-hidden rounded-xl border bg-white shadow-sm transition",
+        "group relative flex flex-col sm:flex-row overflow-hidden rounded-xl border bg-white transition hover:-translate-y-0.5 hover:shadow-md",
         isSelected
-          ? "border-indigo-500 ring-2 ring-indigo-200"
+          ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
           : isHovered
             ? "border-slate-400"
-            : "border-slate-200",
+            : "border-slate-200 shadow-sm",
       ].join(" ")}
       onMouseEnter={() => onHover(hotel.hotelId)}
       onMouseLeave={() => onHover(null)}
@@ -80,13 +79,13 @@ function HotelCardComponent({
         aria-pressed={saved}
         data-testid={`hotel-wishlist-toggle-${hotel.hotelId}`}
         className={[
-          "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-110 active:scale-95",
+          "absolute right-3 top-3 sm:left-3 sm:right-auto z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-110 active:scale-95",
           saved ? "" : "hover:bg-white",
         ].join(" ")}
       >
         <Heart
           className={[
-            "h-5 w-5 transition-colors",
+            "h-4 w-4 transition-colors",
             saved
               ? "fill-rose-500 text-rose-500"
               : "text-slate-600 hover:text-rose-500",
@@ -98,15 +97,15 @@ function HotelCardComponent({
       <button
         type="button"
         onClick={handleOpen}
-        className="grid w-full grid-cols-1 text-left md:grid-cols-[220px_1fr]"
+        className="flex flex-col sm:flex-row w-full text-left"
       >
-        <div className="h-48 bg-slate-100 md:h-full">
+        <div className="relative w-full sm:w-[260px] shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto bg-slate-100 overflow-hidden">
           {shouldShowImage ? (
             <img
               src={hotel.imageUrl}
               alt={hotel.name}
               loading="lazy"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               onError={() => setImageFailed(true)}
             />
           ) : (
@@ -119,64 +118,73 @@ function HotelCardComponent({
           )}
         </div>
 
-        <div className="flex flex-col gap-3 p-4">
+        <div className="flex flex-1 flex-col p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="text-lg font-semibold text-slate-900">{hotel.name}</h3>
-              <p className="line-clamp-1 text-sm text-slate-600">
-                {hotel.address || "Location unavailable"}
-              </p>
+              <h3 className="text-lg font-bold text-slate-900 transition-colors group-hover:text-indigo-700">
+                {hotel.name}
+              </h3>
+              <div className="flex items-center gap-1 mt-0.5 text-sm text-slate-500">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <p className="line-clamp-1">{hotel.address || "Location unavailable"}</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-amber-600">
-              {"★".repeat(hotel.stars || 0)}
-            </span>
+            <div className="flex text-amber-500 shrink-0">
+              {Array.from({ length: hotel.stars || 0 }).map((_, i) => (
+                <Star key={i} className="h-3.5 w-3.5 fill-current" />
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-slate-700">
-            <span className="rounded bg-indigo-600 px-2 py-0.5 font-semibold text-white">
+          <div className="mt-2.5 flex items-center gap-2 text-sm text-slate-700">
+            <span className="rounded bg-indigo-600 px-1.5 py-0.5 font-bold text-white text-xs">
               {hotel.reviewScore?.toFixed(1) || "New"}
             </span>
-            <span>
+            <span className="font-medium">
               {hotel.reviewScore ? formatReviewLabel(hotel.reviewScore) : "No rating"}
             </span>
-            <span className="text-slate-500">
+            <span className="text-slate-500 text-xs">
               ({hotel.reviewCount?.toLocaleString() || 0} reviews)
             </span>
           </div>
 
-          {badges.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+          {(badges.length > 0 || explanation) && (
+            <div className="mt-3 flex flex-wrap gap-2">
               {badges.map((badge) => (
                 <span
                   key={`${hotel.hotelId}-${badge.id}`}
-                  className={badge.className}
+                  className={badge.className + " text-xs"}
                   title={badge.description}
                 >
                   {badge.label}
                 </span>
               ))}
+              {explanation && (
+                <span className="rounded bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
+                  {explanation}
+                </span>
+              )}
             </div>
           )}
 
-          {explanation && (
-            <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
-              {explanation}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            {(hotel.amenities || []).slice(0, 3).map((amenity) => (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(hotel.amenities || []).slice(0, 4).map((amenity) => (
               <span
                 key={amenity}
-                className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
+                className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 font-medium"
               >
                 {amenity}
               </span>
             ))}
+            {(hotel.amenities?.length || 0) > 4 && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 font-medium">
+                +{(hotel.amenities?.length || 0) - 4} more
+              </span>
+            )}
           </div>
 
-          <div className="mt-1 flex items-end justify-between">
-            <div className="text-sm text-slate-500">
+          <div className="mt-auto pt-4 flex items-end justify-between border-t border-slate-100 mt-4">
+            <div className="text-xs text-slate-500 font-medium">
               {formatStayNights(checkIn, checkOut)}
             </div>
 
