@@ -1,7 +1,8 @@
-import { memo, useMemo, useState, type MouseEvent } from "react";
+import { memo, useMemo, type MouseEvent } from "react";
 import { Heart, MapPin, Star } from "lucide-react";
 import { formatReviewLabel, formatStayNights } from "@/lib/hotels/formatters";
 import { HotelPriceComparison } from "@/components/hotels/results/HotelPriceComparison";
+import { HotelImageCarousel } from "@/components/hotels/results/HotelImageCarousel";
 import type { HotelPriceContext } from "@/lib/hotels/priceContext";
 import type { HotelOffer, HotelResult } from "@shared/hotels/types";
 import {
@@ -35,19 +36,24 @@ function HotelCardComponent({
   priceContext,
 }: HotelCardProps) {
   const hotelWithOffers = hotel as HotelResultWithOffers;
-  const [imageFailed, setImageFailed] = useState(false);
   const { isSaved, toggleSave } = useWishlist();
   const saved = isSaved(hotel.hotelId);
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
   const explanation = useMemo(() => getPrimaryHotelExplanation(hotel), [hotel]);
 
-  const hasProviderImage =
-    hotel.provider !== "mock" &&
-    typeof hotel.imageUrl === "string" &&
-    hotel.imageUrl.trim().length > 0;
-
-  const shouldShowImage = hasProviderImage && !imageFailed;
+  // Build a deduped image list. Agoda Long Tail v1 returns a single image
+  // per hotel today, but the carousel is ready to display up to 5 once we
+  // enrich results with the hotel detail API.
+  const carouselImages = useMemo(() => {
+    if (hotel.provider === "mock") return [];
+    const list: string[] = [];
+    if (hotel.imageUrl) list.push(hotel.imageUrl);
+    for (const src of hotel.images ?? []) {
+      if (src && !list.includes(src)) list.push(src);
+    }
+    return list.slice(0, 5);
+  }, [hotel.provider, hotel.imageUrl, hotel.images]);
 
   const handleOpen = () => {
     onSelect(hotel.hotelId);
@@ -101,28 +107,24 @@ function HotelCardComponent({
       >
         {/* Image column */}
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 sm:aspect-auto sm:h-full">
-          {shouldShowImage ? (
-            <img
-              src={hotel.imageUrl}
-              alt={hotel.name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              onError={() => setImageFailed(true)}
-            />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-1 text-slate-400">
-              <span className="text-3xl" aria-hidden="true">
-                {"\u{1F3E8}"}
-              </span>
-              <span className="text-xs font-medium">
-                {hotel.provider === "mock" ? "Sample hotel" : "Image unavailable"}
-              </span>
-            </div>
-          )}
+          <HotelImageCarousel
+            images={carouselImages}
+            alt={hotel.name}
+            fallback={
+              <div className="flex h-full flex-col items-center justify-center gap-1 text-slate-400">
+                <span className="text-3xl" aria-hidden="true">
+                  {"\u{1F3E8}"}
+                </span>
+                <span className="text-xs font-medium">
+                  {hotel.provider === "mock" ? "Sample hotel" : "Image unavailable"}
+                </span>
+              </div>
+            }
+          />
 
           {/* Top-left badge for first/best deal-style emphasis */}
           {badges[0] && (
-            <div className="absolute left-3 top-3">
+            <div className="pointer-events-none absolute left-3 top-3 z-10">
               <span
                 className={[
                   "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm",
