@@ -130,6 +130,21 @@ export function normalizeHotelSearchParams(
     );
   }
 
+  // Auto-correct past dates: Agoda rejects requests where check-in is before today.
+  // If the requested check-in is in the past (e.g. an old saved/shared link), fall
+  // back to the default future-date window so the user still sees live results.
+  const todayIso = toIsoDate(new Date());
+  if (normalized.checkIn < todayIso) {
+    normalized.checkIn = defaults.checkIn;
+    normalized.checkOut = defaults.checkOut;
+  } else if (normalized.checkOut <= normalized.checkIn) {
+    normalized.checkOut = toIsoDate(
+      new Date(
+        new Date(`${normalized.checkIn}T00:00:00Z`).getTime() + 3 * MS_PER_DAY
+      )
+    );
+  }
+
   return normalized;
 }
 
