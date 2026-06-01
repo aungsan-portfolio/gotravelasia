@@ -4,14 +4,7 @@
  * Includes model fallback chain and retry logic for rate limiting.
  */
 
-const GEMINI_API_KEY = "AIzaSyB7o2LVBGvxlmzR3eBc-SkLU-AwDgWZZmA";
 
-// Model fallback chain — try flash first, fallback to flash-lite
-const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
-
-function getApiUrl(model: string) {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-}
 
 // ── Asia travel system prompt ──
 const SYSTEM_PROMPT = `You are GoTravel AI — a friendly flight & travel assistant for Myanmar and international travelers.
