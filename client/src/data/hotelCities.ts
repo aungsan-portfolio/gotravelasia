@@ -16,7 +16,7 @@ export const hotelCitiesRegistry: Record<string, HotelCitySEOData> = {
     slug: "bangkok",
     cityName: "Bangkok",
     country: "Thailand",
-    title: "Bangkok Hotels: Best Places to Stay in 2026 | GoTravel Asia",
+    title: `Bangkok Hotels: Best Places to Stay in ${new Date().getFullYear()} | GoTravel Asia`,
     description: "Find the best areas to stay in Bangkok, Thailand. Compare hotel options from budget stays to luxury resorts along the Chao Phraya River.",
     canonicalPath: "/hotels/bangkok",
     heroImage: "/images/bangkok.webp",

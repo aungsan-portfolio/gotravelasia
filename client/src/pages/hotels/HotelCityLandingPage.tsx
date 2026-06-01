@@ -4,6 +4,7 @@ import { hotelCitiesRegistry } from "@/data/hotelCities";
 import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import { StructuredData } from "@/components/seo/StructuredData";
 import HotelsSearchForm from "@/components/hotels/HotelsSearchForm";
+import { SITE_URL } from "@/lib/config";
 
 export default function HotelCityLandingPage() {
   const [match, params] = useRoute("/hotels/:city");
@@ -21,31 +22,43 @@ export default function HotelCityLandingPage() {
     return <Redirect to={`/hotels?city=${encodeURIComponent(citySlug)}`} />;
   }
 
-  // Schema.org CollectionPage and BreadcrumbList
+  // Schema.org CollectionPage and BreadcrumbList using @graph
   const schema = {
     "@context": "https://schema.org",
-    "@type": ["CollectionPage", "BreadcrumbList"],
-    "name": cityData.title,
-    "description": cityData.description,
-    "url": `https://gotravel-asia.vercel.app${cityData.canonicalPath}`,
-    "itemListElement": [
+    "@graph": [
       {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://gotravel-asia.vercel.app/"
+        "@type": "CollectionPage",
+        "@id": `${SITE_URL}${cityData.canonicalPath}#webpage`,
+        "url": `${SITE_URL}${cityData.canonicalPath}`,
+        "name": cityData.title,
+        "description": cityData.description,
+        "isPartOf": {
+          "@id": `${SITE_URL}/#website`
+        }
       },
       {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Hotels",
-        "item": "https://gotravel-asia.vercel.app/hotels"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": cityData.cityName,
-        "item": `https://gotravel-asia.vercel.app${cityData.canonicalPath}`
+        "@type": "BreadcrumbList",
+        "@id": `${SITE_URL}${cityData.canonicalPath}#breadcrumb`,
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": `${SITE_URL}/`
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Hotels",
+            "item": `${SITE_URL}/hotels`
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": cityData.cityName,
+            "item": `${SITE_URL}${cityData.canonicalPath}`
+          }
+        ]
       }
     ]
   };
@@ -55,7 +68,7 @@ export default function HotelCityLandingPage() {
       <Helmet>
         <title>{cityData.title}</title>
         <meta name="description" content={cityData.description} />
-        <link rel="canonical" href={`https://gotravel-asia.vercel.app${cityData.canonicalPath}`} />
+        <link rel="canonical" href={`${SITE_URL}${cityData.canonicalPath}`} />
       </Helmet>
 
       <StructuredData schema={schema} />

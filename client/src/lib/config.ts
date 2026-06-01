@@ -1,4 +1,5 @@
 export const WEB3FORMS_KEY = import.meta.env.VITE_WEB3FORMS_KEY || "";
+export const SITE_URL = import.meta.env.VITE_SITE_URL || "https://gotravel-asia.vercel.app";
 
 export const AFFILIATE = {
   AGODA_CID: "1959281",
