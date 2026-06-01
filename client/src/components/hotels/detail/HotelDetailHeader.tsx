@@ -122,14 +122,20 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
             >
               {activeImages.map((imageUrl, index) => (
                 <div key={imageUrl} className="relative h-full w-full shrink-0 snap-center bg-slate-100">
-                  <img
-                    src={imageUrl}
-                    alt={`${hotel.name} photo ${index + 1}`}
-                    loading={index === 0 ? "eager" : "lazy"}
+                  <button
+                    type="button"
                     onClick={() => openGallery(index)}
-                    className="h-full w-full object-cover cursor-pointer"
-                    onError={() => handleImageError(imageUrl)}
-                  />
+                    className="h-full w-full block text-left"
+                    aria-label={`View full screen image ${index + 1} of ${hotel.name}`}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`${hotel.name} photo ${index + 1}`}
+                      loading={index === 0 ? "eager" : "lazy"}
+                      className="h-full w-full object-cover"
+                      onError={() => handleImageError(imageUrl)}
+                    />
+                  </button>
                 </div>
               ))}
             </div>
