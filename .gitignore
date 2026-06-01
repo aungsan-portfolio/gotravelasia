@@ -128,3 +128,11 @@ test-results/
 playwright-report/
 blob-report/
 
+
+# AI Debug and Scratch Files
+scratch/
+.backup/
+
+# Vercel Generated Entrypoint
+api/index.js
+
