@@ -231,8 +231,10 @@ export default function HotelSearchResultsPage() {
       checkOut: query.checkOut,
       errorMessage,
       source: "hotel_results",
+      entryPoint: routeMeta?.extraQuery?.entryPoint,
+      canonicalPath: routeMeta?.extraQuery?.canonicalPath,
     });
-  }, [errorMessage, isLoading, query.checkIn, query.checkOut, query.city]);
+  }, [errorMessage, isLoading, query.checkIn, query.checkOut, query.city, routeMeta]);
 
   useEffect(() => {
     if (isLoading || errorMessage || visibleHotels.length !== 0) {
