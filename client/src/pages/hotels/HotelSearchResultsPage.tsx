@@ -239,7 +239,7 @@ export default function HotelSearchResultsPage() {
       return;
     }
 
-    const impressionKey = `${query.city}-${query.checkIn}-${query.checkOut}`;
+    const impressionKey = `${query.city}-${query.checkIn}-${query.checkOut}-${query.adults}-${query.rooms}-${query.sort}-${routeMeta?.extraQuery?.entryPoint}`;
     if (trackedNoResultsKey.current === impressionKey) return;
 
     trackedNoResultsKey.current = impressionKey;
@@ -249,6 +249,8 @@ export default function HotelSearchResultsPage() {
       checkOut: query.checkOut,
       resultCount: 0,
       source: "hotel_results",
+      entryPoint: routeMeta?.extraQuery?.entryPoint,
+      canonicalPath: routeMeta?.extraQuery?.canonicalPath,
     });
   }, [
     errorMessage,
@@ -256,7 +258,11 @@ export default function HotelSearchResultsPage() {
     query.checkIn,
     query.checkOut,
     query.city,
+    query.adults,
+    query.rooms,
+    query.sort,
     visibleHotels.length,
+    routeMeta,
   ]);
 
   return (
@@ -356,6 +362,8 @@ export default function HotelSearchResultsPage() {
                           checkIn: query.checkIn,
                           checkOut: query.checkOut,
                           source: "no_results_fallback",
+                          entryPoint: routeMeta?.extraQuery?.entryPoint,
+                          canonicalPath: routeMeta?.extraQuery?.canonicalPath,
                         });
                       }}
                       target="_blank"

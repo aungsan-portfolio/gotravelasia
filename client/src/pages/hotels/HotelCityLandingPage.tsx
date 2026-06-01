@@ -11,20 +11,11 @@ import { trackHotelCityLandingView } from "@/lib/hotels/tracking";
 export default function HotelCityLandingPage() {
   const [match, params] = useRoute("/hotels/:city");
   
-  if (!match || !params?.city) {
-    return <Redirect to="/hotels" />;
-  }
-
-  const citySlug = params.city.toLowerCase().trim();
+  const citySlug = params?.city?.toLowerCase().trim() || "";
   const cityData = hotelCitiesRegistry[citySlug];
 
-  // Graceful fallback for unsupported SEO cities: 
-  // redirect to the standard search page with the city prefilled in the query.
-  if (!cityData) {
-    return <Redirect to={`/hotels?city=${encodeURIComponent(citySlug)}`} />;
-  }
-
   useEffect(() => {
+    if (!cityData) return;
     trackHotelCityLandingView({
       city: cityData.slug,
       cityName: cityData.cityName,
@@ -32,6 +23,16 @@ export default function HotelCityLandingPage() {
       entryPoint: "hotel_city_page",
     });
   }, [cityData]);
+
+  if (!match || !params?.city) {
+    return <Redirect to="/hotels" />;
+  }
+
+  // Graceful fallback for unsupported SEO cities: 
+  // redirect to the standard search page with the city prefilled in the query.
+  if (!cityData) {
+    return <Redirect to={`/hotels?city=${encodeURIComponent(citySlug)}`} />;
+  }
 
   // Schema.org CollectionPage and BreadcrumbList using @graph
   const schema = {

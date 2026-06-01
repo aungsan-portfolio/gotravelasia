@@ -6,6 +6,7 @@ import {
   defaultHotelDates,
   normalizeHotelSearchParams,
 } from "@shared/hotels/searchParams";
+import { trackHotelSearchSubmit } from "@/lib/hotels/tracking";
 
 interface Props {
   layout?: "default" | "compact";
@@ -97,6 +98,16 @@ export default function HotelsSearchForm({
       rooms,
       page: 1,
       sort: "rank",
+    });
+    
+    trackHotelSearchSubmit({
+      city: citySlug,
+      checkIn,
+      checkOut,
+      adults,
+      rooms,
+      entryPoint,
+      canonicalPath,
     });
     
     if (entryPoint) params.set("entryPoint", entryPoint);
