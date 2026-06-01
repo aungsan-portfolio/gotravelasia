@@ -114,10 +114,17 @@ function HotelCardComponent({
           aria-hidden="true"
         />
       </button>
-      <button
-        type="button"
+      <div
         onClick={handleOpen}
-        className="flex flex-col sm:flex-row w-full text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleOpen();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        className="flex flex-col sm:flex-row w-full text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
       >
         <div className="relative w-full sm:w-[260px] shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto bg-slate-100 overflow-hidden group/image">
           {shouldShowImage ? (
@@ -254,7 +261,7 @@ function HotelCardComponent({
             />
           </div>
         </div>
-      </button>
+      </div>
     </article>
   );
 }

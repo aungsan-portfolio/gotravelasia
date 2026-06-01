@@ -35,16 +35,28 @@ function GalleryImage({
   onError: (src: string) => void;
   onClick?: () => void;
 }) {
+  const content = (
+    <img
+      src={src}
+      alt={alt}
+      loading={loading}
+      className="h-full w-full object-cover transition hover:opacity-95"
+      onError={() => onError(src)}
+    />
+  );
+
   return (
     <div className={["relative overflow-hidden bg-slate-100", roundedClassName].filter(Boolean).join(" ")}>
-      <img
-        src={src}
-        alt={alt}
-        loading={loading}
-        onClick={onClick}
-        className="h-full w-full cursor-pointer object-cover transition hover:opacity-95"
-        onError={() => onError(src)}
-      />
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className="h-full w-full block text-left"
+          aria-label={`View full screen image of ${alt}`}
+        >
+          {content}
+        </button>
+      ) : content}
     </div>
   );
 }
