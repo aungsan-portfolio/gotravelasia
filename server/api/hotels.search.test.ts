@@ -263,6 +263,16 @@ describe("hotel search api", () => {
     expect((res.body as any)?.hotels).toEqual([]);
   });
 
+  it("enables mock fallback when ALLOW_HOTEL_MOCKS is true", async () => {
+    setLiveAgodaEnv({ ALLOW_HOTEL_MOCKS: "true" });
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" } as Response);
+    const res = createRes();
+    await runSearch(buildReq("4"), res);
+    expect((res.body as any)?.meta?.source).toBe("mock");
+    expect((res.body as any)?.hotels.length).toBeGreaterThan(0);
+  });
+
+
   it("bangkok has Agoda LT city override", () => {
     expect(getCityBySlug("bangkok")?.agodaLtCityId).toBe(9395);
   });

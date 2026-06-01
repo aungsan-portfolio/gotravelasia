@@ -139,6 +139,10 @@ function buildDiagnostics(
   };
 }
 
+function shouldAllowHotelMocks(): boolean {
+  return process.env.ALLOW_HOTEL_MOCKS === "true";
+}
+
 function extractAgodaErrorDiagnostics(
   payload: Record<string, unknown>
 ): Record<string, unknown> {
@@ -182,7 +186,7 @@ async function fetchAgodaHotels(
   }
 
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
-  const allowMockFallback = true; // Always allow mock fallback so user gets results immediately
+  const allowMockFallback = shouldAllowHotelMocks();
 
   try {
     if (!AGODA_SITE_ID || !AGODA_API_KEY) {
