@@ -8,11 +8,21 @@ import { agodaHotelUrl } from "../../lib/hotels/affiliate.js";
 
 const PAGE_SIZE = 20;
 
-function normalizeImageUrl(url: any): string {
-  if (typeof url === "string" && url.startsWith("http://")) {
-    return `https://${url.slice("http://".length)}`;
+function normalizeImageUrl(url: any): string | undefined {
+  if (typeof url !== "string") return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`;
   }
-  return typeof url === "string" ? url : "";
+  if (trimmed.startsWith("http://")) {
+    return `https://${trimmed.slice("http://".length)}`;
+  }
+  if (trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return undefined;
 }
 
 function buildFallbackCoordinates(city: HotelSearchCity, index: number) {
@@ -162,6 +172,9 @@ function buildPriceDisplay(lowestRate: number, currency: string, nights: number)
 }
 
 function normalizeHotelImages(rawHotel: any): string[] {
+  const extractNested = (arr: any) => 
+    Array.isArray(arr) ? arr.map((img: any) => typeof img === 'object' ? (img?.url ?? img?.link ?? img) : img) : [];
+
   const rawImages = [
     rawHotel.imageUrl,
     rawHotel.imageURL,
@@ -174,8 +187,10 @@ function normalizeHotelImages(rawHotel: any): string[] {
     rawHotel.hotelImageUrl,
     rawHotel.hotelImageURL,
     rawHotel.image?.url,
-    ...(Array.isArray(rawHotel.images) ? rawHotel.images.map((img: any) => img?.url ?? img) : []),
-    ...(Array.isArray(rawHotel.photos) ? rawHotel.photos.map((img: any) => img?.url ?? img) : []),
+    ...extractNested(rawHotel.images),
+    ...extractNested(rawHotel.photos),
+    ...extractNested(rawHotel.photoList),
+    ...extractNested(rawHotel.hotelImages),
   ];
 
   return Array.from(
@@ -184,9 +199,31 @@ function normalizeHotelImages(rawHotel: any): string[] {
         .map(asNonEmptyString)
         .filter((value): value is string => Boolean(value))
         .map(normalizeImageUrl)
-        .filter(Boolean),
+        .filter((val): val is string => Boolean(val)),
     ),
   );
+}
+
+function normalizeAddress(rawHotel: any, city: HotelSearchCity): string {
+  const exactAddress = asNonEmptyString(rawHotel.address) ?? 
+                       asNonEmptyString(rawHotel.addressLine1) ?? 
+                       asNonEmptyString(rawHotel.location?.address);
+  if (exactAddress) return exactAddress;
+  
+  const areaName = asNonEmptyString(rawHotel.areaName) ?? 
+                   asNonEmptyString(rawHotel.district) ?? 
+                   asNonEmptyString(rawHotel.neighborhood) ?? 
+                   asNonEmptyString(rawHotel.location?.areaName) ?? 
+                   asNonEmptyString(rawHotel.location?.district) ??
+                   asNonEmptyString(rawHotel.location?.neighborhood);
+  if (areaName) return `Near ${areaName}`;
+  
+  const cityName = asNonEmptyString(rawHotel.cityName) ?? 
+                   asNonEmptyString(rawHotel.location?.cityName) ?? 
+                   asNonEmptyString(city.name);
+  if (cityName) return `Near ${cityName}`;
+  
+  return "";
 }
 
 export function normalizeHotel(
@@ -258,13 +295,7 @@ export function normalizeHotel(
     stars,
     reviewScore,
     reviewCount,
-    address: asNonEmptyString(rawHotel.address) ?? 
-             asNonEmptyString(rawHotel.addressLine1) ?? 
-             asNonEmptyString(rawHotel.areaName) ?? 
-             asNonEmptyString(rawHotel.cityName) ?? 
-             asNonEmptyString(rawHotel.location?.address) ?? 
-             asNonEmptyString(rawHotel.location?.areaName) ?? 
-             asNonEmptyString(rawHotel.location?.cityName) ?? "",
+    address: normalizeAddress(rawHotel, city),
     imageUrl,
     images,
     amenities,

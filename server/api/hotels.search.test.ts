@@ -336,8 +336,8 @@ describe("hotel search api", () => {
     } as Response);
     const res = createRes();
     await runSearch(buildReq("1"), res);
-    expect((res.body as any).hotels[0].address).toBe("Sukhumvit");
-    expect((res.body as any).hotels[1].address).toBe("Riverside");
+    expect((res.body as any).hotels[0].address).toBe("Near Sukhumvit");
+    expect((res.body as any).hotels[1].address).toBe("Near Riverside");
   });
 
   it("builds Agoda LT candidates with verified LT id first", () => {
