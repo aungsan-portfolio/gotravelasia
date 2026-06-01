@@ -360,6 +360,20 @@ export default function HotelSearchResultsPage() {
                     </button>
                   </div>
                 )}
+
+                {/* Popular Destinations Internal Links */}
+                {meta?.emptyStateReason !== "no_filter_matches" && (
+                  <div className="mt-8 pt-8 border-t border-slate-200">
+                    <h3 className="text-sm font-medium text-slate-900 mb-4">Explore Popular Destinations</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      <a href="/hotels/bangkok" className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium">Bangkok</a>
+                      <a href="/hotels/phuket" className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium">Phuket</a>
+                      <a href="/hotels/chiang-mai" className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium">Chiang Mai</a>
+                      <a href="/hotels/singapore" className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium">Singapore</a>
+                      <a href="/hotels/bali" className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium">Bali</a>
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 

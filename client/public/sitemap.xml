@@ -55,6 +55,33 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Hotel City Pages -->
+  <url>
+    <loc>https://gotravel-asia.vercel.app/hotels/bangkok</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gotravel-asia.vercel.app/hotels/phuket</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gotravel-asia.vercel.app/hotels/chiang-mai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gotravel-asia.vercel.app/hotels/singapore</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gotravel-asia.vercel.app/hotels/bali</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Blog -->
   <url>
     <loc>https://gotravel-asia.vercel.app/blog</loc>

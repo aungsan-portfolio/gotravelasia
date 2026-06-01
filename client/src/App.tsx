@@ -33,6 +33,7 @@ const TransportPage = lazy(() => import("./pages/TransportPage"));
 const HotelsPage = lazy(() => import("./pages/hotels/HotelSearchResultsPage"));
 const HotelDetailPage = lazy(() => import("./pages/hotels/HotelDetailPage"));
 const SavedHotelsPage = lazy(() => import("./pages/hotels/SavedHotelsPage"));
+const HotelCityLandingPage = lazy(() => import("./pages/hotels/HotelCityLandingPage"));
 
 function PageLoader() {
   return (
@@ -71,7 +72,7 @@ function Router() {
         <Route path="/hotels/:destination/:checkIn/:checkOut/:party" component={HotelsPage} />
         <Route path="/hotels" component={HotelsPage} />
         <Route path="/transport" component={TransportPage} />
-        <Route path="/hotels/:city" component={DestinationLandingPage} />
+        <Route path="/hotels/:city" component={HotelCityLandingPage} />
         <Route path="/hotels/:city/:hotel" component={DestinationLandingPage} />
 
         <Route path="/flights/:originCode/:destinationCode" component={FlightDestinationPage} />
