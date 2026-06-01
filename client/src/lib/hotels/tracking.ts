@@ -30,6 +30,8 @@ export interface HotelTrackingContext {
   freeCancellation?: boolean;
   payLater?: boolean;
   breakfastIncluded?: boolean;
+  entryPoint?: string;
+  canonicalPath?: string;
 }
 
 function sanitizeString(value?: string): string | undefined {
@@ -86,6 +88,8 @@ export function buildHotelTrackingPayload(
   const freeCancellation = sanitizeBoolean(context.freeCancellation);
   const payLater = sanitizeBoolean(context.payLater);
   const breakfastIncluded = sanitizeBoolean(context.breakfastIncluded);
+  const entryPoint = sanitizeString(context.entryPoint);
+  const canonicalPath = sanitizeString(context.canonicalPath);
 
   if (hotelId) payload.hotelId = hotelId;
   if (city) payload.city = city;
@@ -113,6 +117,8 @@ export function buildHotelTrackingPayload(
   if (freeCancellation != null) payload.freeCancellation = freeCancellation;
   if (payLater != null) payload.payLater = payLater;
   if (breakfastIncluded != null) payload.breakfastIncluded = breakfastIncluded;
+  if (entryPoint) payload.entryPoint = entryPoint;
+  if (canonicalPath) payload.canonicalPath = canonicalPath;
 
   // Handle polymorphic filterValue
   if (typeof context.filterValue === "string") {
@@ -227,4 +233,8 @@ export function trackHotelOfferImpression(context: HotelTrackingContext): void {
 
 export function trackHotelOfferClick(context: HotelTrackingContext): void {
   trackHotelEvent("hotel_offer_click", context);
+}
+
+export function trackHotelCityLandingView(context: HotelTrackingContext): void {
+  trackHotelEvent("hotel_city_landing_view", context);
 }

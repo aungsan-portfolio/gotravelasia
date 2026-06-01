@@ -55,10 +55,20 @@ export function resolveHotelRouteState(
   // 2. Attempt to parse as canonical path
   const canonicalParts = parseCanonicalPath(pathname);
   if (!canonicalParts) {
+    const rawQueryParams = new URLSearchParams(searchString);
+    const extraQuery: Record<string, string> = {};
+    for (const [key, value] of rawQueryParams.entries()) {
+      if (!KNOWN_QUERY_KEYS.has(key)) {
+        extraQuery[key] = value;
+      }
+    }
+    
     return {
       query: legacyQuery,
       routeMode: "legacy",
-      routeMeta: null,
+      routeMeta: {
+        extraQuery: Object.keys(extraQuery).length ? extraQuery : undefined,
+      },
     };
   }
 

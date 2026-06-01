@@ -15,6 +15,8 @@ interface Props {
   initialAdults?: number;
   initialRooms?: number;
   submitLabel?: string;
+  entryPoint?: string;
+  canonicalPath?: string;
 }
 
 export default function HotelsSearchForm({
@@ -25,6 +27,8 @@ export default function HotelsSearchForm({
   initialAdults,
   initialRooms,
   submitLabel = "Compare Prices",
+  entryPoint,
+  canonicalPath,
 }: Props) {
   const [, setLocation] = useLocation();
   const defaults = useMemo(() => defaultHotelDates(), []);
@@ -94,6 +98,10 @@ export default function HotelsSearchForm({
       page: 1,
       sort: "rank",
     });
+    
+    if (entryPoint) params.set("entryPoint", entryPoint);
+    if (canonicalPath) params.set("canonicalPath", canonicalPath);
+
     setLocation(`/hotels?${params.toString()}`);
   };
 

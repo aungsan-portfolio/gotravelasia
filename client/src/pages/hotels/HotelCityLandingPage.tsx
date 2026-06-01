@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useRoute, Redirect } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { hotelCitiesRegistry } from "@/data/hotelCities";
@@ -5,6 +6,7 @@ import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import { StructuredData } from "@/components/seo/StructuredData";
 import HotelsSearchForm from "@/components/hotels/HotelsSearchForm";
 import { SITE_URL } from "@/lib/config";
+import { trackHotelCityLandingView } from "@/lib/hotels/tracking";
 
 export default function HotelCityLandingPage() {
   const [match, params] = useRoute("/hotels/:city");
@@ -21,6 +23,15 @@ export default function HotelCityLandingPage() {
   if (!cityData) {
     return <Redirect to={`/hotels?city=${encodeURIComponent(citySlug)}`} />;
   }
+
+  useEffect(() => {
+    trackHotelCityLandingView({
+      city: cityData.slug,
+      cityName: cityData.cityName,
+      canonicalPath: cityData.canonicalPath,
+      entryPoint: "hotel_city_page",
+    });
+  }, [cityData]);
 
   // Schema.org CollectionPage and BreadcrumbList using @graph
   const schema = {
@@ -103,7 +114,12 @@ export default function HotelCityLandingPage() {
         <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-10">
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
             <h2 className="text-xl font-bold text-slate-800 mb-4">Search {cityData.cityName} Hotels</h2>
-            <HotelsSearchForm initialCity={cityData.slug} layout="compact" />
+            <HotelsSearchForm 
+              initialCity={cityData.slug} 
+              layout="compact" 
+              entryPoint="hotel_city_page"
+              canonicalPath={cityData.canonicalPath}
+            />
           </div>
         </div>
 

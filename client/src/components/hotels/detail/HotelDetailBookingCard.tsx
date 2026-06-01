@@ -1,9 +1,11 @@
+import { useEffect, useRef } from "react";
 import type { HotelResult } from "@shared/hotels/types";
 import { buildOutboundDealUrl } from "@/lib/hotels/buildOutboundDealUrl";
 import { buildHotelOutboundRedirectUrl } from "@/lib/hotels/buildHotelOutboundRedirectUrl";
 import {
   trackHotelBookClick,
   trackHotelOutboundRedirectClick,
+  trackHotelOfferImpression,
 } from "@/lib/hotels/tracking";
 import {
   ProviderOfferList,
@@ -64,6 +66,29 @@ export function HotelDetailBookingCard({
       };
     })
     .filter((provider) => Boolean(provider.url));
+
+  const trackedLegacyImpressionsRef = useRef(false);
+
+  useEffect(() => {
+    if (hasOfferList || legacyProviders.length === 0) return;
+    if (trackedLegacyImpressionsRef.current) return;
+    
+    trackedLegacyImpressionsRef.current = true;
+
+    for (const [index, provider] of legacyProviders.entries()) {
+      trackHotelOfferImpression({
+        hotelId: hotel.hotelId,
+        city,
+        checkIn,
+        checkOut,
+        sort,
+        resultPosition,
+        provider: provider.key,
+        offerRank: index + 1,
+        source: "hotel_detail_booking_card",
+      });
+    }
+  }, [hasOfferList, legacyProviders, hotel.hotelId, city, checkIn, checkOut, sort, resultPosition]);
 
   return (
     <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

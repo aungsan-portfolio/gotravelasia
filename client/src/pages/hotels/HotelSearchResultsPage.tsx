@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { HotelFilterSidebar } from "@/components/hotels/results/HotelFilterSidebar";
 import { HotelResultsToolbar } from "@/components/hotels/results/HotelResultsToolbar";
@@ -14,6 +14,7 @@ import {
   trackHotelSearchError,
   trackHotelSearchView,
   trackHotelSelect,
+  trackHotelOutboundRedirectClick,
 } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
@@ -69,6 +70,8 @@ export default function HotelSearchResultsPage() {
   const [isSearchingArea, setIsSearchingArea] = useState(false);
   const [areaFilteredHotels, setAreaFilteredHotels] = useState<typeof visibleHotels | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  
+  const trackedNoResultsKey = useRef<string | null>(null);
 
   const handleSearchArea = useCallback((mapBounds: MarkerBounds) => {
     setIsSearchingArea(true);
@@ -204,6 +207,8 @@ export default function HotelSearchResultsPage() {
       city: query.city,
       checkIn: query.checkIn,
       checkOut: query.checkOut,
+      entryPoint: routeMeta?.extraQuery?.entryPoint,
+      canonicalPath: routeMeta?.extraQuery?.canonicalPath,
     });
   }, [
     isLoading,
@@ -212,6 +217,7 @@ export default function HotelSearchResultsPage() {
     query.city,
     query.checkIn,
     query.checkOut,
+    routeMeta,
   ]);
 
   useEffect(() => {
@@ -233,6 +239,10 @@ export default function HotelSearchResultsPage() {
       return;
     }
 
+    const impressionKey = `${query.city}-${query.checkIn}-${query.checkOut}`;
+    if (trackedNoResultsKey.current === impressionKey) return;
+
+    trackedNoResultsKey.current = impressionKey;
     trackHotelNoResults({
       city: query.city,
       checkIn: query.checkIn,
@@ -339,6 +349,15 @@ export default function HotelSearchResultsPage() {
                   <div className="mt-4 flex justify-center">
                     <a
                       href={affiliateLinks.agoda}
+                      onClick={() => {
+                        trackHotelOutboundRedirectClick({
+                          provider: "agoda",
+                          city: query.city,
+                          checkIn: query.checkIn,
+                          checkOut: query.checkOut,
+                          source: "no_results_fallback",
+                        });
+                      }}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
