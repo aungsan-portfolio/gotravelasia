@@ -13,15 +13,24 @@ function normalizeImageUrl(url: any): string | undefined {
   const trimmed = url.trim();
   if (!trimmed) return undefined;
   
+  let candidate = trimmed;
   if (trimmed.startsWith("//")) {
-    return `https:${trimmed}`;
+    candidate = `https:${trimmed}`;
+  } else if (trimmed.startsWith("http://")) {
+    candidate = `https://${trimmed.slice("http://".length)}`;
+  } else if (!trimmed.startsWith("https://")) {
+    return undefined;
   }
-  if (trimmed.startsWith("http://")) {
-    return `https://${trimmed.slice("http://".length)}`;
+  
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === "https:" && parsed.hostname) {
+      return parsed.href;
+    }
+  } catch (err) {
+    // Malformed URL
   }
-  if (trimmed.startsWith("https://")) {
-    return trimmed;
-  }
+  
   return undefined;
 }
 

@@ -26,6 +26,8 @@ describe("normalizeHotel", () => {
           { url: "https://example.com/img3.jpg" }, // nested
           { link: "https://example.com/img4.jpg" }, // alternative nested
           "invalid-url-format", // should be removed
+          "https://", // malformed, should be removed
+          "https://bad url", // malformed, should be removed
           "", // empty string removed
           null, // null removed
         ],
