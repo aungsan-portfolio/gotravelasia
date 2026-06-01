@@ -9,6 +9,7 @@ import {
   getPrimaryHotelExplanation,
 } from "@/components/hotels/results/hotelBadgeCopy";
 import { useWishlist } from "@/hooks/useWishlist";
+import { getHotelLocationDisplay } from "@/lib/hotels/locationDisplay";
 
 interface HotelCardProps {
   hotel: HotelResult;
@@ -42,6 +43,7 @@ function HotelCardComponent({
 
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 2), [hotel]);
   const explanation = useMemo(() => getPrimaryHotelExplanation(hotel), [hotel]);
+  const locationDisplay = useMemo(() => getHotelLocationDisplay(hotel), [hotel]);
 
   const carouselImages = useMemo(() => {
     if (hotel.provider === "mock") return hotel.imageUrl ? [hotel.imageUrl] : [];
@@ -183,7 +185,7 @@ function HotelCardComponent({
               </h3>
               <div className="flex items-center gap-1 mt-0.5 text-sm text-slate-500">
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
-                <p className="line-clamp-1">{hotel.address || "Location unavailable"}</p>
+                <p className="line-clamp-1">{locationDisplay.text}</p>
               </div>
             </div>
             <div className="flex text-amber-500 shrink-0">

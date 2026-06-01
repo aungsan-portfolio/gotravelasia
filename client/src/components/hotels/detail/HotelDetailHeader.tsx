@@ -5,6 +5,8 @@ import { formatReviewLabel } from "@/lib/hotels/formatters";
 import { getLightweightHotelBadges } from "@/components/hotels/results/hotelBadgeCopy";
 import type { HotelResult } from "@shared/hotels/types";
 import { useWishlist } from "@/hooks/useWishlist";
+import { getHotelLocationDisplay } from "@/lib/hotels/locationDisplay";
+import { HotelPhotoGalleryModal } from "./HotelPhotoGalleryModal";
 
 interface HotelDetailHeaderProps {
   hotel: HotelResult;
@@ -24,12 +26,14 @@ function GalleryImage({
   loading = "lazy",
   roundedClassName = "",
   onError,
+  onClick,
 }: {
   src: string;
   alt: string;
   loading?: "eager" | "lazy";
   roundedClassName?: string;
   onError: (src: string) => void;
+  onClick?: () => void;
 }) {
   return (
     <div className={["relative overflow-hidden bg-slate-100", roundedClassName].filter(Boolean).join(" ")}>
@@ -37,6 +41,7 @@ function GalleryImage({
         src={src}
         alt={alt}
         loading={loading}
+        onClick={onClick}
         className="h-full w-full cursor-pointer object-cover transition hover:opacity-95"
         onError={() => onError(src)}
       />
@@ -46,8 +51,16 @@ function GalleryImage({
 
 export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
   const badges = useMemo(() => getLightweightHotelBadges(hotel, 3), [hotel]);
+  const locationDisplay = useMemo(() => getHotelLocationDisplay(hotel), [hotel]);
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const [activeSlide, setActiveSlide] = useState(0);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [initialGallerySlide, setInitialGallerySlide] = useState(0);
+
+  const openGallery = useCallback((index: number) => {
+    setInitialGallerySlide(index);
+    setIsGalleryOpen(true);
+  }, []);
 
   const galleryImages = useMemo(() => {
     const candidates = [...(hotel.images ?? []), hotel.imageUrl].filter(Boolean);
@@ -101,7 +114,8 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
                     src={imageUrl}
                     alt={`${hotel.name} photo ${index + 1}`}
                     loading={index === 0 ? "eager" : "lazy"}
-                    className="h-full w-full object-cover"
+                    onClick={() => openGallery(index)}
+                    className="h-full w-full object-cover cursor-pointer"
                     onError={() => handleImageError(imageUrl)}
                   />
                 </div>
@@ -121,6 +135,7 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
               loading="eager"
               roundedClassName={activeImages.length === 1 ? "w-full rounded-lg" : "w-2/3 rounded-l-lg"}
               onError={handleImageError}
+              onClick={() => openGallery(0)}
             />
 
             {activeImages.length > 1 && (
@@ -131,19 +146,26 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
                       src={activeImages[1]}
                       alt={`${hotel.name} photo 2`}
                       onError={handleImageError}
+                      onClick={() => openGallery(1)}
                     />
                     <GalleryImage
                       src={activeImages[2]}
                       alt={`${hotel.name} photo 3`}
                       roundedClassName="rounded-tr-lg"
                       onError={handleImageError}
+                      onClick={() => openGallery(2)}
                     />
                     <GalleryImage
                       src={activeImages[3]}
                       alt={`${hotel.name} photo 4`}
                       onError={handleImageError}
+                      onClick={() => openGallery(3)}
                     />
-                    <div className="group relative overflow-hidden rounded-br-lg bg-slate-100">
+                    <button 
+                      type="button"
+                      onClick={() => openGallery(4)}
+                      className="group relative overflow-hidden rounded-br-lg bg-slate-100 text-left w-full h-full block"
+                    >
                       <img
                         src={activeImages[4]}
                         alt={`${hotel.name} photo 5`}
@@ -157,7 +179,7 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
                           <span className="text-xs font-medium">photos</span>
                         </div>
                       )}
-                    </div>
+                    </button>
                   </div>
                 ) : (
                   <div
@@ -182,6 +204,7 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
                             .filter(Boolean)
                             .join(" ")}
                           onError={handleImageError}
+                          onClick={() => openGallery(index + 1)}
                         />
                       );
                     })}
@@ -198,7 +221,7 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-900">{hotel.name}</h1>
-            <p className="mt-1 text-sm text-slate-600">{hotel.address || "Location unavailable"}</p>
+            <p className="mt-1 text-sm text-slate-600">{locationDisplay.text}</p>
           </div>
           
           {/* Heart Save Button */}
@@ -232,6 +255,16 @@ export function HotelDetailHeader({ hotel }: HotelDetailHeaderProps) {
           </div>
         )}
       </div>
+
+      {activeImages.length > 0 && (
+        <HotelPhotoGalleryModal
+          hotel={hotel}
+          images={activeImages}
+          isOpen={isGalleryOpen}
+          onOpenChange={setIsGalleryOpen}
+          initialSlide={initialGallerySlide}
+        />
+      )}
     </section>
   );
 }
