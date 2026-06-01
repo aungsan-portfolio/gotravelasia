@@ -121,8 +121,8 @@ export function HotelDetailBookingCard({
               }
             >
               {index === 0
-                ? `Book on ${provider.label} (opens external site)`
-                : `Compare on ${provider.label}`}
+                ? `View rooms on ${provider.label} (opens external site)`
+                : `See availability on ${provider.label}`}
             </a>
           ))}
         </div>

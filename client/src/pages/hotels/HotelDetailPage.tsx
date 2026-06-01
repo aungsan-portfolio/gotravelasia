@@ -11,6 +11,7 @@ import { useHotelSearch } from "@/hooks/useHotelSearch";
 import { getCityName } from "@/lib/cities";
 import { buildHotelRouteUrl } from "@/lib/hotels/buildHotelRouteUrl";
 import { formatStayNights } from "@/lib/hotels/formatters";
+import { getHotelLocationDisplay } from "@/lib/hotels/locationDisplay";
 import { trackHotelDetailView } from "@/lib/hotels/tracking";
 import { useHotelRouteState } from "./useHotelRouteState";
 
@@ -52,6 +53,7 @@ export default function HotelDetailPage() {
   } = useHotelDetailFallback(selectedHotelId, query, shouldLoadFallback);
 
   const hotel = primaryHotel ?? fallbackHotel;
+  const locationDisplay = useMemo(() => hotel ? getHotelLocationDisplay(hotel) : null, [hotel]);
 
   const cityName = getCityName(query.city);
   const hotelResultPosition = hotel?.rankingPosition;
@@ -199,12 +201,26 @@ export default function HotelDetailPage() {
 
               <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900">Location</h2>
-                <p className="mt-2 text-sm text-slate-700">{hotel.address || "Location details unavailable"}</p>
+                <p className="mt-2 text-sm text-slate-700">{locationDisplay?.text || "Location details unavailable"}</p>
                 {hotel.coordinates ? (
                   <HotelMiniMap coordinates={hotel.coordinates} hotelName={hotel.name} />
                 ) : (
                   <p className="mt-1 text-xs text-slate-500">Map coordinates are not available for this hotel yet.</p>
                 )}
+              </section>
+
+              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-900">Rooms & Availability</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Live room options, final prices, and availability are maintained directly on the partner site.
+                </p>
+              </section>
+
+              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-900">Policies & Guest Reviews</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Detailed cancellation policies, check-in/out times, and comprehensive guest reviews are available on the partner site to ensure you see the most up-to-date information.
+                </p>
               </section>
             </div>
 
