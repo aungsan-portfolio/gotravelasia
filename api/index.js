@@ -337,8 +337,8 @@ async function getUserByOpenId(openId) {
     console.warn("[Database] Cannot get user: database not available");
     return void 0;
   }
-  const result2 = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result2.length > 0 ? result2[0] : void 0;
+  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result.length > 0 ? result[0] : void 0;
 }
 async function getActivePriceAlerts() {
   const db = await getDb();
@@ -467,14 +467,14 @@ async function getDueEmailQueueItems(batchSize, maxAttempts) {
 async function claimEmailQueueItem(id, expectedAttempts) {
   const db = await getDb();
   if (!db) return false;
-  const result2 = await db.execute(sql`
+  const result = await db.execute(sql`
     UPDATE emailQueue
     SET status = 'processing', updatedAt = NOW()
     WHERE id = ${id}
       AND status IN ('pending', 'pending_retry')
       AND attempts = ${expectedAttempts}
   `);
-  const affectedRows = Number(result2?.[0]?.affectedRows ?? 0);
+  const affectedRows = Number(result?.[0]?.affectedRows ?? 0);
   return affectedRows > 0;
 }
 async function markEmailQueueSent(id) {
@@ -1295,9 +1295,9 @@ var destinationRouter = router({
     if (!db) return null;
     const slug = input.toLowerCase();
     try {
-      const result2 = await db.select().from(destinations).where(eq2(destinations.slug, slug)).limit(1);
-      if (result2.length > 0) {
-        return result2[0];
+      const result = await db.select().from(destinations).where(eq2(destinations.slug, slug)).limit(1);
+      if (result.length > 0) {
+        return result[0];
       }
       const apiData = await amadeusAPI.fetchDestinationData(slug);
       if (!apiData) return null;
@@ -1833,19 +1833,19 @@ function hasSupportedPriceDropSignal(flight, context) {
   const simplePoint = context?.historicalPriceByFlightId?.[flight.id];
   if (!series && !simplePoint) return false;
   const historicalPrices = series ? series : [{ price: simplePoint.previousTotal, observedAt: simplePoint.observedAt }];
-  const result2 = analyzePriceTrend({
+  const result = analyzePriceTrend({
     currentPrice: flight.price.total,
     currency: flight.price.currency,
     historicalPrices
   });
-  const isBuySignal = result2.recommendation === "buy_now";
-  const isHistoricalDrop = result2.currentPrice < (result2.historicalMedian ?? result2.currentPrice);
+  const isBuySignal = result.recommendation === "buy_now";
+  const isHistoricalDrop = result.currentPrice < (result.historicalMedian ?? result.currentPrice);
   if (!series && simplePoint) {
     const dropRatio = (simplePoint.previousTotal - flight.price.total) / simplePoint.previousTotal;
     const confidence = simplePoint.confidence ?? 0.5;
     return dropRatio >= 0.05 && confidence >= 0.5;
   }
-  return isBuySignal && isHistoricalDrop && result2.confidence >= 0.4;
+  return isBuySignal && isHistoricalDrop && result.confidence >= 0.4;
 }
 function hasWorthItSignal(flight, allFlights, context) {
   if (!context?.layoverAnalysisSupported) return false;
@@ -2168,9 +2168,9 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
       cache.set(cacheKey, { data: {}, ts: Date.now() });
       return {};
     }
-    const result2 = {};
+    const result = {};
     for (const sp of samplePrices) {
-      result2[sp.date] = {
+      result[sp.date] = {
         price: sp.price,
         origin,
         destination,
@@ -2191,9 +2191,9 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
         const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(
           nearby.getDate()
         ).padStart(2, "0")}`;
-        if (result2[nearbyKey] && !result2[nearbyKey].is_estimated_amadeus) continue;
+        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
         const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
-        result2[nearbyKey] = {
+        result[nearbyKey] = {
           price: Math.round(sp.price * variance * 100) / 100,
           origin,
           destination,
@@ -2206,12 +2206,12 @@ async function fetchAmadeusCalendarPrices(origin, destination, month, currency =
       }
     }
     const realCount = samplePrices.length;
-    const totalCount = Object.keys(result2).length;
+    const totalCount = Object.keys(result).length;
     console.log(
       `[Amadeus] ${origin}\u2192${destination} (${month}): ${realCount} real + ${totalCount - realCount} interpolated = ${totalCount} prices`
     );
-    cache.set(cacheKey, { data: result2, ts: Date.now() });
-    return result2;
+    cache.set(cacheKey, { data: result, ts: Date.now() });
+    return result;
   } catch (error) {
     console.error(
       "[Amadeus] Fetch error:",
@@ -2595,12 +2595,12 @@ async function searchFlights(raw) {
   }
   const running = inflightSearches.get(cacheKey);
   if (running) return running;
-  const task = buildFlightSearchResult(raw).then((result2) => {
-    searchCache.set(cacheKey, { value: result2, expiresAt: Date.now() + CACHE_TTL_MS });
+  const task = buildFlightSearchResult(raw).then((result) => {
+    searchCache.set(cacheKey, { value: result, expiresAt: Date.now() + CACHE_TTL_MS });
     return {
-      ...result2,
+      ...result,
       meta: {
-        ...result2.meta,
+        ...result.meta,
         cacheHit: false
       }
     };
@@ -2952,25 +2952,25 @@ function normalizeHotelAddress(address) {
   };
   return normalized.split(" ").map((word) => mappings[word] || word).join(" ");
 }
-function createHotelOfferFromResult(provider, result2) {
+function createHotelOfferFromResult(provider, result) {
   return {
     provider,
-    hotelId: result2.hotelId,
-    price: result2.lowestRate,
-    currency: result2.currency,
-    outboundLinks: result2.outboundLinks,
-    freeCancellation: result2.freeCancellation,
-    payLater: result2.payLater,
-    breakfastIncluded: result2.breakfastIncluded,
-    rank: result2.rankingPosition || 0
+    hotelId: result.hotelId,
+    price: result.lowestRate,
+    currency: result.currency,
+    outboundLinks: result.outboundLinks,
+    freeCancellation: result.freeCancellation,
+    payLater: result.payLater,
+    breakfastIncluded: result.breakfastIncluded,
+    rank: result.rankingPosition || 0
   };
 }
-function createProviderHotelFromResult(provider, city, result2) {
+function createProviderHotelFromResult(provider, city, result) {
   return {
     provider,
     city,
-    result: result2,
-    offer: createHotelOfferFromResult(provider, result2)
+    result,
+    offer: createHotelOfferFromResult(provider, result)
   };
 }
 function buildCanonicalId(city, hotel) {
@@ -3250,10 +3250,25 @@ function buildAffiliateLinks(cityName, bookingName, cityId, checkIn, checkOut, a
 // server/hotels/normalize.ts
 var PAGE_SIZE = 20;
 function normalizeImageUrl(url) {
-  if (typeof url === "string" && url.startsWith("http://")) {
-    return `https://${url.slice("http://".length)}`;
+  if (typeof url !== "string") return void 0;
+  const trimmed = url.trim();
+  if (!trimmed) return void 0;
+  let candidate = trimmed;
+  if (trimmed.startsWith("//")) {
+    candidate = `https:${trimmed}`;
+  } else if (trimmed.startsWith("http://")) {
+    candidate = `https://${trimmed.slice("http://".length)}`;
+  } else if (!trimmed.startsWith("https://")) {
+    return void 0;
   }
-  return typeof url === "string" ? url : "";
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === "https:" && parsed.hostname) {
+      return parsed.href;
+    }
+  } catch (err) {
+  }
+  return void 0;
 }
 function buildFallbackCoordinates(city, index) {
   const cityLat = city.lat;
@@ -3369,6 +3384,7 @@ function buildPriceDisplay(lowestRate, currency, nights) {
   return priceDisplay;
 }
 function normalizeHotelImages(rawHotel) {
+  const extractNested = (arr) => Array.isArray(arr) ? arr.map((img) => typeof img === "object" ? img?.url ?? img?.link ?? img : img) : [];
   const rawImages = [
     rawHotel.imageUrl,
     rawHotel.imageURL,
@@ -3381,14 +3397,25 @@ function normalizeHotelImages(rawHotel) {
     rawHotel.hotelImageUrl,
     rawHotel.hotelImageURL,
     rawHotel.image?.url,
-    ...Array.isArray(rawHotel.images) ? rawHotel.images.map((img) => img?.url ?? img) : [],
-    ...Array.isArray(rawHotel.photos) ? rawHotel.photos.map((img) => img?.url ?? img) : []
+    ...extractNested(rawHotel.images),
+    ...extractNested(rawHotel.photos),
+    ...extractNested(rawHotel.photoList),
+    ...extractNested(rawHotel.hotelImages)
   ];
   return Array.from(
     new Set(
-      rawImages.map(asNonEmptyString).filter((value) => Boolean(value)).map(normalizeImageUrl).filter(Boolean)
+      rawImages.map(asNonEmptyString).filter((value) => Boolean(value)).map(normalizeImageUrl).filter((val) => Boolean(val))
     )
   );
+}
+function normalizeAddress(rawHotel, city) {
+  const exactAddress = asNonEmptyString(rawHotel.address) ?? asNonEmptyString(rawHotel.addressLine1) ?? asNonEmptyString(rawHotel.location?.address);
+  if (exactAddress) return exactAddress;
+  const areaName = asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.district) ?? asNonEmptyString(rawHotel.neighborhood) ?? asNonEmptyString(rawHotel.location?.areaName) ?? asNonEmptyString(rawHotel.location?.district) ?? asNonEmptyString(rawHotel.location?.neighborhood);
+  if (areaName) return `Near ${areaName}`;
+  const cityName = asNonEmptyString(rawHotel.cityName) ?? asNonEmptyString(rawHotel.location?.cityName) ?? asNonEmptyString(city.name);
+  if (cityName) return `Near ${cityName}`;
+  return "";
 }
 function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallbackLinks, index, page) {
   const hotelId = String(
@@ -3435,7 +3462,7 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
     stars,
     reviewScore,
     reviewCount,
-    address: asNonEmptyString(rawHotel.address) ?? asNonEmptyString(rawHotel.addressLine1) ?? asNonEmptyString(rawHotel.areaName) ?? asNonEmptyString(rawHotel.cityName) ?? asNonEmptyString(rawHotel.location?.address) ?? asNonEmptyString(rawHotel.location?.areaName) ?? asNonEmptyString(rawHotel.location?.cityName) ?? "",
+    address: normalizeAddress(rawHotel, city),
     imageUrl,
     images,
     amenities,
@@ -3583,7 +3610,7 @@ var stats = {
   evictions: 0
 };
 function buildHotelSearchCacheKey(params) {
-  return `${HOTEL_CACHE_NAMESPACE}:${params.source}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.page}:${params.sort}`;
+  return `${HOTEL_CACHE_NAMESPACE}:${params.source}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.sort}`;
 }
 var TTL_BY_SOURCE = {
   agoda: 30 * 60,
@@ -3597,7 +3624,7 @@ function getCacheTtlSeconds(source) {
   return TTL_BY_SOURCE[source] ?? 30 * 60;
 }
 function buildHotelDetailCacheKey(hotelId, city) {
-  const normalizedCity = city.trim().toLowerCase();
+  const normalizedCity = city.trim().toLowerCase().replace(/[\s-]+/g, "-");
   return `${HOTEL_DETAIL_NAMESPACE}:${normalizedCity}:${hotelId}`;
 }
 function evictL1IfNeeded() {
@@ -3718,71 +3745,68 @@ var ProviderOrchestrator = class {
     });
   }
   async searchHotels(criteria) {
-    const startTime = Date.now();
-    const results = await Promise.allSettled(
-      this.providers.map(
-        (p) => Promise.race([
-          p.searchHotels(criteria),
-          this.timeoutAfter(p.timeoutMs, p.id)
-        ])
-      )
-    );
-    const successful = results.map((r, idx) => ({ result: r, provider: this.providers[idx] })).filter(({ result: result2 }) => result2.status === "fulfilled").map(({ result: result2, provider }) => ({
-      provider: provider.id,
-      data: result2.value
-    }));
-    if (successful.length === 0) {
-      console.error("[Orchestrator] All hotel search providers failed.");
-      Sentry2.setTag("hotels.source", "failed");
+    let primaryResponse = null;
+    for (const provider of this.providers) {
+      const isPrimary = provider.priority <= 1;
+      let data;
+      try {
+        data = await Promise.race([
+          provider.searchHotels(criteria),
+          this.timeoutAfter(provider.timeoutMs, provider.id)
+        ]);
+      } catch (error) {
+        console.error(`[Orchestrator] Provider ${provider.id} search failed:`, error);
+        Sentry2.captureException(error, { tags: { provider: provider.id, context: "search" } });
+        continue;
+      }
+      if (isPrimary) {
+        primaryResponse = data;
+      }
+      if (data && Array.isArray(data.hotels) && data.hotels.length > 0) {
+        if (isPrimary) {
+          Sentry2.setTag("hotels.source", provider.id);
+          Sentry2.setTag("provider.primary.healthy", "true");
+          return { data, source: provider.id, isFallback: false };
+        }
+        Sentry2.addBreadcrumb({
+          category: "hotels.fallback",
+          message: `Primary provider failed or returned no inventory. Falling back to ${provider.id}.`,
+          level: "warning"
+        });
+        Sentry2.setTag("hotels.source", provider.id);
+        Sentry2.setTag("provider.primary.healthy", "false");
+        return {
+          data: {
+            ...data,
+            warning: "Showing alternative inventory (Hotellook). Live Agoda results unavailable."
+          },
+          source: provider.id,
+          isFallback: true
+        };
+      }
+    }
+    if (primaryResponse) {
+      Sentry2.setTag("hotels.source", this.providers[0]?.id ?? "agoda");
       Sentry2.setTag("provider.primary.healthy", "false");
       return {
-        data: {
-          source: this.providers[0]?.id || "agoda",
-          hotels: [],
-          totalCount: 0,
-          warning: "Live hotel results are temporarily unavailable.",
-          warnings: ["All hotel search providers failed or timed out."]
-        },
-        source: this.providers[0]?.id || "agoda",
+        data: primaryResponse,
+        source: this.providers[0]?.id ?? "agoda",
         isFallback: false
       };
     }
-    const primary = successful.find((s) => s.provider === "agoda");
-    const secondary = successful.find((s) => s.provider === "hotellook");
-    const elapsedMs = Date.now() - startTime;
-    if (primary && primary.data && primary.data.hotels && primary.data.hotels.length > 0) {
-      Sentry2.setTag("hotels.source", "agoda");
-      Sentry2.setTag("provider.primary.healthy", "true");
-      return {
-        data: primary.data,
-        source: "agoda",
-        isFallback: false
-      };
-    }
-    if (secondary && secondary.data && secondary.data.hotels && secondary.data.hotels.length > 0) {
-      Sentry2.addBreadcrumb({
-        category: "hotels.fallback",
-        message: "Primary provider Agoda failed or returned no inventory. Falling back to Hotellook.",
-        level: "warning"
-      });
-      Sentry2.setTag("hotels.source", "hotellook");
-      Sentry2.setTag("provider.primary.healthy", "false");
-      return {
-        data: {
-          ...secondary.data,
-          warning: "Showing alternative inventory (Hotellook). Live Agoda results unavailable."
-        },
-        source: "hotellook",
-        isFallback: true
-      };
-    }
-    const anySuccessful = successful[0];
-    Sentry2.setTag("hotels.source", anySuccessful.provider);
-    Sentry2.setTag("provider.primary.healthy", anySuccessful.provider === "agoda" ? "true" : "false");
+    console.error("[Orchestrator] All hotel search providers failed.");
+    Sentry2.setTag("hotels.source", "failed");
+    Sentry2.setTag("provider.primary.healthy", "false");
     return {
-      data: anySuccessful.data,
-      source: anySuccessful.provider,
-      isFallback: anySuccessful.provider !== "agoda"
+      data: {
+        source: this.providers[0]?.id || "agoda",
+        hotels: [],
+        totalCount: 0,
+        warning: "Live hotel results are temporarily unavailable.",
+        warnings: ["All hotel search providers failed or timed out."]
+      },
+      source: this.providers[0]?.id || "agoda",
+      isFallback: false
     };
   }
   async getHotelDetail(hotelId, criteria) {
@@ -3840,7 +3864,6 @@ var AgodaProvider = class {
       checkOut: criteria.checkOut,
       adults: criteria.adults,
       rooms: criteria.rooms,
-      page: criteria.page ?? 1,
       sort: criteria.sort ?? "best"
     });
   }
@@ -3851,9 +3874,272 @@ var AgodaProvider = class {
   }
 };
 
+// server/hotels/providers/hotellookClient.ts
+import crypto from "crypto";
+var BASE_URL = "https://engine.hotellook.com/api/v2";
+var COMMON_CITY_IATA = {
+  bangkok: "BKK",
+  yangon: "RGN",
+  singapore: "SIN",
+  tokyo: "TYO",
+  "kuala lumpur": "KUL",
+  hanoi: "HAN",
+  phuket: "HKT",
+  bali: "DPS",
+  manila: "MNL"
+};
+var HotellookClient = class {
+  marker;
+  token;
+  constructor() {
+    this.marker = process.env.TRAVELPAYOUTS_MARKER ?? "gotravelasia";
+    this.token = process.env.TRAVELPAYOUTS_TOKEN ?? process.env.TRAVELPAYOUTS_API_TOKEN ?? "";
+  }
+  /**
+   * Helper to sign request parameters alphabetically using MD5
+   */
+  generateSignature(params) {
+    const sortedKeys = Object.keys(params).sort();
+    const sortedValues = sortedKeys.map((key) => {
+      const val = params[key];
+      return val === void 0 || val === null ? "" : String(val);
+    });
+    const rawString = `${this.token}:${this.marker}:${sortedValues.join(":")}`;
+    return crypto.createHash("md5").update(rawString).digest("hex");
+  }
+  /**
+   * Try to resolve destination name to Hotellook city ID or IATA code
+   */
+  async resolveCity(cityName) {
+    const cleanName = cityName.trim().toLowerCase();
+    if (COMMON_CITY_IATA[cleanName]) {
+      return { iata: COMMON_CITY_IATA[cleanName] };
+    }
+    try {
+      const url = new URL(`${BASE_URL}/lookup.json`);
+      url.searchParams.set("query", cityName);
+      url.searchParams.set("lang", "en");
+      url.searchParams.set("lookFor", "city");
+      url.searchParams.set("limit", "1");
+      const res = await fetch(url.toString());
+      if (res.ok) {
+        const json2 = await res.json();
+        const city = json2.results?.cities?.[0];
+        if (city) {
+          return {
+            cityId: Number(city.id),
+            iata: city.iata?.[0] || void 0
+          };
+        }
+      }
+    } catch (error) {
+      console.error(`[Hotellook] City lookup failed for query "${cityName}":`, error);
+    }
+    return { iata: "BKK" };
+  }
+  /**
+   * Starts Hotellook async search
+   */
+  async startSearch(params) {
+    if (!this.token) {
+      throw new Error("[Hotellook] Cannot start search without TRAVELPAYOUTS_TOKEN");
+    }
+    const payload = {
+      adultsCount: params.adultsCount,
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+      childrenCount: params.childrenCount,
+      currency: params.currency ?? "USD",
+      customerIP: params.customerIP ?? "127.0.0.1",
+      lang: params.lang ?? "en",
+      waitForResult: 0
+    };
+    if (params.cityId !== void 0) {
+      payload.cityId = params.cityId;
+    } else if (params.iata) {
+      payload.iata = params.iata;
+    } else {
+      throw new Error("[Hotellook] iata or cityId required to start search");
+    }
+    const signature = this.generateSignature(payload);
+    const startUrl = new URL(`${BASE_URL}/search/start.json`);
+    Object.entries(payload).forEach(([k, v]) => startUrl.searchParams.set(k, String(v)));
+    startUrl.searchParams.set("marker", this.marker);
+    startUrl.searchParams.set("signature", signature);
+    const res = await fetch(startUrl.toString());
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`[Hotellook] Search start failed with status ${res.status}: ${errorText}`);
+    }
+    const json2 = await res.json();
+    if (!json2.search_id) {
+      throw new Error("[Hotellook] Response did not contain search_id");
+    }
+    return json2.search_id;
+  }
+  /**
+   * Retrieves results of the search by searchId
+   */
+  async getResults(searchId) {
+    const url = new URL(`${BASE_URL}/search/getResult.json`);
+    url.searchParams.set("searchId", searchId);
+    url.searchParams.set("limit", "50");
+    url.searchParams.set("sortBy", "popularity");
+    url.searchParams.set("sortAsc", "0");
+    const res = await fetch(url.toString());
+    if (!res.ok) {
+      throw new Error(`[Hotellook] Get results failed with status ${res.status}`);
+    }
+    return await res.json();
+  }
+};
+
+// server/hotels/providers/hotellookNormalize.ts
+var AMENITY_MAP = {
+  has_internet: "Free Wi-Fi",
+  has_wifi: "Free Wi-Fi",
+  has_parking: "Parking",
+  has_pool: "Swimming pool",
+  has_gym: "Fitness center",
+  has_restaurant: "Restaurant",
+  has_bar: "Bar",
+  has_ac: "Air conditioning",
+  has_airport_transfer: "Airport transfer",
+  has_spa: "Spa"
+};
+function extractAmenities(props) {
+  const amenities = [];
+  Object.entries(AMENITY_MAP).forEach(([propKey, label]) => {
+    if (props[propKey] === true || props[propKey] === 1 || props[propKey] === "1") {
+      if (!amenities.includes(label)) {
+        amenities.push(label);
+      }
+    }
+  });
+  if (amenities.length === 0) {
+    amenities.push("Free Wi-Fi", "Air conditioning");
+  }
+  return amenities;
+}
+function normalizeHotellookHotel(h, criteria, marker) {
+  const hotelId = `hotellook-${h.hotelId}`;
+  const queryParams = new URLSearchParams({
+    marker,
+    hotel_id: String(h.hotelId),
+    check_in: criteria.checkIn,
+    check_out: criteria.checkOut,
+    adults: String(criteria.adults),
+    children: "0",
+    locale: "en",
+    currency: "USD"
+  });
+  const outboundUrl = `https://search.hotellook.com/?${queryParams.toString()}`;
+  return {
+    hotelId,
+    name: h.hotelName,
+    stars: h.stars || 3,
+    reviewScore: h.rating ? Number((h.rating / 10).toFixed(1)) : 7,
+    // Hotellook scales 0-100 -> convert to 0-10
+    reviewCount: h.popularity || 10,
+    address: h.location?.name || "Destination Area",
+    imageUrl: `https://photo.hotellook.com/image_v2/limit/h${h.hotelId}_1/800/520.auto`,
+    images: [`https://photo.hotellook.com/image_v2/limit/h${h.hotelId}_1/800/520.auto`],
+    amenities: extractAmenities(h.props || {}),
+    lowestRate: h.priceFrom || 0,
+    currency: "USD",
+    rankingPosition: h.popularity || 99,
+    breakfastIncluded: Boolean(h.props?.has_breakfast),
+    freeCancellation: Boolean(h.props?.has_free_cancellation),
+    payLater: false,
+    // Default fallback
+    outboundLinks: {
+      hotellook: outboundUrl,
+      metasearch: outboundUrl
+    },
+    coordinates: h.location?.geo ? {
+      lat: h.location.geo.lat,
+      lng: h.location.geo.lon,
+      confidence: "exact"
+    } : void 0,
+    provider: "hotellook"
+  };
+}
+
+// server/hotels/providers/hotellookAdapter.ts
+var sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+var HotellookProvider = class {
+  id = "hotellook";
+  priority = 2;
+  timeoutMs = 4e3;
+  // 4 seconds
+  cacheTtlMs = 15 * 60 * 1e3;
+  // 15 minutes
+  client;
+  constructor() {
+    this.client = new HotellookClient();
+  }
+  async searchHotels(criteria) {
+    try {
+      const resolution = await this.client.resolveCity(criteria.city);
+      const searchId = await this.client.startSearch({
+        checkIn: criteria.checkIn,
+        checkOut: criteria.checkOut,
+        adultsCount: criteria.adults,
+        childrenCount: 0,
+        // Default fallback
+        iata: resolution.iata,
+        cityId: resolution.cityId,
+        currency: criteria.currency ?? "USD",
+        lang: criteria.language ?? "en"
+      });
+      let results = await this.client.getResults(searchId);
+      for (let i = 0; i < 3; i++) {
+        if (results.status === "ok" && results.hotels && results.hotels.length > 0) {
+          break;
+        }
+        await sleep2(1200);
+        results = await this.client.getResults(searchId);
+      }
+      const rawHotels = results.hotels ?? [];
+      const marker = process.env.TRAVELPAYOUTS_MARKER ?? "gotravelasia";
+      const normalizedHotels = rawHotels.map(
+        (h) => normalizeHotellookHotel(h, {
+          city: criteria.city,
+          checkIn: criteria.checkIn,
+          checkOut: criteria.checkOut,
+          adults: criteria.adults,
+          rooms: criteria.rooms,
+          sort: "best",
+          page: criteria.page ?? 1
+        }, marker)
+      );
+      return {
+        source: "hotellook",
+        hotels: normalizedHotels,
+        totalCount: normalizedHotels.length
+      };
+    } catch (error) {
+      console.error("[HotellookProvider] Search failed:", error);
+      return {
+        source: "hotellook",
+        hotels: [],
+        totalCount: 0,
+        warning: "Hotellook search failed."
+      };
+    }
+  }
+  async getHotelDetail(hotelId, criteria) {
+    if (!criteria) return null;
+    const result = await this.searchHotels(criteria);
+    if (!result || !result.hotels) return null;
+    return result.hotels.find((h) => h.hotelId === hotelId) ?? null;
+  }
+};
+
 // server/api/hotels.ts
 var orchestrator = new ProviderOrchestrator([
-  new AgodaProvider()
+  new AgodaProvider(),
+  new HotellookProvider()
 ]);
 var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -3864,6 +4150,7 @@ var TRIP_SITE_ID2 = process.env.TRIP_COM_SITE_ID ?? "";
 var KLOOK_ID2 = process.env.KLOOK_PARTNER_ID ?? "";
 var EXPEDIA_CODE2 = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
 var PAGE_SIZE2 = 20;
+var FETCH_LIMIT = 100;
 var AGODA_SORT_MAP = {
   best: "Recommended",
   rank: "Recommended",
@@ -3923,6 +4210,9 @@ function buildDiagnostics(reason, status, extra = {}) {
     ...extra
   };
 }
+function shouldAllowHotelMocks() {
+  return process.env.ALLOW_HOTEL_MOCKS === "true";
+}
 function extractAgodaErrorDiagnostics(payload) {
   const error = payload.error;
   if (!error) return {};
@@ -3933,7 +4223,7 @@ function extractAgodaErrorDiagnostics(payload) {
   };
 }
 var AGODA_LT_V1_ENDPOINT = "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
-async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, page, sort) {
+async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, sort) {
   const cacheKey = buildHotelSearchCacheKey({
     source: "agoda",
     ltCityId,
@@ -3941,7 +4231,6 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
     checkOut,
     adults,
     rooms,
-    page,
     sort
   });
   const cached = await hotelCacheGet(cacheKey);
@@ -3950,7 +4239,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
     return cached.data;
   }
   const liveAgodaWarning = "Live Agoda results are temporarily unavailable.";
-  const allowMockFallback = true;
+  const allowMockFallback = shouldAllowHotelMocks();
   try {
     if (!AGODA_SITE_ID2 || !AGODA_API_KEY) {
       console.warn("[Hotels] Missing Agoda credentials, skipping live search.");
@@ -3958,7 +4247,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       if (allowMockFallback) {
         return {
           source: "mock",
-          hotels: getMockHotels(agodaCityId, page, sort),
+          hotels: getMockHotels(agodaCityId, sort),
           warnings: ["Missing Agoda credentials. Showing fallback results."],
           diagnostics
         };
@@ -3977,7 +4266,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       checkOut,
       cityId: ltCityId,
       adults,
-      pageSize: PAGE_SIZE2,
+      pageSize: FETCH_LIMIT,
       sort
     });
     const hasAgodaApiKey = Boolean(AGODA_API_KEY);
@@ -4011,7 +4300,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       if (allowMockFallback) {
         return {
           source: "mock",
-          hotels: getMockHotels(agodaCityId, page, sort),
+          hotels: getMockHotels(agodaCityId, sort),
           warnings: ["Live Agoda search is temporarily unavailable. Showing fallback results."],
           diagnostics
         };
@@ -4075,7 +4364,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       if (allowMockFallback) {
         return {
           source: "mock",
-          hotels: getMockHotels(agodaCityId, page, sort),
+          hotels: getMockHotels(agodaCityId, sort),
           warnings: ["No live Agoda hotels were returned for this criteria. Showing fallback results."],
           diagnostics
         };
@@ -4089,20 +4378,20 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
         totalCount: 0
       };
     }
-    const result2 = {
+    const result = {
       source: "agoda",
       hotels,
       totalCount: (typeof payload?.totalResults === "number" ? payload.totalResults : void 0) ?? (typeof payload?.totalCount === "number" ? payload.totalCount : void 0) ?? hotels.length
     };
-    await hotelCacheSet(cacheKey, result2, getCacheTtlSeconds("agoda"));
-    return result2;
+    await hotelCacheSet(cacheKey, result, getCacheTtlSeconds("agoda"));
+    return result;
   } catch (err) {
     console.error("[Hotels] Agoda lt_v1 search failed:", err);
     const diagnostics = buildDiagnostics("fetch_error");
     if (allowMockFallback) {
       return {
         source: "mock",
-        hotels: getMockHotels(agodaCityId, page, sort),
+        hotels: getMockHotels(agodaCityId, sort),
         warnings: ["Live Agoda search failed. Showing fallback results."],
         diagnostics
       };
@@ -4121,25 +4410,26 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
   const attemptedLtCityIds = [];
   let latestDiagnostics;
   let cityResolutionStatus = "unresolved_empty_results";
+  let lastResult;
   for (const candidate of params.ltCityCandidates) {
     attemptedLtCityIds.push(candidate.cityId);
-    const result2 = await fetchAgodaHotels(
+    const result = await fetchAgodaHotels(
       params.agodaCityId,
       candidate.cityId,
       params.checkIn,
       params.checkOut,
       params.adults,
       params.rooms,
-      params.page,
       params.sort
     );
-    const candidateDiagnostics = result2.diagnostics;
+    lastResult = result;
+    const candidateDiagnostics = result.diagnostics;
     latestDiagnostics = candidateDiagnostics ?? latestDiagnostics;
     const responseStatus = candidateDiagnostics?.status;
-    if (result2.hotels.length > 0) {
+    if (result.hotels.length > 0) {
       cityResolutionStatus = "resolved";
       return {
-        ...result2,
+        ...result,
         diagnostics: {
           ...candidateDiagnostics ?? {},
           attemptedLtCityIds,
@@ -4157,7 +4447,7 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
       cityResolutionStatus = "api_error";
     }
   }
-  const finalWarning = result?.warning || "Live Agoda results are temporarily unavailable.";
+  const finalWarning = lastResult?.warning || "Live Agoda results are temporarily unavailable.";
   return {
     source: "agoda",
     hotels: [],
@@ -4195,7 +4485,7 @@ function sortHotels(hotels, sort) {
   });
   return sorted;
 }
-function getMockHotels(cityId, page, sort) {
+function getMockHotels(cityId, sort) {
   const baseLat = 13.75 + cityId % 100 / 100 * 5;
   const baseLng = 100.5 + cityId % 100 / 100 * 5;
   const base = [
@@ -4307,14 +4597,12 @@ function getMockHotels(cityId, page, sort) {
       provider: "mock"
     }
   ];
-  const pageOffset = (page - 1) * base.length;
   const withLinks = base.map((hotel, index) => ({
     ...hotel,
-    hotelId: `${hotel.hotelId}-p${page}`,
-    rankingPosition: pageOffset + index + 1,
+    rankingPosition: index + 1,
     outboundLinks: {
       agoda: agodaHotelUrl(
-        `${hotel.hotelId}-p${page}`,
+        hotel.hotelId,
         cityId,
         "2026-01-01",
         "2026-01-04",
@@ -4419,12 +4707,11 @@ async function executeHotelSearch(reqQuery) {
       rooms: normalized.rooms,
       agodaCityId: city.agodaCityId,
       ltCityCandidates,
-      page: normalized.page,
       sort: normalized.sort
     })
   ]);
-  const result2 = orchestratorResult.data;
-  const normalizedProviderHotels = result2.hotels.map(
+  const result = orchestratorResult.data;
+  const normalizedProviderHotels = orchestratorResult.source === "agoda" ? result.hotels.map(
     (hotel, index) => normalizeHotel(
       hotel,
       city,
@@ -4434,33 +4721,36 @@ async function executeHotelSearch(reqQuery) {
       normalized.rooms,
       affiliateLinks,
       index,
-      normalized.page
+      1
     )
-  );
+  ) : result.hotels;
   const canonicalHotels = mergeProviderHotels(
     normalizedProviderHotels.map(
-      (hotel) => createProviderHotelFromResult("agoda", city.name, hotel)
+      (hotel) => createProviderHotelFromResult(orchestratorResult.source, city.name, hotel)
     )
   );
-  const hotels = sortHotels(
+  const sortedHotels = sortHotels(
     canonicalHotels.map((canonical) => ({
       ...canonical.primaryHotel.result,
       offers: canonical.offers
     })),
     normalized.sort
   );
+  const totalCount = sortedHotels.length;
+  const startIndex = (normalized.page - 1) * PAGE_SIZE2;
+  const hotels = sortedHotels.slice(startIndex, startIndex + PAGE_SIZE2);
   hotels.forEach((hotel) => {
     hotelCacheSet(
       buildHotelDetailCacheKey(hotel.hotelId, city.name),
       hotel,
-      getCacheTtlSeconds(result2.source)
+      getCacheTtlSeconds(result.source)
     ).catch((e) => console.error("[HotelDetail] Warming failed:", e));
   });
   return {
     normalized,
     city,
     hotels,
-    result: result2,
+    result: { ...result, totalCount },
     affiliateLinks: { ...affiliateLinks, booking: bookingLink }
   };
 }
@@ -4774,11 +5064,11 @@ function setCors(req, res) {
 }
 function parseRequest(req) {
   const raw = req.query;
-  const result2 = {};
+  const result = {};
   for (const [k, v] of Object.entries(raw)) {
-    result2[k] = Array.isArray(v) ? v[0] : v ?? "";
+    result[k] = Array.isArray(v) ? v[0] : v ?? "";
   }
-  return result2;
+  return result;
 }
 
 // api/_lib/authMe.ts
@@ -5128,9 +5418,9 @@ async function fetchAmadeusCalendarPrices2(origin, destination, month, currency 
     );
     const samplePrices = sampleResults.filter((r) => r.status === "fulfilled").map((r) => r.value).filter((v) => !!v && v.price > 0);
     if (!samplePrices.length) return {};
-    const result2 = {};
+    const result = {};
     for (const sp of samplePrices) {
-      result2[sp.date] = {
+      result[sp.date] = {
         price: sp.price,
         origin,
         destination,
@@ -5149,9 +5439,9 @@ async function fetchAmadeusCalendarPrices2(origin, destination, month, currency 
         nearby.setDate(nearby.getDate() + offset);
         if (nearby.getMonth() + 1 !== mon || nearby.getFullYear() !== year) continue;
         const nearbyKey = `${year}-${String(mon).padStart(2, "0")}-${String(nearby.getDate()).padStart(2, "0")}`;
-        if (result2[nearbyKey] && !result2[nearbyKey].is_estimated_amadeus) continue;
+        if (result[nearbyKey] && !result[nearbyKey].is_estimated_amadeus) continue;
         const variance = 1 + Math.abs(offset) * 0.02 * (offset > 0 ? 1 : -1);
-        result2[nearbyKey] = {
+        result[nearbyKey] = {
           price: Math.round(sp.price * variance * 100) / 100,
           origin,
           destination,
@@ -5163,7 +5453,7 @@ async function fetchAmadeusCalendarPrices2(origin, destination, month, currency 
         };
       }
     }
-    return result2;
+    return result;
   } catch {
     return {};
   }
@@ -5235,8 +5525,8 @@ async function handleCalendarPrices(req, res, params) {
       getLiveFxRate(cur, "THB")
     ]);
     const merged = {};
-    for (const result3 of [v3Mo1, v3Mo2]) {
-      const arr = result3.status === "fulfilled" && result3.value?.data;
+    for (const result2 of [v3Mo1, v3Mo2]) {
+      const arr = result2.status === "fulfilled" && result2.value?.data;
       if (Array.isArray(arr)) {
         for (const e of arr) {
           addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
@@ -5290,8 +5580,8 @@ async function handleCalendarPrices(req, res, params) {
         }, "legacy");
       }
     }
-    for (const result3 of [amadeusMo1, amadeusMo2]) {
-      const data = result3.status === "fulfilled" ? result3.value : null;
+    for (const result2 of [amadeusMo1, amadeusMo2]) {
+      const data = result2.status === "fulfilled" ? result2.value : null;
       if (data && typeof data === "object") {
         for (const [dateStr, entry] of Object.entries(data)) {
           entry.currency = cur;
@@ -5306,14 +5596,14 @@ async function handleCalendarPrices(req, res, params) {
       source: "fallback_static",
       asOf: null
     };
-    const result2 = {
+    const result = {
       success: true,
       data: merged,
       currency: cur,
       fx
     };
-    await setCache(cacheKey, result2);
-    res.status(200).json(result2);
+    await setCache(cacheKey, result);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Calendar prices error:", error);
     res.status(500).json({ error: "Failed to fetch calendar prices" });
@@ -5373,9 +5663,9 @@ async function handleCheapPrices(req, res, params) {
         };
       });
     }
-    const result2 = { success: true, data: mappedData, currency, fx };
-    await setCache(cacheKey, result2);
-    res.status(200).json(result2);
+    const result = { success: true, data: mappedData, currency, fx };
+    await setCache(cacheKey, result);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Cheap prices error:", error);
     res.status(500).json({ error: "Failed to fetch cheap prices" });
@@ -5421,9 +5711,9 @@ async function handleSpecialOffers(req, res, params) {
         offers = [...offers, ...moreOffers];
       }
     }
-    const result2 = { success: true, data: offers };
-    await setCache(cacheKey, result2);
-    res.status(200).json(result2);
+    const result = { success: true, data: offers };
+    await setCache(cacheKey, result);
+    res.status(200).json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -6208,10 +6498,10 @@ router5.get(
           };
         });
       }
-      const result2 = { success: true, data: mappedData, currency, fx };
-      await setCache2(cacheKey, result2);
+      const result = { success: true, data: mappedData, currency, fx };
+      await setCache2(cacheKey, result);
       res.set("Cache-Control", "public, max-age=1800");
-      res.json(result2);
+      res.json(result);
     } catch (error) {
       console.error("Cheap prices error:", error);
       res.status(500).json({ error: "Failed to fetch cheap prices" });
@@ -6266,8 +6556,8 @@ router6.get(
         getLiveFxRate(cur, "THB")
       ]);
       const merged = {};
-      for (const result3 of [v3Mo1, v3Mo2]) {
-        const arr = result3.status === "fulfilled" && result3.value?.data;
+      for (const result2 of [v3Mo1, v3Mo2]) {
+        const arr = result2.status === "fulfilled" && result2.value?.data;
         if (Array.isArray(arr)) {
           for (const e of arr) {
             addPrice(merged, e.departure_at?.split("T")[0], e.price || 0, {
@@ -6331,8 +6621,8 @@ router6.get(
           }, "legacy");
         }
       }
-      for (const result3 of [amadeusMo1, amadeusMo2]) {
-        const data = result3.status === "fulfilled" ? result3.value : null;
+      for (const result2 of [amadeusMo1, amadeusMo2]) {
+        const data = result2.status === "fulfilled" ? result2.value : null;
         if (data && typeof data === "object") {
           for (const [dateStr, entry] of Object.entries(data)) {
             entry.currency = cur;
@@ -6347,10 +6637,10 @@ router6.get(
         source: "fallback_static",
         asOf: null
       };
-      const result2 = { success: true, data: merged, currency: cur, fx };
-      await setCache2(cacheKey, result2);
+      const result = { success: true, data: merged, currency: cur, fx };
+      await setCache2(cacheKey, result);
       res.set("Cache-Control", "public, max-age=3600");
-      res.json(result2);
+      res.json(result);
     } catch (error) {
       console.error("Calendar prices error:", error);
       res.status(500).json({ error: "Failed to fetch calendar prices" });
@@ -6364,8 +6654,8 @@ import { Router as Router6 } from "express";
 var router7 = Router6();
 router7.get("/", async (req, res) => {
   try {
-    const result2 = await searchFlights(req.query);
-    res.json(result2);
+    const result = await searchFlights(req.query);
+    res.json(result);
   } catch (error) {
     console.error("[FlightsSearch] error:", error);
     res.status(500).json({
@@ -6752,7 +7042,7 @@ router8.post("/submit", async (req, res) => {
         });
         return;
       }
-      const result3 = await createPriceAlert({
+      const result2 = await createPriceAlert({
         email,
         origin,
         destination,
@@ -6763,7 +7053,7 @@ router8.post("/submit", async (req, res) => {
         source: "popup_route_submit",
         isActive: true
       });
-      if (!result3.success) {
+      if (!result2.success) {
         res.status(503).json({
           success: false,
           error: "Price alert service is temporarily unavailable."
@@ -6773,13 +7063,13 @@ router8.post("/submit", async (req, res) => {
       res.json({
         success: true,
         flow: "auto-saved",
-        alreadyExists: result3.alreadyExists
+        alreadyExists: result2.alreadyExists
       });
       return;
     }
-    const result2 = await saveSubscriber({ email, source });
+    const result = await saveSubscriber({ email, source });
     const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey && !result2.alreadyExists) {
+    if (resendApiKey && !result.alreadyExists) {
       new Resend(resendApiKey).emails.send({
         from: process.env.EMAIL_FROM || "GoTravel Asia <onboarding@resend.dev>",
         to: email,
@@ -6792,7 +7082,7 @@ router8.post("/submit", async (req, res) => {
     res.json({
       success: true,
       flow: "welcome-email",
-      alreadyExists: result2.alreadyExists
+      alreadyExists: result.alreadyExists
     });
   } catch (error) {
     console.error("[price-alerts] submit error:", error);
@@ -6979,7 +7269,7 @@ var router10 = Router9();
 var MAX_CITIES_PER_RUN = Number(process.env.HOTEL_WARM_MAX_CITIES) || 10;
 var DELAY_BETWEEN_CITIES_MS = Number(process.env.HOTEL_WARM_DELAY_MS) || 2e3;
 var WARM_DAYS_AHEAD = [1, 3, 7, 14];
-function sleep2(ms) {
+function sleep3(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 function getWarmDates() {
@@ -7064,7 +7354,7 @@ router10.get("/warm-hotels", async (req, res) => {
           );
         }
         if (DELAY_BETWEEN_CITIES_MS > 0) {
-          await sleep2(DELAY_BETWEEN_CITIES_MS);
+          await sleep3(DELAY_BETWEEN_CITIES_MS);
         }
       }
     }

@@ -20,87 +20,83 @@ export class ProviderOrchestrator {
   }
 
   async searchHotels(criteria: HotelSearchCriteria): Promise<HotelProviderResponse<any>> {
-    const startTime = Date.now();
+    // Lazy fallback: try providers in priority order and stop at the first that
+    // returns inventory. Secondary providers (e.g. Hotellook) are only invoked
+    // when the primary fails or returns no hotels — avoiding a wasted upstream
+    // search session on every request when a secondary is configured.
+    let primaryResponse: any = null;
 
-    // Race all providers with individual timeouts in parallel
-    const results = await Promise.allSettled(
-      this.providers.map(p =>
-        Promise.race([
-          p.searchHotels(criteria),
-          this.timeoutAfter(p.timeoutMs, p.id),
-        ])
-      )
-    );
+    for (const provider of this.providers) {
+      const isPrimary = provider.priority <= 1;
+      let data: any;
 
-    // Collect successful results
-    const successful = results
-      .map((r, idx) => ({ result: r, provider: this.providers[idx] }))
-      .filter(({ result }) => result.status === "fulfilled")
-      .map(({ result, provider }) => ({
-        provider: provider.id,
-        data: (result as PromiseFulfilledResult<any>).value,
-      }));
+      try {
+        data = await Promise.race([
+          provider.searchHotels(criteria),
+          this.timeoutAfter(provider.timeoutMs, provider.id),
+        ]);
+      } catch (error) {
+        console.error(`[Orchestrator] Provider ${provider.id} search failed:`, error);
+        Sentry.captureException(error, { tags: { provider: provider.id, context: "search" } });
+        continue;
+      }
 
-    if (successful.length === 0) {
-      console.error("[Orchestrator] All hotel search providers failed.");
-      Sentry.setTag("hotels.source", "failed");
+      if (isPrimary) {
+        // Keep the primary's payload so we can preserve its diagnostics/warnings
+        // for the empty-state derivation when no provider has inventory.
+        primaryResponse = data;
+      }
+
+      if (data && Array.isArray(data.hotels) && data.hotels.length > 0) {
+        if (isPrimary) {
+          Sentry.setTag("hotels.source", provider.id);
+          Sentry.setTag("provider.primary.healthy", "true");
+          return { data, source: provider.id, isFallback: false };
+        }
+
+        Sentry.addBreadcrumb({
+          category: "hotels.fallback",
+          message: `Primary provider failed or returned no inventory. Falling back to ${provider.id}.`,
+          level: "warning",
+        });
+        Sentry.setTag("hotels.source", provider.id);
+        Sentry.setTag("provider.primary.healthy", "false");
+        return {
+          data: {
+            ...data,
+            warning: "Showing alternative inventory (Hotellook). Live Agoda results unavailable.",
+          },
+          source: provider.id,
+          isFallback: true,
+        };
+      }
+    }
+
+    // No provider returned inventory. Prefer the primary's response so its
+    // diagnostics/warnings still drive the empty-state reason downstream.
+    if (primaryResponse) {
+      Sentry.setTag("hotels.source", this.providers[0]?.id ?? "agoda");
       Sentry.setTag("provider.primary.healthy", "false");
       return {
-        data: {
-          source: this.providers[0]?.id || "agoda",
-          hotels: [],
-          totalCount: 0,
-          warning: "Live hotel results are temporarily unavailable.",
-          warnings: ["All hotel search providers failed or timed out."],
-        },
-        source: this.providers[0]?.id || "agoda",
+        data: primaryResponse,
+        source: this.providers[0]?.id ?? "agoda",
         isFallback: false,
       };
     }
 
-    // Sort by priority to find primary first
-    const primary = successful.find(s => s.provider === "agoda");
-    const secondary = successful.find(s => s.provider === "hotellook");
-
-    const elapsedMs = Date.now() - startTime;
-
-    if (primary && primary.data && primary.data.hotels && primary.data.hotels.length > 0) {
-      Sentry.setTag("hotels.source", "agoda");
-      Sentry.setTag("provider.primary.healthy", "true");
-      return {
-        data: primary.data,
-        source: "agoda",
-        isFallback: false,
-      };
-    }
-
-    // If primary failed or returned empty results, fall back to secondary
-    if (secondary && secondary.data && secondary.data.hotels && secondary.data.hotels.length > 0) {
-      Sentry.addBreadcrumb({
-        category: "hotels.fallback",
-        message: "Primary provider Agoda failed or returned no inventory. Falling back to Hotellook.",
-        level: "warning",
-      });
-      Sentry.setTag("hotels.source", "hotellook");
-      Sentry.setTag("provider.primary.healthy", "false");
-      return {
-        data: {
-          ...secondary.data,
-          warning: "Showing alternative inventory (Hotellook). Live Agoda results unavailable.",
-        },
-        source: "hotellook",
-        isFallback: true,
-      };
-    }
-
-    // Fallback: If primary returned empty results, try secondary even if it was technically successful
-    const anySuccessful = successful[0];
-    Sentry.setTag("hotels.source", anySuccessful.provider);
-    Sentry.setTag("provider.primary.healthy", anySuccessful.provider === "agoda" ? "true" : "false");
+    console.error("[Orchestrator] All hotel search providers failed.");
+    Sentry.setTag("hotels.source", "failed");
+    Sentry.setTag("provider.primary.healthy", "false");
     return {
-      data: anySuccessful.data,
-      source: anySuccessful.provider,
-      isFallback: anySuccessful.provider !== "agoda",
+      data: {
+        source: this.providers[0]?.id || "agoda",
+        hotels: [],
+        totalCount: 0,
+        warning: "Live hotel results are temporarily unavailable.",
+        warnings: ["All hotel search providers failed or timed out."],
+      },
+      source: this.providers[0]?.id || "agoda",
+      isFallback: false,
     };
   }
 
