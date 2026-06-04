@@ -18,6 +18,7 @@ import type {
   HotelCoordinatesConfidence,
   HotelSearchDiagnostics,
   HotelOutboundLinks,
+  HotelOfferProvider,
   HotelPriceDisplay,
   HotelResult,
   HotelSearchCity,
@@ -741,7 +742,7 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
 
   const canonicalHotels = mergeProviderHotels(
     normalizedProviderHotels.map((hotel: any) =>
-      createProviderHotelFromResult(orchestratorResult.source, (city as any).name, hotel)
+      createProviderHotelFromResult(orchestratorResult.source as HotelOfferProvider, (city as any).name, hotel)
     )
   );
 
