@@ -20,7 +20,6 @@ export class AgodaProvider implements HotelProvider {
       checkOut: criteria.checkOut,
       adults: criteria.adults,
       rooms: criteria.rooms,
-      page: criteria.page ?? 1,
       sort: criteria.sort ?? "best",
     });
   }

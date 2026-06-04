@@ -67,12 +67,11 @@ export interface HotelSearchCacheKeyParams {
   checkOut: string;
   adults: number;
   rooms: number;
-  page: number;
   sort: string;
 }
 
 export function buildHotelSearchCacheKey(params: HotelSearchCacheKeyParams): string {
-  return `${HOTEL_CACHE_NAMESPACE}:${params.source}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.page}:${params.sort}`;
+  return `${HOTEL_CACHE_NAMESPACE}:${params.source}:${params.ltCityId}:${params.checkIn}:${params.checkOut}:${params.adults}:${params.rooms}:${params.sort}`;
 }
 
 const TTL_BY_SOURCE: Record<string, number> = {
@@ -86,7 +85,13 @@ export function getCacheTtlSeconds(source: string): number {
 }
 
 export function buildHotelDetailCacheKey(hotelId: string, city: string): string {
-  const normalizedCity = city.trim().toLowerCase();
+  // Collapse whitespace and hyphens to a single separator so a warming key
+  // built from a display name ("Kuala Lumpur") matches a lookup key built from
+  // a slug ("kuala-lumpur").
+  const normalizedCity = city
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "-");
   return `${HOTEL_DETAIL_NAMESPACE}:${normalizedCity}:${hotelId}`;
 }
 
@@ -309,7 +314,6 @@ export async function hotelCacheWarm(
     checkOut: params.checkOut,
     adults: params.adults ?? 2,
     rooms: params.rooms ?? 1,
-    page: 1,
     sort: params.sort ?? "best",
   });
 

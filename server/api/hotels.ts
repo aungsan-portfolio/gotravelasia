@@ -42,9 +42,11 @@ import {
 } from "../hotels/cache.js";
 import { ProviderOrchestrator } from "../hotels/providerOrchestrator.js";
 import { AgodaProvider } from "../hotels/providers/agodaAdapter.js";
+import { HotellookProvider } from "../hotels/providers/hotellookAdapter.js";
 
 const orchestrator = new ProviderOrchestrator([
   new AgodaProvider(),
+  new HotellookProvider(),
 ]);
 
 const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
@@ -56,6 +58,9 @@ const TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID ?? "";
 const KLOOK_ID = process.env.KLOOK_PARTNER_ID ?? "";
 const EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
 const PAGE_SIZE = 20;
+// Agoda lt_v1 has no offset/page parameter — it only accepts maxResult. We fetch
+// a larger pool once, cache it page-independently, then slice per page locally.
+const FETCH_LIMIT = 100;
 
 const AGODA_SORT_MAP: Record<HotelSort, string> = {
   best: "Recommended",
@@ -165,7 +170,6 @@ async function fetchAgodaHotels(
   checkOut: string,
   adults: number,
   rooms: number,
-  page: number,
   sort: HotelSort
 ) {
   const cacheKey = buildHotelSearchCacheKey({
@@ -175,7 +179,6 @@ async function fetchAgodaHotels(
     checkOut,
     adults,
     rooms,
-    page,
     sort,
   });
 
@@ -195,7 +198,7 @@ async function fetchAgodaHotels(
       if (allowMockFallback) {
         return {
           source: "mock" as const,
-          hotels: getMockHotels(agodaCityId, page, sort),
+          hotels: getMockHotels(agodaCityId, sort),
           warnings: ["Missing Agoda credentials. Showing fallback results."],
           diagnostics,
         };
@@ -215,7 +218,7 @@ async function fetchAgodaHotels(
       checkOut,
       cityId: ltCityId,
       adults,
-      pageSize: PAGE_SIZE,
+      pageSize: FETCH_LIMIT,
       sort,
     });
 
@@ -257,7 +260,7 @@ async function fetchAgodaHotels(
       if (allowMockFallback) {
         return {
           source: "mock" as const,
-          hotels: getMockHotels(agodaCityId, page, sort),
+          hotels: getMockHotels(agodaCityId, sort),
           warnings: ["Live Agoda search is temporarily unavailable. Showing fallback results."],
           diagnostics,
         };
@@ -329,7 +332,7 @@ async function fetchAgodaHotels(
       if (allowMockFallback) {
         return {
           source: "mock" as const,
-          hotels: getMockHotels(agodaCityId, page, sort),
+          hotels: getMockHotels(agodaCityId, sort),
           warnings: ["No live Agoda hotels were returned for this criteria. Showing fallback results."],
           diagnostics,
         };
@@ -361,7 +364,7 @@ async function fetchAgodaHotels(
     if (allowMockFallback) {
       return {
         source: "mock" as const,
-        hotels: getMockHotels(agodaCityId, page, sort),
+        hotels: getMockHotels(agodaCityId, sort),
         warnings: ["Live Agoda search failed. Showing fallback results."],
         diagnostics,
       };
@@ -384,7 +387,6 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
   checkOut: string;
   adults: number;
   rooms: number;
-  page: number;
   sort: HotelSort;
 }) {
   const attemptedLtCityIds: number[] = [];
@@ -402,7 +404,6 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
       params.checkOut,
       params.adults,
       params.rooms,
-      params.page,
       params.sort
     )) as any;
     lastResult = result;
@@ -476,7 +477,7 @@ function sortHotels(hotels: HotelResult[], sort: HotelSort) {
   return sorted;
 }
 
-function getMockHotels(cityId: number, page: number, sort: HotelSort) {
+function getMockHotels(cityId: number, sort: HotelSort) {
   // Generate pseudo-coordinates derived from cityId so they map correctly
   // This prevents them from being flagged as `isFallback` and filtered out of views.
   const baseLat = 13.75 + ((cityId % 100) / 100) * 5;
@@ -592,14 +593,12 @@ function getMockHotels(cityId: number, page: number, sort: HotelSort) {
     },
   ];
 
-  const pageOffset = (page - 1) * base.length;
   const withLinks = base.map((hotel, index) => ({
     ...hotel,
-    hotelId: `${hotel.hotelId}-p${page}`,
-    rankingPosition: pageOffset + index + 1,
+    rankingPosition: index + 1,
     outboundLinks: {
       agoda: agodaHotelUrl(
-        `${hotel.hotelId}-p${page}`,
+        hotel.hotelId,
         cityId,
         "2026-01-01",
         "2026-01-04",
@@ -715,40 +714,51 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
       rooms: normalized.rooms,
       agodaCityId: (city as any).agodaCityId,
       ltCityCandidates,
-      page: normalized.page,
       sort: normalized.sort,
     }),
   ]);
 
   const result = orchestratorResult.data;
 
-  const normalizedProviderHotels = result.hotels.map((hotel: any, index: number) =>
-    normalizeHotel(
-      hotel,
-      city,
-      normalized.checkIn,
-      normalized.checkOut,
-      normalized.adults,
-      normalized.rooms,
-      affiliateLinks,
-      index,
-      normalized.page
-    )
-  );
+  // Agoda lt_v1 returns raw data that needs normalizeHotel. Secondary providers
+  // (e.g. Hotellook) already return normalized HotelResult objects, so we skip
+  // the Agoda-specific normalizer for them.
+  const normalizedProviderHotels = orchestratorResult.source === "agoda"
+    ? result.hotels.map((hotel: any, index: number) =>
+        normalizeHotel(
+          hotel,
+          city,
+          normalized.checkIn,
+          normalized.checkOut,
+          normalized.adults,
+          normalized.rooms,
+          affiliateLinks,
+          index,
+          1
+        )
+      )
+    : result.hotels;
 
   const canonicalHotels = mergeProviderHotels(
     normalizedProviderHotels.map((hotel: any) =>
-      createProviderHotelFromResult("agoda", (city as any).name, hotel)
+      createProviderHotelFromResult(orchestratorResult.source, (city as any).name, hotel)
     )
   );
 
-  const hotels = sortHotels(
+  const sortedHotels = sortHotels(
     canonicalHotels.map((canonical) => ({
       ...canonical.primaryHotel.result,
       offers: canonical.offers,
     })),
     normalized.sort
   );
+
+  // Total available is the size of the fetched pool, not Agoda's reported total
+  // (we only fetch up to FETCH_LIMIT), so pagination stays consistent with what
+  // we can actually slice.
+  const totalCount = sortedHotels.length;
+  const startIndex = (normalized.page - 1) * PAGE_SIZE;
+  const hotels = sortedHotels.slice(startIndex, startIndex + PAGE_SIZE);
 
   // Instant Cache Warming for Hotel Details
   // Fire and forget cache sets for each hotel so that detail lookups are instant O(1)
@@ -764,7 +774,7 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
     normalized,
     city,
     hotels,
-    result,
+    result: { ...result, totalCount },
     affiliateLinks: { ...affiliateLinks, booking: bookingLink },
   };
 }

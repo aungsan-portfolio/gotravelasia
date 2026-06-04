@@ -6,6 +6,7 @@ import {
 } from "../../shared/hotels/cities";
 import { deriveEmptyStateReason } from "./hotels";
 import { findAgodaLtCityIdByName } from "../../shared/hotels/agodaLtCityMap";
+import { buildHotelDetailCacheKey } from "../hotels/cache";
 
 function createRes() {
   return {
@@ -221,7 +222,7 @@ describe("hotel search api", () => {
     } as Response);
 
     const res = createRes();
-    await runSearch(buildReq("2"), res);
+    await runSearch(buildReq("1"), res);
     const hotel = (res.body as any).hotels[0];
     expect(hotel.name).toBe("Lite Hotel");
     expect(hotel.stars).toBe(4);
@@ -248,7 +249,7 @@ describe("hotel search api", () => {
     } as Response);
 
     const res = createRes();
-    await runSearch(buildReq("3"), res);
+    await runSearch(buildReq("1"), res);
     const hotel = (res.body as any).hotels[0];
     expect(hotel.breakfastIncluded).toBe(true);
     expect(hotel.amenities).toContain("Free WiFi");
@@ -267,7 +268,7 @@ describe("hotel search api", () => {
     setLiveAgodaEnv({ ALLOW_HOTEL_MOCKS: "true" });
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" } as Response);
     const res = createRes();
-    await runSearch(buildReq("4"), res);
+    await runSearch(buildReq("1"), res);
     expect((res.body as any)?.meta?.source).toBe("mock");
     expect((res.body as any)?.hotels.length).toBeGreaterThan(0);
   });
@@ -530,5 +531,52 @@ describe("hotel search api", () => {
     expect(kl.agodaCityId).toBe(3714);
     expect(kl.agodaLtCityId).toBe(14524);
     expect(candidates.map((item) => item.cityId)).toEqual([14524, 3714]);
+  });
+
+  it("slices a >20 result pool across pages from a single upstream fetch", async () => {
+    setLiveAgodaEnv();
+    const results = Array.from({ length: 25 }, (_, i) => ({
+      hotelId: `h${i + 1}`,
+      hotelName: `Hotel ${i + 1}`,
+      dailyRate: 100 + i,
+      latitude: 13.7 + i * 0.001,
+      longitude: 100.5 + i * 0.001,
+    }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ results }),
+    } as Response);
+
+    const res1 = createRes();
+    await runSearch(buildReq("1"), res1);
+    expect((res1.body as any).hotels.length).toBe(20);
+    expect((res1.body as any).meta.totalCount).toBe(25);
+    expect((res1.body as any).meta.totalPages).toBe(2);
+
+    const res2 = createRes();
+    await runSearch(buildReq("2"), res2);
+    expect((res2.body as any).hotels.length).toBe(5);
+
+    // Page 2 is served from the cached pool — no second upstream fetch.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    // Pages must not overlap.
+    const ids1 = new Set((res1.body as any).hotels.map((h: any) => h.hotelId));
+    const ids2 = (res2.body as any).hotels.map((h: any) => h.hotelId);
+    expect(ids2.some((id: string) => ids1.has(id))).toBe(false);
+  });
+});
+
+describe("hotel detail cache key", () => {
+  it("matches across display-name and slug forms of a multi-word city", () => {
+    const fromName = buildHotelDetailCacheKey("h1", "Kuala Lumpur");
+    const fromSlug = buildHotelDetailCacheKey("h1", "kuala-lumpur");
+    expect(fromName).toBe(fromSlug);
+  });
+
+  it("collapses extra whitespace and casing", () => {
+    expect(buildHotelDetailCacheKey("h1", "  Kuala   Lumpur  ")).toBe(
+      buildHotelDetailCacheKey("h1", "kuala-lumpur")
+    );
   });
 });
