@@ -11,7 +11,6 @@ import type {
   HotelSort,
 } from "@shared/hotels/types";
 import { applyHotelFilters, type HotelRichFilters } from "@/lib/hotels/filterEngine";
-import { sortHotelsByRankingScore } from "@/lib/hotels/rankingScore";
 import { buildHotelRouteUrl, type HotelRouteMeta } from "@/lib/hotels/buildHotelRouteUrl";
 import { searchHotels } from "@/lib/hotels/searchClient";
 import {
@@ -147,7 +146,7 @@ export function useHotelSearch(
 
     switch (sort) {
       case "best":
-        return sortHotelsByRankingScore(filteredHotels);
+        return filteredHotels;
       case "price_asc":
         return [...filteredHotels].sort(
           (a, b) =>
@@ -329,7 +328,9 @@ export function useHotelSearch(
     visibleHotels,
     sort,
     activeFilters,
-    totalFound: visibleHotels.length,
+    totalFound: (activeFilters.length > 0 || Object.keys(richFilters).length > 0)
+      ? visibleHotels.length
+      : (data?.meta.totalCount ?? visibleHotels.length),
     richFilters,
     currentPage: data?.meta.page ?? query.page,
     totalPages: data?.meta.totalPages ?? 1,

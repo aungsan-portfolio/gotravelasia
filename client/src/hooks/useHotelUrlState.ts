@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import type { HotelFilterId } from "@/types/hotels";
 import type { HotelRichFilters } from "@/lib/hotels/filterEngine";
@@ -150,6 +150,7 @@ export function useHotelUrlState(input: {
   const searchString = useSearch();
   const [, setLocation] = useLocation();
   const initializedRef = useRef(false);
+  const [hasRestored, setHasRestored] = useState(false);
   const lastSerializedRef = useRef<string>("");
 
   // 1. Restore state from URL on initial mount
@@ -166,11 +167,14 @@ export function useHotelUrlState(input: {
     if (hasState && input.onRestoreFilters) {
       input.onRestoreFilters(restored);
     }
+    
+    // Defer URL serialization to the next cycle so React has time to apply the restored state
+    setHasRestored(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2. Sync state TO URL when filter/map changes
   useEffect(() => {
-    if (!initializedRef.current) return;
+    if (!initializedRef.current || !hasRestored) return;
 
     const filterParams = buildHotelFilterUrlParams({
       activeFilters: input.activeFilters,

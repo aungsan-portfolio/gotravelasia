@@ -4136,6 +4136,30 @@ var HotellookProvider = class {
   }
 };
 
+// shared/hotels/rankingScore.ts
+var REVIEW_COUNT_CAP = 5e3;
+var PRICE_CAP_USD = 500;
+function clamp012(value) {
+  return Math.min(1, Math.max(0, value));
+}
+function hasBreakfastAmenity(hotel) {
+  return (hotel.amenities ?? []).some(
+    (a) => a.toLowerCase().includes("breakfast")
+  );
+}
+function computeRankingScore(hotel) {
+  const reviewNorm = clamp012((hotel.reviewScore ?? 0) / 10);
+  const starsNorm = clamp012((hotel.stars ?? 0) / 5);
+  const rawCount = Math.max(0, hotel.reviewCount ?? 0);
+  const countNorm = clamp012(Math.log1p(rawCount) / Math.log1p(REVIEW_COUNT_CAP));
+  const rate = hotel.lowestRate ?? 0;
+  const priceNorm = rate > 0 ? 1 - clamp012(rate / PRICE_CAP_USD) : 0.5;
+  const hasBreakfast = hotel.breakfastIncluded === true || hasBreakfastAmenity(hotel);
+  const hasFreeCancellation = hotel.freeCancellation === true;
+  const score = reviewNorm * 30 + priceNorm * 20 + starsNorm * 15 + countNorm * 15 + (hasFreeCancellation ? 10 : 0) + (hasBreakfast ? 10 : 0);
+  return score;
+}
+
 // server/api/hotels.ts
 var orchestrator = new ProviderOrchestrator([
   new AgodaProvider(),
@@ -4479,8 +4503,11 @@ function sortHotels(hotels, sort) {
         return (b.reviewScore || 0) - (a.reviewScore || 0) || (b.reviewCount || 0) - (a.reviewCount || 0);
       case "rank":
       case "best":
-      default:
+      default: {
+        const diff = computeRankingScore(b) - computeRankingScore(a);
+        if (diff !== 0) return diff;
         return (a.rankingPosition || 0) - (b.rankingPosition || 0);
+      }
     }
   });
   return sorted;

@@ -44,6 +44,7 @@ import {
 import { ProviderOrchestrator } from "../hotels/providerOrchestrator.js";
 import { AgodaProvider } from "../hotels/providers/agodaAdapter.js";
 import { HotellookProvider } from "../hotels/providers/hotellookAdapter.js";
+import { computeRankingScore } from "../../shared/hotels/rankingScore.js";
 
 const orchestrator = new ProviderOrchestrator([
   new AgodaProvider(),
@@ -471,8 +472,11 @@ function sortHotels(hotels: HotelResult[], sort: HotelSort) {
         return (b.reviewScore || 0) - (a.reviewScore || 0) || (b.reviewCount || 0) - (a.reviewCount || 0);
       case "rank":
       case "best":
-      default:
+      default: {
+        const diff = computeRankingScore(b) - computeRankingScore(a);
+        if (diff !== 0) return diff;
         return (a.rankingPosition || 0) - (b.rankingPosition || 0);
+      }
     }
   });
   return sorted;
