@@ -19,7 +19,7 @@ import {
 import { useHotelRouteState } from "./useHotelRouteState";
 import { useHotelMapView } from "@/features/hotels/mapView/useHotelMapView";
 import type { MarkerBounds } from "@/features/hotels/mapView/markers.types";
-import { ExternalLink, SearchX, List, Map as MapIcon } from "lucide-react";
+import { ExternalLink, SearchX, List, Map as MapIcon, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HotelPagination } from "@/components/hotels/results/HotelPagination";
 import { HotelAffiliateStrip } from "@/components/hotels/results/HotelAffiliateStrip";
@@ -274,9 +274,20 @@ export default function HotelSearchResultsPage() {
       )}
       <main className="min-h-screen bg-slate-50 relative pb-20 xl:pb-6">
       <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-          Hotels in {cityName}
-        </h1>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setLocation("/")}
+            className="w-fit gap-2 text-slate-600 hover:text-slate-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Button>
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+            Hotels in {cityName}
+          </h1>
+        </div>
 
         <div className="mt-6">
           <HotelResultsToolbar
