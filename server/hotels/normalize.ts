@@ -264,7 +264,11 @@ export function normalizeHotel(
   const stars = Number(rawHotel.stars ?? rawHotel.starRating ?? rawHotel.rating ?? 0);
   const lowestRate = Number(rawHotel.lowestRate ?? rawHotel.price?.amount ?? rawHotel.displayPrice?.amount ?? rawHotel.priceDisplay?.amount ?? rawHotel.dailyRate ?? 0);
   
-  const agodaUrl = rawHotel.landingURL ?? (hotelId ? agodaHotelUrl(
+  // Prefer Agoda's own deep link (landingURL) when present and non-empty; the
+  // manually-built affiliate URL is a fallback only.
+  const landingUrl =
+    typeof rawHotel.landingURL === "string" ? rawHotel.landingURL.trim() : "";
+  const agodaUrl = landingUrl || (hotelId ? agodaHotelUrl(
     hotelId,
     city.agodaLtCityId ?? city.agodaCityId,
     checkIn,

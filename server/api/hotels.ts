@@ -44,12 +44,17 @@ import {
 import { ProviderOrchestrator } from "../hotels/providerOrchestrator.js";
 import { AgodaProvider } from "../hotels/providers/agodaAdapter.js";
 import { HotellookProvider } from "../hotels/providers/hotellookAdapter.js";
+import type { HotelProvider } from "../../shared/hotels/providers/types.js";
 import { computeRankingScore } from "../../shared/hotels/rankingScore.js";
 
-const orchestrator = new ProviderOrchestrator([
-  new AgodaProvider(),
-  new HotellookProvider(),
-]);
+// Hotellook is a secondary fallback that is not production-ready, so it is
+// disabled by default and only registered when explicitly enabled via env.
+const HOTELLOOK_ENABLED = process.env.HOTELS_ENABLE_HOTELLOOK === "true";
+const orchestratorProviders: HotelProvider[] = [new AgodaProvider()];
+if (HOTELLOOK_ENABLED) {
+  orchestratorProviders.push(new HotellookProvider());
+}
+const orchestrator = new ProviderOrchestrator(orchestratorProviders);
 
 const AGODA_SITE_ID = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 const AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
@@ -59,10 +64,11 @@ const BOOKING_ADV = process.env.BOOKING_AWIN_ADV_ID ?? "5910";
 const TRIP_SITE_ID = process.env.TRIP_COM_SITE_ID ?? "";
 const KLOOK_ID = process.env.KLOOK_PARTNER_ID ?? "";
 const EXPEDIA_CODE = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
-const PAGE_SIZE = 20;
-// Agoda lt_v1 has no offset/page parameter — it only accepts maxResult. We fetch
-// a larger pool once, cache it page-independently, then slice per page locally.
-const FETCH_LIMIT = 100;
+// Agoda lt_v1 returns a single page: maxResult is capped at 1–30 by the spec and
+// there is NO page/offset/startIndex/cursor field. We request one page (the spec
+// max) and never slice it into fake pages; totalPages is always 1.
+const AGODA_MAX_RESULT = 30;
+const PAGE_SIZE = AGODA_MAX_RESULT;
 
 const AGODA_SORT_MAP: Record<HotelSort, string> = {
   best: "Recommended",
@@ -112,7 +118,8 @@ export function buildAgodaLtV1RequestBody(params: {
         dailyRate: { minimum: 1, maximum: 10000 },
         discountOnly: false,
         language: "en-us",
-        maxResult: params.pageSize,
+        // Spec: maxResult is an integer in the range 1–30 (City Search only).
+        maxResult: Math.min(30, Math.max(1, Math.trunc(params.pageSize))),
         minimumReviewScore: 0,
         minimumStarRating: 0,
         occupancy: {
@@ -164,6 +171,73 @@ function extractAgodaErrorDiagnostics(
 
 const AGODA_LT_V1_ENDPOINT =
   "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
+
+// Spec §2: Authorization must be "siteid:apikey". Never log the raw value.
+function buildAgodaAuthHeader(): string {
+  return AGODA_API_KEY.startsWith(`${AGODA_SITE_ID}:`)
+    ? AGODA_API_KEY
+    : `${AGODA_SITE_ID}:${AGODA_API_KEY}`;
+}
+
+// Shared request headers for every lt_v1 call (search + hotel-detail).
+// NOTE: Accept-Encoding is deliberately NOT set. Node's fetch negotiates gzip
+// and decompresses automatically; setting it manually previously broke response
+// decompression in this runtime (reverted in commit a920664), so we rely on the
+// automatic behavior and intentionally deviate from the PDF on this one header.
+function buildAgodaHeaders(): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    Authorization: buildAgodaAuthHeader(),
+  };
+}
+
+// Hotel List Search body (spec §4): looks up specific hotels by id on the SAME
+// lt_v1 endpoint. `hotelId` is a top-level array under `criteria` (NOT under
+// `additional`, and with NO `cityId`). City-search-only fields (maxResult,
+// sortBy, dailyRate, minimum*) are omitted per the spec.
+export function buildAgodaLtV1HotelDetailBody(params: {
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  hotelId: number;
+}) {
+  return {
+    criteria: {
+      additional: {
+        currency: "USD",
+        discountOnly: false,
+        language: "en-us",
+        occupancy: {
+          numberOfAdult: params.adults,
+          numberOfChildren: 0,
+        },
+      },
+      checkInDate: params.checkIn,
+      checkOutDate: params.checkOut,
+      hotelId: [params.hotelId],
+    },
+  };
+}
+
+// Find the first non-empty hotel array across the shapes Agoda may return.
+function extractHotelsArray(payload: any): unknown[] {
+  const candidates: unknown[] = [
+    payload?.results,
+    payload?.hotels,
+    payload?.properties,
+    payload?.data,
+    (payload?.data as any)?.results,
+    (payload?.data as any)?.hotels,
+    payload?.searchResults,
+    payload?.hotelList,
+  ];
+  return (
+    (candidates.find(
+      (candidate): candidate is unknown[] =>
+        Array.isArray(candidate) && candidate.length > 0
+    ) as unknown[]) ?? []
+  );
+}
 
 async function fetchAgodaHotels(
   agodaCityId: number,
@@ -220,7 +294,7 @@ async function fetchAgodaHotels(
       checkOut,
       cityId: ltCityId,
       adults,
-      pageSize: FETCH_LIMIT,
+      pageSize: AGODA_MAX_RESULT,
       sort,
     });
 
@@ -238,12 +312,7 @@ async function fetchAgodaHotels(
     const response = await fetch(AGODA_LT_V1_ENDPOINT, {
       method: "POST",
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID}:`)
-          ? AGODA_API_KEY
-          : `${AGODA_SITE_ID}:${AGODA_API_KEY}`,
-      },
+      headers: buildAgodaHeaders(),
       body: JSON.stringify(body),
     });
 
@@ -303,10 +372,7 @@ async function fetchAgodaHotels(
       },
       {}
     );
-    const hotels =
-      (Object.values(resultCandidateMap).find(
-        (candidate): candidate is unknown[] => Array.isArray(candidate) && candidate.length > 0
-      ) as unknown[]) ?? [];
+    const hotels = extractHotelsArray(payload);
 
     if (!hotels.length) {
       if (hasErrorPayload) {
@@ -456,6 +522,91 @@ export async function fetchAgodaHotelsWithCityCandidates(params: {
       cityResolutionStatus,
     },
   };
+}
+
+/**
+ * Look up a single hotel via Agoda Hotel List Search (spec §4) instead of a full
+ * city search. Returns a normalized HotelResult, or null when the hotel is not
+ * found / credentials are missing / the request fails.
+ */
+export async function fetchAgodaHotelDetail(params: {
+  hotelId: number;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  rooms: number;
+  city?: string;
+  agodaCityId?: number;
+}): Promise<HotelResult | null> {
+  if (!AGODA_SITE_ID || !AGODA_API_KEY) {
+    console.warn("[Hotels] Missing Agoda credentials, skipping hotel detail lookup.");
+    return null;
+  }
+
+  const body = buildAgodaLtV1HotelDetailBody({
+    checkIn: params.checkIn,
+    checkOut: params.checkOut,
+    adults: params.adults,
+    hotelId: params.hotelId,
+  });
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(AGODA_LT_V1_ENDPOINT, {
+      method: "POST",
+      signal: controller.signal,
+      headers: buildAgodaHeaders(),
+      body: JSON.stringify(body),
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      safeWarnOnce(`Agoda lt_v1 hotel detail returned status ${response.status}.`);
+      return null;
+    }
+
+    const payload = (await response.json()) as Record<string, unknown>;
+    const hotels = extractHotelsArray(payload);
+    if (!hotels.length) return null;
+
+    const cityName = params.city?.trim() || `City ${params.agodaCityId ?? ""}`.trim();
+    const detailCity = {
+      slug: (params.city ?? "").toLowerCase().replace(/\s+/g, "-"),
+      name: cityName,
+      bookingName: cityName,
+      country: "",
+      agodaCityId: params.agodaCityId ?? 0,
+      hasHotels: true,
+    } as HotelSearchCity;
+
+    const affiliateLinks = buildAffiliateLinks(
+      cityName,
+      cityName,
+      params.agodaCityId ?? 0,
+      params.checkIn,
+      params.checkOut,
+      params.adults,
+      params.rooms
+    );
+
+    return normalizeHotel(
+      hotels[0],
+      detailCity,
+      params.checkIn,
+      params.checkOut,
+      params.adults,
+      params.rooms,
+      affiliateLinks,
+      0,
+      1
+    );
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error("[Hotels] Agoda lt_v1 hotel detail failed:", err);
+    return null;
+  }
 }
 
 function sortHotels(hotels: HotelResult[], sort: HotelSort) {
@@ -758,18 +909,17 @@ export async function executeHotelSearch(reqQuery: Record<string, unknown>) {
     normalized.sort
   );
 
-  // Total available is the size of the fetched pool, not Agoda's reported total
-  // (we only fetch up to FETCH_LIMIT), so pagination stays consistent with what
-  // we can actually slice.
+  // Agoda lt_v1 returns a single page (maxResult ≤ 30) and the spec has no
+  // pagination, so we return the whole result set as one page — no slicing.
   const totalCount = sortedHotels.length;
-  const startIndex = (normalized.page - 1) * PAGE_SIZE;
-  const hotels = sortedHotels.slice(startIndex, startIndex + PAGE_SIZE);
+  const hotels = sortedHotels;
 
   // Instant Cache Warming for Hotel Details
-  // Fire and forget cache sets for each hotel so that detail lookups are instant O(1)
+  // Fire and forget cache sets for each hotel so that detail lookups are instant O(1).
+  // Keyed on hotelId only so warming and detail lookup always agree (city-independent).
   hotels.forEach(hotel => {
     hotelCacheSet(
-      buildHotelDetailCacheKey(hotel.hotelId, (city as any).name),
+      buildHotelDetailCacheKey(hotel.hotelId),
       hotel,
       getCacheTtlSeconds(result.source)
     ).catch(e => console.error("[HotelDetail] Warming failed:", e));
@@ -824,11 +974,12 @@ function buildHotelSearchResponsePayload(params: {
     checkOut: params.normalized.checkOut,
     adults: params.normalized.adults,
     rooms: params.normalized.rooms,
-    page: params.normalized.page,
+    // Agoda lt_v1 has no pagination: always a single page of results.
+    page: 1,
     sort: params.normalized.sort,
     pageSize: PAGE_SIZE,
     totalCount: params.result.totalCount ?? params.hotels.length,
-    totalPages: Math.max(1, Math.ceil((params.result.totalCount ?? params.hotels.length) / PAGE_SIZE)),
+    totalPages: 1,
     warning: (params.result as any).warning,
     warnings: params.result.warnings,
     emptyStateReason: deriveEmptyStateReason(
@@ -895,7 +1046,9 @@ export async function getHotelDetail(req: Request, res: Response) {
         }
     }
 
-    const cacheKey = buildHotelDetailCacheKey(hotelId, cacheCityName);
+    // hotelId-only key so search warming and detail lookup always resolve to the
+    // same entry regardless of how the city was supplied.
+    const cacheKey = buildHotelDetailCacheKey(hotelId);
     const cached = await hotelCacheGet(cacheKey);
 
     if (cached && cached.data) {
@@ -925,7 +1078,16 @@ export async function getHotelDetail(req: Request, res: Response) {
     };
 
     const orchestratorResult = await orchestrator.getHotelDetail(hotelId, criteria);
-    
+
+    // Populate the same canonical key so subsequent lookups hit the cache.
+    if (orchestratorResult.data) {
+      hotelCacheSet(
+        cacheKey,
+        orchestratorResult.data,
+        getCacheTtlSeconds(orchestratorResult.source)
+      ).catch(e => console.error("[HotelDetail] Cache set failed:", e));
+    }
+
     return res.json({
       city: { id: 0, name: cacheCityName, type: "orchestrator_fallback" },
       hotels: [],

@@ -1,5 +1,9 @@
 import type { HotelProvider, HotelSearchCriteria } from "../../../shared/hotels/providers/types.js";
-import { fetchAgodaHotelsWithCityCandidates } from "../../api/hotels.js";
+import type { HotelResult } from "../../../shared/hotels/types.js";
+import {
+  fetchAgodaHotelsWithCityCandidates,
+  fetchAgodaHotelDetail,
+} from "../../api/hotels.js";
 
 // AgodaProvider adapter wraps existing fetchAgodaHotelsWithCityCandidates 1:1
 export class AgodaProvider implements HotelProvider {
@@ -24,9 +28,24 @@ export class AgodaProvider implements HotelProvider {
     });
   }
 
-  async getHotelDetail(hotelId: string, criteria?: HotelSearchCriteria): Promise<any | null> {
+  async getHotelDetail(
+    hotelId: string,
+    criteria?: HotelSearchCriteria
+  ): Promise<HotelResult | null> {
     if (!criteria) return null;
-    const searchResult = await this.searchHotels(criteria);
-    return searchResult.hotels.find((h: any) => h.hotelId === hotelId) ?? null;
+    const numericHotelId = Number(hotelId);
+    if (!Number.isFinite(numericHotelId)) return null;
+
+    // Look up the single hotel via Agoda Hotel List Search (lt_v1 §4) instead of
+    // running a full city search and filtering client-side.
+    return fetchAgodaHotelDetail({
+      hotelId: numericHotelId,
+      checkIn: criteria.checkIn,
+      checkOut: criteria.checkOut,
+      adults: criteria.adults,
+      rooms: criteria.rooms,
+      city: criteria.city,
+      agodaCityId: criteria.agodaCityId,
+    });
   }
 }

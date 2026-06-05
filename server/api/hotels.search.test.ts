@@ -533,7 +533,7 @@ describe("hotel search api", () => {
     expect(candidates.map((item) => item.cityId)).toEqual([14524, 3714]);
   });
 
-  it("slices a >20 result pool across pages from a single upstream fetch", async () => {
+  it("returns the whole result set as a single page (no fake pagination)", async () => {
     setLiveAgodaEnv();
     const results = Array.from({ length: 25 }, (_, i) => ({
       hotelId: `h${i + 1}`,
@@ -549,34 +549,115 @@ describe("hotel search api", () => {
 
     const res1 = createRes();
     await runSearch(buildReq("1"), res1);
-    expect((res1.body as any).hotels.length).toBe(20);
+    // Agoda lt_v1 has no pagination — all results come back on page 1.
+    expect((res1.body as any).hotels.length).toBe(25);
     expect((res1.body as any).meta.totalCount).toBe(25);
-    expect((res1.body as any).meta.totalPages).toBe(2);
+    expect((res1.body as any).meta.totalPages).toBe(1);
+    expect((res1.body as any).meta.page).toBe(1);
+  });
 
-    const res2 = createRes();
-    await runSearch(buildReq("2"), res2);
-    expect((res2.body as any).hotels.length).toBe(5);
+  it("requests maxResult 30 (the lt_v1 spec max) and never page/offset fields", async () => {
+    setLiveAgodaEnv();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [{ hotelId: "h1", dailyRate: 100 }] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
 
-    // Page 2 is served from the cached pool — no second upstream fetch.
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.criteria.additional.maxResult).toBe(30);
+    // No pagination fields must leak into the upstream request.
+    expect(JSON.stringify(body)).not.toMatch(/offset|startIndex|pageNumber|"page"/i);
+  });
 
-    // Pages must not overlap.
-    const ids1 = new Set((res1.body as any).hotels.map((h: any) => h.hotelId));
-    const ids2 = (res2.body as any).hotels.map((h: any) => h.hotelId);
-    expect(ids2.some((id: string) => ids1.has(id))).toBe(false);
+  it("does not set an Accept-Encoding header on the upstream request", async () => {
+    setLiveAgodaEnv();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+
+    const headers = (fetchSpy.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    const headerKeys = Object.keys(headers).map((k) => k.toLowerCase());
+    expect(headerKeys).not.toContain("accept-encoding");
+  });
+
+  it("preserves a non-empty Agoda landingURL verbatim", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [
+          {
+            hotelId: "h1",
+            hotelName: "Landing Hotel",
+            dailyRate: 100,
+            landingURL: "https://agoda.example/deep/h1?cid=123",
+          },
+        ],
+      }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    expect((res.body as any).hotels[0].outboundLinks.agoda).toBe(
+      "https://agoda.example/deep/h1?cid=123"
+    );
+  });
+
+  it("falls back to a built affiliate URL when landingURL is empty", async () => {
+    setLiveAgodaEnv();
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [
+          {
+            hotelId: "h1",
+            hotelName: "No Landing Hotel",
+            dailyRate: 100,
+            landingURL: "   ",
+          },
+        ],
+      }),
+    } as Response);
+    const res = createRes();
+    await runSearch(buildReq("1"), res);
+    const agoda = (res.body as any).hotels[0].outboundLinks.agoda;
+    expect(agoda).toBeTruthy();
+    expect(agoda.trim()).not.toBe("");
+    expect(agoda).toContain("agoda");
+  });
+});
+
+describe("Agoda Hotel List Search body (lt_v1 §4)", () => {
+  it("puts hotelId as a top-level array under criteria with no city fields", async () => {
+    const { buildAgodaLtV1HotelDetailBody } = await import("./hotels");
+    const body = buildAgodaLtV1HotelDetailBody({
+      checkIn: "2026-05-10",
+      checkOut: "2026-05-12",
+      adults: 2,
+      hotelId: 12345,
+    });
+    expect(body.criteria.hotelId).toEqual([12345]);
+    // City-search-only fields must be absent.
+    expect((body.criteria as any).cityId).toBeUndefined();
+    expect((body.criteria.additional as any).maxResult).toBeUndefined();
+    expect((body.criteria.additional as any).sortBy).toBeUndefined();
+    expect((body.criteria.additional as any).dailyRate).toBeUndefined();
   });
 });
 
 describe("hotel detail cache key", () => {
-  it("matches across display-name and slug forms of a multi-word city", () => {
-    const fromName = buildHotelDetailCacheKey("h1", "Kuala Lumpur");
-    const fromSlug = buildHotelDetailCacheKey("h1", "kuala-lumpur");
-    expect(fromName).toBe(fromSlug);
+  it("is derived from hotelId only (city-independent)", () => {
+    // Same hotelId → same key regardless of any city context, so search-time
+    // warming and detail lookup always resolve to the same entry.
+    expect(buildHotelDetailCacheKey("h1")).toBe(buildHotelDetailCacheKey("h1"));
+    expect(buildHotelDetailCacheKey("h1")).toContain("h1");
   });
 
-  it("collapses extra whitespace and casing", () => {
-    expect(buildHotelDetailCacheKey("h1", "  Kuala   Lumpur  ")).toBe(
-      buildHotelDetailCacheKey("h1", "kuala-lumpur")
-    );
+  it("produces distinct keys for distinct hotel ids", () => {
+    expect(buildHotelDetailCacheKey("h1")).not.toBe(buildHotelDetailCacheKey("h2"));
   });
 });

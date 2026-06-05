@@ -3431,7 +3431,8 @@ function normalizeHotel(rawHotel, city, checkIn, checkOut, adults, rooms, fallba
   const reviewCount = Number(rawHotel.reviewCount ?? rawHotel.reviewCountRaw ?? rawHotel.review?.count ?? 0);
   const stars = Number(rawHotel.stars ?? rawHotel.starRating ?? rawHotel.rating ?? 0);
   const lowestRate = Number(rawHotel.lowestRate ?? rawHotel.price?.amount ?? rawHotel.displayPrice?.amount ?? rawHotel.priceDisplay?.amount ?? rawHotel.dailyRate ?? 0);
-  const agodaUrl = rawHotel.landingURL ?? (hotelId ? agodaHotelUrl(
+  const landingUrl = typeof rawHotel.landingURL === "string" ? rawHotel.landingURL.trim() : "";
+  const agodaUrl = landingUrl || (hotelId ? agodaHotelUrl(
     hotelId,
     city.agodaLtCityId ?? city.agodaCityId,
     checkIn,
@@ -3623,9 +3624,8 @@ var TTL_BY_SOURCE = {
 function getCacheTtlSeconds(source) {
   return TTL_BY_SOURCE[source] ?? 30 * 60;
 }
-function buildHotelDetailCacheKey(hotelId, city) {
-  const normalizedCity = city.trim().toLowerCase().replace(/[\s-]+/g, "-");
-  return `${HOTEL_DETAIL_NAMESPACE}:${normalizedCity}:${hotelId}`;
+function buildHotelDetailCacheKey(hotelId) {
+  return `${HOTEL_DETAIL_NAMESPACE}:${hotelId}`;
 }
 function evictL1IfNeeded() {
   if (l1Cache.size <= L1_MAX_SIZE) return;
@@ -3869,8 +3869,17 @@ var AgodaProvider = class {
   }
   async getHotelDetail(hotelId, criteria) {
     if (!criteria) return null;
-    const searchResult = await this.searchHotels(criteria);
-    return searchResult.hotels.find((h) => h.hotelId === hotelId) ?? null;
+    const numericHotelId = Number(hotelId);
+    if (!Number.isFinite(numericHotelId)) return null;
+    return fetchAgodaHotelDetail({
+      hotelId: numericHotelId,
+      checkIn: criteria.checkIn,
+      checkOut: criteria.checkOut,
+      adults: criteria.adults,
+      rooms: criteria.rooms,
+      city: criteria.city,
+      agodaCityId: criteria.agodaCityId
+    });
   }
 };
 
@@ -4161,10 +4170,12 @@ function computeRankingScore(hotel) {
 }
 
 // server/api/hotels.ts
-var orchestrator = new ProviderOrchestrator([
-  new AgodaProvider(),
-  new HotellookProvider()
-]);
+var HOTELLOOK_ENABLED = process.env.HOTELS_ENABLE_HOTELLOOK === "true";
+var orchestratorProviders = [new AgodaProvider()];
+if (HOTELLOOK_ENABLED) {
+  orchestratorProviders.push(new HotellookProvider());
+}
+var orchestrator = new ProviderOrchestrator(orchestratorProviders);
 var AGODA_SITE_ID2 = normalizeAgodaSiteId(process.env.AGODA_SITE_ID ?? "");
 var AGODA_API_KEY = normalizeAgodaApiKey(process.env.AGODA_API_KEY ?? "");
 var AWIN_TOKEN2 = process.env.AWIN_TOKEN ?? "";
@@ -4173,8 +4184,8 @@ var BOOKING_ADV2 = process.env.BOOKING_AWIN_ADV_ID ?? "5910";
 var TRIP_SITE_ID2 = process.env.TRIP_COM_SITE_ID ?? "";
 var KLOOK_ID2 = process.env.KLOOK_PARTNER_ID ?? "";
 var EXPEDIA_CODE2 = process.env.EXPEDIA_TP_CODE ?? "ZZxDEika";
-var PAGE_SIZE2 = 20;
-var FETCH_LIMIT = 100;
+var AGODA_MAX_RESULT = 30;
+var PAGE_SIZE2 = AGODA_MAX_RESULT;
 var AGODA_SORT_MAP = {
   best: "Recommended",
   rank: "Recommended",
@@ -4206,7 +4217,8 @@ function buildAgodaLtV1RequestBody(params) {
         dailyRate: { minimum: 1, maximum: 1e4 },
         discountOnly: false,
         language: "en-us",
-        maxResult: params.pageSize,
+        // Spec: maxResult is an integer in the range 1–30 (City Search only).
+        maxResult: Math.min(30, Math.max(1, Math.trunc(params.pageSize))),
         minimumReviewScore: 0,
         minimumStarRating: 0,
         occupancy: {
@@ -4247,6 +4259,48 @@ function extractAgodaErrorDiagnostics(payload) {
   };
 }
 var AGODA_LT_V1_ENDPOINT = "https://affiliateapi7643.agoda.com/affiliateservice/lt_v1";
+function buildAgodaAuthHeader() {
+  return AGODA_API_KEY.startsWith(`${AGODA_SITE_ID2}:`) ? AGODA_API_KEY : `${AGODA_SITE_ID2}:${AGODA_API_KEY}`;
+}
+function buildAgodaHeaders() {
+  return {
+    "Content-Type": "application/json",
+    Authorization: buildAgodaAuthHeader()
+  };
+}
+function buildAgodaLtV1HotelDetailBody(params) {
+  return {
+    criteria: {
+      additional: {
+        currency: "USD",
+        discountOnly: false,
+        language: "en-us",
+        occupancy: {
+          numberOfAdult: params.adults,
+          numberOfChildren: 0
+        }
+      },
+      checkInDate: params.checkIn,
+      checkOutDate: params.checkOut,
+      hotelId: [params.hotelId]
+    }
+  };
+}
+function extractHotelsArray(payload) {
+  const candidates = [
+    payload?.results,
+    payload?.hotels,
+    payload?.properties,
+    payload?.data,
+    payload?.data?.results,
+    payload?.data?.hotels,
+    payload?.searchResults,
+    payload?.hotelList
+  ];
+  return candidates.find(
+    (candidate) => Array.isArray(candidate) && candidate.length > 0
+  ) ?? [];
+}
 async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults, rooms, sort) {
   const cacheKey = buildHotelSearchCacheKey({
     source: "agoda",
@@ -4290,7 +4344,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       checkOut,
       cityId: ltCityId,
       adults,
-      pageSize: FETCH_LIMIT,
+      pageSize: AGODA_MAX_RESULT,
       sort
     });
     const hasAgodaApiKey = Boolean(AGODA_API_KEY);
@@ -4304,10 +4358,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
     const response = await fetch(AGODA_LT_V1_ENDPOINT, {
       method: "POST",
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: AGODA_API_KEY.startsWith(`${AGODA_SITE_ID2}:`) ? AGODA_API_KEY : `${AGODA_SITE_ID2}:${AGODA_API_KEY}`
-      },
+      headers: buildAgodaHeaders(),
       body: JSON.stringify(body)
     });
     clearTimeout(timeoutId);
@@ -4361,9 +4412,7 @@ async function fetchAgodaHotels(agodaCityId, ltCityId, checkIn, checkOut, adults
       },
       {}
     );
-    const hotels = Object.values(resultCandidateMap).find(
-      (candidate) => Array.isArray(candidate) && candidate.length > 0
-    ) ?? [];
+    const hotels = extractHotelsArray(payload);
     if (!hotels.length) {
       if (hasErrorPayload) {
         console.warn("[Hotels] Agoda lt_v1 error payload", {
@@ -4488,6 +4537,69 @@ async function fetchAgodaHotelsWithCityCandidates(params) {
       cityResolutionStatus
     }
   };
+}
+async function fetchAgodaHotelDetail(params) {
+  if (!AGODA_SITE_ID2 || !AGODA_API_KEY) {
+    console.warn("[Hotels] Missing Agoda credentials, skipping hotel detail lookup.");
+    return null;
+  }
+  const body = buildAgodaLtV1HotelDetailBody({
+    checkIn: params.checkIn,
+    checkOut: params.checkOut,
+    adults: params.adults,
+    hotelId: params.hotelId
+  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8e3);
+  try {
+    const response = await fetch(AGODA_LT_V1_ENDPOINT, {
+      method: "POST",
+      signal: controller.signal,
+      headers: buildAgodaHeaders(),
+      body: JSON.stringify(body)
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      safeWarnOnce(`Agoda lt_v1 hotel detail returned status ${response.status}.`);
+      return null;
+    }
+    const payload = await response.json();
+    const hotels = extractHotelsArray(payload);
+    if (!hotels.length) return null;
+    const cityName = params.city?.trim() || `City ${params.agodaCityId ?? ""}`.trim();
+    const detailCity = {
+      slug: (params.city ?? "").toLowerCase().replace(/\s+/g, "-"),
+      name: cityName,
+      bookingName: cityName,
+      country: "",
+      agodaCityId: params.agodaCityId ?? 0,
+      hasHotels: true
+    };
+    const affiliateLinks = buildAffiliateLinks(
+      cityName,
+      cityName,
+      params.agodaCityId ?? 0,
+      params.checkIn,
+      params.checkOut,
+      params.adults,
+      params.rooms
+    );
+    return normalizeHotel(
+      hotels[0],
+      detailCity,
+      params.checkIn,
+      params.checkOut,
+      params.adults,
+      params.rooms,
+      affiliateLinks,
+      0,
+      1
+    );
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error("[Hotels] Agoda lt_v1 hotel detail failed:", err);
+    return null;
+  }
 }
 function sortHotels(hotels, sort) {
   const sorted = [...hotels];
@@ -4764,11 +4876,10 @@ async function executeHotelSearch(reqQuery) {
     normalized.sort
   );
   const totalCount = sortedHotels.length;
-  const startIndex = (normalized.page - 1) * PAGE_SIZE2;
-  const hotels = sortedHotels.slice(startIndex, startIndex + PAGE_SIZE2);
+  const hotels = sortedHotels;
   hotels.forEach((hotel) => {
     hotelCacheSet(
-      buildHotelDetailCacheKey(hotel.hotelId, city.name),
+      buildHotelDetailCacheKey(hotel.hotelId),
       hotel,
       getCacheTtlSeconds(result.source)
     ).catch((e) => console.error("[HotelDetail] Warming failed:", e));
@@ -4808,11 +4919,12 @@ function buildHotelSearchResponsePayload(params) {
     checkOut: params.normalized.checkOut,
     adults: params.normalized.adults,
     rooms: params.normalized.rooms,
-    page: params.normalized.page,
+    // Agoda lt_v1 has no pagination: always a single page of results.
+    page: 1,
     sort: params.normalized.sort,
     pageSize: PAGE_SIZE2,
     totalCount: params.result.totalCount ?? params.hotels.length,
-    totalPages: Math.max(1, Math.ceil((params.result.totalCount ?? params.hotels.length) / PAGE_SIZE2)),
+    totalPages: 1,
     warning: params.result.warning,
     warnings: params.result.warnings,
     emptyStateReason: deriveEmptyStateReason(
@@ -4867,7 +4979,7 @@ async function getHotelDetail(req, res) {
         cacheCityName = normalizedParams.city;
       }
     }
-    const cacheKey = buildHotelDetailCacheKey(hotelId, cacheCityName);
+    const cacheKey = buildHotelDetailCacheKey(hotelId);
     const cached = await hotelCacheGet(cacheKey);
     if (cached && cached.data) {
       console.log(`[Hotels] Detail Cache hit for ${cacheKey} (age=${cached.age}ms)`);
@@ -4893,6 +5005,13 @@ async function getHotelDetail(req, res) {
       // Optional since it's a fallback
     };
     const orchestratorResult = await orchestrator.getHotelDetail(hotelId, criteria);
+    if (orchestratorResult.data) {
+      hotelCacheSet(
+        cacheKey,
+        orchestratorResult.data,
+        getCacheTtlSeconds(orchestratorResult.source)
+      ).catch((e) => console.error("[HotelDetail] Cache set failed:", e));
+    }
     return res.json({
       city: { id: 0, name: cacheCityName, type: "orchestrator_fallback" },
       hotels: [],

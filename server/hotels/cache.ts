@@ -84,15 +84,11 @@ export function getCacheTtlSeconds(source: string): number {
   return TTL_BY_SOURCE[source] ?? 30 * 60;
 }
 
-export function buildHotelDetailCacheKey(hotelId: string, city: string): string {
-  // Collapse whitespace and hyphens to a single separator so a warming key
-  // built from a display name ("Kuala Lumpur") matches a lookup key built from
-  // a slug ("kuala-lumpur").
-  const normalizedCity = city
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "-");
-  return `${HOTEL_DETAIL_NAMESPACE}:${normalizedCity}:${hotelId}`;
+export function buildHotelDetailCacheKey(hotelId: string): string {
+  // Keyed on hotelId only: Agoda hotel ids are globally unique, so search
+  // warming and detail lookup always resolve to the same entry regardless of
+  // how (or whether) a city was supplied.
+  return `${HOTEL_DETAIL_NAMESPACE}:${hotelId}`;
 }
 
 function buildCityInvalidationPattern(city: string): string {
