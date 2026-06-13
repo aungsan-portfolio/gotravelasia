@@ -35,7 +35,7 @@ export async function rateLimitMiddleware(
   try {
     const now = Date.now();
     const ip = getClientIp(req);
-    const key = `ratelimit:${namespace}:${ip}`;
+    const key = atelimit::;
     const store = getStore();
 
     const { count, resetAt } = await store.increment(key, WINDOW_MS);

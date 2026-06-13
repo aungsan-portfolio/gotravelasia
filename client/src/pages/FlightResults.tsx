@@ -1,4 +1,4 @@
-/** @deprecated `/flights/results` is served by `pages/flights/WhiteLabelResultsBridge.tsx`. */
+﻿/** @deprecated `/flights/results` is served by `pages/flights/WhiteLabelResultsBridge.tsx`. */
 import { useEffect, useMemo, useState } from "react";
 import SEO from "@/seo/SEO";
 import { StaysSection } from "@/components/flights/stays-section";
@@ -49,9 +49,9 @@ function safeIsoDate(v: string | null): string | null {
 function getRouteLabel(search: URLSearchParams): string {
   const o = safeParam(search.get("origin"));
   const d = safeParam(search.get("destination"));
-  if (o && d) return `${o.toUpperCase()} → ${d.toUpperCase()}`;
+  if (o && d) return `${o.toUpperCase()} â†’ ${d.toUpperCase()}`;
   const m = safeParam(search.get("flightSearch")).match(/^([A-Z]{3})\d{4}([A-Z]{3})/);
-  if (m) return `${m[1]} → ${m[2]}`;
+  if (m) return `${m[1]} â†’ ${m[2]}`;
   return "";
 }
 
@@ -215,8 +215,8 @@ export default function FlightResults() {
   }, [search]);
 
   useEffect(() => {
-    console.debug("[GTA] parsed →", { destinationCode, cityName, departDate, returnDate });
-    // ── Cleanup previous run ─────────────────────────────
+    console.debug("[GTA] parsed â†’", { destinationCode, cityName, departDate, returnDate });
+    // â”€â”€ Cleanup previous run â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     document.getElementById(SCRIPT_ID)?.remove();
     document.querySelectorAll(`.${WEEDLE_SCRIPT_CLASS}`).forEach((el) => el.remove());
     document.getElementById("tpwl-search")?.replaceChildren();
@@ -224,7 +224,7 @@ export default function FlightResults() {
     document.getElementById("tpwl-widget-weedles")?.replaceChildren();
     setWidgetState("loading");
 
-    // ── Travelpayouts global config ──────────────────────
+    // â”€â”€ Travelpayouts global config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.TPWL_CONFIGURATION = {
       ...window.TPWL_CONFIGURATION,
       resultsURL: `${window.location.origin}/flights/results`,
@@ -242,7 +242,7 @@ export default function FlightResults() {
       link_color: "F5A623",
     };
 
-    // ── Load main Travelpayouts widget script ────────────
+    // â”€â”€ Load main Travelpayouts widget script â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const mainScript = document.createElement("script");
     mainScript.id    = SCRIPT_ID;
     mainScript.async = true;
@@ -250,7 +250,7 @@ export default function FlightResults() {
     mainScript.src   = `https://tpwidg.com/wl_web/main.js?wl_id=${encodeURIComponent(WL_ID)}`;
     document.body.appendChild(mainScript);
 
-    // ── Mount weedle popular destination scripts ─────────
+    // â”€â”€ Mount weedle popular destination scripts â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const mountWeedles = () => {
       const container = document.getElementById("tpwl-widget-weedles");
       if (!container) return;
@@ -279,7 +279,7 @@ export default function FlightResults() {
 
     const mountTimer = window.setTimeout(mountWeedles, 1200);
 
-    // ── Poll until weedles render or timeout ─────────────
+    // â”€â”€ Poll until weedles render or timeout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const pollStart = Date.now();
     const pollTimer = window.setInterval(() => {
       const container = document.getElementById("tpwl-widget-weedles");
@@ -313,15 +313,15 @@ export default function FlightResults() {
       />
 
       <style>{`
-        /* ═══════════════════════════════════════════════════
-           GoTravelAsia — Flight Results Page
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           GoTravelAsia â€” Flight Results Page
            Layout:
              1. Gold toolbar (logo + TP search widget)
-             2. TP results widget — full viewport width
+             2. TP results widget â€” full viewport width
              3. Popular destinations grid
              4. Footer
            No static filters. No fake prices.
-        ═══════════════════════════════════════════════════ */
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -341,10 +341,24 @@ export default function FlightResults() {
           /* Travelpayouts CSS variable overrides */
           --tpwl-font-family:              "Plus Jakarta Sans", system-ui, sans-serif;
           --tpwl-main-text:                #00162b;
-          --tpwl-search-result-background: #f5f7fa;
-          --tpwl-search-form-background:   #3D0870;
           --tpwl-headline-text:            #ffffff;
           --tpwl-links:                    #F5A623;
+          --tpwl-search-result-background: #ffffff;
+          --tpwl-search-form-background:   #3D0870;
+          --tpwl-card-background:          #ffffff;
+          --tpwl-border-color:             #edf0f5;
+          --tpwl-text-secondary:           #4a566d;
+          --tpwl-accent-color:             #F5A623;
+          --tpwl-button-background:        #F5A623;
+          --tpwl-button-text:              #3D0870;
+          --tpwl-button-background-hover:  #D4881A;
+          --tpwl-link-hover:                #D4881A;
+          --tpwl-success-color:            #10b981;
+          --tpwl-warning-color:            #f59e0b;
+          --tpwl-error-color:              #ef4444;
+          --tpwl-input-background:         #ffffff;
+          --tpwl-input-border:             #dde2ec;
+          --tpwl-input-border-focus:       #F5A623;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -363,7 +377,7 @@ export default function FlightResults() {
         }
         body a:hover { color: var(--gold-dark); text-decoration: underline; }
 
-        /* ── Hide Travelpayouts branding ────────────────── */
+        /* â”€â”€ Hide Travelpayouts branding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         a[href*="travelpayouts"]:not(.gta-logo),
         [class*="powered-by"], [class*="poweredBy"],
         [class*="powered_by"], [class*="PoweredBy"],
@@ -371,15 +385,15 @@ export default function FlightResults() {
           display: none !important;
         }
 
-        /* ── Hide TP's own hero header and search band ──── */
+        /* â”€â”€ Hide TP's own hero header and search band â”€â”€â”€â”€ */
         .tpwl-logo-header   { display: none !important; }
         .tpwl-search-header { display: none !important; }
 
-        /* ═══════════════════════════════════════════════════
-           TOOLBAR — gold band
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           TOOLBAR â€” gold band
            Row 1: Logo | route | actions  (48px)
            Row 2: Travelpayouts search widget (auto height)
-        ═══════════════════════════════════════════════════ */
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
         .gta-toolbar {
           position: sticky;
           top: 0;
@@ -389,7 +403,7 @@ export default function FlightResults() {
           padding: 0 24px 14px;
         }
 
-        /* ── Top row: logo + actions ────────────────────── */
+        /* â”€â”€ Top row: logo + actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         .gta-toolbar__top {
           display: flex;
           align-items: center;
@@ -486,7 +500,7 @@ export default function FlightResults() {
           color: var(--gold);
         }
 
-        /* ── Search widget row ──────────────────────────── */
+        /* â”€â”€ Search widget row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         .gta-toolbar__search {
           width: 100%;
         }
@@ -504,9 +518,9 @@ export default function FlightResults() {
           z-index: 500 !important;
         }
 
-        /* ═══════════════════════════════════════════════════
-           RESULTS AREA — full width, TP controls layout
-        ═══════════════════════════════════════════════════ */
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           RESULTS AREA â€” full width, TP controls layout
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
         .tpwl-main {
           background: var(--gray-50) !important;
           min-height: 60vh;
@@ -525,13 +539,13 @@ export default function FlightResults() {
           min-width: 976px;
         }
 
-        /* ── Minimal ticket card polish ──────────────────── */
+        /* â”€â”€ Minimal ticket card polish â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         [class*="ticket"]:not([class*="tpwl-widget"]),
         [class*="Ticket"]:not([class*="tpwl-widget"]) {
           margin-bottom: 8px !important;
         }
 
-        /* CTA buttons — brand gold */
+        /* CTA buttons â€” brand gold */
         [class*="buy"], [class*="Buy"],
         [class*="book"], [class*="Book"],
         [class*="select"], [class*="Select"],
@@ -547,9 +561,9 @@ export default function FlightResults() {
           background: var(--gold-dark) !important;
         }
 
-        /* ═══════════════════════════════════════════════════
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            POPULAR DESTINATIONS
-        ═══════════════════════════════════════════════════ */
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
         .tpwl-widgets__wrapper { display: none !important; }
 
         .gta-explore {
@@ -653,9 +667,9 @@ export default function FlightResults() {
           50%       { opacity: 0.4; }
         }
 
-        /* ═══════════════════════════════════════════════════
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            FOOTER
-        ═══════════════════════════════════════════════════ */
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
         .gta-footer {
           background: var(--purple-dark);
           color: rgba(255,255,255,.4);
@@ -686,7 +700,7 @@ export default function FlightResults() {
           text-decoration: none;
         }
 
-        /* ═══ RESPONSIVE ═══════════════════════════════════ */
+        /* â•â•â• RESPONSIVE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
         @media (max-width: 1024px) {
           .tpwl__content { max-width: unset; min-width: unset; }
           .gta-dest-grid,
@@ -715,7 +729,7 @@ export default function FlightResults() {
 
       <div className="tpwl-page">
 
-        {/* ══ TOOLBAR — gold bar with TP search inside ═════ */}
+        {/* â•â• TOOLBAR â€” gold bar with TP search inside â•â•â•â•â• */}
         <div className="gta-toolbar" role="banner">
 
           {/* Top row */}
@@ -743,7 +757,7 @@ export default function FlightResults() {
 
             <div className="gta-toolbar__right">
               <a href="#" className="gta-btn gta-btn--outline" target="_blank" rel="noopener noreferrer">
-                🔔 Price Alerts
+                ðŸ”” Price Alerts
               </a>
               <a href="/" className="gta-btn gta-btn--dark">
                 New Search
@@ -751,13 +765,13 @@ export default function FlightResults() {
             </div>
           </div>
 
-          {/* Search widget row — Travelpayouts renders here */}
+          {/* Search widget row â€” Travelpayouts renders here */}
           <div className="gta-toolbar__search">
             <div id="tpwl-search" />
           </div>
         </div>
 
-        {/* ══ RESULTS — Travelpayouts controls this ════════ */}
+        {/* â•â• RESULTS â€” Travelpayouts controls this â•â•â•â•â•â•â•â• */}
         <main className="tpwl-main">
           <div className="tpwl-tickets__wrapper">
             <div className="tpwl__content">
@@ -784,14 +798,14 @@ export default function FlightResults() {
             />
           </ErrorBoundary>
 
-          {/* ══ POPULAR DESTINATIONS ═══════════════════════ */}
+          {/* â•â• POPULAR DESTINATIONS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           <section aria-labelledby="gta-explore-heading">
             <div className="gta-explore">
               <div className="gta-explore__header">
                 <h2 id="gta-explore-heading" className="gta-explore__title">
                   Popular destinations
                 </h2>
-                <a href="/flights" className="gta-explore__link">See all →</a>
+                <a href="/flights" className="gta-explore__link">See all â†’</a>
               </div>
 
               {widgetState === "loading" && (
@@ -811,7 +825,7 @@ export default function FlightResults() {
                         <div className="gta-dest-card__city">{d.city}</div>
                         <div className="gta-dest-card__country">{d.country}</div>
                       </div>
-                      <div className="gta-dest-card__cta">Search flights →</div>
+                      <div className="gta-dest-card__cta">Search flights â†’</div>
                     </a>
                   ))}
                 </div>
@@ -830,11 +844,11 @@ export default function FlightResults() {
           </section>
         </main>
 
-        {/* ══ FOOTER ═══════════════════════════════════════ */}
+        {/* â•â• FOOTER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <footer className="gta-footer">
           <div className="gta-footer__inner">
             <div className="gta-footer__copyright">
-              © {new Date().getFullYear()} GoTravel Asia
+              Â© {new Date().getFullYear()} GoTravel Asia
             </div>
             <div className="gta-footer__links">
               <a href="/terms"   target="_blank" rel="noreferrer">Terms</a>

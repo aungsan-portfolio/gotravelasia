@@ -1,14 +1,16 @@
-// api/_handlers/flights.ts
+﻿// api/_handlers/flights.ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { setCors, parseRequest } from "../_lib/http.js";
 import { handleCalendarPrices } from "../_lib/calendarPrices.js";
 import { handleCheapPrices }    from "../_lib/cheapPrices.js";
 import { handleSpecialOffers }  from "../_lib/specialOffers.js";
 import { searchFlights }        from "../../server/flights/searchFlights.js";
+import { rateLimitMiddleware } from "../_lib/rateLimit.js";
 
 export default async function handler(req: any, res: any) {
   if (setCors(req, res)) return;
 
+  if (await rateLimitMiddleware(req, res, "flights")) return;
   const params = parseRequest(req);
   const { type } = params;
 
