@@ -1,6 +1,6 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // 1) BRAND TOKENS & STYLES (Extracted from FlightWidget.tsx)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const B = {
     purple: "#5B0EA6",
     purpleDeep: "#2D0558",
@@ -37,11 +37,11 @@ export const labelStyle: React.CSSProperties = {
 import React from "react";
 
 export const AIRPORTS = [
-    // 🇲🇲 HOME (Myanmar)
-    { code: "RGN", name: "Yangon (ရန်ကုန်)", country: "Myanmar", isPopular: true },
-    { code: "MDL", name: "Mandalay (မန္တလေး)", country: "Myanmar", isPopular: true },
+    // ðŸ‡²ðŸ‡² HOME (Myanmar)
+    { code: "RGN", name: "Yangon (á€›á€”á€ºá€€á€¯á€”á€º)", country: "Myanmar", isPopular: true },
+    { code: "MDL", name: "Mandalay (á€™á€”á€¹á€á€œá€±á€¸)", country: "Myanmar", isPopular: true },
 
-    // 🔥 POPULAR (Southeast Asia & East Asia Hubs)
+    // ðŸ”¥ POPULAR (Southeast Asia & East Asia Hubs)
     { code: "BKK", name: "Bangkok (All Airports)", country: "Thailand", isPopular: true },
     { code: "SIN", name: "Singapore (All Airports)", country: "Singapore", isPopular: true },
     { code: "KUL", name: "Kuala Lumpur", country: "Malaysia", isPopular: true },
@@ -57,35 +57,33 @@ export const AIRPORTS = [
     { code: "OSA", name: "Osaka (All Airports)", country: "Japan", isPopular: true },
     { code: "SAI", name: "Siem Reap", country: "Cambodia", isPopular: true },
 
-    // 🇹🇭 Thailand (Others)
+    // ðŸ‡¹ðŸ‡­ Thailand (Others)
     { code: "DMK", name: "Bangkok (Don Mueang)", country: "Thailand" },
     { code: "KBV", name: "Krabi", country: "Thailand" },
 
-    // 🇻🇳 Vietnam
+    // ðŸ‡»ðŸ‡³ Vietnam
     { code: "HAN", name: "Hanoi", country: "Vietnam" },
 
-    // 🇮🇩 Indonesia
+    // ðŸ‡®ðŸ‡© Indonesia
     { code: "JKT", name: "Jakarta (All Airports)", country: "Indonesia" },
 
-    // 🇵🇭 Philippines
+    // ðŸ‡µðŸ‡­ Philippines
     { code: "MNL", name: "Manila (Ninoy Aquino)", country: "Philippines" },
     { code: "CEB", name: "Cebu (Mactan)", country: "Philippines" },
 
-    // 🇲🇾 Malaysia (Others)
+    // ðŸ‡²ðŸ‡¾ Malaysia (Others)
     { code: "BKI", name: "Kota Kinabalu", country: "Malaysia" },
     { code: "PEN", name: "Penang", country: "Malaysia" },
 
-    // 🇹🇼 Taiwan
-    { code: "TPE-OLD", name: "Taipei (Internal)", country: "Taiwan" }, // Kept TPE code at top popular
+    // ðŸ‡¹ðŸ‡¼ Taiwan
 
-    // 🇰🇷 South Korea (Others)
+    // ðŸ‡°ðŸ‡· South Korea (Others)
     { code: "PUS", name: "Busan (Gimhae)", country: "South Korea" },
     { code: "CJU", name: "Jeju", country: "South Korea" },
 
-    // 🇯🇵 Japan (Others)
-    { code: "OSA-OLD", name: "Osaka (Internal)", country: "Japan" }, // Kept OSA code at top popular
+    // ðŸ‡¯ðŸ‡µ Japan (Others)
 
-    // 🇨🇳 China
+    // ðŸ‡¨ðŸ‡³ China
     { code: "BJS", name: "Beijing (All Airports)", country: "China" },
     { code: "SHA", name: "Shanghai (All Airports)", country: "China" },
     { code: "CAN", name: "Guangzhou", country: "China" },
@@ -94,25 +92,70 @@ export const AIRPORTS = [
     { code: "CKG", name: "Chongqing", country: "China" },
     { code: "CTU", name: "Chengdu", country: "China" },
 
-    // 🇭🇰 / 🇲🇴 Hong Kong & Macau
+    // ðŸ‡­ðŸ‡° / ðŸ‡²ðŸ‡´ Hong Kong & Macau
     { code: "MFM", name: "Macau", country: "Macau" },
 
-    // 🇮🇳 India
+    // ðŸ‡®ðŸ‡³ India
     { code: "CCU", name: "Kolkata", country: "India" },
     { code: "DEL", name: "Delhi (Indira Gandhi)", country: "India" },
     { code: "MAA", name: "Chennai", country: "India" },
     { code: "GAY", name: "Gaya", country: "India" },
 
-    // 🇰🇭 Cambodia
+    // ðŸ‡°ðŸ‡­ Cambodia
     { code: "PNH", name: "Phnom Penh", country: "Cambodia" },
     { code: "LPQ", name: "Luang Prabang", country: "Laos" },
 
-    // 🇦🇪 UAE
+    // ðŸ‡¦ðŸ‡ª UAE
     { code: "DXB", name: "Dubai", country: "United Arab Emirates" },
 
-    // 🇧🇳 Brunei
+    // ðŸ‡§ðŸ‡³ Brunei
     { code: "BWN", name: "Bandar Seri Begawan", country: "Brunei" },
-] as const;
+
+    // ðŸ‡±ðŸ‡° Sri Lanka
+    { code: "CMB", name: "Colombo (Bandaranaike)", country: "Sri Lanka" },
+
+    // ðŸ‡§ðŸ‡© Bangladesh
+    { code: "DAC", name: "Dhaka", country: "Bangladesh" },
+
+    // ðŸ‡³ðŸ‡µ Nepal
+    { code: "KTM", name: "Kathmandu", country: "Nepal" },
+
+    // ðŸ‡²ðŸ‡³ Maldives
+    { code: "MLE", name: "Malé", country: "Maldives" },
+
+    // ðŸ‡§ðŸ‡° More Thailand (domestic & budget carrier hubs)
+    { code: "USM", name: "Koh Samui", country: "Thailand" },
+    { code: "HDY", name: "Hat Yai", country: "Thailand" },
+    { code: "UTP", name: "Pattaya (U-Tapao)", country: "Thailand" },
+
+    // ðŸ‡»ðŸ‡³ More Vietnam
+    { code: "PQC", name: "Phu Quoc", country: "Vietnam" },
+
+    // ðŸ‡®ðŸ‡© More Indonesia
+    { code: "SUB", name: "Surabaya", country: "Indonesia" },
+    { code: "JOG", name: "Yogyakarta", country: "Indonesia" },
+
+    // ðŸ‡°ðŸ‡· More South Korea
+    { code: "GMP", name: "Seoul (Gimpo)", country: "South Korea" },
+
+    // ðŸ‡¯ðŸ‡µ More Japan
+    { code: "FUK", name: "Fukuoka", country: "Japan" },
+    { code: "OKA", name: "Okinawa (Naha)", country: "Japan" },
+    { code: "NGO", name: "Nagoya (Chubu)", country: "Japan" },
+
+    // ðŸ‡¨ðŸ‡³ More China
+    { code: "XIY", name: "Xi'an", country: "China" },
+    { code: "HGH", name: "Hangzhou", country: "China" },
+    { code: "SZX", name: "Shenzhen", country: "China" },
+
+    // ðŸ‡®ðŸ‡³ More India
+    { code: "BOM", name: "Mumbai", country: "India" },
+    { code: "BLR", name: "Bangalore", country: "India" },
+
+    // ðŸ‡¦ðŸ‡ª More Middle East
+    { code: "AUH", name: "Abu Dhabi", country: "United Arab Emirates" },
+    { code: "DOH", name: "Doha", country: "Qatar" },
+    { code: "IST", name: "Istanbul", country: "Turkey" },] as const;
 
 export type Airport = (typeof AIRPORTS)[number];
 export type AirportCode = Airport["code"];
@@ -122,7 +165,7 @@ export const AIRPORT_MAP = new Map<string, Airport>(
     (AIRPORTS as unknown as Airport[]).map(a => [a.code, a])
 );
 
-// ── UX IMPROVEMENT: Destination Grouping Logic ── //
+// â”€â”€ UX IMPROVEMENT: Destination Grouping Logic â”€â”€ //
 export const DESTINATION_GROUPS = (() => {
     const groups: { key: string; label: string; options: Airport[] }[] = [];
     const airList = AIRPORTS as unknown as Airport[];
@@ -130,13 +173,13 @@ export const DESTINATION_GROUPS = (() => {
     // 1. Myanmar (Home) - Always absolute top
     const myanmar = airList.filter(a => a.country === "Myanmar");
     if (myanmar.length) {
-        groups.push({ key: "Myanmar", label: "🇲🇲 Myanmar (Home)", options: myanmar });
+        groups.push({ key: "Myanmar", label: "ðŸ‡²ðŸ‡² Myanmar (Home)", options: myanmar });
     }
 
     // 2. Popular Destinations
     const popular = airList.filter(a => (a as any).isPopular);
     if (popular.length) {
-        groups.push({ key: "Popular", label: "🔥 Popular Destinations", options: popular });
+        groups.push({ key: "Popular", label: "ðŸ”¥ Popular Destinations", options: popular });
     }
 
     // 3. The rest grouped by Country

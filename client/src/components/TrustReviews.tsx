@@ -1,31 +1,31 @@
-import { Plane, Clock, Shield, CheckCircle } from "lucide-react";
+﻿import { Plane, Clock, Shield, CheckCircle } from "lucide-react";
 
 const FEATURES = [
   {
     icon: Plane,
-    emoji: "✈️",
-    title: "Compare 500+ flight routes instantly",
-    desc: "Search across Aviasales & Trip.com in one place. Flights from Yangon and Mandalay to Bangkok, Singapore, Chiang Mai, and more.",
+    emoji: "âœˆï¸",
+    title: "Compare 100,000+ flight routes instantly",
+    desc: "Search across Aviasales & Trip.com in one place. We query 728 airlines and 100,000+ routes â€” from Yangon and Mandalay to Bangkok, Singapore, Tokyo, and anywhere else in the world.",
     color: "bg-blue-50 text-blue-600",
   },
   {
     icon: Clock,
-    emoji: "💰",
+    emoji: "ðŸ’°",
     title: "Real-time prices updated every 6 hours",
-    desc: "Our price data refreshes automatically so you always see current fares — no stale prices or bait-and-switch surprises.",
+    desc: "Our price data refreshes automatically so you always see current fares â€” no stale prices or bait-and-switch surprises.",
     color: "bg-amber-50 text-amber-600",
   },
   {
     icon: Shield,
-    emoji: "🔒",
-    title: "Book directly with partners — zero markup",
+    emoji: "ðŸ”’",
+    title: "Book directly with partners â€” zero markup",
     desc: "We redirect you straight to Aviasales, Agoda, 12Go, or Klook. You pay the same price as booking direct. No hidden fees, ever.",
     color: "bg-emerald-50 text-emerald-600",
   },
 ];
 
 const PARTNER_STATS = [
-  { name: "Aviasales", role: "Flight Search", logo: "/images/partners/aviasales.svg" },
+  { name: "Aviasales", role: "728 Airlines · 100k+ Routes", logo: "/images/partners/aviasales.svg" },
   { name: "Trip.com", role: "Flights & Hotels", logo: "/images/partners/tripcom.svg" },
   { name: "Agoda", role: "Hotel Booking", logo: "/images/partners/agoda.svg" },
   { name: "12Go", role: "Transport", logo: "/images/partners/12go.svg" },
@@ -39,7 +39,7 @@ export default function TrustReviews() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full text-sm font-bold mb-4">
             <CheckCircle className="w-4 h-4" />
-            Built for travelers from Myanmar
+            Built for travelers from Myanmar · Powered by Aviasales
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
             What Travelers Love
