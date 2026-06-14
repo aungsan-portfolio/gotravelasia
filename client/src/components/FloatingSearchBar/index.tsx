@@ -121,12 +121,12 @@ export default function FloatingSearchBar() {
     return (
         <div
             ref={barRef}
-            className="flex items-center h-[44px] px-[8px] gap-[4px] rounded-[12px] border border-[rgba(245,197,24,0.28)] flex-1 min-w-0 relative"
+            className="flex items-center h-[40px] px-[8px] gap-[4px] rounded-[10px] border border-[rgba(245,197,24,0.2)] flex-1 min-w-0 relative"
             style={{
-                background: "rgba(42,8,128,0.85)",
+                background: "rgba(42,8,128,0.92)",
                 backdropFilter: "blur(14px)",
                 WebkitBackdropFilter: "blur(14px)",
-                boxShadow: "0 4px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(245,197,24,.06)",
+                boxShadow: "0 1px 3px rgba(0,0,0,.18), inset 0 0 0 1px rgba(245,197,24,.06)",
                 fontFamily: "'Plus Jakarta Sans','Source Sans 3',sans-serif",
             }}
         >
