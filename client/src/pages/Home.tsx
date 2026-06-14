@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect, Suspense } from "react";
+﻿import React, { useState, useCallback, useEffect, Suspense } from "react";
 import Layout from "@/components/Layout";
 import SEO from "@/seo/SEO";
 import HeroSection from "@/components/HeroSection";
+import MockupHeroSection from '@/components/home/MockupHeroSection'; // Cheapflights-style mockup (A/B toggle)
 import FlightWidget from "@/components/flights/FlightWidget";
 import CheapDealsCards from "@/components/cheap-deals";
 import SpecialOffers from "@/components/cheap-deals/SpecialOffers";
@@ -14,7 +15,7 @@ import {
   buildAviasalesUrl as buildAviasalesLink,
 } from "@/lib/config";
 
-// ─── Lazy-loaded tabs (Upgrade 4: code splitting) ───
+// â”€â”€â”€ Lazy-loaded tabs (Upgrade 4: code splitting) â”€â”€â”€
 const HotelSearchPreview = React.lazy(() => import("@/components/home/HotelSearchPreview"));
 const TwelveGoWidget = React.lazy(() => import("@/components/TwelveGoWidget"));
 
@@ -36,6 +37,8 @@ function TabSkeleton() {
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "transport">("flights");
+  // A/B toggle: false = original HeroSection, true = Cheapflights-style mockup
+  const [mockupMode, setMockupMode] = useState<boolean>(false);
 
   // Read URL hash to switch tabs (connected to nav links)
   useEffect(() => {
@@ -53,10 +56,14 @@ export default function Home() {
   return (
     <Layout>
       <SEO path="/" />
-      <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
+            {mockupMode ? (
+        <MockupHeroSection
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onExitMockup={() => setMockupMode(false)}
+        >
         {activeTab === "flights" && <FlightWidget />}
 
-        {/* Upgrade 4: Lazy-loaded tabs — Hotels & Transport only download when clicked */}
         <Suspense fallback={<TabSkeleton />}>
           {activeTab === "hotels" && <HotelSearchPreview />}
           {activeTab === "transport" && (
@@ -68,7 +75,36 @@ export default function Home() {
             </div>
           )}
         </Suspense>
-      </HeroSection>
+        </MockupHeroSection>
+      ) : (
+        <HeroSection activeTab={activeTab} setActiveTab={setActiveTab}>
+        {activeTab === "flights" && <FlightWidget />}
+
+        <Suspense fallback={<TabSkeleton />}>
+          {activeTab === "hotels" && <HotelSearchPreview />}
+          {activeTab === "transport" && (
+            <div
+              className="w-full relative z-10"
+              style={{ padding: '0 8px' }}
+            >
+              <TwelveGoWidget minHeight={450} />
+            </div>
+          )}
+        </Suspense>
+        </HeroSection>
+      )}
+
+      {!mockupMode && (
+        <button
+          type="button"
+          onClick={() => setMockupMode(true)}
+          className="mockup-entry-pill"
+          aria-label="Try the new Cheapflights-style design"
+        >
+          Try new design
+        </button>
+      )}
+
 
       <SpecialOffers />
 
@@ -84,3 +120,6 @@ export default function Home() {
     </Layout>
   );
 }
+
+
+
