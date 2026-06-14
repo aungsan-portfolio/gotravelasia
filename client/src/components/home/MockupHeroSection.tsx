@@ -85,7 +85,7 @@ export default function MockupHeroSection({
 
         {/* Search card - white, subtle shadow, search box is the hero */}
         <div className="cf-search-card">
-          <div className="cf-search-card__inner">
+          <div className="cf-search-card__widget">
             {children}
           </div>
         </div>
@@ -107,4 +107,5 @@ export default function MockupHeroSection({
     </section>
   );
 }
+
 

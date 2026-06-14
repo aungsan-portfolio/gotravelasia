@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;500;700&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;500;700&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -289,7 +289,7 @@
   }
 }
 
-/* ═══════════ TRAVELPAYOUTS WHITE LABEL OVERRIDES ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• TRAVELPAYOUTS WHITE LABEL OVERRIDES â•â•â•â•â•â•â•â•â•â•â• */
 .tpwl-page *,
 .tpwl-page [class*="TPWL"] *,
 .tpwl-page .TPWL-widget *,
@@ -397,7 +397,7 @@
   color: var(--primary) !important;
 }
 
-/* ═══════════ BUDGET SLIDER ═══════════ */
+/* â•â•â•â•â•â•â•â•â•â•â• BUDGET SLIDER â•â•â•â•â•â•â•â•â•â•â• */
 .slider-budget {
   -webkit-appearance: none;
   appearance: none;
@@ -566,12 +566,32 @@
 }
 
 .cf-search-card__inner {
+  padding: 0;
+}
+
+/* Dark inner container - gives the dark FlightWidget a proper backdrop.
+   The widget's white text and rgba(255,255,255,0.18) borders assume a dark
+   background. Without this, fields are invisible on the white card. */
+.cf-search-card__widget {
+  background: linear-gradient(180deg, #1a1730 0%, #0d0b1e 100%);
+  border-radius: 12px;
   padding: 20px 24px 24px;
+  position: relative;
+}
+
+.cf-search-card__widget::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 197, 24, 0.18);
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {
-  .cf-search-card__inner {
+  .cf-search-card__widget {
     padding: 16px;
+    border-radius: 10px;
   }
 }
 
@@ -648,3 +668,4 @@
   outline: 2px solid #f5c518;
   outline-offset: 2px;
 }
+
