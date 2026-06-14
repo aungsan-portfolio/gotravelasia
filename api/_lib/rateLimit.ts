@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+﻿import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getStore } from "../../shared/utils/store.js";
 
 const WINDOW_MS = 60_000;
@@ -35,7 +35,7 @@ export async function rateLimitMiddleware(
   try {
     const now = Date.now();
     const ip = getClientIp(req);
-    const key = atelimit::;
+    const key = `ratelimit:${namespace}:${ip}`;
     const store = getStore();
 
     const { count, resetAt } = await store.increment(key, WINDOW_MS);
